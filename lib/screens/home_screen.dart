@@ -188,8 +188,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (index == 0) {
                     return _buildProfileInfo();
                   }
-                  Video video = _channel.videos[index - 1];
-                  return _buildVideo(video);
+                  // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
+                  if (index <= 50) {
+                    Video video = _channel.videos[index - 1];
+                    return _buildVideo(video);
+                  }
                 },
               ),
             )
