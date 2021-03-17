@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter/services.dart';
 
 class VideoScreen extends StatefulWidget {
-
   final String id;
 
   VideoScreen({this.id});
@@ -12,7 +12,6 @@ class VideoScreen extends StatefulWidget {
 }
 
 class _VideoScreenState extends State<VideoScreen> {
-
   YoutubePlayerController _controller;
 
   @override
@@ -29,16 +28,21 @@ class _VideoScreenState extends State<VideoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: YoutubePlayer(
+    return YoutubePlayerBuilder(
+      onExitFullScreen: () {
+        //SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      },
+      player: YoutubePlayer(
         controller: _controller,
-        showVideoProgressIndicator: true,
-        onReady: () {
-          print('Player is ready.');
-        },
       ),
+      builder: (context, player) {
+        return Column(
+          children: <Widget>[
+            player,
+          ],
+        );
+      },
     );
   }
-
 }
