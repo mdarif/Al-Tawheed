@@ -3,6 +3,7 @@ import 'package:myapp/models/channel_model.dart';
 import 'package:myapp/models/video_model.dart';
 import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/services/api_service.dart';
+import './main_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -161,16 +162,17 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Sharah Kitaab Al Tawheed'),
         backgroundColor: Colors.purple,
         elevation: 4,
-        leading: IconButton(
+        /*leading: IconButton(
           icon: Icon(Icons.menu),
           tooltip: 'Menu Icon',
           onPressed: () {},
-        ), //IconButton
+        ), //IconButton*/
         brightness: Brightness.dark,
-        actions: [
+        /*actions: [
           IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
-        ],
+        ],*/
       ),
+      drawer: MainDrawer(),
       body: _channel != null
           ? NotificationListener<ScrollNotification>(
               onNotification: (ScrollNotification scrollDetails) {
