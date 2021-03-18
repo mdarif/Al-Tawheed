@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.almarfa.tawheed">
    <application
-        android:label="tawheed"
+        android:label="At-Tawheed"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
