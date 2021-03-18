@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  "58 Videos",
+                  "50 Videos",
                   style: TextStyle(
                     color: Colors.blue[600],
                     fontSize: 10.0,
