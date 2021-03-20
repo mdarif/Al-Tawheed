@@ -59,7 +59,7 @@ class MainDrawer extends StatelessWidget {
               title: Text(
                 "Contact Us",
               ),
-              leading: const Icon(Icons.contact_support_rounded),
+              leading: const Icon(Icons.alternate_email),
               onTap: () {
                 showDialog(
                     context: context,
