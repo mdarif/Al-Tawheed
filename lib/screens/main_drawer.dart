@@ -31,7 +31,10 @@ class MainDrawer extends StatelessWidget {
             ),
             leading: const Icon(Icons.monitor),
             onTap: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AboutUs()),
+              );
             },
           ),
           ListTile(
@@ -40,7 +43,10 @@ class MainDrawer extends StatelessWidget {
             ),
             leading: const Icon(Icons.favorite),
             onTap: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ContactUs()),
+              );
             },
           ),
         ],
