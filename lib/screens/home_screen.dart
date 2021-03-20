@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: EdgeInsets.all(20.0),
       padding: EdgeInsets.all(20.0),
-      height: 120.0,
+      height: 130.0,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: <Widget>[
           CircleAvatar(
             backgroundColor: Colors.white,
-            radius: 35.0,
+            radius: 45.0,
             backgroundImage: NetworkImage(_channel.profilePictureUrl),
           ),
           SizedBox(width: 12.0),
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   "Sheikh Abdullah Nasir Rahmani Hafizahullah",
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 14.0,
+                    fontSize: 15.0,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.clip,
@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   '${_channel.title}',
                   style: TextStyle(
                     color: Colors.brown,
-                    fontSize: 12.0,
+                    fontSize: 13.0,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -79,16 +79,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   '${_channel.subscriberCount} subscribers',
                   style: TextStyle(
                     color: Colors.grey[600],
-                    fontSize: 11.0,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                SizedBox(height: 7),
                 Text(
                   "50 Videos",
                   style: TextStyle(
                     color: Colors.blue[600],
-                    fontSize: 10.0,
+                    fontSize: 13.0,
                     fontWeight: FontWeight.w600,
                   ),
                 )
@@ -125,19 +126,41 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           children: <Widget>[
             Image(
-              width: 120.0,
+              width: 130.0,
               image: NetworkImage(video.thumbnailUrl),
             ),
-            SizedBox(width: 10.0),
             Expanded(
-              child: Text(
-                video.title,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 12.0,
+                child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //SizedBox(width: 10.0),
+                Container(
+                  padding: const EdgeInsets.only(left: 12, top: 5),
+                  //flex: 1,
+                  child: Text(
+                    video.title,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14.0,
+                      //backgroundColor: Colors.purple,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+                SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.only(left: 12),
+                  //flex: 1,
+                  child: Text(
+                    video.channelTitle,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12.0,
+                      //backgroundColor: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ))
           ],
         ),
       ),
