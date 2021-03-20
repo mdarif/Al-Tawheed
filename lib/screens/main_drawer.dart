@@ -5,6 +5,17 @@ import 'contact_us.dart';
 class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final drawerHeader = UserAccountsDrawerHeader(
+      accountName: Text(
+        "Mohammad Arif",
+      ),
+      accountEmail: Text(
+        "arif.mohammed@gmail.com",
+      ),
+      currentAccountPicture: const CircleAvatar(
+        child: FlutterLogo(size: 42.0),
+      ),
+    );
     return Drawer(
       // Add a ListView to the drawer. This ensures the user can scroll
       // through the options in the drawer if there isn't enough vertical
@@ -12,44 +23,24 @@ class MainDrawer extends StatelessWidget {
       child: ListView(
         // Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            child: Text(
-              'Kitaab Al Tawheed',
-              style: TextStyle(color: Colors.white),
-            ),
-            decoration: BoxDecoration(
-              color: Colors.purple,
-            ),
-          ),
+        children: [
+          drawerHeader,
           ListTile(
-            leading: Icon(Icons.monitor),
-            title: Text('About Us'),
+            title: Text(
+              "About Us",
+            ),
+            leading: const Icon(Icons.monitor),
             onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              //Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AboutUs()),
-              );
+              Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: Icon(Icons.contact_page),
             title: Text(
-              'Contact Us',
-              style: TextStyle(fontSize: 14),
+              "Contact Us",
             ),
+            leading: const Icon(Icons.favorite),
             onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ContactUs()),
-              );
+              Navigator.pop(context);
             },
           ),
         ],
