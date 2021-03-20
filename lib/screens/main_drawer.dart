@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'about_us.dart';
 import 'contact_us.dart';
 
@@ -7,14 +8,31 @@ class MainDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final drawerHeader = UserAccountsDrawerHeader(
       accountName: Text(
-        "Mohammad Arif",
+        "Powered by Al Marfa Software Inc.",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14.0,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-      accountEmail: Text(
-        "arif.mohammed@gmail.com",
-      ),
+      accountEmail: Text("https://almarfa.in",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13.0,
+            fontWeight: FontWeight.w400,
+          )),
       currentAccountPicture: const CircleAvatar(
-        child: FlutterLogo(size: 42.0),
+        radius: 55,
+        backgroundColor: Color(0xffFDCF09),
+        child: CircleAvatar(
+          radius: 40,
+          backgroundImage: AssetImage('assets/almarfa.jpg'),
+        ),
       ),
+      onDetailsPressed: () {
+        print("_launchURL");
+        _launchURL();
+      },
     );
     return Drawer(
       // Add a ListView to the drawer. This ensures the user can scroll
@@ -25,7 +43,7 @@ class MainDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           drawerHeader,
-          ListTile(
+          /*ListTile(
             title: Text(
               "About Us",
             ),
@@ -36,21 +54,69 @@ class MainDrawer extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => AboutUs()),
               );
             },
-          ),
+          ),*/
           ListTile(
-            title: Text(
-              "Contact Us",
-            ),
-            leading: const Icon(Icons.favorite),
-            onTap: () {
+              title: Text(
+                "Contact Us",
+              ),
+              leading: const Icon(Icons.contact_support_rounded),
+              onTap: () {
+                showDialog(
+                    context: context,
+                    builder: (ctxt) => new AlertDialog(
+                          title: Text('Al Marfa Software Inc.'),
+                          content: SingleChildScrollView(
+                            child: ListBody(
+                              children: <Widget>[
+                                Text(
+                                    'If you have any feedback or suggestions please send an email to us!'),
+                                //Text('+91-8595836869'),
+                              ],
+                            ),
+                          ),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text('Email Us'),
+                              onPressed: () {
+                                launchEmailSubmission();
+                              },
+                            ),
+                          ],
+                        ));
+              }
+              /*onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ContactUs()),
               );
-            },
-          ),
+            },*/
+              ),
         ],
       ),
     );
+  }
+}
+
+_launchURL() async {
+  const url = 'https://almarfa.in';
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+
+void launchEmailSubmission() async {
+  final Uri params =
+      Uri(scheme: 'mailto', path: 'info@almarfa.in', queryParameters: {
+    'subject': 'Contact Al Marfa Software Inc.',
+    //'body': 'Default body'
+  });
+
+  String url = params.toString();
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    print('Could not launch $url');
   }
 }
