@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'about_us.dart';
-import 'contact_us.dart';
 
 class MainDrawer extends StatelessWidget {
   @override

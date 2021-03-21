@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "247800911349",
+    "project_id": "at-tawheed",
+    "storage_bucket": "at-tawheed.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:247800911349:android:3c6868be966caad78fbcbc",
+        "android_client_info": {
+          "package_name": "com.almarfa.tawheed"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "247800911349-8u8nb8glc7hj2o0aqaaeha7lfijujhok.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQsEWr613yLLHsgyG5y1DLpzrKepaAvLw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "247800911349-8u8nb8glc7hj2o0aqaaeha7lfijujhok.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
