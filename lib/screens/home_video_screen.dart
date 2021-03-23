@@ -3,19 +3,17 @@ import 'package:myapp/models/channel_model.dart';
 import 'package:myapp/models/video_model.dart';
 import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/services/api_service.dart';
-import './main_drawer.dart';
-import 'dart:math';
+import 'main_drawer.dart';
 import 'package:firebase_database/firebase_database.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeVideoScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _HomeVideoScreenState createState() => _HomeVideoScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeVideoScreenState extends State<HomeVideoScreen> {
   Channel _channel;
   bool _isLoading = false;
-
 
   @override
   void initState() {
@@ -171,7 +169,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   _loadMoreVideos() async {
-
     _isLoading = true;
     List<Video> moreVideos = await APIService.instance
         .fetchVideosFromPlaylist(playlistId: _channel.uploadPlaylistId);
@@ -207,7 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _channel.videos.length != int.parse(_channel.videoCount) &&
                     scrollDetails.metrics.pixels ==
                         scrollDetails.metrics.maxScrollExtent) {
-                  DatabaseReference _testRef = FirebaseDatabase.instance.reference().child("_loadMoreVideos");
+                  DatabaseReference _testRef = FirebaseDatabase.instance
+                      .reference()
+                      .child("_loadMoreVideos");
                   _testRef.set("Loading more videos!");
                   _loadMoreVideos();
                 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/screens/home_screen.dart';
+import 'package:myapp/screens/home_video_screen.dart';
+import 'package:myapp/screens/welcome.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 //void main() => runApp(MyApp());
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
               print('You have an error! ${snapshot.error.toString()} ');
               return Text('Something went wrong');
             } else if (snapshot.hasData) {
-              return HomeScreen();
+              return WelcomeScreen();
             } else {
               return Center(
                 child: CircularProgressIndicator(),
