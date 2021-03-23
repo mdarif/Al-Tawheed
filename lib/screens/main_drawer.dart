@@ -67,14 +67,16 @@ class MainDrawer extends StatelessWidget {
                             child: ListBody(
                               children: <Widget>[
                                 Text(
-                                    'If you have any feedback or suggestions please send an email to us!'),
+                                    'If you have any feedback or suggestion(s) please write back to us.'),
                                 //Text('+91-8595836869'),
                               ],
                             ),
                           ),
                           actions: <Widget>[
                             TextButton(
-                              child: Text('Email Us'),
+                              child: Text('EMAIL US'),
+                              style:
+                                  TextButton.styleFrom(primary: Colors.purple),
                               onPressed: () {
                                 launchEmailSubmission();
                               },
@@ -106,7 +108,7 @@ _launchURL() async {
 
 void launchEmailSubmission() async {
   final Uri params =
-      Uri(scheme: 'mailto', path: 'info@almarfa.in', queryParameters: {
+      Uri(scheme: 'mailto', path: 'arif.mohammed@gmail.com', queryParameters: {
     'subject': 'Contact Al Marfa Software Inc.',
     //'body': 'Default body'
   });
