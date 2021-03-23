@@ -62,7 +62,8 @@ class MainDrawer extends StatelessWidget {
                 showDialog(
                     context: context,
                     builder: (ctxt) => new AlertDialog(
-                          title: Text('Al Marfa Software Inc.'),
+                          title: Text('Al Marfa Software Inc.',
+                              style: TextStyle(fontSize: 20)),
                           content: SingleChildScrollView(
                             child: ListBody(
                               children: <Widget>[
@@ -75,8 +76,8 @@ class MainDrawer extends StatelessWidget {
                           actions: <Widget>[
                             TextButton(
                               child: Text('EMAIL US'),
-                              style:
-                                  TextButton.styleFrom(primary: Colors.purple),
+                              /* style:
+                                  TextButton.styleFrom(primary: Colors.purple), */
                               onPressed: () {
                                 launchEmailSubmission();
                               },

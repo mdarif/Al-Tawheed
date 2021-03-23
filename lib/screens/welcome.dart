@@ -80,18 +80,23 @@ class MyStatelessWidget extends StatelessWidget {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       // background color
-                      primary: Colors.purple,
+                      primary: Colors.indigoAccent.shade700, // background
                       padding:
                           EdgeInsets.symmetric(horizontal: 80, vertical: 10),
-                      textStyle: TextStyle(fontSize: 25),
+
+                      textStyle: TextStyle(
+                        fontSize: 25,
+                        //primaryColor: Colors.indigoAccent.shade700,
+                      ),
                     ),
                     child: Text('START NOW'),
                     onPressed: () {
-                      Navigator.push(
+                      Navigator.pushNamed(context, '/videoscreen');
+                      /*  Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => HomeVideoScreen()),
-                      );
+                      ); */
                     },
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/services/api_service.dart';
 import 'main_drawer.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'welcome.dart';
 
 class HomeVideoScreen extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class HomeVideoScreen extends StatefulWidget {
 class _HomeVideoScreenState extends State<HomeVideoScreen> {
   Channel _channel;
   bool _isLoading = false;
+  final APIServiceInstance = APIService.instance;
 
   @override
   void initState() {
@@ -22,8 +24,8 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   }
 
   _initChannel() async {
-    Channel channel = await APIService.instance
-        .fetchChannel(channelId: 'UC6tt6jN-ufLKbrR51jFTTQw');
+    Channel channel = await APIServiceInstance.fetchChannel(
+        channelId: 'UC6tt6jN-ufLKbrR51jFTTQw');
     setState(() {
       _channel = channel;
     });
@@ -170,8 +172,8 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
 
   _loadMoreVideos() async {
     _isLoading = true;
-    List<Video> moreVideos = await APIService.instance
-        .fetchVideosFromPlaylist(playlistId: _channel.uploadPlaylistId);
+    List<Video> moreVideos = await APIServiceInstance.fetchVideosFromPlaylist(
+        playlistId: _channel.uploadPlaylistId);
     List<Video> allVideos = _channel.videos..addAll(moreVideos);
     setState(() {
       _channel.videos = allVideos;
@@ -181,58 +183,69 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Sharah Kitaab Al Tawheed'),
-        backgroundColor: Colors.purple,
-        elevation: 4,
-        /*leading: IconButton(
+    return WillPopScope(
+      onWillPop: () {
+        APIServiceInstance.clearNextPageToken();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => WelcomeScreen()),
+          (Route<dynamic> route) => false,
+        );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Sharah Kitaab Al Tawheed'),
+          //backgroundColor: Colors.blueAccent.shade400,
+          elevation: 4,
+          /*leading: IconButton(
           icon: Icon(Icons.menu),
           tooltip: 'Menu Icon',
           onPressed: () {},
         ), //IconButton*/
-        brightness: Brightness.dark,
-        /*actions: [
+          brightness: Brightness.dark,
+          /*actions: [
           IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
         ],*/
-      ),
-      drawer: MainDrawer(),
-      body: _channel != null
-          ? NotificationListener<ScrollNotification>(
-              onNotification: (ScrollNotification scrollDetails) {
-                if (!_isLoading &&
-                    _channel.videos.length != int.parse(_channel.videoCount) &&
-                    scrollDetails.metrics.pixels ==
-                        scrollDetails.metrics.maxScrollExtent) {
-                  DatabaseReference _testRef = FirebaseDatabase.instance
-                      .reference()
-                      .child("_loadMoreVideos");
-                  _testRef.set("Loading more videos!");
-                  _loadMoreVideos();
-                }
-                return false;
-              },
-              child: ListView.builder(
-                itemCount: 1 + _channel.videos.length,
-                itemBuilder: (BuildContext context, int index) {
-                  if (index == 0) {
-                    return _buildProfileInfo();
+        ),
+        drawer: MainDrawer(),
+        body: _channel != null
+            ? NotificationListener<ScrollNotification>(
+                onNotification: (ScrollNotification scrollDetails) {
+                  if (!_isLoading &&
+                      _channel.videos.length !=
+                          int.parse(_channel.videoCount) &&
+                      scrollDetails.metrics.pixels ==
+                          scrollDetails.metrics.maxScrollExtent) {
+                    DatabaseReference _testRef = FirebaseDatabase.instance
+                        .reference()
+                        .child("_loadMoreVideos");
+                    _testRef.set("Loading more videos!");
+                    _loadMoreVideos();
                   }
-                  // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
-                  if (index <= 50) {
-                    Video video = _channel.videos[index - 1];
-                    return _buildVideo(video);
-                  }
+                  return false;
                 },
-              ),
-            )
-          : Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor, // Red
+                child: ListView.builder(
+                  itemCount: 1 + _channel.videos.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    if (index == 0) {
+                      return _buildProfileInfo();
+                    }
+                    // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
+                    if (index <= 50) {
+                      Video video = _channel.videos[index - 1];
+                      return _buildVideo(video);
+                    }
+                  },
+                ),
+              )
+            : Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor, // Red
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
