@@ -67,7 +67,7 @@ class MyStatelessWidget extends StatelessWidget {
                       fontSize: 18.0,
                       fontFamily: 'bold',
                       fontWeight: FontWeight.bold,
-                      color: Colors.black.withOpacity(0.6)),
+                      color: Colors.black.withOpacity(0.8)),
                 ),
               ),
             ),
@@ -77,19 +77,20 @@ class MyStatelessWidget extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       // background color
                       primary: Colors.indigoAccent.shade700, // background
                       padding:
                           EdgeInsets.symmetric(horizontal: 80, vertical: 10),
+                      elevation: 5,
 
                       textStyle: TextStyle(
                         fontSize: 25,
                         //primaryColor: Colors.indigoAccent.shade700,
                       ),
                     ),
-                    child: Text('START NOW'),
+                    label: Text('WATCH NOW'),
                     onPressed: () {
                       Navigator.pushNamed(context, '/videoscreen');
                       /*  Navigator.push(
@@ -98,6 +99,7 @@ class MyStatelessWidget extends StatelessWidget {
                             builder: (context) => HomeVideoScreen()),
                       ); */
                     },
+                    icon: Icon(Icons.video_collection),
                   ),
                 ],
               ),
