@@ -21,8 +21,8 @@ class MyStatelessWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(),
+    return SizedBox(
+      //decoration: BoxDecoration(),
       child: Scaffold(
         body: Stack(
           //fit: StackFit.expand,
@@ -39,9 +39,13 @@ class MyStatelessWidget extends StatelessWidget {
             ),
             Container(
               //alignment: Alignment.topCenter,
-              margin: EdgeInsets.only(top: 0),
-              alignment: Alignment.bottomCenter,
-              child: Center(
+              //color: Colors.white,
+              //margin: EdgeInsets.only(top: 0),
+              //alignment: Alignment.bottomCenter,
+              child: Positioned(
+                top: 100,
+                left: 0,
+                right: 0,
                 child: Text(
                   'Sharah Kitaab Al Tawheed \n شرح کتاب التوحید',
                   textAlign: TextAlign.center,
@@ -49,13 +53,14 @@ class MyStatelessWidget extends StatelessWidget {
                       fontSize: 50.0,
                       fontFamily: 'bold',
                       fontWeight: FontWeight.bold,
-                      color: Colors.black.withOpacity(0.8)),
+                      color: Colors.black.withOpacity(0.7)),
                 ),
               ),
             ),
             Container(
               //alignment: Alignment.topCenter,
-              margin: EdgeInsets.only(top: 275),
+              margin: EdgeInsets.only(top: 70),
+              //color: Colors.green,
               //alignment: Alignment.topRight,
               //top: 100,
               //right: 0,
@@ -72,7 +77,7 @@ class MyStatelessWidget extends StatelessWidget {
               ),
             ),
             Container(
-              margin: EdgeInsets.only(bottom: 40.0),
+              margin: EdgeInsets.only(bottom: 20.0),
               alignment: Alignment.bottomCenter,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -82,7 +87,7 @@ class MyStatelessWidget extends StatelessWidget {
                       // background color
                       primary: Colors.indigoAccent.shade700, // background
                       padding:
-                          EdgeInsets.symmetric(horizontal: 80, vertical: 10),
+                          EdgeInsets.symmetric(horizontal: 70, vertical: 15),
                       elevation: 5,
 
                       textStyle: TextStyle(
