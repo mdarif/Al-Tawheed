@@ -1,6 +1,6 @@
-# myapp
+# Sharah Kitaab Al Tawheed
 
-A new Flutter application.
+This is a Flutter application which consolidates Sharah Kitaab Al Tawheed YouTube lectures by Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
 
 ## Getting Started
 
