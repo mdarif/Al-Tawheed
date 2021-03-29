@@ -1,16 +1,12 @@
 # Sharah Kitaab Al Tawheed
 
-This is a Flutter application which consolidates Sharah Kitaab Al Tawheed YouTube lectures by Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
+This is a native Android/iOS mobile application which consolidates Sharah Kitaab Al Tawheed YouTube lectures by Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+کل مدت : ستائیس گھنٹے سات منٹ ہے
+Complete CD Link on Google Drive = http://goo.gl/iOvZnE​
+Complete CD Link on copy.com = http://goo.gl/9IVHW0​
+Complete CD Link on Dropbox : http://goo.gl/f63eKB​ : Size : 685 MB
+High Quality Link on Dropbox : http://goo.gl/rcVNal​ : Size : 1.6 GB
+Complete High Quality Link on Youtube playlist = http://goo.gl/pCo3uB
