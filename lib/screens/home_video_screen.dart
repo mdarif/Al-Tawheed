@@ -15,6 +15,7 @@ class HomeVideoScreen extends StatefulWidget {
 class _HomeVideoScreenState extends State<HomeVideoScreen> {
   Channel _channel;
   bool _isLoading = false;
+  int totalVideosCount = 50;
   final APIServiceInstance = APIService.instance;
 
   @override
@@ -104,12 +105,13 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
-  _buildVideo(Video video) {
+  _buildVideo(Video video, int index) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => VideoScreen(id: video.id),
+          builder: (_) => VideoScreen(
+              id: video.id, allVideos: _channel.videos, index: index),
         ),
       ),
       child: Container(
@@ -212,8 +214,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
             ? NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollDetails) {
                   if (!_isLoading &&
-                      _channel.videos.length !=
-                          int.parse(_channel.videoCount) &&
+                      _channel.videos.length <= totalVideosCount &&
                       scrollDetails.metrics.pixels ==
                           scrollDetails.metrics.maxScrollExtent) {
                     DatabaseReference _testRef = FirebaseDatabase.instance
@@ -221,6 +222,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                         .child("_loadMoreVideos");
                     _testRef.set("Loading more videos!");
                     _loadMoreVideos();
+                    _showSnackBar('Loading videos...');
                   }
                   return false;
                 },
@@ -233,7 +235,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                     // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
                     if (index <= 50) {
                       Video video = _channel.videos[index - 1];
-                      return _buildVideo(video);
+                      return _buildVideo(video, index);
                     }
                   },
                 ),
@@ -247,5 +249,46 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
               ),
       ),
     );
+  }
+
+  void _showSnackBar(String message) {
+    final snackBar = SnackBar(
+      content: Text(
+        message,
+        //textAlign: TextAlign.center,
+      ),
+      duration: Duration(seconds: 1),
+      //backgroundColor: Colors.indigoAccent.shade700,
+      //behavior: SnackBarBehavior.floating,
+      /* action: SnackBarAction(
+        label: 'Undo',
+        onPressed: () {
+          // Some code to undo the change.
+        },
+      ), */
+    );
+
+    // Find the ScaffoldMessenger in the widget tree
+    // and use it to show a SnackBar.
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+/*     ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w300,
+            fontSize: 16.0,
+          ),
+        ),
+        backgroundColor: Colors.blueAccent,
+        behavior: SnackBarBehavior.floating,
+        elevation: 1.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50.0),
+        ),
+      ),
+    ); */
   }
 }
