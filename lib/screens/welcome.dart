@@ -8,7 +8,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       /*appBar: AppBar(
-        title: Text('Welcome to Sharah Kitaab Al Tawheed'),
+        title: Text('Welcome to Sharah Kitab Al-Tawheed'),
       ),*/
       body: MyStatelessWidget(),
     );
@@ -47,7 +47,7 @@ class MyStatelessWidget extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Text(
-                  'Sharah Kitaab Al Tawheed \n شرح کتاب التوحید',
+                  'Sharah Kitab Al-Tawheed \n شرح کتاب التوحید',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 50.0,
