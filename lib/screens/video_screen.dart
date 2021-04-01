@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:share/share.dart';
 
 class VideoScreen extends StatefulWidget {
   final String id;
@@ -40,11 +41,15 @@ class _VideoScreenState extends State<VideoScreen> {
       player: YoutubePlayer(
         controller: _controller,
         onEnded: (data) {
-          var playNextVideo = widget.allVideos[_index];
-          _controller.load(playNextVideo.id);
-          this.setState(() {
-            _index++;
-          });
+          if (_index <= 49) {
+            var playNextVideo = widget.allVideos[_index];
+            _controller.load(playNextVideo.id);
+            this.setState(() {
+              _index++;
+            });
+          } else {
+            _showEndDialog();
+          }
           //_showSnackBar('Next Video Started!');
         },
       ),
@@ -58,37 +63,48 @@ class _VideoScreenState extends State<VideoScreen> {
     );
   }
 
-/*   void _showSnackBar(String message) {
-    final snackBar = SnackBar(
-      content: Text(message),
-      action: SnackBarAction(
-        label: 'Undo',
-        onPressed: () {
-          // Some code to undo the change.
-        },
-      ),
-    );
+  void _showEndDialog() {
+    showDialog(
+        context: context,
+        builder: (ctxt) => new AlertDialog(
+              title: Text(
+                  'Congratulations, Alhamdulillah you have completed the Sharah Kitab At-Tawheed',
+                  style: TextStyle(fontSize: 20)),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text(
+                        'Please do not forget us in your prayers and duas \n Jazāk Allāhu Khayran‎'),
+                    //Text('+91-8595836869'),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('SHARE'),
+                  /* style:
+                            TextButton.styleFrom(primary: Colors.purple), */
+                  onPressed: () {
+                    _share();
+                    //launchEmailSubmission();
+                  },
+                ),
+                TextButton(
+                  child: Text('EXIT'),
+                  /* style:
+                            TextButton.styleFrom(primary: Colors.purple), */
+                  onPressed: () {
+                    SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                    //launchEmailSubmission();
+                  },
+                ),
+              ],
+            ));
+  }
 
-    // Find the ScaffoldMessenger in the widget tree
-    // and use it to show a SnackBar.
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-/*     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.w300,
-            fontSize: 16.0,
-          ),
-        ),
-        backgroundColor: Colors.blueAccent,
-        behavior: SnackBarBehavior.floating,
-        elevation: 1.0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50.0),
-        ),
-      ),
-    ); */
-  } */
+  void _share() {
+    Share.share(
+        'Check out Sharah Kitab At-Tawheed on Google Play store at https://almarfa.in',
+        subject: 'Like & share Sharah Kitab At-Tawheed!');
+  }
 }
