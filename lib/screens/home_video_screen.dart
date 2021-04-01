@@ -65,7 +65,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   "Sheikh Abdullah Nasir Rahmani Hafizahullah",
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 15.0,
+                    fontSize: 14.0,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.clip,
@@ -88,12 +88,12 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 7),
+                SizedBox(height: 0),
                 Text(
                   "50 Videos",
                   style: TextStyle(
-                    color: Colors.blue[600],
-                    fontSize: 13.0,
+                    color: Colors.green[600],
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w600,
                   ),
                 )
