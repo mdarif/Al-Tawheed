@@ -196,7 +196,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Sharah Kitaab Al Tawheed'),
+          title: Text('Sharah Kitab Al-Tawheed'),
           //backgroundColor: Colors.blueAccent.shade400,
           elevation: 4,
           /*leading: IconButton(
