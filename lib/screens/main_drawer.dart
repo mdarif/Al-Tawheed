@@ -8,14 +8,14 @@ class MainDrawer extends StatelessWidget {
       accountName: Text(
         "Powered by Al Marfa Software Inc.",
         style: TextStyle(
-          color: Colors.white,
+          color: Colors.black87,
           fontSize: 14.0,
           fontWeight: FontWeight.w600,
         ),
       ),
       accountEmail: Text("https://almarfa.in",
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black87,
             fontSize: 13.0,
             fontWeight: FontWeight.w400,
           )),
@@ -24,7 +24,7 @@ class MainDrawer extends StatelessWidget {
         backgroundColor: Color(0xffFDCF09),
         child: CircleAvatar(
           radius: 40,
-          backgroundImage: AssetImage('assets/almarfa.jpg'),
+          backgroundImage: AssetImage('assets/am-logo-mobile-2.jpg'),
         ),
       ),
       onDetailsPressed: () {

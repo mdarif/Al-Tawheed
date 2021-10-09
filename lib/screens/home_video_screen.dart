@@ -196,15 +196,23 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Sharah Kitab Al-Tawheed'),
-          //backgroundColor: Colors.blueAccent.shade400,
-          elevation: 4,
+          iconTheme: IconThemeData(
+            color: Colors.black, //change your color here
+          ),
+          title: Text('Sharah Kitab Al-Tawheed',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontStyle: FontStyle.normal,
+                  color: Colors.black87)),
+          centerTitle: true,
+          backgroundColor: Colors.limeAccent.shade700,
+          elevation: 2,
           /*leading: IconButton(
           icon: Icon(Icons.menu),
           tooltip: 'Menu Icon',
           onPressed: () {},
         ), //IconButton*/
-          brightness: Brightness.dark,
+          brightness: Brightness.light,
           /*actions: [
           IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
         ],*/

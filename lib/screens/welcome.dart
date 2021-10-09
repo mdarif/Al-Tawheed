@@ -77,6 +77,40 @@ class MyStatelessWidget extends StatelessWidget {
               ),
             ),
             Container(
+              margin: EdgeInsets.only(bottom: 100.0),
+              alignment: Alignment.bottomCenter,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      // background color
+                      primary: Colors.limeAccent.shade700, // background
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 70, vertical: 15),
+                      elevation: 3,
+
+                      textStyle: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 25,
+                        //primaryColor: Colors.indigoAccent.shade700,
+                      ),
+                    ),
+                    label: Text('READ NOW'),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/readkat');
+                      /*  Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => HomeVideoScreen()),
+                      ); */
+                    },
+                    icon: Icon(Icons.book),
+                  ),
+                ],
+              ),
+            ),
+            Container(
               margin: EdgeInsets.only(bottom: 20.0),
               alignment: Alignment.bottomCenter,
               child: Row(
@@ -85,12 +119,13 @@ class MyStatelessWidget extends StatelessWidget {
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       // background color
-                      primary: Colors.indigoAccent.shade700, // background
+                      primary: Colors.limeAccent.shade700, // background
                       padding:
                           EdgeInsets.symmetric(horizontal: 70, vertical: 15),
-                      elevation: 5,
+                      elevation: 3,
 
                       textStyle: TextStyle(
+                        color: Colors.black87,
                         fontSize: 25,
                         //primaryColor: Colors.indigoAccent.shade700,
                       ),
