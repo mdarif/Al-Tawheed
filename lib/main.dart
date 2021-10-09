@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/screens/home_video_screen.dart';
 import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/screens/welcome.dart';
+import 'package:myapp/screens/readkat_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 //void main() => runApp(MyApp());
@@ -25,12 +26,13 @@ class MyApp extends StatelessWidget {
         // When navigating to the "/second" route, build the SecondScreen widget.
         '/videoscreen': (context) => HomeVideoScreen(),
         '/video': (context) => VideoScreen(),
+        '/readkat': (context) => ReadKat()
       },
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // Define the default brightness and colors.
         brightness: Brightness.light,
-        primaryColor: Colors.indigoAccent.shade700,
+        primaryColor: Colors.limeAccent.shade700,
         //accentColor: Colors.cyan[600],
 
         // Define the default font family.
