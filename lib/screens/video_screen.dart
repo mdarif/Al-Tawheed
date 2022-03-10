@@ -68,7 +68,7 @@ class _VideoScreenState extends State<VideoScreen> {
         context: context,
         builder: (ctxt) => new AlertDialog(
               title: Text(
-                  'Congratulations, Alhamdulillah you have completed the Sharah Kitab At-Tawheed',
+                  'Congratulations, Alhamdulillah you have completed the Sharah Kitaab At-Tawheed',
                   style: TextStyle(fontSize: 20)),
               content: SingleChildScrollView(
                 child: ListBody(
@@ -104,7 +104,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
   void _share() {
     Share.share(
-        'Check out Sharah Kitab At-Tawheed on Google Play store at https://almarfa.in',
-        subject: 'Like & share Sharah Kitab At-Tawheed!');
+        'Check out Sharah Kitaab at-Tawheed on Google Play store at https://almarfa.in',
+        subject: 'Like & share Sharah Kitaab At-Tawheed!');
   }
 }

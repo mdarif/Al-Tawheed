@@ -52,7 +52,8 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           CircleAvatar(
             backgroundColor: Colors.white,
             radius: 45.0,
-            backgroundImage: NetworkImage(_channel.profilePictureUrl),
+            backgroundImage: NetworkImage(
+                'https://almarfa.in/wp-content/uploads/2022/03/kitab-at-tawheed_gapp.jpg'),
           ),
           SizedBox(width: 12.0),
           Expanded(
@@ -62,7 +63,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
               children: <Widget>[
                 Text(
                   // "_channel.title"
-                  "Sheikh Abdullah Nasir Rahmani Hafizahullah",
+                  "Shaikh Abdullah Nasir Rahmani Hafizahullah",
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 14.0,
@@ -70,7 +71,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   ),
                   overflow: TextOverflow.clip,
                 ),
-                Text(
+/*                 Text(
                   '${_channel.title}',
                   style: TextStyle(
                     color: Colors.brown,
@@ -78,7 +79,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
-                ),
+                ), */
                 Text(
                   '${_channel.subscriberCount} subscribers',
                   style: TextStyle(
@@ -151,7 +152,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 5),
+/*                 SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.only(left: 12),
                   //flex: 1,
@@ -163,7 +164,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                       //backgroundColor: Colors.red,
                     ),
                   ),
-                ),
+                ), */
               ],
             ))
           ],
@@ -199,7 +200,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           iconTheme: IconThemeData(
             color: Colors.black, //change your color here
           ),
-          title: Text('Sharah Kitab Al-Tawheed',
+          title: Text('Sharah Kitaab al-Tawheed',
               style: TextStyle(
                   fontSize: 20,
                   fontStyle: FontStyle.normal,
