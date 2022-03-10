@@ -8,7 +8,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       /*appBar: AppBar(
-        title: Text('Welcome to Sharah Kitab Al-Tawheed'),
+        title: Text('Welcome to Sharah Kitaab al-Tawheed'),
       ),*/
       body: MyStatelessWidget(),
     );
@@ -47,7 +47,7 @@ class MyStatelessWidget extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Text(
-                  'Sharah Kitab Al-Tawheed \n شرح کتاب التوحید',
+                  'Sharah Kitaab al-Tawheed \n شرح کتاب التوحید',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 50.0,
@@ -66,7 +66,7 @@ class MyStatelessWidget extends StatelessWidget {
               //right: 0,
               child: Center(
                 child: Text(
-                  'By Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah',
+                  'By Fadilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 18.0,
@@ -76,41 +76,7 @@ class MyStatelessWidget extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              margin: EdgeInsets.only(bottom: 100.0),
-              alignment: Alignment.bottomCenter,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      // background color
-                      primary: Colors.limeAccent.shade700, // background
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 70, vertical: 15),
-                      elevation: 3,
-
-                      textStyle: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 25,
-                        //primaryColor: Colors.indigoAccent.shade700,
-                      ),
-                    ),
-                    label: Text('READ NOW'),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/readkat');
-                      /*  Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => HomeVideoScreen()),
-                      ); */
-                    },
-                    icon: Icon(Icons.book),
-                  ),
-                ],
-              ),
-            ),
-            Container(
+/*             Container(
               margin: EdgeInsets.only(bottom: 20.0),
               alignment: Alignment.bottomCenter,
               child: Row(
@@ -125,7 +91,42 @@ class MyStatelessWidget extends StatelessWidget {
                       elevation: 3,
 
                       textStyle: TextStyle(
-                        color: Colors.black87,
+                        //color: Colors.black87,
+                        fontSize: 25,
+                        //primaryColor: Colors.indigoAccent.shade700,
+                      ),
+                    ),
+                    label: Text('READ NOW'),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/readkat');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => HomeVideoScreen()),
+                      );
+                    },
+                    icon: Icon(Icons.book),
+                  ),
+                ],
+              ),
+            ), */
+            Container(
+              margin: EdgeInsets.only(bottom: 20.0),
+              alignment: Alignment.bottomCenter,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      // background color
+                      primary: Colors.limeAccent.shade700, // background
+                      onPrimary: Colors.black, // text color
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 70, vertical: 15),
+                      elevation: 5,
+
+                      textStyle: TextStyle(
+                        //color: Colors.black.withOpacity(0.6),
                         fontSize: 25,
                         //primaryColor: Colors.indigoAccent.shade700,
                       ),
@@ -133,11 +134,6 @@ class MyStatelessWidget extends StatelessWidget {
                     label: Text('WATCH NOW'),
                     onPressed: () {
                       Navigator.pushNamed(context, '/videoscreen');
-                      /*  Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => HomeVideoScreen()),
-                      ); */
                     },
                     icon: Icon(Icons.video_collection),
                   ),
@@ -163,7 +159,7 @@ class MyStatelessWidget extends StatelessWidget {
             ),
             const ListTile(
               leading: Icon(Icons.book_rounded),
-              title: Text('What is Kitab At Tawheed?'),
+              title: Text('What is Kitaab at-Tawheed?'),
               subtitle: Text(
                   'Kitab At-Tawheed which is one of the best books on the subject of Tawheed and ranks high in authenticity. In this book, all the relevant Verses have been discussed reasonably, rationally and sincerely; and the essence of the Qur’an and Sunnah is placed in a very simple and appealing manner. This is the reason that the upright persons, beyond group ism and prejudices, have been adopting the correct Islamic path – the path of the Qur’an and Sunnah – under the influence of the basic facts and proofs produced herein.'),
             ),

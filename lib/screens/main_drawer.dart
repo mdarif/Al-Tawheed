@@ -24,7 +24,8 @@ class MainDrawer extends StatelessWidget {
         backgroundColor: Color(0xffFDCF09),
         child: CircleAvatar(
           radius: 40,
-          backgroundImage: AssetImage('assets/am-logo-mobile-2.jpg'),
+          //backgroundImage: AssetImage('assets/am-logo-mobile-2.jpg'),
+          backgroundImage: NetworkImage('https://almarfa.in/wp-content/uploads/2022/03/am-logo-mobile-kat-2.jpg'),
         ),
       ),
       onDetailsPressed: () {
