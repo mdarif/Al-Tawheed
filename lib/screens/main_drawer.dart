@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:developer' as developer;
+import 'package:share/share.dart';
 
 class MainDrawer extends StatelessWidget {
   @override
@@ -33,9 +33,7 @@ class MainDrawer extends StatelessWidget {
         ),
       ),
       onDetailsPressed: () {
-        print("_launchURL");
-        developer.log('_launchURL');
-        _launchURL();
+        _launchURL('https://almarfa.in');
       },
     );
     return Drawer(
@@ -98,15 +96,32 @@ class MainDrawer extends StatelessWidget {
               );
             },*/
               ),
+          ListTile(
+            title: Text(
+              "Rate App",
+            ),
+            leading: const Icon(Icons.star),
+            onTap: () {
+              _launchURL(
+                  'https://play.google.com/store/apps/details?id=com.almarfa.tawheed');
+            },
+          ),
+          ListTile(
+            title: Text(
+              "Share App",
+            ),
+            leading: const Icon(Icons.share),
+            onTap: () {
+              _share();
+            },
+          ),
         ],
       ),
     );
   }
 }
 
-_launchURL() async {
-  developer.log('_launchURL()');
-  const url = 'https://almarfa.in';
+_launchURL(String url) async {
   if (await canLaunch(url)) {
     await launch(url);
   } else {
@@ -115,11 +130,9 @@ _launchURL() async {
 }
 
 void launchEmailSubmission() async {
-  developer.log('launchEmailSubmission()');
   final Uri params =
       Uri(scheme: 'mailto', path: 'arif.mohammed@gmail.com', queryParameters: {
     'subject': 'Contact Al Marfa Software Inc.',
-    //'body': 'Default body'
   });
 
   String url = params.toString();
@@ -128,4 +141,10 @@ void launchEmailSubmission() async {
   } else {
     print('Could not launch $url');
   }
+}
+
+void _share() {
+  Share.share(
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload it from: https://almarfa.in/kitab-at-tawheed/',
+      subject: 'Like & share Sharah Kitaab At-Tawheed!');
 }

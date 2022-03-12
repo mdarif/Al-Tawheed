@@ -104,7 +104,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
   void _share() {
     Share.share(
-        'Check out Sharah Kitaab at-Tawheed on Google Play store at https://almarfa.in',
+        'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload it from: https://almarfa.in/kitab-at-tawheed/',
         subject: 'Like & share Sharah Kitaab At-Tawheed!');
   }
 }
