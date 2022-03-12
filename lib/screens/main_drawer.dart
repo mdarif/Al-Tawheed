@@ -146,5 +146,5 @@ void launchEmailSubmission() async {
 void _share() {
   Share.share(
       'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload it from: https://almarfa.in/kitab-at-tawheed/',
-      subject: 'Like & share Sharah Kitaab At-Tawheed!');
+      subject: 'Like & share Sharah Kitab At-Tawheed!');
 }

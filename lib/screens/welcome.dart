@@ -49,7 +49,7 @@ class MyStatelessWidget extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Text(
-                  'Sharah\n Kitaab al-Tawheed \n شرح کتاب التوحید',
+                  'Sharah\n Kitab al-Tawheed \n شرح کتاب التوحید',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 45.0,

@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sharah Kitaab al-Tawheed',
+      title: 'Sharah Kitab al-Tawheed',
       // on the FirstScreen widget.
       initialRoute: '/',
       routes: {
