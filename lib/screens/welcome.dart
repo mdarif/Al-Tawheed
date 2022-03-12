@@ -1,5 +1,7 @@
+// @dart=2.9
+
 import 'package:flutter/material.dart';
-import 'home_video_screen.dart';
+import 'dart:developer' as developer;
 
 class WelcomeScreen extends StatelessWidget {
   //const WelcomeScreen({Key? key}) : super(key: key);
@@ -47,10 +49,10 @@ class MyStatelessWidget extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Text(
-                  'Sharah Kitaab al-Tawheed \n شرح کتاب التوحید',
+                  'Sharah\n Kitaab al-Tawheed \n شرح کتاب التوحید',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 50.0,
+                      fontSize: 45.0,
                       fontFamily: 'bold',
                       fontWeight: FontWeight.bold,
                       color: Colors.black.withOpacity(0.7)),
@@ -59,7 +61,6 @@ class MyStatelessWidget extends StatelessWidget {
             ),
             Container(
               //alignment: Alignment.topCenter,
-              margin: EdgeInsets.only(top: 70),
               //color: Colors.green,
               //alignment: Alignment.topRight,
               //top: 100,
@@ -133,6 +134,7 @@ class MyStatelessWidget extends StatelessWidget {
                     ),
                     label: Text('WATCH NOW'),
                     onPressed: () {
+                      developer.log('WATCH NOW, go to video screen');
                       Navigator.pushNamed(context, '/videoscreen');
                     },
                     icon: Icon(Icons.video_collection),

@@ -1,3 +1,5 @@
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:myapp/screens/home_video_screen.dart';
 import 'package:myapp/screens/video_screen.dart';

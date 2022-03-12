@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 
 class VideoScreen extends StatefulWidget {
-  final String id;
-  final List allVideos;
-  final int index;
+  final String? id;
+  final List? allVideos;
+  final int? index;
 
   VideoScreen({this.id, this.allVideos, this.index});
 
@@ -15,15 +15,15 @@ class VideoScreen extends StatefulWidget {
 }
 
 class _VideoScreenState extends State<VideoScreen> {
-  YoutubePlayerController _controller;
-  int _index;
+  late YoutubePlayerController _controller;
+  int? _index;
 
   @override
   void initState() {
     super.initState();
     _index = widget.index;
     _controller = YoutubePlayerController(
-      initialVideoId: widget.id,
+      initialVideoId: widget.id!,
       flags: YoutubePlayerFlags(
         mute: false,
         autoPlay: true,
@@ -41,11 +41,11 @@ class _VideoScreenState extends State<VideoScreen> {
       player: YoutubePlayer(
         controller: _controller,
         onEnded: (data) {
-          if (_index <= 49) {
-            var playNextVideo = widget.allVideos[_index];
+          if (_index! <= 49) {
+            var playNextVideo = widget.allVideos![_index!];
             _controller.load(playNextVideo.id);
             this.setState(() {
-              _index++;
+              _index = _index! + 1;
             });
           } else {
             _showEndDialog();

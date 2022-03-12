@@ -1,5 +1,8 @@
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:developer' as developer;
 
 class MainDrawer extends StatelessWidget {
   @override
@@ -25,11 +28,13 @@ class MainDrawer extends StatelessWidget {
         child: CircleAvatar(
           radius: 40,
           //backgroundImage: AssetImage('assets/am-logo-mobile-2.jpg'),
-          backgroundImage: NetworkImage('https://almarfa.in/wp-content/uploads/2022/03/am-logo-mobile-kat-2.jpg'),
+          backgroundImage: NetworkImage(
+              'https://almarfa.in/wp-content/uploads/2022/03/am-logo-mobile-kat-2.jpg'),
         ),
       ),
       onDetailsPressed: () {
         print("_launchURL");
+        developer.log('_launchURL');
         _launchURL();
       },
     );
@@ -100,6 +105,7 @@ class MainDrawer extends StatelessWidget {
 }
 
 _launchURL() async {
+  developer.log('_launchURL()');
   const url = 'https://almarfa.in';
   if (await canLaunch(url)) {
     await launch(url);
@@ -109,6 +115,7 @@ _launchURL() async {
 }
 
 void launchEmailSubmission() async {
+  developer.log('launchEmailSubmission()');
   final Uri params =
       Uri(scheme: 'mailto', path: 'arif.mohammed@gmail.com', queryParameters: {
     'subject': 'Contact Al Marfa Software Inc.',
