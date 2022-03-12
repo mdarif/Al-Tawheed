@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
+import 'dart:developer' as developer;
 
 class VideoScreen extends StatefulWidget {
   final String? id;
@@ -40,13 +41,20 @@ class _VideoScreenState extends State<VideoScreen> {
       },
       player: YoutubePlayer(
         controller: _controller,
+        onReady: () {
+          var currentVideo = widget.allVideos![_index!];
+          developer.log('onReady index: $_index actual id ${currentVideo.id}');
+        },
         onEnded: (data) {
-          if (_index! <= 49) {
-            var playNextVideo = widget.allVideos![_index!];
-            _controller.load(playNextVideo.id);
+          if (_index! < 49) {
+            var playNextVideo = widget.allVideos![_index! + 1];
+            developer.log('playNextVideo.id: ${playNextVideo.id}');
             this.setState(() {
               _index = _index! + 1;
             });
+            _controller.load(playNextVideo.id);
+          } else if (_index! == 49) {
+            _showEndDialog();
           } else {
             _showEndDialog();
           }
