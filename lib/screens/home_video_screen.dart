@@ -5,7 +5,7 @@ import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/services/api_service.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'main_drawer.dart';
-import 'package:firebase_database/firebase_database.dart';
+// import 'package:firebase_database/firebase_database.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'welcome.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +18,7 @@ class HomeVideoScreen extends StatefulWidget {
 
 class _HomeVideoScreenState extends State<HomeVideoScreen> {
   Channel? _channel;
-  bool _isLoading = false;
+  // bool _isLoading = false;
   int totalVideosCount = 50;
   final apiServiceInstance = APIService.instance;
 
@@ -181,7 +181,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
-  _loadMoreVideos() async {
+/*   _loadMoreVideos() async {
     //_isLoading = true;
 
     List<Video> moreVideos = await apiServiceInstance.fetchVideosFromPlaylist(
@@ -191,7 +191,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
       _channel!.videos = allVideos;
     });
     //_isLoading = false;
-  }
+  } */
 
   @override
   Widget build(BuildContext context) {
@@ -221,49 +221,32 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           centerTitle: true,
           backgroundColor: Colors.limeAccent.shade700,
           elevation: 2,
-          /*leading: IconButton(
-          icon: Icon(Icons.menu),
-          tooltip: 'Menu Icon',
-          onPressed: () {},
-        ), //IconButton*/
-          // brightness: Brightness.light,
-          /*actions: [
-          IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
-        ],*/
         ),
         drawer: MainDrawer(),
         body: _channel != null
-            ? NotificationListener<ScrollNotification>(
-                onNotification: (ScrollNotification scrollDetails) {
-                  if (_isLoading &&
-                      _channel!.videos!.length <= totalVideosCount &&
-                      scrollDetails.metrics.pixels ==
-                          scrollDetails.metrics.maxScrollExtent) {
-                    DatabaseReference _testRef = FirebaseDatabase.instance
-                        // ignore: deprecated_member_use
-                        .reference()
-                        .child("_loadMoreVideos");
-                    _testRef.set("Loading more videos!");
-                    _loadMoreVideos();
-                    _showSnackBar('Loading videos...');
-                  }
-                  return false;
-                },
-                child: ListView.builder(
-                  itemCount: _channel!.videos!.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    developer.log(
-                        '_buildVideo: ListView.builder itemBuilder $index itemCount: ${_channel!.videos!.length}');
-                    // if (index <= 1) {
-                    //   return _buildProfileInfo();
-                    // }
-                    // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
-                    //if (index <= 50) {
-                    Video video = _channel!.videos![index];
-                    return _buildVideo(video, index);
-                    //}
-                    //throw Exception('Error: Index out of range');
-                  },
+            ? Container(
+                child: Column(
+                  children: [
+                    _buildProfileInfo(),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _channel!.videos!.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          developer.log(
+                              '_buildVideo: ListView.builder itemBuilder $index itemCount: ${_channel!.videos!.length}');
+                          // if (index <= 1) {
+                          //   return _buildProfileInfo();
+                          // }
+                          // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
+                          //if (index <= 50) {
+                          Video video = _channel!.videos![index];
+                          return _buildVideo(video, index);
+                          //}
+                          //throw Exception('Error: Index out of range');
+                        },
+                      ),
+                    )
+                  ],
                 ),
               )
             : Center(
@@ -277,7 +260,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
-  void _showSnackBar(String message) {
+/*   void _showSnackBar(String message) {
     developer.log('_showSnackBar');
     final snackBar = SnackBar(
       content: Text(
@@ -285,37 +268,10 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
         //textAlign: TextAlign.center,
       ),
       duration: Duration(seconds: 1),
-      //backgroundColor: Colors.indigoAccent.shade700,
-      //behavior: SnackBarBehavior.floating,
-      /* action: SnackBarAction(
-        label: 'Undo',
-        onPressed: () {
-          // Some code to undo the change.
-        },
-      ), */
     );
 
     // Find the ScaffoldMessenger in the widget tree
     // and use it to show a SnackBar.
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
-/*     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.w300,
-            fontSize: 16.0,
-          ),
-        ),
-        backgroundColor: Colors.blueAccent,
-        behavior: SnackBarBehavior.floating,
-        elevation: 1.0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50.0),
-        ),
-      ),
-    ); */
-  }
+  } */
 }

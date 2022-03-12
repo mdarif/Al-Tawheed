@@ -45,7 +45,7 @@ class MyStatelessWidget extends StatelessWidget {
               //margin: EdgeInsets.only(top: 0),
               //alignment: Alignment.bottomCenter,
               child: Positioned(
-                top: 100,
+                top: 70,
                 left: 0,
                 right: 0,
                 child: Text(
@@ -60,7 +60,7 @@ class MyStatelessWidget extends StatelessWidget {
               ),
             ),
             Container(
-              //alignment: Alignment.topCenter,
+              // alignment: Alignment.topCenter,
               //color: Colors.green,
               //alignment: Alignment.topRight,
               //top: 100,
