@@ -31,7 +31,6 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   _initChannel() async {
     Channel channel = await apiServiceInstance.fetchChannel(
         channelId: 'UC6tt6jN-ufLKbrR51jFTTQw');
-    developer.log('_initChannel channel>>>>>>>: $channel');
     setState(() {
       _channel = channel;
     });
@@ -184,17 +183,14 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
 
   _loadMoreVideos() async {
     //_isLoading = true;
-    developer.log('_loadMoreVideos>>>>>>> $_isLoading');
 
     List<Video> moreVideos = await apiServiceInstance.fetchVideosFromPlaylist(
         playlistId: _channel!.uploadPlaylistId);
     List<Video> allVideos = _channel!.videos!..addAll(moreVideos);
     setState(() {
       _channel!.videos = allVideos;
-      developer.log('_loadMoreVideos>>>>>: _channel.videos: $allVideos');
     });
     //_isLoading = false;
-    developer.log('_loadMoreVideos: _isLoading at last: $_isLoading');
   }
 
   @override
@@ -217,7 +213,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           iconTheme: IconThemeData(
             color: Colors.black, //change your color here
           ),
-          title: Text('Sharah Kitaab al-Tawheed',
+          title: Text('Sharah Kitab al-Tawheed',
               style: TextStyle(
                   fontSize: 20,
                   fontStyle: FontStyle.normal,
@@ -239,12 +235,10 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
         body: _channel != null
             ? NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollDetails) {
-                  // developer.log('totalVideosCount: $totalVideosCount');
                   if (_isLoading &&
                       _channel!.videos!.length <= totalVideosCount &&
                       scrollDetails.metrics.pixels ==
                           scrollDetails.metrics.maxScrollExtent) {
-                    developer.log('<<<Should not be here>>>');
                     DatabaseReference _testRef = FirebaseDatabase.instance
                         // ignore: deprecated_member_use
                         .reference()
@@ -266,7 +260,6 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                     // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
                     //if (index <= 50) {
                     Video video = _channel!.videos![index];
-                    developer.log('index>>>>>>>> $index');
                     return _buildVideo(video, index);
                     //}
                     //throw Exception('Error: Index out of range');

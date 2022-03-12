@@ -15,7 +15,7 @@ class ReadKat extends StatelessWidget {
         iconTheme: IconThemeData(
           color: Colors.black, //change your color here
         ),
-        title: Text('Sharah Kitaab al-Tawheed',
+        title: Text('Sharah Kitab al-Tawheed',
             style: TextStyle(
                 fontSize: 20,
                 fontStyle: FontStyle.normal,

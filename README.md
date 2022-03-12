@@ -1,4 +1,4 @@
-# Sharah Kitaab al-Tawheed
+# Sharah Kitab al-Tawheed
 
 This is a native Android/iOS mobile application which consolidates Sharah Kitaab al-Tawheed YouTube lectures by Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
 
