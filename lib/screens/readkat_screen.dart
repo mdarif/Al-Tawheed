@@ -1,11 +1,17 @@
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'main_drawer.dart';
+import 'package:flutter/services.dart';
 
 class ReadKat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarBrightness: Brightness.light,
+        ),
         iconTheme: IconThemeData(
           color: Colors.black, //change your color here
         ),
@@ -22,7 +28,7 @@ class ReadKat extends StatelessWidget {
           tooltip: 'Menu Icon',
           onPressed: () {},
         ), //IconButton*/
-        brightness: Brightness.light,
+        // brightness: Brightness.light,
         /*actions: [
           IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
         ],*/

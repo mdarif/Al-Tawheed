@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:myapp/models/channel_model.dart';
 import 'package:myapp/models/video_model.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:myapp/utilities/keys.dart';
 
 class APIService {
@@ -17,8 +18,8 @@ class APIService {
     _nextPageToken = '';
   }
 
-  Future<Channel> fetchChannel({String channelId}) async {
-    Map<String, String> parameters = {
+  Future<Channel> fetchChannel({String? channelId}) async {
+    Map<String, String?> parameters = {
       'part': 'snippet, contentDetails, statistics',
       'id': channelId,
       'key': 'AIzaSyCz5BA-vyZymJTx4miICm5ADwsaCamay9U',
@@ -48,11 +49,12 @@ class APIService {
     }
   }
 
-  Future<List<Video>> fetchVideosFromPlaylist({String playlistId}) async {
+  Future<List<Video>> fetchVideosFromPlaylist({String? playlistId}) async {
     Map<String, String> parameters = {
       'part': 'snippet',
-      'playlistId': 'PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA',
-      'maxResults': '8',
+      // 'playlistId': 'PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA',
+      'playlistId': 'PLNA2F9JZ_49FGNiUHSVa9_8IzyeQnYX2Q',
+      'maxResults': '50', // Earlier it was 8
       'pageToken': _nextPageToken,
       'key': API_KEY,
     };

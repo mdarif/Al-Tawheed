@@ -3,9 +3,13 @@ import 'package:myapp/models/channel_model.dart';
 import 'package:myapp/models/video_model.dart';
 import 'package:myapp/screens/video_screen.dart';
 import 'package:myapp/services/api_service.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'main_drawer.dart';
 import 'package:firebase_database/firebase_database.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'welcome.dart';
+import 'package:flutter/services.dart';
+import 'dart:developer' as developer;
 
 class HomeVideoScreen extends StatefulWidget {
   @override
@@ -13,10 +17,10 @@ class HomeVideoScreen extends StatefulWidget {
 }
 
 class _HomeVideoScreenState extends State<HomeVideoScreen> {
-  Channel _channel;
+  Channel? _channel;
   bool _isLoading = false;
   int totalVideosCount = 50;
-  final APIServiceInstance = APIService.instance;
+  final apiServiceInstance = APIService.instance;
 
   @override
   void initState() {
@@ -25,14 +29,17 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   }
 
   _initChannel() async {
-    Channel channel = await APIServiceInstance.fetchChannel(
+    Channel channel = await apiServiceInstance.fetchChannel(
         channelId: 'UC6tt6jN-ufLKbrR51jFTTQw');
+    developer.log('_initChannel channel>>>>>>>: $channel');
     setState(() {
       _channel = channel;
     });
   }
 
   _buildProfileInfo() {
+    developer.log(
+        '_buildProfileInfo: Build fetched YT Channel profile info pn top pf the screen');
     return Container(
       margin: EdgeInsets.all(20.0),
       padding: EdgeInsets.all(20.0),
@@ -81,7 +88,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   overflow: TextOverflow.ellipsis,
                 ), */
                 Text(
-                  '${_channel.subscriberCount} subscribers',
+                  '${_channel?.subscriberCount} subscribers',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12.0,
@@ -107,12 +114,14 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   }
 
   _buildVideo(Video video, int index) {
+    developer.log(
+        '_buildVideo: Build fetched VIDEOS rows on the main screen $index');
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => VideoScreen(
-              id: video.id, allVideos: _channel.videos, index: index),
+              id: video.id, allVideos: _channel!.videos, index: index),
         ),
       ),
       child: Container(
@@ -133,7 +142,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           children: <Widget>[
             Image(
               width: 130.0,
-              image: NetworkImage(video.thumbnailUrl),
+              image: NetworkImage(video.thumbnailUrl!),
             ),
             Expanded(
                 child: Column(
@@ -144,7 +153,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   padding: const EdgeInsets.only(left: 12, top: 5),
                   //flex: 1,
                   child: Text(
-                    video.title,
+                    video.title!,
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 14.0,
@@ -174,29 +183,37 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   }
 
   _loadMoreVideos() async {
-    _isLoading = true;
-    List<Video> moreVideos = await APIServiceInstance.fetchVideosFromPlaylist(
-        playlistId: _channel.uploadPlaylistId);
-    List<Video> allVideos = _channel.videos..addAll(moreVideos);
+    //_isLoading = true;
+    developer.log('_loadMoreVideos>>>>>>> $_isLoading');
+
+    List<Video> moreVideos = await apiServiceInstance.fetchVideosFromPlaylist(
+        playlistId: _channel!.uploadPlaylistId);
+    List<Video> allVideos = _channel!.videos!..addAll(moreVideos);
     setState(() {
-      _channel.videos = allVideos;
+      _channel!.videos = allVideos;
+      developer.log('_loadMoreVideos>>>>>: _channel.videos: $allVideos');
     });
-    _isLoading = false;
+    //_isLoading = false;
+    developer.log('_loadMoreVideos: _isLoading at last: $_isLoading');
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () {
-        APIServiceInstance.clearNextPageToken();
+      onWillPop: () async {
+        apiServiceInstance.clearNextPageToken();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => WelcomeScreen()),
           (Route<dynamic> route) => false,
         );
+        return false;
       },
       child: Scaffold(
         appBar: AppBar(
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarBrightness: Brightness.light,
+          ),
           iconTheme: IconThemeData(
             color: Colors.black, //change your color here
           ),
@@ -213,7 +230,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           tooltip: 'Menu Icon',
           onPressed: () {},
         ), //IconButton*/
-          brightness: Brightness.light,
+          // brightness: Brightness.light,
           /*actions: [
           IconButton(icon: Icon(Icons.account_box), onPressed: () => {})
         ],*/
@@ -222,11 +239,14 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
         body: _channel != null
             ? NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollDetails) {
-                  if (!_isLoading &&
-                      _channel.videos.length <= totalVideosCount &&
+                  // developer.log('totalVideosCount: $totalVideosCount');
+                  if (_isLoading &&
+                      _channel!.videos!.length <= totalVideosCount &&
                       scrollDetails.metrics.pixels ==
                           scrollDetails.metrics.maxScrollExtent) {
+                    developer.log('<<<Should not be here>>>');
                     DatabaseReference _testRef = FirebaseDatabase.instance
+                        // ignore: deprecated_member_use
                         .reference()
                         .child("_loadMoreVideos");
                     _testRef.set("Loading more videos!");
@@ -236,16 +256,20 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   return false;
                 },
                 child: ListView.builder(
-                  itemCount: 1 + _channel.videos.length,
+                  itemCount: _channel!.videos!.length,
                   itemBuilder: (BuildContext context, int index) {
-                    if (index == 0) {
-                      return _buildProfileInfo();
-                    }
+                    developer.log(
+                        '_buildVideo: ListView.builder itemBuilder $index itemCount: ${_channel!.videos!.length}');
+                    // if (index <= 1) {
+                    //   return _buildProfileInfo();
+                    // }
                     // Show only first 50 videos from the playlist https://www.youtube.com/watch?v=MVjeIojedRM&list=PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA&index=7
-                    if (index <= 50) {
-                      Video video = _channel.videos[index - 1];
-                      return _buildVideo(video, index);
-                    }
+                    //if (index <= 50) {
+                    Video video = _channel!.videos![index];
+                    developer.log('index>>>>>>>> $index');
+                    return _buildVideo(video, index);
+                    //}
+                    //throw Exception('Error: Index out of range');
                   },
                 ),
               )
@@ -261,6 +285,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   }
 
   void _showSnackBar(String message) {
+    developer.log('_showSnackBar');
     final snackBar = SnackBar(
       content: Text(
         message,
