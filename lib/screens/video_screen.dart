@@ -76,13 +76,13 @@ class _VideoScreenState extends State<VideoScreen> {
         context: context,
         builder: (ctxt) => new AlertDialog(
               title: Text(
-                  'Congratulations, Alhamdulillah you have completed the Sharah Kitaab At-Tawheed',
+                  'Congratulations, Alhamd-o-lillah you have completed the Sharah Kitaab At-Tawheed',
                   style: TextStyle(fontSize: 20)),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
                     Text(
-                        'Please do not forget us in your prayers and duas \n Jazāk Allāhu Khayran‎'),
+                        'Please do not forget us in your prayers and duas \n\nJazāk Allāhu Khayran‎'),
                     //Text('+91-8595836869'),
                   ],
                 ),
