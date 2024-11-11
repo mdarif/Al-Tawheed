@@ -1,13 +1,17 @@
-// @dart=2.9
+// @dart=2.12.0
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share/share.dart';
+import 'dart:io' show Platform;
 
 class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final drawerHeader = UserAccountsDrawerHeader(
+      decoration: BoxDecoration(
+        color: Colors.limeAccent.shade700,
+      ),
       accountName: Text(
         "Powered by Al Marfa Software Inc.",
         style: TextStyle(
@@ -45,18 +49,6 @@ class MainDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           drawerHeader,
-          /*ListTile(
-            title: Text(
-              "About Us",
-            ),
-            leading: const Icon(Icons.monitor),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AboutUs()),
-              );
-            },
-          ),*/
           ListTile(
               title: Text(
                 "Contact Us",
@@ -89,23 +81,18 @@ class MainDrawer extends StatelessWidget {
                           ],
                         ));
               }
-              /*onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ContactUs()),
-              );
-            },*/
               ),
-          ListTile(
-            title: Text(
-              "Rate App",
+          if (Platform.isAndroid)
+            ListTile(
+              title: Text(
+                "Rate App",
+              ),
+              leading: const Icon(Icons.star),
+              onTap: () {
+                _launchURL(
+                    'https://play.google.com/store/apps/details?id=com.almarfa.tawheed');
+              },
             ),
-            leading: const Icon(Icons.star),
-            onTap: () {
-              _launchURL(
-                  'https://play.google.com/store/apps/details?id=com.almarfa.tawheed');
-            },
-          ),
           ListTile(
             title: Text(
               "Share App",

@@ -1,4 +1,4 @@
-// @dart=2.9
+// @dart=2.12.0
 
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
@@ -120,8 +120,7 @@ class MyStatelessWidget extends StatelessWidget {
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       // background color
-                      primary: Colors.limeAccent.shade700, // background
-                      onPrimary: Colors.black, // text color
+                      foregroundColor: Colors.black, backgroundColor: Colors.limeAccent.shade700, // text color
                       padding:
                           EdgeInsets.symmetric(horizontal: 70, vertical: 15),
                       elevation: 5,
