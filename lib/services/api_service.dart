@@ -22,7 +22,7 @@ class APIService {
     Map<String, String?> parameters = {
       'part': 'snippet, contentDetails, statistics',
       'id': channelId,
-      'key': 'AIzaSyCz5BA-vyZymJTx4miICm5ADwsaCamay9U',
+      'key': API_KEY,
     };
     Uri uri = Uri.https(
       _baseUrl,
