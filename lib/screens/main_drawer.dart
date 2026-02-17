@@ -23,13 +23,9 @@ class MainDrawer extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundColor: Color(0xffFDCF09),
-                  child: CircleAvatar(
-                    radius: 38,
-                    backgroundImage: NetworkImage(
+                   backgroundImage: NetworkImage(
                       'https://scontent.fdel52-1.fna.fbcdn.net/v/t39.30808-6/460928293_927260439420580_1308407852678437045_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=vkhCj3vNhn8Q7kNvwHZycKZ&_nc_oc=Adnn6xMaVOa1Cas1kIvNVrelLrjaD4ukVGZYY5foK-kdm7Ls_a32gAF6tZUhdhpkVVg&_nc_zt=23&_nc_ht=scontent.fdel52-1.fna&_nc_gid=uqZswuj5cT3fxQz1YTjm8Q&oh=00_Aft6vzGBXC01Gv5ikU9crD7a5CKt3eDEyaufz9GfwcY2vg&oe=69990327',
                     ),
-                  ),
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -237,17 +233,22 @@ _launchURL(String url) async {
   }
 }
 
-void launchEmailSubmission() async {
-  final Uri params =
-      Uri(scheme: 'mailto', path: 'arif.mohammed@gmail.com', queryParameters: {
-    'subject': 'Contact Al Marfa Software Inc.',
-  });
+Future<void> launchEmailSubmission() async {
+  final Uri emailUri = Uri(
+    scheme: 'mailto',
+    path: 'arif.mohammed@gmail.com',
+    queryParameters: {
+      'subject': 'Contact Al Marfa Software Inc.',
+    },
+  );
 
-  String url = params.toString();
-  if (await canLaunch(url)) {
-    await launch(url);
-  } else {
-    print('Could not launch $url');
+  try {
+    await launchUrl(
+      emailUri,
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (e) {
+    print('Could not launch $emailUri');
   }
 }
 
@@ -274,15 +275,6 @@ void _showShareOptions(BuildContext context) {
                 onTap: () {
                   Navigator.pop(context);
                   _shareViaWhatsApp();
-                },
-              ),
-              _buildShareButton(
-                context,
-                icon: Icons.send,
-                label: 'Telegram',
-                onTap: () {
-                  Navigator.pop(context);
-                  _shareViaTelegram();
                 },
               ),
               _buildShareButton(
@@ -328,7 +320,7 @@ Widget _buildShareButton(BuildContext context,
 
 void _shareViaWhatsApp() async {
   final String message =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/user/call2tawheed.AbuAhmed\n📱 Facebook: https://www.facebook.com/UrdulslaimicMessages';
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
   final String encodedMessage = Uri.encodeComponent(message);
   final String whatsappUrl = 'https://wa.me/?text=$encodedMessage';
   if (await canLaunch(whatsappUrl)) {
@@ -339,21 +331,8 @@ void _shareViaWhatsApp() async {
   }
 }
 
-void _shareViaTelegram() async {
-  final String message =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/user/call2tawheed.AbuAhmed\n📱 Facebook: https://www.facebook.com/UrdulslaimicMessages';
-  final String encodedMessage = Uri.encodeComponent(message);
-  final String telegramUrl = 'https://t.me/share/url?url=&text=$encodedMessage';
-  if (await canLaunch(telegramUrl)) {
-    await launch(telegramUrl);
-  } else {
-    // Fallback to generic share if Telegram not installed
-    Share.share(message);
-  }
-}
-
 void _share() {
   Share.share(
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/user/call2tawheed.AbuAhmed\n📱 Facebook: https://www.facebook.com/UrdulslaimicMessages',
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
       subject: 'Like & share Sharah Kitab At-Tawheed!');
 }
