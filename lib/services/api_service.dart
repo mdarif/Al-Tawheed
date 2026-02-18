@@ -12,10 +12,10 @@ class APIService {
   static final APIService instance = APIService._instantiate();
 
   final String _baseUrl = 'www.googleapis.com';
-  String _nextPageToken = '';
+  final Map<String, String> _nextPageTokens = {};
 
-  clearNextPageToken() {
-    _nextPageToken = '';
+  clearNextPageToken(String playlistId) {
+    _nextPageTokens[playlistId] = '';
   }
 
   Future<Channel> fetchChannel({String? channelId}) async {
@@ -38,24 +38,19 @@ class APIService {
     if (response.statusCode == 200) {
       Map<String, dynamic> data = json.decode(response.body)['items'][0];
       Channel channel = Channel.fromMap(data);
-
-      // Fetch first batch of videos from uploads playlist
-      channel.videos = await fetchVideosFromPlaylist(
-        playlistId: channel.uploadPlaylistId,
-      );
       return channel;
     } else {
       throw json.decode(response.body)['error']['message'];
     }
   }
 
+  // Fetch Videos from a playlist
   Future<List<Video>> fetchVideosFromPlaylist({String? playlistId}) async {
     Map<String, String> parameters = {
       'part': 'snippet',
-      // 'playlistId': 'PLNA2F9JZ_49FjeYC-Xsl5suQEy4knwyOA',
-      'playlistId': 'PLNA2F9JZ_49FGNiUHSVa9_8IzyeQnYX2Q',
-      'maxResults': '50', // Earlier it was 8
-      'pageToken': _nextPageToken,
+      'playlistId': playlistId!,
+      'maxResults': '50',
+      'pageToken': _nextPageTokens[playlistId] ?? '',
       'key': API_KEY,
     };
     Uri uri = Uri.https(
@@ -71,7 +66,8 @@ class APIService {
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      _nextPageToken = data['nextPageToken'] ?? '';
+      // _nextPageToken = data['nextPageToken'] ?? '';
+      _nextPageTokens[playlistId] = data['nextPageToken'] ?? '';
       List<dynamic> videosJson = data['items'];
 
       // Fetch first eight videos from uploads playlist

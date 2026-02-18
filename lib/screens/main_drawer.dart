@@ -23,9 +23,9 @@ class MainDrawer extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 40,
-                   backgroundImage: NetworkImage(
-                      'https://scontent.fdel52-1.fna.fbcdn.net/v/t39.30808-6/460928293_927260439420580_1308407852678437045_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=vkhCj3vNhn8Q7kNvwHZycKZ&_nc_oc=Adnn6xMaVOa1Cas1kIvNVrelLrjaD4ukVGZYY5foK-kdm7Ls_a32gAF6tZUhdhpkVVg&_nc_zt=23&_nc_ht=scontent.fdel52-1.fna&_nc_gid=uqZswuj5cT3fxQz1YTjm8Q&oh=00_Aft6vzGBXC01Gv5ikU9crD7a5CKt3eDEyaufz9GfwcY2vg&oe=69990327',
-                    ),
+                  backgroundImage: NetworkImage(
+                    'https://scontent.fdel52-1.fna.fbcdn.net/v/t39.30808-6/460928293_927260439420580_1308407852678437045_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=vkhCj3vNhn8Q7kNvwHZycKZ&_nc_oc=Adnn6xMaVOa1Cas1kIvNVrelLrjaD4ukVGZYY5foK-kdm7Ls_a32gAF6tZUhdhpkVVg&_nc_zt=23&_nc_ht=scontent.fdel52-1.fna&_nc_gid=uqZswuj5cT3fxQz1YTjm8Q&oh=00_Aft6vzGBXC01Gv5ikU9crD7a5CKt3eDEyaufz9GfwcY2vg&oe=69990327',
+                  ),
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -190,7 +190,8 @@ Widget _buildYouTubeChannelCard(BuildContext context) {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.play_circle_filled, color: Colors.white, size: 32),
+              child:
+                  Icon(Icons.play_circle_filled, color: Colors.white, size: 32),
             ),
             SizedBox(width: 14),
             Expanded(
@@ -226,8 +227,8 @@ Widget _buildYouTubeChannelCard(BuildContext context) {
 }
 
 _launchURL(String url) async {
-  if (await canLaunch(url)) {
-    await launch(url);
+  if (await launchUrl(Uri.parse(url))) {
+    await launchUrl(Uri.parse(url));
   } else {
     throw 'Could not launch $url';
   }
@@ -312,27 +313,37 @@ Widget _buildShareButton(BuildContext context,
           child: Icon(icon, size: 30, color: Colors.black),
         ),
         SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       ],
     ),
   );
 }
 
+// Share via WhatsApp with fallback to generic share if WhatsApp is not installed
 void _shareViaWhatsApp() async {
   final String message =
       'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
   final String encodedMessage = Uri.encodeComponent(message);
   final String whatsappUrl = 'https://wa.me/?text=$encodedMessage';
-  if (await canLaunch(whatsappUrl)) {
-    await launch(whatsappUrl);
+  if (await launchUrl(Uri.parse(whatsappUrl))) {
+    await launchUrl(Uri.parse(whatsappUrl));
   } else {
     // Fallback to generic share if WhatsApp not installed
-    Share.share(message);
+    await SharePlus.instance.share(ShareParams(
+        text: message, subject: 'Like & Share Sharah Kitab At-Tawheed!'));
   }
 }
 
+// Generic share function for "More" option
 void _share() {
-  Share.share(
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
-      subject: 'Like & share Sharah Kitab At-Tawheed!');
+  final String message =
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
+
+  SharePlus.instance.share(
+    ShareParams(
+      text: message,
+      subject: 'Like & Share Sharah Kitab At-Tawheed!',
+    ),
+  );
 }

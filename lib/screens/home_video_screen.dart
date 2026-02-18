@@ -11,6 +11,7 @@ import 'main_drawer.dart';
 import 'welcome.dart';
 import 'package:flutter/services.dart';
 import 'dart:developer' as developer;
+import 'package:intl/intl.dart';
 
 class HomeVideoScreen extends StatefulWidget {
   @override
@@ -23,6 +24,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
   // bool _isLoading = false;
   int totalVideosCount = 50;
   final apiServiceInstance = APIService.instance;
+  static const String tawheedPlaylistId = 'PLNA2F9JZ_49FGNiUHSVa9_8IzyeQnYX2Q';
 
   @override
   void initState() {
@@ -31,14 +33,28 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     _fetchAlMarfaDuroosChannel();
   }
 
+  String _formatCount(int? value) {
+    if (value == null) return '';
+    return NumberFormat.compact().format(value);
+  }
+
   _initChannel() async {
+    // Fetch Tawheed channel stats from https://www.youtube.com/@call2tawheedAbuAhmed
     Channel channel = await apiServiceInstance.fetchChannel(
         channelId: 'UC6tt6jN-ufLKbrR51jFTTQw');
+
+    // Fetch videos from SPECIFIC playlist at https://www.youtube.com/@call2tawheedAbuAhmed
+    // https://www.youtube.com/playlist?list=PLNA2F9JZ_49FGNiUHSVa9_8IzyeQnYX2Q
+    List<Video> videos = await apiServiceInstance.fetchVideosFromPlaylist(
+        playlistId: tawheedPlaylistId);
+
     setState(() {
+      channel.videos = videos;
       _channel = channel;
     });
   }
 
+  // Fetch Al Marfa Duroos channel stats from https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw
   _fetchAlMarfaDuroosChannel() async {
     Channel channel = await apiServiceInstance.fetchChannel(
         channelId: 'UCCCp4iPyMgqduVahr2gmLVw');
@@ -47,9 +63,10 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     });
   }
 
+  // Build the profile info section at the top of the screen
   _buildProfileInfo() {
     developer.log(
-        '_buildProfileInfo: Build fetched YT Channel profile info pn top pf the screen');
+        '_buildProfileInfo: Build fetched YT Channel profile info on top of the screen');
     return Container(
       margin: EdgeInsets.all(20.0),
       padding: EdgeInsets.all(20.0),
@@ -79,7 +96,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  _alMarfaChannel?.title ?? 'AL MARFA DUROOS',
+                  _alMarfaChannel?.title ?? 'Loading...',
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 14.0,
@@ -88,7 +105,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  '${_alMarfaChannel?.subscriberCount ?? '8.7K'} subscribers',
+                  '${_formatCount(_alMarfaChannel?.subscriberCount)} subscribers',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12.0,
@@ -98,7 +115,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                 ),
                 SizedBox(height: 0),
                 Text(
-                  "${_alMarfaChannel?.videoCount ?? '241'} Videos",
+                  "${_formatCount(_alMarfaChannel?.videoCount)} Videos",
                   style: TextStyle(
                     color: Colors.green[600],
                     fontSize: 12.0,
@@ -113,6 +130,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
+  // Build each video item in the list
   _buildVideo(Video video, int index) {
     developer.log(
         '_buildVideo: Build fetched VIDEOS rows on the main screen $index');
@@ -161,19 +179,6 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                     ),
                   ),
                 ),
-/*                 SizedBox(height: 5),
-                Container(
-                  padding: const EdgeInsets.only(left: 12),
-                  //flex: 1,
-                  child: Text(
-                    video.channelTitle,
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 12.0,
-                      //backgroundColor: Colors.red,
-                    ),
-                  ),
-                ), */
               ],
             ))
           ],
@@ -182,23 +187,11 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
-/*   _loadMoreVideos() async {
-    //_isLoading = true;
-
-    List<Video> moreVideos = await apiServiceInstance.fetchVideosFromPlaylist(
-        playlistId: _channel!.uploadPlaylistId);
-    List<Video> allVideos = _channel!.videos!..addAll(moreVideos);
-    setState(() {
-      _channel!.videos = allVideos;
-    });
-    //_isLoading = false;
-  } */
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        apiServiceInstance.clearNextPageToken();
+        apiServiceInstance.clearNextPageToken(tawheedPlaylistId);
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => WelcomeScreen()),
@@ -237,7 +230,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                           if (index == 0) {
                             return _buildYouTubePromoBanner(context);
                           }
-                          
+
                           final videoIndex = index - 1;
                           developer.log(
                               '_buildVideo: ListView.builder itemBuilder $videoIndex itemCount: ${_channel!.videos!.length}');
@@ -260,30 +253,16 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
     );
   }
 
-/*   void _showSnackBar(String message) {
-    developer.log('_showSnackBar');
-    final snackBar = SnackBar(
-      content: Text(
-        message,
-        //textAlign: TextAlign.center,
-      ),
-      duration: Duration(seconds: 1),
-    );
-
-    // Find the ScaffoldMessenger in the widget tree
-    // and use it to show a SnackBar.
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  } */
-
+  // Build the YouTube promotional banner as the first item in the list
   _buildYouTubePromoBanner(BuildContext context) {
-    final subscriberCount = _alMarfaChannel?.subscriberCount ?? '8.7K';
-    
+    final subscriberCount = _formatCount(_alMarfaChannel?.subscriberCount);
+
     return GestureDetector(
       onTap: () async {
         const String youtubeUrl =
             'https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
-        if (await canLaunch(youtubeUrl)) {
-          await launch(youtubeUrl);
+        if (await launchUrl(Uri.parse(youtubeUrl))) {
+          await launchUrl(Uri.parse(youtubeUrl));
         }
       },
       child: Container(
@@ -313,7 +292,8 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.play_circle_filled, color: Colors.red, size: 28),
+              child:
+                  Icon(Icons.play_circle_filled, color: Colors.red, size: 28),
             ),
             SizedBox(width: 12.0),
             Expanded(

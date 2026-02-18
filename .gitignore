@@ -54,3 +54,13 @@ app.*.map.json
 lib/utilities/keys.dart
 android/key.properties
 android/app/upload-keystore.jks
+
+.env.example
+.vscode/
+android/app/build_workaround.gradle
+android/app/upload-keystore.jks.zip
+android/flutter_helper.gradle
+android/init.gradle
+check-env.sh
+setup-env.sh
+setup.sh
