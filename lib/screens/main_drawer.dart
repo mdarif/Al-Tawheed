@@ -320,7 +320,7 @@ Widget _buildShareButton(BuildContext context,
 
 void _shareViaWhatsApp() async {
   final String message =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
   final String encodedMessage = Uri.encodeComponent(message);
   final String whatsappUrl = 'https://wa.me/?text=$encodedMessage';
   if (await canLaunch(whatsappUrl)) {
@@ -333,6 +333,6 @@ void _shareViaWhatsApp() async {
 
 void _share() {
   Share.share(
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n📺 YouTube: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
       subject: 'Like & share Sharah Kitab At-Tawheed!');
 }
