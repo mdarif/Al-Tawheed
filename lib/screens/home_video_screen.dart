@@ -86,8 +86,8 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
           CircleAvatar(
             backgroundColor: Colors.white,
             radius: 45.0,
-            backgroundImage: NetworkImage(
-                'https://scontent.fdel52-1.fna.fbcdn.net/v/t39.30808-6/460928293_927260439420580_1308407852678437045_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=vkhCj3vNhn8Q7kNvwHZycKZ&_nc_oc=Adnn6xMaVOa1Cas1kIvNVrelLrjaD4ukVGZYY5foK-kdm7Ls_a32gAF6tZUhdhpkVVg&_nc_zt=23&_nc_ht=scontent.fdel52-1.fna&_nc_gid=uqZswuj5cT3fxQz1YTjm8Q&oh=00_Aft6vzGBXC01Gv5ikU9crD7a5CKt3eDEyaufz9GfwcY2vg&oe=69990327'),
+            backgroundImage:
+                const AssetImage('assets/images/am_duroos_logo.png'),
           ),
           SizedBox(width: 12.0),
           Expanded(

@@ -120,7 +120,8 @@ class MyStatelessWidget extends StatelessWidget {
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       // background color
-                      foregroundColor: Colors.black, backgroundColor: Colors.limeAccent.shade700, // text color
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.limeAccent.shade700, // text color
                       padding:
                           EdgeInsets.symmetric(horizontal: 70, vertical: 15),
                       elevation: 5,
@@ -145,60 +146,5 @@ class MyStatelessWidget extends StatelessWidget {
         ),
       ),
     );
-    /*return Center(
-      child: Card(
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            ClipOval(
-              child: Image.asset(
-                'assets/tawheed.png',
-                fit: BoxFit.cover,
-                width: 150,
-                height: 150,
-              ),
-            ),
-            const ListTile(
-              leading: Icon(Icons.book_rounded),
-              title: Text('What is Kitaab at-Tawheed?'),
-              subtitle: Text(
-                  'Kitab At-Tawheed which is one of the best books on the subject of Tawheed and ranks high in authenticity. In this book, all the relevant Verses have been discussed reasonably, rationally and sincerely; and the essence of the Qur’an and Sunnah is placed in a very simple and appealing manner. This is the reason that the upright persons, beyond group ism and prejudices, have been adopting the correct Islamic path – the path of the Qur’an and Sunnah – under the influence of the basic facts and proofs produced herein.'),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                /*TextButton(
-                  child: const Text('START NOW'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => HomeVideoScreen()),
-                    );
-                  },
-                ),*/
-                const SizedBox(width: 50),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    // background color
-                    primary: Colors.purple,
-                    padding: EdgeInsets.symmetric(horizontal: 80, vertical: 10),
-                    textStyle: TextStyle(fontSize: 15),
-                  ),
-                  child: Text('START NOW'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => HomeVideoScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );*/
   }
 }
