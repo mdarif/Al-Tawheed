@@ -3,7 +3,6 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'dart:developer' as developer;
 
 class VideoScreen extends StatefulWidget {
   final String? id;
@@ -42,24 +41,15 @@ class _VideoScreenState extends State<VideoScreen> {
       },
       player: YoutubePlayer(
         controller: _controller,
-        onReady: () {
-          var currentVideo = widget.allVideos![_index!];
-          developer.log('onReady index: $_index actual id ${currentVideo.id}');
-        },
+        onReady: () {},
         onEnded: (data) {
-          if (_index! < 49) {
-            var playNextVideo = widget.allVideos![_index! + 1];
-            developer.log('playNextVideo.id: ${playNextVideo.id}');
-            this.setState(() {
-              _index = _index! + 1;
-            });
-            _controller.load(playNextVideo.id);
-          } else if (_index! == 49) {
-            _showEndDialog();
+          final lastIndex = widget.allVideos!.length - 1;
+          if (_index! < lastIndex) {
+            setState(() => _index = _index! + 1);
+            _controller.load(widget.allVideos![_index!].id);
           } else {
             _showEndDialog();
           }
-          //_showSnackBar('Next Video Started!');
         },
       ),
       builder: (context, player) {
@@ -75,7 +65,7 @@ class _VideoScreenState extends State<VideoScreen> {
   void _showEndDialog() {
     showDialog(
         context: context,
-        builder: (ctxt) => new AlertDialog(
+        builder: (ctxt) => AlertDialog(
               title: Text(
                   'Congratulations, Alhamd-o-lillah you have completed the Sharah Kitaab At-Tawheed',
                   style: TextStyle(fontSize: 20)),
@@ -91,20 +81,12 @@ class _VideoScreenState extends State<VideoScreen> {
               actions: <Widget>[
                 TextButton(
                   child: Text('SHARE'),
-                  /* style:
-                            TextButton.styleFrom(primary: Colors.purple), */
-                  onPressed: () {
-                    _share();
-                    //launchEmailSubmission();
-                  },
+                  onPressed: _share,
                 ),
                 TextButton(
                   child: Text('EXIT'),
-                  /* style:
-                            TextButton.styleFrom(primary: Colors.purple), */
                   onPressed: () {
                     SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                    //launchEmailSubmission();
                   },
                 ),
               ],
@@ -112,6 +94,10 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   void _share() {
-    Share.share("The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload it from: https://almarfa.in/kitab-at-tawheed/");
+    SharePlus.instance.share(ShareParams(
+      text:
+          'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload it from: https://almarfa.in/kitab-at-tawheed/',
+      subject: 'Like & Share Sharah Kitab At-Tawheed!',
+    ));
   }
 }

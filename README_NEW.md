@@ -1,6 +1,6 @@
 # Sharah Kitab al-Tawheed
 
-A modern Flutter application that consolidates Sharah Kitaab al-Tawheed YouTube lectures of Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
+A modern Flutter application that consolidates Sharah Kitaab al-Tawheed YouTube lectures of Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
 
 **Total Duration**: 27 hours 7 minutes
 

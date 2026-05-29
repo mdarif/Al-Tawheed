@@ -1,22 +1,24 @@
-// @dart=2.12.0
-
 import 'package:flutter/material.dart';
+import 'package:myapp/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io' show Platform;
 
 class MainDrawer extends StatelessWidget {
+  static const String _shareMessage =
+      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of'
+      ' *Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.'
+      '\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed'
+      '\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // Custom Header with Al Marfa branding
           Container(
-            decoration: BoxDecoration(
-              color: Colors.limeAccent.shade700,
-            ),
+            decoration: BoxDecoration(color: AppColors.primary),
             padding: EdgeInsets.fromLTRB(20, 60, 30, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +39,7 @@ class MainDrawer extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'MANHAJ E SALAF: A RETURN TO THE SUNNAH',
+                  'MANHAJ E SALAF: LEARN ISLAM AS UNDERSTOOD BY THE SALAF',
                   style: TextStyle(
                     color: Colors.black54,
                     fontSize: 12.0,
@@ -48,7 +50,6 @@ class MainDrawer extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8),
-          // Menu Items
           _buildDrawerItem(
             icon: Icons.mail_outline,
             title: 'Contact Us',
@@ -64,8 +65,7 @@ class MainDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 _launchURL(
-                  'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
-                );
+                    'https://play.google.com/store/apps/details?id=com.almarfa.tawheed');
               },
             ),
           _buildDrawerItem(
@@ -77,20 +77,45 @@ class MainDrawer extends StatelessWidget {
             },
           ),
           Divider(indent: 16, endIndent: 16, thickness: 1),
-          // YouTube Channel Card
-          _buildYouTubeChannelCard(context),
-          SizedBox(height: 16),
+          SizedBox(height: 8),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Powered by Al Marfa Software Inc.',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GestureDetector(
+              onTap: () => _launchURL('https://www.almarfa.co'),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.language, size: 14, color: Colors.grey[500]),
+                    SizedBox(width: 6),
+                    Text(
+                      'Powered by ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                    Text(
+                      'Al Marfa Technologies',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.open_in_new, size: 11, color: Colors.grey[400]),
+                  ],
+                ),
               ),
             ),
           ),
+          SizedBox(height: 8),
         ],
       ),
     );
@@ -140,209 +165,115 @@ class MainDrawer extends StatelessWidget {
             child: Text('EMAIL US'),
             onPressed: () {
               Navigator.pop(ctxt);
-              launchEmailSubmission();
+              _launchEmail();
             },
           ),
           TextButton(
             child: Text('CANCEL'),
-            onPressed: () {
-              Navigator.pop(ctxt);
-            },
+            onPressed: () => Navigator.pop(ctxt),
           ),
         ],
       ),
     );
   }
-}
 
-Widget _buildYouTubeChannelCard(BuildContext context) {
-  return Padding(
-    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        _launchURL('https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw');
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.red.shade600, Colors.red.shade500],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withOpacity(0.3),
-              blurRadius: 12,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
+  void _showShareOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
         padding: EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child:
-                  Icon(Icons.play_circle_filled, color: Colors.white, size: 32),
+            Text(
+              'Share via',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Al Marfa Duroos',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Subscribe to YouTube Channel',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
-              ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildShareButton(
+                  context,
+                  icon: Icons.messenger,
+                  label: 'WhatsApp',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _shareViaWhatsApp();
+                  },
+                ),
+                _buildShareButton(
+                  context,
+                  icon: Icons.more_horiz,
+                  label: 'More',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _share();
+                  },
+                ),
+              ],
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
           ],
         ),
       ),
-    ),
-  );
-}
-
-_launchURL(String url) async {
-  if (await launchUrl(Uri.parse(url))) {
-    await launchUrl(Uri.parse(url));
-  } else {
-    throw 'Could not launch $url';
-  }
-}
-
-Future<void> launchEmailSubmission() async {
-  final Uri emailUri = Uri(
-    scheme: 'mailto',
-    path: 'arif.mohammed@gmail.com',
-    queryParameters: {
-      'subject': 'Contact Al Marfa Software Inc.',
-    },
-  );
-
-  try {
-    await launchUrl(
-      emailUri,
-      mode: LaunchMode.externalApplication,
     );
-  } catch (e) {
-    print('Could not launch $emailUri');
   }
-}
 
-void _showShareOptions(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) => Container(
-      padding: EdgeInsets.all(16),
+  Widget _buildShareButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Share via',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Icon(icon, size: 30, color: Colors.black),
           ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildShareButton(
-                context,
-                icon: Icons.messenger,
-                label: 'WhatsApp',
-                onTap: () {
-                  Navigator.pop(context);
-                  _shareViaWhatsApp();
-                },
-              ),
-              _buildShareButton(
-                context,
-                icon: Icons.more_horiz,
-                label: 'More',
-                onTap: () {
-                  Navigator.pop(context);
-                  _share();
-                },
-              ),
-            ],
-          ),
+          SizedBox(height: 8),
+          Text(label,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
-    ),
-  );
-}
-
-Widget _buildShareButton(BuildContext context,
-    {required IconData icon,
-    required String label,
-    required VoidCallback onTap}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.limeAccent.shade700,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Icon(icon, size: 30, color: Colors.black),
-        ),
-        SizedBox(height: 8),
-        Text(label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-      ],
-    ),
-  );
-}
-
-// Share via WhatsApp with fallback to generic share if WhatsApp is not installed
-void _shareViaWhatsApp() async {
-  final String message =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
-  final String encodedMessage = Uri.encodeComponent(message);
-  final String whatsappUrl = 'https://wa.me/?text=$encodedMessage';
-  if (await launchUrl(Uri.parse(whatsappUrl))) {
-    await launchUrl(Uri.parse(whatsappUrl));
-  } else {
-    // Fallback to generic share if WhatsApp not installed
-    await SharePlus.instance.share(ShareParams(
-        text: message, subject: 'Like & Share Sharah Kitab At-Tawheed!'));
+    );
   }
-}
 
-// Generic share function for "More" option
-void _share() {
-  final String message =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of *Fadilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
+  Future<void> _launchURL(String url) async {
+    await launchUrl(Uri.parse(url));
+  }
 
-  SharePlus.instance.share(
-    ShareParams(
-      text: message,
+  Future<void> _launchEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'arif.mohammed@gmail.com',
+      queryParameters: {'subject': 'Contact Al Marfa Software Inc.'},
+    );
+    await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _shareViaWhatsApp() async {
+    final String encodedMessage = Uri.encodeComponent(_shareMessage);
+    final launched =
+        await launchUrl(Uri.parse('https://wa.me/?text=$encodedMessage'));
+    if (!launched) {
+      await SharePlus.instance.share(ShareParams(
+          text: _shareMessage,
+          subject: 'Like & Share Sharah Kitab At-Tawheed!'));
+    }
+  }
+
+  void _share() {
+    SharePlus.instance.share(ShareParams(
+      text: _shareMessage,
       subject: 'Like & Share Sharah Kitab At-Tawheed!',
-    ),
-  );
+    ));
+  }
 }

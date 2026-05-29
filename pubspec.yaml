@@ -23,13 +23,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_analytics: ^12.1.2
-  firebase_core: ^4.4.0
-  firebase_database: ^12.1.3
   url_launcher: ^6.3.1
-  cupertino_icons: ^1.0.8
-  share_plus: ^12.0.1
-  flutter_inappwebview: ^6.0.0
+  cupertino_icons: ^1.0.9
+  share_plus: ^13.1.0
   youtube_player_flutter: ^9.1.3
   http: ^1.2.0
   intl: ^0.20.2
@@ -47,6 +43,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/
     - assets/images/
   #   - images/a_dot_ham.jpeg
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -74,5 +71,5 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
 
 dependency_overrides:
-  url_launcher_android: ^6.3.28
+  url_launcher_android: ^6.3.30
   url_launcher_ios: ^6.3.1
