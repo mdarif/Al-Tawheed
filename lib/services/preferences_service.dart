@@ -39,6 +39,14 @@ class PreferencesService {
   String? get lastLectureId => _p.getString('last_lecture_id');
   int get lastPositionSeconds => _p.getInt('last_position') ?? 0;
 
+  // ── Bookmarks ───────────────────────────────────────────────────────────
+
+  Set<String> loadBookmarks() =>
+      Set<String>.from(_p.getStringList('bookmarks') ?? []);
+
+  Future<void> saveBookmarks(Set<String> ids) =>
+      _p.setStringList('bookmarks', ids.toList());
+
   // ── Playback speed ──────────────────────────────────────────────────────
 
   double get playbackSpeed => _p.getDouble('playback_speed') ?? 1.0;

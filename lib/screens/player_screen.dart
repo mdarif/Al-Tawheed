@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_colors.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 
@@ -20,6 +21,10 @@ class PlayerScreen extends StatelessWidget {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
+        actions: [
+          _BookmarkButton(),
+          const SizedBox(width: 4),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -260,6 +265,31 @@ class _TransportControls extends StatelessWidget {
           onPressed: player.hasNext ? player.playNext : null,
         ),
       ],
+    );
+  }
+}
+
+// ── Bookmark button ────────────────────────────────────────────────────────────
+
+class _BookmarkButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final player = context.watch<PlayerNotifier>();
+    final lectureId = player.current?.id;
+    if (lectureId == null) return const SizedBox.shrink();
+
+    final isBookmarked = context.select<ProgressProvider, bool>(
+      (p) => p.isBookmarked(lectureId),
+    );
+
+    return IconButton(
+      tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark',
+      icon: Icon(
+        isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+        color: isBookmarked ? AppColors.gold : AppColors.onDark,
+      ),
+      onPressed: () =>
+          context.read<ProgressProvider>().toggleBookmark(lectureId),
     );
   }
 }

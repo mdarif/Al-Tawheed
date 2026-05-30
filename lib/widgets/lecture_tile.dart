@@ -5,6 +5,7 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_colors.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 
+
 class LectureTile extends StatelessWidget {
   final Lecture lecture;
   final VoidCallback? onTap;
@@ -44,10 +45,16 @@ class LectureTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.play_circle_outline_rounded,
-              color: AppColors.onDarkSecondary,
-              size: 22,
+            Selector<ProgressProvider, bool>(
+              selector: (_, p) => p.isBookmarked(lecture.id),
+              builder: (_, isBookmarked, __) => Icon(
+                isBookmarked
+                    ? Icons.bookmark_rounded
+                    : Icons.play_circle_outline_rounded,
+                color:
+                    isBookmarked ? AppColors.gold : AppColors.onDarkSecondary,
+                size: 22,
+              ),
             ),
           ],
         ),

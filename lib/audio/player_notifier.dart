@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart' show ProcessingState;
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/services/preferences_service.dart';
 
 class PlayerNotifier extends ChangeNotifier {
   final TawheedAudioHandler _handler;
@@ -21,6 +22,12 @@ class PlayerNotifier extends ChangeNotifier {
   double _speed = 1.0;
 
   PlayerNotifier(this._handler, this._progress) {
+    // Restore saved playback speed immediately so it's applied on first play
+    final savedSpeed = PreferencesService.instance.playbackSpeed;
+    if (savedSpeed != 1.0) {
+      _speed = savedSpeed;
+      _handler.setSpeed(savedSpeed);
+    }
     _subs.addAll([
       _handler.playbackState.listen((state) {
         _playing = state.playing;
@@ -113,7 +120,10 @@ class PlayerNotifier extends ChangeNotifier {
     if (idx > 0) await loadAndPlay(_queue[idx - 1], _queue);
   }
 
-  Future<void> setSpeed(double s) => _handler.setSpeed(s);
+  Future<void> setSpeed(double s) async {
+    await _handler.setSpeed(s);
+    await PreferencesService.instance.savePlaybackSpeed(s);
+  }
 
   Future<void> stop() async {
     _saveCurrentPosition();

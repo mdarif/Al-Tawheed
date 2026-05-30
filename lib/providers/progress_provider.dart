@@ -7,13 +7,15 @@ class ProgressProvider extends ChangeNotifier {
   Map<String, int> _progress = {};
   String? _lastLectureId;
   int _lastPositionSeconds = 0;
+  Set<String> _bookmarks = {};
 
-  /// Load saved progress synchronously — requires [PreferencesService.init]
+  /// Load saved state synchronously — requires [PreferencesService.init]
   /// to have been called before this provider is created.
   void load() {
     _progress = _prefs.loadAllProgress();
     _lastLectureId = _prefs.lastLectureId;
     _lastPositionSeconds = _prefs.lastPositionSeconds;
+    _bookmarks = _prefs.loadBookmarks();
     notifyListeners();
   }
 
@@ -33,6 +35,21 @@ class ProgressProvider extends ChangeNotifier {
 
   bool hasProgress(String lectureId) =>
       (_progress[lectureId] ?? 0) > 0;
+
+  // ── Bookmarks ─────────────────────────────────────────────────────────────
+
+  bool isBookmarked(String lectureId) => _bookmarks.contains(lectureId);
+  Set<String> get bookmarkedIds => Set.unmodifiable(_bookmarks);
+
+  Future<void> toggleBookmark(String lectureId) async {
+    if (_bookmarks.contains(lectureId)) {
+      _bookmarks.remove(lectureId);
+    } else {
+      _bookmarks.add(lectureId);
+    }
+    notifyListeners();
+    await _prefs.saveBookmarks(_bookmarks);
+  }
 
   // ── Commands ─────────────────────────────────────────────────────────────
 
