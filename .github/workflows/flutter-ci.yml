@@ -104,7 +104,19 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------ #
-      # 8. Analyze (static analysis)
+      # 8. Create stub keys.dart for CI
+      #
+      #    lib/utilities/keys.dart is gitignored (contains the real YouTube
+      #    Data API key). The analyzer fails without it. A stub with an empty
+      #    key satisfies the import without exposing secrets.
+      # ------------------------------------------------------------------ #
+      - name: Create stub keys.dart
+        run: |
+          mkdir -p lib/utilities
+          echo "const String API_KEY = '';" > lib/utilities/keys.dart
+
+      # ------------------------------------------------------------------ #
+      # 9. Analyze (static analysis)
       #    --fatal-warnings fails the job on warnings and errors.
       #    --fatal-infos is intentionally avoided: third-party packages
       #    produce INFO-level hints that are outside this project's control.
@@ -113,7 +125,7 @@ jobs:
         run: flutter analyze --fatal-warnings
 
       # ------------------------------------------------------------------ #
-      # 9. Run tests
+      # 10. Run tests
       #
       #    test/widget_test.dart is the unmodified Flutter counter-app
       #    template and always fails (no counter widget in this app).
@@ -125,13 +137,13 @@ jobs:
         run: flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
 
       # ------------------------------------------------------------------ #
-      # 10. Build Android debug APK
+      # 11. Build Android debug APK
       # ------------------------------------------------------------------ #
       - name: Build Android debug APK
         run: flutter build apk --debug
 
       # ------------------------------------------------------------------ #
-      # 11. Upload debug APK artifact (kept 7 days)
+      # 12. Upload debug APK artifact (kept 7 days)
       # ------------------------------------------------------------------ #
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
