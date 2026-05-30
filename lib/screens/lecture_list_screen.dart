@@ -8,8 +8,6 @@ import 'package:myapp/theme/app_colors.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
-import 'main_drawer.dart';
-
 class LectureListScreen extends StatefulWidget {
   const LectureListScreen({super.key});
 
@@ -29,7 +27,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: MainDrawer(),
       body: Consumer<CatalogProvider>(
         builder: (context, provider, _) {
           return switch (provider.status) {
@@ -150,12 +147,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return SliverAppBar(
       pinned: true,
       expandedHeight: catalog != null ? 140 : 80,
-      leading: Builder(
-        builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () => Scaffold.of(ctx).openDrawer(),
-        ),
-      ),
+      automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Column(

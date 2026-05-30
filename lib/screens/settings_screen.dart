@@ -76,6 +76,20 @@ class SettingsScreen extends StatelessWidget {
           // ── App ─────────────────────────────────────────────────────────
           _SectionHeader('App'),
           ListTile(
+            leading: const Icon(Icons.mail_outline_rounded),
+            title: const Text('Contact Us'),
+            onTap: () => launchUrl(
+              Uri(
+                scheme: 'mailto',
+                path: 'arif.mohammed@gmail.com',
+                queryParameters: {
+                  'subject': 'Sharah Kitab Al-Tawheed — Feedback',
+                },
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          ListTile(
             leading: const Icon(Icons.share_rounded),
             title: const Text('Share app'),
             onTap: () => SharePlus.instance.share(
