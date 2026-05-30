@@ -107,6 +107,20 @@ To change the brand colour across the entire app, edit that one line.
 
 ---
 
+## Documentation
+
+Full guides are in [docs/](docs/README.md).
+
+| | |
+|---|---|
+| [Setup](docs/setup.md) | Environment, dependencies, API key |
+| [CI/CD](docs/ci-cd.md) | Pipelines, pre-push hook, release workflow |
+| [Git workflow](docs/git-workflow.md) | Branching, commits, PRs |
+| [Testing](docs/testing.md) | Running and writing tests |
+| [Troubleshooting](docs/troubleshooting.md) | Common errors and fixes |
+
+---
+
 ## Lecture Info
 
 کل مدت : ستائیس گھنٹے سات منٹ ہے
