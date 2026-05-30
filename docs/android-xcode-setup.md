@@ -409,7 +409,7 @@ flutter run
 If you encounter issues:
 
 1. **Run Flutter Doctor**: `flutter doctor -v` (shows all issues)
-2. **Check Documentation**: See SETUP_GUIDE.md
+2. **Check Documentation**: See [setup.md](setup.md)
 3. **Clean Cache**: `flutter clean && flutter pub get`
 4. **Restart Terminal**: Close and reopen terminal
 

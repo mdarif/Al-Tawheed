@@ -5,7 +5,7 @@
 - [ ] Run setup: `bash setup.sh`
 - [ ] Verify Flutter: `flutter doctor`
 - [ ] Check dependencies: `flutter pub get`
-- [ ] Read documentation: `SETUP_GUIDE.md` and `TESTING_GUIDE.md`
+- [ ] Read documentation: [setup.md](setup.md) and [testing.md](testing.md)
 
 ## Before Starting Development
 - [ ] Create feature branch: `git checkout -b feature/feature-name`

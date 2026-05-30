@@ -419,7 +419,7 @@ flutter run -v
 
 ## Getting Help
 
-1. **Check Documentation**: SETUP_GUIDE.md, ANDROID_STUDIO_XCODE_SETUP.md
+1. **Check Documentation**: [setup.md](setup.md), [android-xcode-setup.md](android-xcode-setup.md)
 2. **Run flutter doctor**: `flutter doctor -v`
 3. **Check logs**: Look for error messages carefully
 4. **Search online**: Most Flutter issues have solutions on StackOverflow
