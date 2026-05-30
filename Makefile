@@ -1,10 +1,11 @@
-.PHONY: help setup clean test analyze format build release run
+.PHONY: help setup setup-hooks clean test analyze format build release run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
 	@echo ""
 	@echo "Setup & Maintenance:"
-	@echo "  make setup           - Complete project setup"
+	@echo "  make setup           - Complete project setup (installs hooks)"
+	@echo "  make setup-hooks     - Install git pre-push hook (run once after clone)"
 	@echo "  make clean           - Clean build artifacts"
 	@echo "  make pub-get         - Get pub dependencies"
 	@echo "  make pub-upgrade     - Upgrade all dependencies"
@@ -15,10 +16,14 @@ help:
 	@echo "  make run-android     - Run on Android emulator"
 	@echo "  make run-ios         - Run on iOS simulator"
 	@echo ""
+	@echo "CI:"
+	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
+	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
+	@echo ""
 	@echo "Testing & Quality:"
-	@echo "  make test            - Run all tests"
+	@echo "  make test            - Run tests (mirrors CI)"
 	@echo "  make test-verbose    - Run tests with verbose output"
-	@echo "  make analyze         - Analyze code for issues"
+	@echo "  make analyze         - Analyze code (--fatal-warnings, mirrors CI)"
 	@echo "  make format          - Format all code"
 	@echo "  make coverage        - Generate test coverage report"
 	@echo "  make lint            - Run linter"
@@ -37,11 +42,16 @@ help:
 	@echo "  make devices         - List connected devices"
 
 # Setup
-setup:
+setup: setup-hooks
 	@echo "Setting up Al-Tawheed project..."
 	flutter pub get
-	cd ios && pod install && cd ..
 	@echo "✓ Project setup complete!"
+
+# Install git hooks — run once after cloning
+setup-hooks:
+	@echo "Installing git hooks..."
+	git config core.hooksPath .githooks
+	@echo "✓ Hooks installed (.githooks/pre-push active)"
 
 # Clean
 clean:
@@ -82,20 +92,17 @@ run-release:
 
 # Testing
 test:
-	flutter test
+	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
 
 test-verbose:
-	flutter test --verbose
-
-test-android:
-	flutter test test/widget_test.dart
+	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded --verbose
 
 test-units:
-	flutter test test/unit_tests.dart
+	flutter test test/unit_tests.dart --reporter=expanded
 
 # Analysis & Quality
 analyze:
-	flutter analyze
+	flutter analyze --fatal-warnings
 
 format:
 	flutter format .
@@ -109,6 +116,22 @@ lint:
 
 check-quality: analyze lint test
 	@echo "✓ All quality checks passed!"
+
+# Run the exact same steps as the GitHub Actions CI pipeline locally
+ci:
+	@echo "Running CI pipeline locally..."
+	@mkdir -p lib/utilities
+	@[ -f lib/utilities/keys.dart ] || printf 'const String API_KEY = "";\n' > lib/utilities/keys.dart
+	flutter analyze --fatal-warnings
+	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
+	flutter build apk --debug
+	@echo "✓ CI pipeline passed."
+
+# Pull the latest failed CI run logs from GitHub Actions
+ci-logs:
+	@RUN_ID=$$(gh run list --repo mdarif/Al-Tawheed --limit 1 --json databaseId --jq '.[0].databaseId'); \
+	echo "Fetching logs for run $$RUN_ID..."; \
+	gh run view $$RUN_ID --log-failed
 
 # Building
 build-android:
