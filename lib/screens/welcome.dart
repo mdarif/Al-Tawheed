@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/theme/app_colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -86,7 +87,7 @@ class WelcomeScreen extends StatelessWidget {
                       icon: const Icon(Icons.headphones_rounded, size: 22),
                       label: const Text('START LISTENING'),
                       onPressed: () =>
-                          Navigator.pushNamed(context, '/lectures'),
+                          context.go('/lectures'),
                     ),
                   ),
                 ),

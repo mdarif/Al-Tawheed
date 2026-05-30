@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
-import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/theme/app_colors.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -13,13 +13,7 @@ class MiniPlayer extends StatelessWidget {
     if (!player.hasAudio) return const SizedBox.shrink();
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) => const PlayerScreen(),
-        ),
-      ),
+      onTap: () => context.push('/player'),
       child: Container(
         height: 68,
         decoration: BoxDecoration(

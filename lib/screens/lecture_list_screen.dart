@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
-import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/theme/app_colors.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
-import 'package:myapp/widgets/mini_player.dart';
 import 'main_drawer.dart';
 
 class LectureListScreen extends StatefulWidget {
@@ -31,7 +30,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: MainDrawer(),
-      bottomSheet: const MiniPlayer(),
       body: Consumer<CatalogProvider>(
         builder: (context, provider, _) {
           return switch (provider.status) {
@@ -190,13 +188,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
 
   void _onLectureTap(Lecture lecture, List<Lecture> queue) {
     context.read<PlayerNotifier>().loadAndPlay(lecture, queue);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => const PlayerScreen(),
-      ),
-    );
+    context.push('/player');
   }
 }
 
