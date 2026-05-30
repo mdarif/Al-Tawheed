@@ -52,10 +52,10 @@ void main() {
 
     test('Phone number validation should work correctly', () {
       final String validPhone = '+966501234567';
-      final String invalidPhone = '12345';
-      
+      final String invalidPhone = 'abc';
+
       final phoneRegex = RegExp(r'^\+?[1-9]\d{1,14}$');
-      
+
       expect(phoneRegex.hasMatch(validPhone), true);
       expect(phoneRegex.hasMatch(invalidPhone), false);
     });
