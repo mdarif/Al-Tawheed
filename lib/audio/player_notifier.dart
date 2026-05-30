@@ -4,10 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/progress_provider.dart';
 
 class PlayerNotifier extends ChangeNotifier {
   final TawheedAudioHandler _handler;
+  final ProgressProvider _progress;
   final List<StreamSubscription<dynamic>> _subs = [];
+  Timer? _saveTimer;
 
   Lecture? _current;
   List<Lecture> _queue = const [];
@@ -17,7 +20,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool _loading = false;
   double _speed = 1.0;
 
-  PlayerNotifier(this._handler) {
+  PlayerNotifier(this._handler, this._progress) {
     _subs.addAll([
       _handler.playbackState.listen((state) {
         _playing = state.playing;
@@ -36,7 +39,6 @@ class PlayerNotifier extends ChangeNotifier {
           notifyListeners();
         }
       }),
-      // Auto-advance to next lecture when current one finishes
       _handler.player.processingStateStream.listen((state) {
         if (state == ProcessingState.completed) _onCompleted();
       }),
@@ -62,14 +64,26 @@ class PlayerNotifier extends ChangeNotifier {
   bool get hasNext => _currentIndex >= 0 && _currentIndex < _queue.length - 1;
 
   // ── Commands ─────────────────────────────────────────────────────────────
+
   Future<void> loadAndPlay(Lecture lecture, List<Lecture> queue) async {
+    _saveCurrentPosition(); // persist position of previous lecture before switching
+    _cancelSaveTimer();
+
     _current = lecture;
     _queue = List.unmodifiable(queue);
     _position = Duration.zero;
     _duration = Duration(seconds: lecture.durationSeconds);
     _loading = true;
     notifyListeners();
-    await _handler.loadLecture(lecture);
+
+    // Restore saved position — skip if within 30s of start or within 30s of end
+    final saved = _progress.getPositionSeconds(lecture.id);
+    final resumeAt = saved > 30 && saved < lecture.durationSeconds - 30
+        ? Duration(seconds: saved)
+        : Duration.zero;
+
+    await _handler.loadLecture(lecture, startFrom: resumeAt);
+    _startSaveTimer();
   }
 
   Future<void> playPause() =>
@@ -102,12 +116,41 @@ class PlayerNotifier extends ChangeNotifier {
   Future<void> setSpeed(double s) => _handler.setSpeed(s);
 
   Future<void> stop() async {
+    _saveCurrentPosition();
+    _cancelSaveTimer();
     await _handler.stop();
     _current = null;
     notifyListeners();
   }
 
+  // ── Progress persistence ─────────────────────────────────────────────────
+
+  void _startSaveTimer() {
+    _saveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_playing) _saveCurrentPosition();
+    });
+  }
+
+  void _cancelSaveTimer() {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+  }
+
+  void _saveCurrentPosition() {
+    final id = _current?.id;
+    if (id != null && _position.inSeconds > 0) {
+      _progress.saveProgress(id, _position.inSeconds);
+    }
+  }
+
   void _onCompleted() {
+    // Save completed position so the tile shows 100% done
+    final id = _current?.id;
+    final total = _current?.durationSeconds;
+    if (id != null && total != null) {
+      _progress.saveProgress(id, total);
+    }
+    // Auto-advance
     final idx = _currentIndex;
     if (idx >= 0 && idx < _queue.length - 1) {
       loadAndPlay(_queue[idx + 1], _queue);
@@ -116,6 +159,8 @@ class PlayerNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    _saveCurrentPosition();
+    _cancelSaveTimer();
     for (final s in _subs) {
       s.cancel();
     }

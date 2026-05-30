@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
@@ -66,7 +67,12 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
-        ChangeNotifierProvider(create: (_) => PlayerNotifier(audioHandler)),
+        // ProgressProvider before PlayerNotifier — PlayerNotifier reads it on creation
+        ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) =>
+              PlayerNotifier(audioHandler, ctx.read<ProgressProvider>()),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Sharah Kitab al-Tawheed',

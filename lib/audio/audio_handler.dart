@@ -19,8 +19,11 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     await session.configure(const AudioSessionConfiguration.music());
   }
 
-  /// Load and immediately begin playing a lecture.
-  Future<void> loadLecture(Lecture lecture) async {
+  /// Load a lecture and begin playing, optionally resuming from [startFrom].
+  Future<void> loadLecture(
+    Lecture lecture, {
+    Duration startFrom = Duration.zero,
+  }) async {
     mediaItem.add(MediaItem(
       id: lecture.audioUrl,
       title: lecture.title,
@@ -28,6 +31,7 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
       duration: Duration(seconds: lecture.durationSeconds),
     ));
     await _player.setUrl(lecture.audioUrl);
+    if (startFrom > Duration.zero) await _player.seek(startFrom);
     await play();
   }
 
