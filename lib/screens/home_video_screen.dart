@@ -110,7 +110,7 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
                 Text(
                   "${_formatCount(_alMarfaChannel?.videoCount)} Videos",
                   style: TextStyle(
-                    color: AppColors.textGreen,
+                    color: AppColors.success,
                     fontSize: 12.0,
                     fontWeight: FontWeight.w600,
                   ),
@@ -241,14 +241,14 @@ class _HomeVideoScreenState extends State<HomeVideoScreen> {
         padding: EdgeInsets.all(12.0),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.youtubeRed, AppColors.youtubeRedLight],
+            colors: [Color(0xFFE53935), Color(0xFFEF5350)], // YouTube red — removed with promo banner in Phase 2,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.youtubeRed.withValues(alpha: 0.3),
+              color: Color(0x4DE53935),
               offset: Offset(0, 4),
               blurRadius: 8.0,
             ),

@@ -18,7 +18,7 @@ class MainDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            decoration: BoxDecoration(color: AppColors.primary),
+            decoration: BoxDecoration(color: AppColors.gold),
             padding: EdgeInsets.fromLTRB(20, 60, 30, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +233,7 @@ class MainDrawer extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: AppColors.gold,
               borderRadius: BorderRadius.circular(30),
             ),
             child: Icon(icon, size: 30, color: Colors.black),
