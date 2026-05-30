@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks clean test analyze format build release run ci ci-logs
+.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -16,9 +16,10 @@ help:
 	@echo "  make run-android     - Run on Android emulator"
 	@echo "  make run-ios         - Run on iOS simulator"
 	@echo ""
-	@echo "CI:"
+	@echo "CI / CD:"
 	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
 	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
+	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major)"
 	@echo ""
 	@echo "Testing & Quality:"
 	@echo "  make test            - Run tests (mirrors CI)"
@@ -150,6 +151,22 @@ build-all: build-android build-ios build-web
 	@echo "✓ All builds complete!"
 
 # Release
+# Trigger the GitHub Actions release workflow (runs on master in CI).
+# Usage: make release BUMP=patch  (or minor / major)
+BUMP ?= patch
+release:
+	@echo "Triggering release workflow (bump=$(BUMP))..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "master" ]; then \
+	  echo "Error: releases must be triggered from master (you are on $$BRANCH)"; \
+	  exit 1; \
+	fi
+	gh workflow run flutter-release.yml \
+	  --ref master \
+	  --field bump=$(BUMP)
+	@echo "✓ Release workflow triggered — watch it at:"
+	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
+
 release-android:
 	@echo "Building Android App Bundle for Google Play Store..."
 	flutter build appbundle --release
