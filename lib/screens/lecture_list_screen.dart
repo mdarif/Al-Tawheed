@@ -109,11 +109,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
       }
     }
 
-    // Extra bottom padding so the mini player doesn't cover last lecture
-    final bottomPad = context.select<PlayerNotifier, bool>((p) => p.hasAudio)
-        ? const SliverToBoxAdapter(child: SizedBox(height: 72))
-        : const SliverToBoxAdapter(child: SizedBox(height: 24));
-
     return CustomScrollView(
       slivers: [
         _buildAppBar(catalog),
@@ -140,7 +135,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
             childCount: items.length,
           ),
         ),
-        bottomPad,
+        // Bottom padding that adapts to whether the mini player is visible.
+        // Uses a Selector widget so context.select is properly inside a build method.
+        SliverToBoxAdapter(
+          child: Selector<PlayerNotifier, bool>(
+            selector: (_, p) => p.hasAudio,
+            builder: (_, hasAudio, __) =>
+                SizedBox(height: hasAudio ? 80 : 24),
+          ),
+        ),
       ],
     );
   }

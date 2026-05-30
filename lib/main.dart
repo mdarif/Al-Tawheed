@@ -11,7 +11,9 @@ import 'package:myapp/theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final audioHandler = await AudioService.init(
+  // Explicit type parameter required — without it, type inference fails on iOS
+  // and AudioService.init returns null instead of TawheedAudioHandler.
+  final audioHandler = await AudioService.init<TawheedAudioHandler>(
     builder: () => TawheedAudioHandler(),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.almarfa.tawheed.audio',
