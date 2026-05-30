@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/theme/app_colors.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
+import 'package:myapp/widgets/mini_player.dart';
 import 'main_drawer.dart';
 
 class LectureListScreen extends StatefulWidget {
@@ -28,6 +31,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: MainDrawer(),
+      bottomSheet: const MiniPlayer(),
       body: Consumer<CatalogProvider>(
         builder: (context, provider, _) {
           return switch (provider.status) {
@@ -96,7 +100,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
   }
 
   Widget _buildList(Catalog catalog) {
-    // Build a flat list of items: [ChapterHeader, Lecture, Lecture, ...]
+    final lectures = catalog.lectures;
     final items = <_ListItem>[];
     for (final chapter in catalog.chapters) {
       items.add(_ListItem.chapter(chapter));
@@ -105,6 +109,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
       }
     }
 
+    // Extra bottom padding so the mini player doesn't cover last lecture
+    final bottomPad = context.select<PlayerNotifier, bool>((p) => p.hasAudio)
+        ? const SliverToBoxAdapter(child: SizedBox(height: 72))
+        : const SliverToBoxAdapter(child: SizedBox(height: 24));
+
     return CustomScrollView(
       slivers: [
         _buildAppBar(catalog),
@@ -112,14 +121,12 @@ class _LectureListScreenState extends State<LectureListScreen> {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final item = items[index];
-              if (item.isChapter) {
-                return ChapterHeader(chapter: item.chapter!);
-              }
+              if (item.isChapter) return ChapterHeader(chapter: item.chapter!);
               return Column(
                 children: [
                   LectureTile(
                     lecture: item.lecture!,
-                    onTap: () => _onLectureTap(item.lecture!),
+                    onTap: () => _onLectureTap(item.lecture!, lectures),
                   ),
                   Divider(
                     height: 1,
@@ -133,7 +140,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
             childCount: items.length,
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        bottomPad,
       ],
     );
   }
@@ -154,9 +161,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Sharah Kitab al-Tawheed',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.4,
@@ -178,19 +185,18 @@ class _LectureListScreenState extends State<LectureListScreen> {
     );
   }
 
-  void _onLectureTap(Lecture lecture) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${lecture.title} — audio player coming in Phase 3'),
-        backgroundColor: AppColors.surfaceContainerDark,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+  void _onLectureTap(Lecture lecture, List<Lecture> queue) {
+    context.read<PlayerNotifier>().loadAndPlay(lecture, queue);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const PlayerScreen(),
       ),
     );
   }
 }
 
-// Simple discriminated union for the flat list items
 class _ListItem {
   final Chapter? chapter;
   final Lecture? lecture;

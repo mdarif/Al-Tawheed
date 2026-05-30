@@ -13,7 +13,7 @@ flutter analyze --fatal-warnings
 
 echo ""
 echo "▶  flutter test"
-flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
+flutter test --reporter=expanded
 
 echo ""
 echo "✓  All checks passed — push allowed."

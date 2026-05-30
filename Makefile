@@ -93,10 +93,10 @@ run-release:
 
 # Testing
 test:
-	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
+	flutter test --reporter=expanded
 
 test-verbose:
-	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded --verbose
+	flutter test --reporter=expanded --verbose
 
 test-units:
 	flutter test test/unit_tests.dart --reporter=expanded
@@ -122,7 +122,7 @@ check-quality: analyze lint test
 ci:
 	@echo "Running CI pipeline locally..."
 	flutter analyze --fatal-warnings
-	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
+	flutter test --reporter=expanded
 	flutter build apk --debug
 	@echo "✓ CI pipeline passed."
 
