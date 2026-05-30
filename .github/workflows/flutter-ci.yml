@@ -14,10 +14,12 @@ on:
   push:
     branches:
       - develop
+      - v2
   pull_request:
     branches:
       - develop
       - master
+      - v2
 
 # Cancel any in-progress run on the same branch or PR to save runner minutes.
 concurrency:
