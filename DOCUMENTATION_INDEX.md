@@ -8,6 +8,10 @@ Start here if you're new to the project:
 2. **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Complete setup instructions (START HERE!)
 3. **[SETUP_SUMMARY.md](SETUP_SUMMARY.md)** - What changed and why
 
+### 🚢 CI/CD Pipeline
+Automated build, test, and release:
+1. **[CICD.md](CICD.md)** - Complete CI/CD reference (pipelines, hooks, release workflow, roadmap)
+
 ### 🧪 Testing & Quality
 Learn about testing and code quality:
 1. **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing framework and best practices
@@ -16,7 +20,7 @@ Learn about testing and code quality:
 ### 🔧 Development
 Manage code and contributions:
 1. **[GIT_WORKFLOW.md](GIT_WORKFLOW.md)** - Git best practices and workflow
-2. **[Makefile](Makefile)** - Development command shortcuts
+2. **[Makefile](Makefile)** - Development command shortcuts (`make help` for full list)
 3. **[setup.sh](setup.sh)** - Automated setup script
 
 ### ⚙️ Configuration
