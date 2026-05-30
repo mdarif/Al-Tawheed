@@ -121,8 +121,6 @@ check-quality: analyze lint test
 # Run the exact same steps as the GitHub Actions CI pipeline locally
 ci:
 	@echo "Running CI pipeline locally..."
-	@mkdir -p lib/utilities
-	@[ -f lib/utilities/keys.dart ] || printf 'const String API_KEY = "";\n' > lib/utilities/keys.dart
 	flutter analyze --fatal-warnings
 	flutter test test/unit_tests.dart test/widget_test_updated.dart --reporter=expanded
 	flutter build apk --debug

@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
 # Mirrors the CI pipeline locally. Runs on every `git push`.
-# Fail fast here — never waste a CI run on a known failure.
 set -euo pipefail
-
-KEYS_FILE="lib/utilities/keys.dart"
-STUB_CREATED=false
-
-# Create a stub keys.dart only if the real file is absent (gitignored on CI too)
-if [ ! -f "$KEYS_FILE" ]; then
-  mkdir -p lib/utilities
-  printf 'const String API_KEY = "";\n' > "$KEYS_FILE"
-  STUB_CREATED=true
-  trap 'rm -f "$KEYS_FILE"' EXIT
-fi
 
 echo ""
 echo "┌─────────────────────────────────────┐"

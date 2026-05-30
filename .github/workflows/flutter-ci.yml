@@ -106,19 +106,7 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------ #
-      # 8. Create stub keys.dart for CI
-      #
-      #    lib/utilities/keys.dart is gitignored (contains the real YouTube
-      #    Data API key). The analyzer fails without it. A stub with an empty
-      #    key satisfies the import without exposing secrets.
-      # ------------------------------------------------------------------ #
-      - name: Create stub keys.dart
-        run: |
-          mkdir -p lib/utilities
-          echo "const String API_KEY = '';" > lib/utilities/keys.dart
-
-      # ------------------------------------------------------------------ #
-      # 9. Analyze (static analysis)
+      # 8. Analyze (static analysis)
       #    --fatal-warnings fails the job on warnings and errors.
       #    --fatal-infos is intentionally avoided: third-party packages
       #    produce INFO-level hints that are outside this project's control.
