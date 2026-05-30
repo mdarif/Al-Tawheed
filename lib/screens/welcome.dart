@@ -1,59 +1,96 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: <Widget>[
+        children: [
+          // Background image
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/tawheed.png'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          Container(
-            color: Color.fromRGBO(255, 255, 255, 0.79),
-          ),
-          Positioned(
-            top: 70,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Sharah\n Kitab al-Tawheed \n شرح کتاب التوحید',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 45.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.black.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-          Center(
-            child: Text(
-              'By Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.black.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(bottom: 20.0),
-            alignment: Alignment.bottomCenter,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 70, vertical: 15),
-                elevation: 5,
-                textStyle: TextStyle(fontSize: 25),
-              ),
-              label: Text('WATCH NOW'),
-              onPressed: () => Navigator.pushNamed(context, '/videoscreen'),
-              icon: Icon(Icons.video_collection),
+          // Dark overlay — suits the dark theme aesthetic
+          Container(color: const Color(0xCC1C1C1E)),
+          // Content
+          SafeArea(
+            child: Column(
+              children: [
+                const Spacer(),
+                // Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Sharah Kitab\nal-Tawheed',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -1,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'شرح کتاب التوحید',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.gold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'By Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.65),
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // CTA button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.headphones_rounded, size: 22),
+                      label: const Text('START LISTENING'),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/lectures'),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

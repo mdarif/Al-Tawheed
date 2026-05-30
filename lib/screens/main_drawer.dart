@@ -6,10 +6,10 @@ import 'dart:io' show Platform;
 
 class MainDrawer extends StatelessWidget {
   static const String _shareMessage =
-      'The *Sharah Kitab Al-Tawheed* Mobile Application consolidates YouTube lectures of'
-      ' *Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah*.'
+      'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of'
+      
       '\n\nDownload from Google Play Store: https://play.google.com/store/apps/details?id=com.almarfa.tawheed'
-      '\n\n *YouTube Channel*: https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw';
+      ;
 
   @override
   Widget build(BuildContext context) {

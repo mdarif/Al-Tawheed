@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/screens/home_video_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/theme/app_theme.dart';
 
@@ -13,17 +15,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sharah Kitab al-Tawheed',
-      initialRoute: '/',
-      routes: {
-        '/': (context) => WelcomeScreen(),
-        '/videoscreen': (context) => const HomeVideoScreen(),
-      },
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CatalogProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Sharah Kitab al-Tawheed',
+        initialRoute: '/',
+        routes: {
+          '/': (context) => WelcomeScreen(),
+          '/lectures': (context) => const LectureListScreen(),
+        },
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.dark,
+      ),
     );
   }
 }
