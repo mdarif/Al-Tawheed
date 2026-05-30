@@ -14,8 +14,14 @@ import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/theme/app_theme.dart';
 
+// Root navigator key — required so /player opens on the root navigator,
+// not the shell's nested navigator. Without this, context.push('/player')
+// from within ShellRoute throws because /player is not a shell-level route.
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
 // Router is a top-level singleton — created once, never recreated on rebuild.
 final _router = GoRouter(
+  navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   routes: [
     // Splash / onboarding — shown on cold start
@@ -47,8 +53,10 @@ final _router = GoRouter(
       ],
     ),
 
-    // Full-screen player — outside shell so bottom nav hides
+    // Full-screen player — parentNavigatorKey forces it onto the root
+    // navigator so the bottom nav bar is hidden behind the player.
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/player',
       pageBuilder: (context, state) => const MaterialPage(
         fullscreenDialog: true,
