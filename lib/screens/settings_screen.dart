@@ -6,6 +6,7 @@ import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
@@ -163,34 +164,20 @@ class _DownloadsSection extends StatelessWidget {
               style:
                   TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            onTap: () => showDialog<bool>(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Clear all downloads?'),
-                content: Text(
-                  '$count ${count == 1 ? 'lecture' : 'lectures'} '
-                  '(${_formatBytes(size)}) will be deleted from this device.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(
-                      'Delete all',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ],
-              ),
-            ).then((confirmed) {
-              if (confirmed == true && context.mounted) {
+            onTap: () async {
+              final confirmed = await showConfirmDialog(
+                context,
+                title: 'Clear all downloads?',
+                message:
+                    '$count ${count == 1 ? 'lecture' : 'lectures'} '
+                    '(${_formatBytes(size)}) will be deleted from this device.',
+                confirmLabel: 'Delete all',
+                destructive: true,
+              );
+              if (confirmed && context.mounted) {
                 context.read<DownloadsProvider>().deleteAll();
               }
-            }),
+            },
           ),
         const Divider(height: 32),
       ],

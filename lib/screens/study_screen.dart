@@ -5,6 +5,7 @@ import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
+import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
 import 'package:myapp/widgets/study/overall_progress_summary.dart';
 
@@ -52,26 +53,15 @@ class _StudyScreenState extends State<StudyScreen> {
 
   Future<void> _onClassTap(BuildContext context, ChapterStudyInfo info) async {
     if (info.status == ChapterStudyStatus.studied) {
-      final restart = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('Restart ${info.chapter.title}?'),
-          content: const Text(
+      final restart = await showConfirmDialog(
+        context,
+        title: 'Restart ${info.chapter.title}?',
+        message:
             'This class is already studied. Restart from the first part?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Restart'),
-            ),
-          ],
-        ),
+        confirmLabel: 'Restart',
+        filledConfirm: true,
       );
-      if (restart != true || !context.mounted) return;
+      if (!restart || !context.mounted) return;
       startStudySession(context, info.chapter.id, restartStudied: true);
       return;
     }

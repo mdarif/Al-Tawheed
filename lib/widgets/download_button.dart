@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/widgets/confirm_dialog.dart';
 
 class DownloadButton extends StatelessWidget {
   final Lecture lecture;
@@ -85,29 +86,15 @@ class DownloadButton extends StatelessWidget {
     };
   }
 
-  void _confirmDelete(BuildContext context) {
-    showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete download?'),
-        content: Text(
-          '${lecture.title} will be removed from offline storage.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true && context.mounted) {
-        context.read<DownloadsProvider>().delete(lecture.id);
-      }
-    });
+  void _confirmDelete(BuildContext context) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete download?',
+      message: '${lecture.title} will be removed from offline storage.',
+      confirmLabel: 'Delete',
+    );
+    if (confirmed && context.mounted) {
+      context.read<DownloadsProvider>().delete(lecture.id);
+    }
   }
 }
