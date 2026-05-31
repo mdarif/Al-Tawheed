@@ -1,22 +1,25 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/services/remote_content_service.dart';
 
 class CatalogService {
   CatalogService._();
   static final CatalogService instance = CatalogService._();
 
+  /// Fetches the catalog using stale-while-revalidate caching.
+  ///
+  /// - Returns cached data instantly if available (even if stale).
+  /// - Triggers a background refresh when cache is older than [AppConfig.catalogCacheTtlMs].
+  /// - On first launch with no cache, fetches synchronously.
   Future<Catalog> fetchCatalog() async {
-    final response = await http
-        .get(Uri.parse(AppConfig.catalogUrl))
-        .timeout(const Duration(seconds: 15));
+    final body = await RemoteContentService.fetch(
+      url: AppConfig.catalogUrl,
+      cacheKey: 'catalog',
+      ttlMs: AppConfig.catalogCacheTtlMs,
+    );
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load catalog (HTTP ${response.statusCode})');
-    }
-
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final json = jsonDecode(body) as Map<String, dynamic>;
     final catalog = Catalog.fromJson(json);
 
     if (catalog.version > AppConfig.maxSupportedCatalogVersion) {

@@ -93,17 +93,20 @@ class DailyBenefit {
   final String id;
   final String text;
   final String source;
+  final String? textArabic;
 
   const DailyBenefit({
     required this.id,
     required this.text,
     required this.source,
+    this.textArabic,
   });
 
   factory DailyBenefit.fromJson(Map<String, dynamic> json) => DailyBenefit(
         id: json['id'] as String,
         text: json['text'] as String,
         source: json['source'] as String,
+        textArabic: json['textArabic'] as String?,
       );
 }
 

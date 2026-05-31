@@ -248,11 +248,28 @@ class _DailyBenefitCard extends StatelessWidget {
               Icon(Icons.format_quote_rounded,
                   color: context.brandColor, size: 24),
               const SizedBox(height: 10),
+              // Arabic text — right-aligned with proper RTL directionality
+              if (benefit.textArabic != null) ...[
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Text(
+                    benefit.textArabic!,
+                    style: context.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      height: 1.8,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               Text(
                 benefit.text,
-                style: context.textTheme.bodyLarge?.copyWith(
+                style: context.textTheme.bodyMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   height: 1.6,
+                  color: context.secondaryTextColor,
                 ),
               ),
               const SizedBox(height: 10),
