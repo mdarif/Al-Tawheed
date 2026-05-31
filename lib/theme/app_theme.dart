@@ -143,10 +143,10 @@ class AppTheme {
   );
 
   static const _lightScheme = ColorScheme.light(
-    primary: AppColors.gold,
-    onPrimary: AppColors.onLight,
-    secondary: AppColors.goldDark,
-    onSecondary: AppColors.surfaceLight,
+    primary: AppColors.goldLightTheme,
+    onPrimary: AppColors.onGoldLight,
+    secondary: AppColors.goldLightThemeDark,
+    onSecondary: AppColors.onLight,
     surface: AppColors.surfaceLight,
     onSurface: AppColors.onLight,
     onSurfaceVariant: AppColors.onLightSecondary,

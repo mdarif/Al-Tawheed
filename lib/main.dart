@@ -4,6 +4,7 @@ import 'package:myapp/app.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ Future<void> main() async {
       androidNotificationChannelName: 'Sharah Kitab al-Tawheed',
       androidNotificationOngoing: true,
       androidShowNotificationBadge: true,
-      notificationColor: Color(0xFFC9A84C),
+      notificationColor: AppColors.goldLightTheme,
     ),
   );
 
