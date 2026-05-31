@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Thin wrapper around shared_preferences.
@@ -53,6 +54,29 @@ class PreferencesService {
 
   Future<void> savePlaybackSpeed(double speed) =>
       _p.setDouble('playback_speed', speed);
+
+  // ── Theme ───────────────────────────────────────────────────────────────
+
+  ThemeMode get themeMode {
+    switch (_p.getString('theme_mode')) {
+      case 'light':
+        return ThemeMode.light;
+      case 'system':
+        return ThemeMode.system;
+      case 'dark':
+      default:
+        return ThemeMode.dark;
+    }
+  }
+
+  Future<void> saveThemeMode(ThemeMode mode) {
+    final value = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.system => 'system',
+      ThemeMode.dark => 'dark',
+    };
+    return _p.setString('theme_mode', value);
+  }
 
   // ── Remote JSON cache ────────────────────────────────────────────────────
   // Each remote file is cached as a raw JSON string + a fetch timestamp.

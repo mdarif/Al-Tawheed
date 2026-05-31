@@ -110,7 +110,7 @@ class _TrackInfo extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Shaikh Abdullah Nasir Rahmani',
+          'Shaikh Abdullah Nasir Rahmani Hafizahullah',
           style: TextStyle(
             fontSize: 14,
             color: AppColors.onDarkSecondary,
@@ -258,9 +258,8 @@ class _TransportControls extends StatelessWidget {
           iconSize: 32,
           icon: Icon(
             Icons.skip_next_rounded,
-            color: player.hasNext
-                ? AppColors.onDark
-                : AppColors.onDarkSecondary,
+            color:
+                player.hasNext ? AppColors.onDark : AppColors.onDarkSecondary,
           ),
           onPressed: player.hasNext ? player.playNext : null,
         ),
@@ -315,9 +314,8 @@ class _SpeedControl extends StatelessWidget {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.gold
-                    : AppColors.surfaceContainerDark,
+                color:
+                    selected ? AppColors.gold : AppColors.surfaceContainerDark,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

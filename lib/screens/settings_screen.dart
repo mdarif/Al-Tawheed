@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/widgets/settings/theme_mode_selector.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -21,6 +22,28 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          // ── Appearance ───────────────────────────────────────────────────
+          _SectionHeader('Appearance'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Theme',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.onDarkSecondary
+                        : AppColors.onLightSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const ThemeModeSelector(),
+              ],
+            ),
+          ),
+          const Divider(height: 32),
+
           // ── Playback ─────────────────────────────────────────────────────
           _SectionHeader('Playback'),
           Padding(

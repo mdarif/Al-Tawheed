@@ -8,6 +8,7 @@ import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
@@ -91,14 +92,20 @@ class MyApp extends StatelessWidget {
           create: (ctx) =>
               PlayerNotifier(audioHandler, ctx.read<ProgressProvider>()),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider()..load(),
+          lazy: false,
+        ),
       ],
-      child: MaterialApp.router(
-        title: 'Sharah Kitab al-Tawheed',
-        routerConfig: _router,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.dark,
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) => MaterialApp.router(
+          title: 'Sharah Kitab al-Tawheed',
+          routerConfig: _router,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeProvider.themeMode,
+        ),
       ),
     );
   }
