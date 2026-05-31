@@ -30,10 +30,14 @@ class PlayerNotifier extends ChangeNotifier {
     }
     _subs.addAll([
       _handler.playbackState.listen((state) {
+        final wasPlaying = _playing;
         _playing = state.playing;
         _loading = state.processingState == AudioProcessingState.loading ||
             state.processingState == AudioProcessingState.buffering;
         _speed = state.speed;
+        // Save whenever playback stops for any reason — covers lock screen
+        // pause, incoming calls, headphone disconnect, background kill, etc.
+        if (wasPlaying && !_playing) _saveCurrentPosition();
         notifyListeners();
       }),
       _handler.player.positionStream.listen((pos) {
@@ -93,8 +97,14 @@ class PlayerNotifier extends ChangeNotifier {
     _startSaveTimer();
   }
 
-  Future<void> playPause() =>
-      _playing ? _handler.pause() : _handler.play();
+  Future<void> playPause() async {
+    if (_playing) {
+      _saveCurrentPosition(); // save before pausing so position survives restart
+      await _handler.pause();
+    } else {
+      await _handler.play();
+    }
+  }
 
   Future<void> seek(Duration position) => _handler.seek(position);
 
@@ -136,7 +146,7 @@ class PlayerNotifier extends ChangeNotifier {
   // ── Progress persistence ─────────────────────────────────────────────────
 
   void _startSaveTimer() {
-    _saveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (_playing) _saveCurrentPosition();
     });
   }
