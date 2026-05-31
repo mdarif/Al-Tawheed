@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
-import 'package:myapp/widgets/settings/theme_mode_selector.dart';
+import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,7 +13,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>().config;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -23,13 +22,13 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader('Appearance'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Theme', style: theme.textTheme.bodySmall),
-                const SizedBox(height: 12),
-                const ThemeModeSelector(),
-              ],
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.groupedSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.groupedBorder, width: 1),
+              ),
+              child: const ThemeModeSwitch(),
             ),
           ),
           const Divider(height: 32),
@@ -41,7 +40,7 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Playback speed', style: theme.textTheme.bodySmall),
+                Text('Playback speed', style: context.textTheme.bodySmall),
                 const SizedBox(height: 12),
                 const PlaybackSpeedSelector(),
               ],

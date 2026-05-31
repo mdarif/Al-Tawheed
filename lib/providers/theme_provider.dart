@@ -21,4 +21,8 @@ class ThemeProvider extends ChangeNotifier {
     await _prefs.saveThemeMode(mode);
     notifyListeners();
   }
+
+  /// Toggle between explicit light and dark (single-switch UX).
+  Future<void> setDarkMode(bool isDark) =>
+      setThemeMode(isDark ? ThemeMode.dark : ThemeMode.light);
 }
