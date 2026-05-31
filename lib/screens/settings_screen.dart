@@ -3,28 +3,25 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/theme/app_colors.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   static const _speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
-  static const _shareMessage =
-      'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
-      'Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
-      'Download from Google Play Store:\n'
-      'https://play.google.com/store/apps/details?id=com.almarfa.tawheed';
 
   @override
   Widget build(BuildContext context) {
     final player = context.watch<PlayerNotifier>();
+    final config = context.watch<AppConfigProvider>().config;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
-          // ── Playback ────────────────────────────────────────────────────
+          // ── Playback ─────────────────────────────────────────────────────
           _SectionHeader('Playback'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -73,7 +70,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          // ── App ─────────────────────────────────────────────────────────
+          // ── App ──────────────────────────────────────────────────────────
           _SectionHeader('App'),
           ListTile(
             leading: const Icon(Icons.mail_outline_rounded),
@@ -81,10 +78,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => launchUrl(
               Uri(
                 scheme: 'mailto',
-                path: 'arif.mohammed@gmail.com',
-                queryParameters: {
-                  'subject': 'Sharah Kitab Al-Tawheed — Feedback',
-                },
+                path: config.contact.email,
+                queryParameters: {'subject': config.contact.subject},
               ),
               mode: LaunchMode.externalApplication,
             ),
@@ -93,36 +88,38 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.share_rounded),
             title: const Text('Share app'),
             onTap: () => SharePlus.instance.share(
-              ShareParams(text: _shareMessage),
+              ShareParams(text: config.share.message),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.star_outline_rounded),
-            title: const Text('Rate on Play Store'),
-            onTap: () => launchUrl(
-              Uri.parse(
-                'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
+          if (config.links.playStore != null)
+            ListTile(
+              leading: const Icon(Icons.star_outline_rounded),
+              title: const Text('Rate on Play Store'),
+              onTap: () => launchUrl(
+                Uri.parse(config.links.playStore!),
+                mode: LaunchMode.externalApplication,
               ),
-              mode: LaunchMode.externalApplication,
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.language_rounded),
-            title: const Text('almarfa.co'),
-            onTap: () => launchUrl(
-              Uri.parse('https://almarfa.co'),
-              mode: LaunchMode.externalApplication,
+          if (config.links.website != null)
+            ListTile(
+              leading: const Icon(Icons.language_rounded),
+              title: Text(config.links.website!
+                  .replaceFirst('https://', '')
+                  .replaceFirst('http://', '')),
+              onTap: () => launchUrl(
+                Uri.parse(config.links.website!),
+                mode: LaunchMode.externalApplication,
+              ),
             ),
-          ),
           const Divider(height: 32),
 
-          // ── About ────────────────────────────────────────────────────────
+          // ── About ─────────────────────────────────────────────────────────
           _SectionHeader('About'),
           ListTile(
             leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('50 lectures · Sharah Kitab al-Tawheed'),
-            subtitle: const Text(
-                'By Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah'),
+            title: Text(
+                '${config.about.lectureCount} lectures · ${config.about.appName}'),
+            subtitle: Text('By ${config.about.lecturer}'),
           ),
           const SizedBox(height: 24),
         ],

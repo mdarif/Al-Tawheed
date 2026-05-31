@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/providers/announcements_provider.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
@@ -74,6 +77,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Remote content — load eagerly (lazy: false) so fetches start at startup
+        ChangeNotifierProvider(
+            create: (_) => AppConfigProvider()..load(), lazy: false),
+        ChangeNotifierProvider(
+            create: (_) => FeatureFlagsProvider()..load(), lazy: false),
+        ChangeNotifierProvider(
+            create: (_) => AnnouncementsProvider()..load(), lazy: false),
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
         // ProgressProvider before PlayerNotifier — PlayerNotifier reads it on creation
         ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),

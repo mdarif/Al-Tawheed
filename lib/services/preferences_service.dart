@@ -53,4 +53,24 @@ class PreferencesService {
 
   Future<void> savePlaybackSpeed(double speed) =>
       _p.setDouble('playback_speed', speed);
+
+  // ── Remote JSON cache ────────────────────────────────────────────────────
+  // Each remote file is cached as a raw JSON string + a fetch timestamp.
+  // Pattern: saveRemoteJson(key, body) / loadRemoteJson(key) / remoteJsonAge(key)
+
+  Future<void> saveRemoteJson(String key, String body) async {
+    await Future.wait([
+      _p.setString('cache_${key}_json', body),
+      _p.setInt('cache_${key}_fetched_at', DateTime.now().millisecondsSinceEpoch),
+    ]);
+  }
+
+  String? loadRemoteJson(String key) => _p.getString('cache_${key}_json');
+
+  /// Returns the age of the cached entry in milliseconds, or null if never cached.
+  int? remoteJsonAgeMs(String key) {
+    final ts = _p.getInt('cache_${key}_fetched_at');
+    if (ts == null) return null;
+    return DateTime.now().millisecondsSinceEpoch - ts;
+  }
 }
