@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
@@ -14,7 +15,8 @@ class PlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return _StudyCompletionListener(
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
@@ -43,6 +45,7 @@ class PlayerScreen extends StatelessWidget {
               const _CoverArt(),
               const SizedBox(height: 32),
               const _TrackInfo(),
+              const _StudyContextStrip(),
               const SizedBox(height: 32),
               const _SeekBar(),
               const SizedBox(height: 28),
@@ -54,7 +57,41 @@ class PlayerScreen extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
+  }
+}
+
+class _StudyCompletionListener extends StatefulWidget {
+  final Widget child;
+  const _StudyCompletionListener({required this.child});
+
+  @override
+  State<_StudyCompletionListener> createState() =>
+      _StudyCompletionListenerState();
+}
+
+class _StudyCompletionListenerState extends State<_StudyCompletionListener> {
+  String? _handledChapterId;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = context.select<PlayerNotifier, String?>(
+      (p) => p.pendingStudyChapterCompleteId,
+    );
+
+    if (pending != null && pending != _handledChapterId) {
+      _handledChapterId = pending;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final notifier = context.read<PlayerNotifier>();
+        notifier.clearPendingStudyComplete();
+        Navigator.of(context).pop();
+        context.push('/study/complete?chapterId=$pending');
+      });
+    }
+
+    return widget.child;
   }
 }
 
@@ -124,6 +161,39 @@ class _TrackInfo extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StudyContextStrip extends StatelessWidget {
+  const _StudyContextStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<PlayerNotifier, String?>(
+      selector: (_, player) => player.studyContextLabel,
+      builder: (_, label, __) {
+        if (label == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: context.semantic.brandSubtle.withValues(
+                alpha: context.isDarkTheme ? 0.35 : 0.55,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              label,
+              style: context.textTheme.labelMedium?.copyWith(
+                color: context.brandColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

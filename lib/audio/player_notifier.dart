@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
+import 'package:myapp/audio/playback_mode.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -17,6 +18,9 @@ class PlayerNotifier extends ChangeNotifier {
 
   Lecture? _current;
   List<Lecture> _queue = const [];
+  PlaybackMode _playbackMode = PlaybackMode.casual;
+  Chapter? _studyChapter;
+  String? _pendingStudyChapterCompleteId;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   bool _playing = false;
@@ -73,6 +77,16 @@ class PlayerNotifier extends ChangeNotifier {
   Duration get position => _position;
   Duration get duration => _duration;
   double get speed => _speed;
+  PlaybackMode get playbackMode => _playbackMode;
+  Chapter? get studyChapter => _studyChapter;
+  String? get pendingStudyChapterCompleteId => _pendingStudyChapterCompleteId;
+
+  String? get studyContextLabel => formatStudyContextLabel(
+        mode: _playbackMode,
+        chapter: _studyChapter,
+        currentIndex: _currentIndex,
+        queueLength: _queue.length,
+      );
 
   double get progress {
     final total = _duration.inMilliseconds;
@@ -85,7 +99,32 @@ class PlayerNotifier extends ChangeNotifier {
 
   // ── Commands ─────────────────────────────────────────────────────────────
 
-  Future<void> loadAndPlay(Lecture lecture, List<Lecture> queue) async {
+  Future<void> startStudySession({
+    required Lecture lecture,
+    required List<Lecture> queue,
+    required Chapter chapter,
+  }) =>
+      loadAndPlay(
+        lecture,
+        queue,
+        mode: PlaybackMode.study,
+        studyChapter: chapter,
+      );
+
+  Future<void> loadAndPlay(
+    Lecture lecture,
+    List<Lecture> queue, {
+    PlaybackMode? mode,
+    Chapter? studyChapter,
+  }) async {
+    if (mode != null) {
+      _playbackMode = mode;
+      _studyChapter = studyChapter;
+    } else {
+      _playbackMode = PlaybackMode.casual;
+      _studyChapter = null;
+    }
+    _pendingStudyChapterCompleteId = null;
     _saveCurrentPosition(); // persist position of previous lecture before switching
     _cancelSaveTimer();
 
@@ -135,13 +174,25 @@ class PlayerNotifier extends ChangeNotifier {
   Future<void> playNext() async {
     final idx = _currentIndex;
     if (idx >= 0 && idx < _queue.length - 1) {
-      await loadAndPlay(_queue[idx + 1], _queue);
+      await loadAndPlay(
+        _queue[idx + 1],
+        _queue,
+        mode: _playbackMode,
+        studyChapter: _studyChapter,
+      );
     }
   }
 
   Future<void> playPrevious() async {
     final idx = _currentIndex;
-    if (idx > 0) await loadAndPlay(_queue[idx - 1], _queue);
+    if (idx > 0) {
+      await loadAndPlay(
+        _queue[idx - 1],
+        _queue,
+        mode: _playbackMode,
+        studyChapter: _studyChapter,
+      );
+    }
   }
 
   Future<void> setSpeed(double s) async {
@@ -154,7 +205,14 @@ class PlayerNotifier extends ChangeNotifier {
     _cancelSaveTimer();
     await _handler.stop();
     _current = null;
+    _playbackMode = PlaybackMode.casual;
+    _studyChapter = null;
+    _pendingStudyChapterCompleteId = null;
     notifyListeners();
+  }
+
+  void clearPendingStudyComplete() {
+    _pendingStudyChapterCompleteId = null;
   }
 
   // ── Progress persistence ─────────────────────────────────────────────────
@@ -182,16 +240,30 @@ class PlayerNotifier extends ChangeNotifier {
   }
 
   void _onCompleted() {
-    // Save completed position so the tile shows 100% done
     final id = _current?.id;
     final total = _current?.durationSeconds;
     if (id != null && total != null) {
       _progress.saveProgress(id, total);
     }
-    // Auto-advance
+
     final idx = _currentIndex;
+    if (shouldCompleteStudyChapter(
+      mode: _playbackMode,
+      currentIndex: idx,
+      queueLength: _queue.length,
+    )) {
+      _pendingStudyChapterCompleteId = _studyChapter?.id;
+      notifyListeners();
+      return;
+    }
+
     if (idx >= 0 && idx < _queue.length - 1) {
-      loadAndPlay(_queue[idx + 1], _queue);
+      loadAndPlay(
+        _queue[idx + 1],
+        _queue,
+        mode: _playbackMode,
+        studyChapter: _studyChapter,
+      );
     }
   }
 

@@ -8,6 +8,7 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
   });
 

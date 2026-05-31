@@ -9,12 +9,15 @@ import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
+import 'package:myapp/screens/study_class_complete_screen.dart';
+import 'package:myapp/screens/study_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -68,6 +71,22 @@ final _router = GoRouter(
         child: PlayerScreen(),
       ),
     ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/study',
+      builder: (context, state) => const StudyScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/study/complete',
+      builder: (context, state) {
+        final chapterId = state.uri.queryParameters['chapterId'];
+        if (chapterId == null || chapterId.isEmpty) {
+          return const StudyScreen();
+        }
+        return StudyClassCompleteScreen(chapterId: chapterId);
+      },
+    ),
   ],
 );
 
@@ -89,6 +108,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
         ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) => StudyProgressProvider(
+            ctx.read<ProgressProvider>(),
+            ctx.read<CatalogProvider>(),
+          )..load(),
+        ),
         ChangeNotifierProvider(create: (_) => DownloadsProvider()..load()),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(

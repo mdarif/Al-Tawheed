@@ -29,4 +29,13 @@ class CatalogProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// Injects catalog without network — for tests only.
+  @visibleForTesting
+  void setCatalogForTest(Catalog catalog) {
+    _catalog = catalog;
+    _status = CatalogStatus.loaded;
+    _error = null;
+    notifyListeners();
+  }
 }

@@ -13,6 +13,12 @@ class PreferencesService {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
+  /// Clears cached prefs — call before [init] in tests for isolation.
+  @visibleForTesting
+  void resetForTest() {
+    _prefs = null;
+  }
+
   SharedPreferences get _p {
     assert(_prefs != null, 'PreferencesService.init() must be called before use');
     return _prefs!;
@@ -85,6 +91,14 @@ class PreferencesService {
 
   Future<void> saveDownloadedIds(Set<String> ids) =>
       _p.setStringList('downloaded_lecture_ids', ids.toList());
+
+  // ── Study mode ──────────────────────────────────────────────────────────
+
+  Set<String> loadStudiedChapterIds() =>
+      Set<String>.from(_p.getStringList('studied_chapter_ids') ?? []);
+
+  Future<void> saveStudiedChapterIds(Set<String> ids) =>
+      _p.setStringList('studied_chapter_ids', ids.toList());
 
   // ── Dismissed announcements ─────────────────────────────────────────────
 
