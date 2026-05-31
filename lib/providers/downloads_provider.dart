@@ -11,17 +11,20 @@ class DownloadsProvider extends ChangeNotifier {
   Set<String> _downloadedIds = {};
   int _totalDownloadedBytes = 0;
 
-  /// Reconcile disk state off the UI thread path — call once at startup.
+  /// Reconcile disk state off the UI thread — call once at startup.
   Future<void> load() async {
     _downloadedIds = PreferencesService.instance.loadDownloadedIds();
     final savedCount = _downloadedIds.length;
 
-    for (final id in List.of(_downloadedIds)) {
-      if (DownloadService.existsSync(id)) {
-        _statuses[id] = DownloadStatus.downloaded;
-      } else {
-        _downloadedIds.remove(id);
-      }
+    if (_downloadedIds.isNotEmpty) {
+      _downloadedIds = await compute(
+        reconcileDownloadedIds,
+        (_downloadedIds.toList(), DownloadService.documentsPath),
+      );
+    }
+
+    for (final id in _downloadedIds) {
+      _statuses[id] = DownloadStatus.downloaded;
     }
 
     if (_downloadedIds.length != savedCount) {
@@ -54,8 +57,7 @@ class DownloadsProvider extends ChangeNotifier {
   /// Returns local file path if downloaded, null otherwise.
   String? localPathIfDownloaded(String lectureId) {
     if (!isDownloaded(lectureId)) return null;
-    final path = DownloadService.localPath(lectureId);
-    return DownloadService.existsSync(lectureId) ? path : null;
+    return DownloadService.localPath(lectureId);
   }
 
   // ── Commands ─────────────────────────────────────────────────────────────
@@ -76,7 +78,6 @@ class DownloadsProvider extends ChangeNotifier {
         fileSizeBytes: lecture.fileSizeBytes,
         onProgress: (p) {
           _progress[lecture.id] = p;
-          // Throttle UI updates — avoid flooding the main thread (ANR on Android).
           final stepped = (p * 100).floorToDouble() / 100;
           if (stepped != lastNotifiedProgress || p >= 1.0) {
             lastNotifiedProgress = stepped;

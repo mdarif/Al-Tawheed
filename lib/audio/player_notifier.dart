@@ -161,7 +161,7 @@ class PlayerNotifier extends ChangeNotifier {
 
   void _startSaveTimer() {
     _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_playing) _saveCurrentPosition();
+      if (_playing) _saveCurrentPosition(notify: false);
     });
   }
 
@@ -170,10 +170,14 @@ class PlayerNotifier extends ChangeNotifier {
     _saveTimer = null;
   }
 
-  void _saveCurrentPosition() {
+  void _saveCurrentPosition({bool notify = true}) {
     final id = _current?.id;
     if (id != null && _position.inSeconds > 0) {
-      _progress.saveProgress(id, _position.inSeconds);
+      if (notify) {
+        _progress.saveProgress(id, _position.inSeconds);
+      } else {
+        _progress.saveProgressSilent(id, _position.inSeconds);
+      }
     }
   }
 

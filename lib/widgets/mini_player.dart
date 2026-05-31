@@ -9,9 +9,21 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerNotifier>();
-    if (!player.hasAudio) return const SizedBox.shrink();
+    return Selector<PlayerNotifier, bool>(
+      selector: (_, player) => player.hasAudio,
+      builder: (context, hasAudio, _) {
+        if (!hasAudio) return const SizedBox.shrink();
+        return const _MiniPlayerBar();
+      },
+    );
+  }
+}
 
+class _MiniPlayerBar extends StatelessWidget {
+  const _MiniPlayerBar();
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => context.push('/player'),
       child: Container(
@@ -24,11 +36,14 @@ class MiniPlayer extends StatelessWidget {
         ),
         child: Column(
           children: [
-            LinearProgressIndicator(
-              value: player.progress,
-              backgroundColor: context.progressTrackColor,
-              color: context.brandColor,
-              minHeight: 2,
+            Selector<PlayerNotifier, double>(
+              selector: (_, player) => player.progress,
+              builder: (_, progress, __) => LinearProgressIndicator(
+                value: progress,
+                backgroundColor: context.progressTrackColor,
+                color: context.brandColor,
+                minHeight: 2,
+              ),
             ),
             Expanded(
               child: Padding(
@@ -50,25 +65,31 @@ class MiniPlayer extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        player.current?.title ?? '',
-                        style: context.textTheme.labelMedium?.copyWith(
-                          color: context.primaryTextColor,
+                      child: Selector<PlayerNotifier, String>(
+                        selector: (_, player) => player.current?.title ?? '',
+                        builder: (_, title, __) => Text(
+                          title,
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.primaryTextColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    IconButton(
-                      icon: Icon(
-                        player.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        size: 28,
-                        color: context.primaryTextColor,
+                    Selector<PlayerNotifier, bool>(
+                      selector: (_, player) => player.isPlaying,
+                      builder: (_, isPlaying, __) => IconButton(
+                        icon: Icon(
+                          isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          size: 28,
+                          color: context.primaryTextColor,
+                        ),
+                        onPressed: context.read<PlayerNotifier>().playPause,
+                        padding: EdgeInsets.zero,
                       ),
-                      onPressed: player.playPause,
-                      padding: EdgeInsets.zero,
                     ),
                     IconButton(
                       icon: Icon(

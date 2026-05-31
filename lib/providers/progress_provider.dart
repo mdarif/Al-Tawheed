@@ -53,11 +53,28 @@ class ProgressProvider extends ChangeNotifier {
 
   // ── Commands ─────────────────────────────────────────────────────────────
 
-  Future<void> saveProgress(String lectureId, int positionSeconds) async {
+  /// Persists progress and notifies listeners (use when UI should refresh).
+  Future<void> saveProgress(String lectureId, int positionSeconds) =>
+      _persistProgress(lectureId, positionSeconds, notify: true);
+
+  /// Persists progress without notifying — for periodic background saves.
+  Future<void> saveProgressSilent(String lectureId, int positionSeconds) =>
+      _persistProgress(lectureId, positionSeconds, notify: false);
+
+  Future<void> _persistProgress(
+    String lectureId,
+    int positionSeconds, {
+    required bool notify,
+  }) async {
+    final unchanged = _progress[lectureId] == positionSeconds &&
+        _lastLectureId == lectureId &&
+        _lastPositionSeconds == positionSeconds;
+    if (unchanged) return;
+
     _progress[lectureId] = positionSeconds;
     _lastLectureId = lectureId;
     _lastPositionSeconds = positionSeconds;
-    notifyListeners();
+    if (notify) notifyListeners();
     await _prefs.saveProgress(lectureId, positionSeconds);
   }
 }

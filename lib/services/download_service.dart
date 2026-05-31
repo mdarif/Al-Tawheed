@@ -1,6 +1,20 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
+/// Reconciles persisted download IDs against files on disk (runs off UI thread).
+Future<Set<String>> reconcileDownloadedIds(
+  (List<String> ids, String documentsPath) args,
+) async {
+  final (ids, documentsPath) = args;
+  final valid = <String>{};
+  for (final id in ids) {
+    if (await File('$documentsPath/audio/$id.mp3').exists()) {
+      valid.add(id);
+    }
+  }
+  return valid;
+}
+
 /// Low-level download and file-management service.
 ///
 /// Call [init] once in main() so that [localPath] stays synchronous
@@ -20,6 +34,11 @@ class DownloadService {
   static String localPath(String lectureId) {
     assert(_documentsPath != null, 'DownloadService.init() must be called first');
     return '$_documentsPath/audio/$lectureId.mp3';
+  }
+
+  static String get documentsPath {
+    assert(_documentsPath != null, 'DownloadService.init() must be called first');
+    return _documentsPath!;
   }
 
   static bool existsSync(String lectureId) {
