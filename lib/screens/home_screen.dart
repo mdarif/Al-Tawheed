@@ -5,7 +5,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -37,8 +37,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ── Continue Listening ────────────────────────────────────────────────────────
-
 class _ContinueListeningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -47,7 +45,6 @@ class _ContinueListeningCard extends StatelessWidget {
 
     final lastId = progress.lastLectureId;
 
-    // Not shown if no history or catalog not loaded yet
     if (lastId == null || catalog.status != CatalogStatus.loaded) {
       return _emptyState(context);
     }
@@ -68,10 +65,9 @@ class _ContinueListeningCard extends StatelessWidget {
       children: [
         Text(
           'Continue Listening',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-              ),
+          style: context.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 12),
         GestureDetector(
@@ -83,12 +79,9 @@ class _ContinueListeningCard extends StatelessWidget {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark,
+              color: context.groupedSurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.surfaceContainerDark,
-                width: 1,
-              ),
+              border: Border.all(color: context.groupedBorder, width: 1),
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -100,12 +93,12 @@ class _ContinueListeningCard extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.12),
+                        color: context.semantic.brandSubtle,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         Icons.headphones_rounded,
-                        color: AppColors.gold,
+                        color: context.brandColor,
                         size: 22,
                       ),
                     ),
@@ -116,19 +109,16 @@ class _ContinueListeningCard extends StatelessWidget {
                         children: [
                           Text(
                             lecture.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
+                            style: context.textTheme.titleMedium?.copyWith(
                               fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             '${DurationFormatter.fromSeconds(savedSeconds)} listened'
                             ' · ${DurationFormatter.fromSeconds(remaining)} left',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onDarkSecondary,
-                            ),
+                            style: context.textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -137,12 +127,12 @@ class _ContinueListeningCard extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.gold,
+                        color: context.brandColor,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.play_arrow_rounded,
-                        color: Colors.black,
+                        color: context.onBrandColor,
                         size: 22,
                       ),
                     ),
@@ -153,18 +143,15 @@ class _ContinueListeningCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                   child: LinearProgressIndicator(
                     value: fraction,
-                    backgroundColor: AppColors.surfaceContainerDark,
-                    color: AppColors.gold,
+                    backgroundColor: context.progressTrackColor,
+                    color: context.brandColor,
                     minHeight: 4,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '${(fraction * 100).round()}% complete',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.onDarkSecondary,
-                  ),
+                  style: context.textTheme.bodySmall,
                 ),
               ],
             ),
@@ -180,33 +167,28 @@ class _ContinueListeningCard extends StatelessWidget {
       children: [
         Text(
           'Continue Listening',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-              ),
+          style: context.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.surfaceDark,
+            color: context.groupedSurface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.surfaceContainerDark,
-              width: 1,
-            ),
+            border: Border.all(color: context.groupedBorder, width: 1),
           ),
           child: Column(
             children: [
               Icon(Icons.headphones_rounded,
-                  size: 36, color: AppColors.onDarkSecondary),
+                  size: 36, color: context.mutedIconColor),
               const SizedBox(height: 10),
               Text(
                 'Start a lecture to resume here',
-                style: TextStyle(
-                  color: AppColors.onDarkSecondary,
-                  fontSize: 14,
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: context.secondaryTextColor,
                 ),
               ),
             ],
@@ -216,8 +198,6 @@ class _ContinueListeningCard extends StatelessWidget {
     );
   }
 }
-
-// ── Daily Benefit ─────────────────────────────────────────────────────────────
 
 class _DailyBenefitCard extends StatelessWidget {
   @override
@@ -229,20 +209,19 @@ class _DailyBenefitCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Rotate through benefits by day of year
     final benefits = catalog.catalog!.dailyBenefits;
     final dayIndex = DateTime.now().difference(DateTime(2026)).inDays;
     final benefit = benefits[dayIndex % benefits.length];
+    final semantic = context.semantic;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Daily Benefit',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-              ),
+          style: context.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -251,15 +230,15 @@ class _DailyBenefitCard extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.gold.withValues(alpha: 0.15),
-                AppColors.gold.withValues(alpha: 0.05),
+                semantic.accentGradientStart,
+                semantic.accentGradientEnd,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.25),
+              color: semantic.accentGradientBorder,
               width: 1,
             ),
           ),
@@ -267,22 +246,20 @@ class _DailyBenefitCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.format_quote_rounded,
-                  color: AppColors.gold, size: 24),
+                  color: context.brandColor, size: 24),
               const SizedBox(height: 10),
               Text(
                 benefit.text,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.6,
+                style: context.textTheme.bodyLarge?.copyWith(
                   fontStyle: FontStyle.italic,
+                  height: 1.6,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 '— ${benefit.source}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.gold,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: semantic.brandEmphasis,
                   fontWeight: FontWeight.w600,
                 ),
               ),

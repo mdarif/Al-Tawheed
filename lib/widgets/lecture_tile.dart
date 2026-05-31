@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/progress_provider.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
-
 
 class LectureTile extends StatelessWidget {
   final Lecture lecture;
@@ -14,24 +13,21 @@ class LectureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Lecture number badge with progress ring
             _ProgressBadge(lecture: lecture),
             const SizedBox(width: 14),
-            // Title + duration
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     lecture.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: context.textTheme.titleMedium?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -39,7 +35,7 @@ class LectureTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     DurationFormatter.fromSeconds(lecture.durationSeconds),
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                    style: context.textTheme.bodySmall?.copyWith(fontSize: 12),
                   ),
                 ],
               ),
@@ -51,8 +47,7 @@ class LectureTile extends StatelessWidget {
                 isBookmarked
                     ? Icons.bookmark_rounded
                     : Icons.play_circle_outline_rounded,
-                color:
-                    isBookmarked ? AppColors.gold : AppColors.onDarkSecondary,
+                color: isBookmarked ? context.brandColor : context.mutedIconColor,
                 size: 22,
               ),
             ),
@@ -63,7 +58,6 @@ class LectureTile extends StatelessWidget {
   }
 }
 
-/// Number badge that doubles as a circular progress indicator.
 class _ProgressBadge extends StatelessWidget {
   final Lecture lecture;
   const _ProgressBadge({required this.lecture});
@@ -80,16 +74,14 @@ class _ProgressBadge extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Background container
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerDark,
+                  color: context.elevatedSurface,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              // Circular progress overlay
               if (hasProgress)
                 SizedBox(
                   width: 40,
@@ -99,18 +91,15 @@ class _ProgressBadge extends StatelessWidget {
                     strokeWidth: 2.5,
                     backgroundColor: Colors.transparent,
                     color: fraction >= 0.99
-                        ? AppColors.gold
-                        : AppColors.gold.withValues(alpha: 0.6),
+                        ? context.brandColor
+                        : context.brandColor.withValues(alpha: 0.6),
                     strokeCap: StrokeCap.round,
                   ),
                 ),
-              // Number label
               Text(
                 lecture.number.toString().padLeft(2, '0'),
-                style: TextStyle(
-                  color: hasProgress ? AppColors.gold : AppColors.gold,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                style: context.textTheme.labelMedium?.copyWith(
+                  color: context.brandColor,
                   letterSpacing: 0.5,
                 ),
               ),

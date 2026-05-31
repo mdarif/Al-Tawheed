@@ -1,171 +1,156 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'app_colors.dart';
+import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_semantic_colors.dart';
+import 'package:myapp/theme/app_typography.dart';
 
 class AppTheme {
   AppTheme._();
 
-  // ── Dark (default) ──────────────────────────────────────────────────────
-  static ThemeData get dark => ThemeData(
-        useMaterial3: true,
+  static ThemeData get dark => _build(
         brightness: Brightness.dark,
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.gold,
-          onPrimary: AppColors.onLight,
-          secondary: AppColors.goldLight,
-          onSecondary: AppColors.onLight,
-          surface: AppColors.surfaceDark,
-          onSurface: AppColors.onDark,
-          surfaceContainerHighest: AppColors.surfaceContainerDark,
-          error: AppColors.error,
-        ),
-        scaffoldBackgroundColor: AppColors.backgroundDark,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.backgroundDark,
-          foregroundColor: AppColors.onDark,
-          elevation: 0,
-          centerTitle: true,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarBrightness: Brightness.dark,
-            statusBarIconBrightness: Brightness.light,
-          ),
-          titleTextStyle: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onDark,
-            letterSpacing: -0.4,
-          ),
-          iconTheme: IconThemeData(color: AppColors.onDark),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: AppColors.surfaceDark,
-          selectedItemColor: AppColors.gold,
-          unselectedItemColor: AppColors.onDarkSecondary,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-        ),
-        cardTheme: const CardThemeData(
-          color: AppColors.surfaceDark,
-          elevation: 0,
-          margin: EdgeInsets.zero,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            foregroundColor: AppColors.onLight,
-            backgroundColor: AppColors.gold,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-            ),
-          ),
-        ),
-        listTileTheme: const ListTileThemeData(
-          iconColor: AppColors.gold,
-          textColor: AppColors.onDark,
-        ),
-        dividerTheme: const DividerThemeData(
-          color: AppColors.surfaceContainerDark,
-          thickness: 1,
-          space: 1,
-        ),
-        sliderTheme: const SliderThemeData(
-          activeTrackColor: AppColors.gold,
-          thumbColor: AppColors.gold,
-          inactiveTrackColor: AppColors.surfaceTintDark,
-          overlayColor: Color(0x29C9A84C),
-        ),
-        progressIndicatorTheme: const ProgressIndicatorThemeData(
-          color: AppColors.gold,
-        ),
-        iconTheme: const IconThemeData(color: AppColors.onDark),
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            color: AppColors.onDark,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-            letterSpacing: -0.4,
-          ),
-          titleMedium: TextStyle(
-            color: AppColors.onDark,
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-            letterSpacing: -0.2,
-          ),
-          bodyMedium: TextStyle(color: AppColors.onDark, fontSize: 14),
-          bodySmall: TextStyle(color: AppColors.onDarkSecondary, fontSize: 12),
-          labelSmall: TextStyle(
-            color: AppColors.onDarkSecondary,
-            fontSize: 11,
-            letterSpacing: 0.5,
-          ),
-        ),
+        platform: defaultTargetPlatform,
       );
 
-  // ── Light (available via Settings toggle) ───────────────────────────────
-  static ThemeData get light => ThemeData(
-        useMaterial3: true,
+  static ThemeData get light => _build(
         brightness: Brightness.light,
-        colorScheme: const ColorScheme.light(
-          primary: AppColors.gold,
-          onPrimary: AppColors.onLight,
-          secondary: AppColors.goldDark,
-          onSecondary: AppColors.surfaceLight,
-          surface: AppColors.surfaceLight,
-          onSurface: AppColors.onLight,
-          error: AppColors.error,
-        ),
-        scaffoldBackgroundColor: AppColors.backgroundLight,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.backgroundLight,
-          foregroundColor: AppColors.onLight,
-          elevation: 0,
-          centerTitle: true,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarBrightness: Brightness.light,
-            statusBarIconBrightness: Brightness.dark,
-          ),
-          titleTextStyle: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onLight,
-            letterSpacing: -0.4,
-          ),
-          iconTheme: IconThemeData(color: AppColors.onLight),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: AppColors.surfaceLight,
-          selectedItemColor: AppColors.gold,
-          unselectedItemColor: AppColors.onLightSecondary,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-        ),
-        cardTheme: const CardThemeData(
-          color: AppColors.surfaceLight,
-          elevation: 0,
-          margin: EdgeInsets.zero,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            foregroundColor: AppColors.onLight,
-            backgroundColor: AppColors.gold,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-            ),
-          ),
-        ),
-        listTileTheme: const ListTileThemeData(
-          iconColor: AppColors.gold,
-          textColor: AppColors.onLight,
-        ),
-        sliderTheme: const SliderThemeData(
-          activeTrackColor: AppColors.gold,
-          thumbColor: AppColors.gold,
-          inactiveTrackColor: Color(0xFFD1D1D6),
-          overlayColor: Color(0x29C9A84C),
-        ),
-        progressIndicatorTheme: const ProgressIndicatorThemeData(
-          color: AppColors.gold,
-        ),
+        platform: defaultTargetPlatform,
       );
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required TargetPlatform platform,
+  }) {
+    final isDark = brightness == Brightness.dark;
+    final colorScheme = isDark ? _darkScheme : _lightScheme;
+    final semantic = isDark
+        ? AppSemanticColors.dark(colorScheme)
+        : AppSemanticColors.light(colorScheme);
+    final textTheme = AppTypography.create(
+      brightness: brightness,
+      platform: platform,
+      colorScheme: colorScheme,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      platform: platform,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      extensions: [semantic],
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor:
+            isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        centerTitle: true,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          statusBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+        ),
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: semantic.brandSubtle,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? semantic.brand : colorScheme.onSurfaceVariant,
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return textTheme.labelMedium?.copyWith(
+            fontSize: 12,
+            color: selected ? semantic.brand : colorScheme.onSurfaceVariant,
+          );
+        }),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: semantic.brand,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: colorScheme.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: semantic.onBrand,
+          backgroundColor: semantic.brand,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          foregroundColor: semantic.onBrand,
+          backgroundColor: semantic.brand,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: semantic.brand,
+        textColor: colorScheme.onSurface,
+      ),
+      dividerTheme: DividerThemeData(
+        color: semantic.groupedBorder,
+        thickness: 1,
+        space: 1,
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: semantic.brand,
+        thumbColor: semantic.brand,
+        inactiveTrackColor: semantic.surfaceTint,
+        overlayColor: semantic.brand.withValues(alpha: 0.16),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: semantic.brand,
+      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+    );
+  }
+
+  static const _darkScheme = ColorScheme.dark(
+    primary: AppColors.gold,
+    onPrimary: AppColors.onLight,
+    secondary: AppColors.goldLight,
+    onSecondary: AppColors.onLight,
+    surface: AppColors.surfaceDark,
+    onSurface: AppColors.onDark,
+    onSurfaceVariant: AppColors.onDarkSecondary,
+    surfaceContainerHighest: AppColors.surfaceContainerDark,
+    error: AppColors.error,
+  );
+
+  static const _lightScheme = ColorScheme.light(
+    primary: AppColors.gold,
+    onPrimary: AppColors.onLight,
+    secondary: AppColors.goldDark,
+    onSecondary: AppColors.surfaceLight,
+    surface: AppColors.surfaceLight,
+    onSurface: AppColors.onLight,
+    onSurfaceVariant: AppColors.onLightSecondary,
+    surfaceContainerHighest: AppColors.surfaceContainerLight,
+    error: AppColors.error,
+  );
 }

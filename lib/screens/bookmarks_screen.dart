@@ -5,7 +5,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 class BookmarksScreen extends StatelessWidget {
@@ -42,7 +42,7 @@ class BookmarksScreen extends StatelessWidget {
                     height: 1,
                     indent: 70,
                     endIndent: 16,
-                    color: AppColors.surfaceContainerDark,
+                    color: context.dividerColor,
                   ),
                 ],
               ),
@@ -65,15 +65,14 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return Center(
-          child: CircularProgressIndicator(color: AppColors.gold));
+      return Center(child: CircularProgressIndicator(color: context.brandColor));
     }
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.bookmark_outline_rounded,
-              size: 52, color: AppColors.onDarkSecondary),
+              size: 52, color: context.mutedIconColor),
           const SizedBox(height: 16),
           Text(
             'No saved lectures yet',

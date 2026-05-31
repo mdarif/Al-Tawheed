@@ -2,19 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/app_config_provider.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_selector.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const _speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
-
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerNotifier>();
     final config = context.watch<AppConfigProvider>().config;
     final theme = Theme.of(context);
 
@@ -29,14 +26,7 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Theme',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.onDarkSecondary
-                        : AppColors.onLightSecondary,
-                  ),
-                ),
+                Text('Theme', style: theme.textTheme.bodySmall),
                 const SizedBox(height: 12),
                 const ThemeModeSelector(),
               ],
@@ -51,43 +41,9 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Playback speed',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.onDarkSecondary)),
+                Text('Playback speed', style: theme.textTheme.bodySmall),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: _speeds.map((s) {
-                    final selected = (player.speed - s).abs() < 0.01;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => player.setSpeed(s),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.gold
-                                : AppColors.surfaceContainerDark,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${s}x',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: selected
-                                  ? Colors.black
-                                  : AppColors.onDarkSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                const PlaybackSpeedSelector(),
               ],
             ),
           ),
@@ -161,12 +117,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-          color: AppColors.gold,
-        ),
+        style: context.textTheme.labelSmall,
       ),
     );
   }

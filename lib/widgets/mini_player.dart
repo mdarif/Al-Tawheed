@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -17,18 +17,17 @@ class MiniPlayer extends StatelessWidget {
       child: Container(
         height: 68,
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
+          color: context.groupedSurface,
           border: Border(
-            top: BorderSide(color: AppColors.surfaceContainerDark, width: 0.5),
+            top: BorderSide(color: context.groupedBorder, width: 0.5),
           ),
         ),
         child: Column(
           children: [
-            // Thin progress bar at the very top of the mini player
             LinearProgressIndicator(
               value: player.progress,
-              backgroundColor: AppColors.surfaceTintDark,
-              color: AppColors.gold,
+              backgroundColor: context.progressTrackColor,
+              color: context.brandColor,
               minHeight: 2,
             ),
             Expanded(
@@ -36,50 +35,46 @@ class MiniPlayer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    // Headphones icon
                     Container(
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.12),
+                        color: context.semantic.brandSubtle,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.headphones_rounded,
-                        color: AppColors.gold,
+                        color: context.brandColor,
                         size: 18,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Lecture title
                     Expanded(
                       child: Text(
                         player.current?.title ?? '',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                        style: context.textTheme.labelMedium?.copyWith(
+                          color: context.primaryTextColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    // Play / Pause
                     IconButton(
                       icon: Icon(
                         player.isPlaying
                             ? Icons.pause_rounded
                             : Icons.play_arrow_rounded,
                         size: 28,
+                        color: context.primaryTextColor,
                       ),
                       onPressed: player.playPause,
                       padding: EdgeInsets.zero,
                     ),
-                    // Close
                     IconButton(
                       icon: Icon(
                         Icons.close_rounded,
                         size: 20,
-                        color: AppColors.onDarkSecondary,
+                        color: context.mutedIconColor,
                       ),
                       onPressed: context.read<PlayerNotifier>().stop,
                       padding: EdgeInsets.zero,

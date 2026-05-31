@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semantic;
+
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -17,14 +18,11 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Dark overlay — suits the dark theme aesthetic
-          Container(color: const Color(0xCC1C1C1E)),
-          // Content
+          Container(color: semantic.scrimOverlay),
           SafeArea(
             child: Column(
               children: [
                 const Spacer(),
-                // Title
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Column(
@@ -32,22 +30,17 @@ class WelcomeScreen extends StatelessWidget {
                       Text(
                         'Sharah Kitab\nal-Tawheed',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                          height: 1.15,
+                        style: context.textTheme.displayLarge?.copyWith(
+                          color: semantic.onScrim,
                         ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         'شرح کتاب التوحید',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: context.textTheme.titleMedium?.copyWith(
                           fontSize: 22,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.gold,
+                          color: context.brandColor,
                           letterSpacing: 1,
                         ),
                       ),
@@ -55,9 +48,8 @@ class WelcomeScreen extends StatelessWidget {
                       Text(
                         'By Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.65),
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: semantic.onScrimMuted,
                           height: 1.5,
                         ),
                       ),
@@ -65,29 +57,21 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // CTA button
                 Padding(
                   padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gold,
-                        foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        textStyle: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                        textStyle: context.textTheme.labelLarge,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       icon: const Icon(Icons.headphones_rounded, size: 22),
                       label: const Text('START LISTENING'),
-                      onPressed: () =>
-                          context.go('/lectures'),
+                      onPressed: () => context.go('/lectures'),
                     ),
                   ),
                 ),

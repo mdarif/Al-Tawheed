@@ -19,6 +19,8 @@ class AppColors {
   // ── Light surface palette ───────────────────────────────────────────────
   static const Color backgroundLight = Color(0xFFF2F2F7);
   static const Color surfaceLight = Color(0xFFFFFFFF);
+  static const Color surfaceContainerLight = Color(0xFFE5E5EA);
+  static const Color surfaceTintLight = Color(0xFFD1D1D6);
 
   // ── Text ────────────────────────────────────────────────────────────────
   static const Color onDark = Color(0xFFEBEBF5);       // primary text on dark

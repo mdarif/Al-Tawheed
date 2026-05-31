@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
-import 'package:myapp/theme/app_colors.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
@@ -45,7 +45,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         _buildAppBar(null),
         SliverFillRemaining(
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.gold),
+            child: CircularProgressIndicator(color: context.brandColor),
           ),
         ),
       ],
@@ -63,7 +63,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.wifi_off_rounded,
-                    size: 52, color: AppColors.onDarkSecondary),
+                    size: 52, color: context.mutedIconColor),
                 const SizedBox(height: 20),
                 Text(
                   'Could not load lectures',
@@ -81,10 +81,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
                   onPressed: provider.load,
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('Retry'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.onLight,
-                  ),
                 ),
               ],
             ),
@@ -122,7 +118,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
                     height: 1,
                     indent: 70,
                     endIndent: 16,
-                    color: AppColors.surfaceContainerDark,
+                    color: context.dividerColor,
                   ),
                 ],
               );
@@ -154,23 +150,20 @@ class _LectureListScreenState extends State<LectureListScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Sharah Kitab al-Tawheed',
-              style: TextStyle(
-                fontSize: 16,
+              style: context.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                letterSpacing: -0.4,
               ),
             ),
             if (catalog != null)
               Text(
                 '${catalog.book.lectureCount} lectures · '
                 '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.onDarkSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
               ),
           ],
         ),
