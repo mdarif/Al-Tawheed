@@ -19,8 +19,8 @@ class DownloadButton extends StatelessWidget {
     final status = context.select<DownloadsProvider, DownloadStatus>(
       (p) => p.statusFor(lecture.id),
     );
-    final progress = context.select<DownloadsProvider, double>(
-      (p) => p.progressFor(lecture.id),
+    final progress = context.select<DownloadsProvider, int>(
+      (p) => (p.progressFor(lecture.id) * 100).round(),
     );
 
     return switch (status) {
@@ -43,13 +43,13 @@ class DownloadButton extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               CircularProgressIndicator(
-                value: progress > 0 ? progress : null,
+                value: progress > 0 ? progress / 100 : null,
                 strokeWidth: 2,
                 color: context.brandColor,
               ),
               if (progress > 0)
                 Text(
-                  '${(progress * 100).round()}',
+                  '$progress',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.w700,

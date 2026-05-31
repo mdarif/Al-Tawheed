@@ -6,6 +6,7 @@ class SelectionChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final EdgeInsetsGeometry padding;
+  final bool expand;
 
   const SelectionChip({
     super.key,
@@ -13,6 +14,7 @@ class SelectionChip extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    this.expand = false,
   });
 
   @override
@@ -21,13 +23,16 @@ class SelectionChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
+        width: expand ? double.infinity : null,
         padding: padding,
         decoration: BoxDecoration(
           color: selected ? context.brandColor : context.chipUnselectedBackground,
           borderRadius: BorderRadius.circular(10),
         ),
+        alignment: expand ? Alignment.center : null,
         child: Text(
           label,
+          textAlign: expand ? TextAlign.center : null,
           style: context.textTheme.labelMedium?.copyWith(
             color: selected ? context.onBrandColor : context.chipUnselectedText,
           ),

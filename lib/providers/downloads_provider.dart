@@ -9,21 +9,26 @@ class DownloadsProvider extends ChangeNotifier {
   final Map<String, DownloadStatus> _statuses = {};
   final Map<String, double> _progress = {};
   Set<String> _downloadedIds = {};
+  int _totalDownloadedBytes = 0;
 
-  void load() {
+  /// Reconcile disk state off the UI thread path — call once at startup.
+  Future<void> load() async {
     _downloadedIds = PreferencesService.instance.loadDownloadedIds();
-    // Reconcile: mark as downloaded only if the file actually exists on disk
+    final savedCount = _downloadedIds.length;
+
     for (final id in List.of(_downloadedIds)) {
       if (DownloadService.existsSync(id)) {
         _statuses[id] = DownloadStatus.downloaded;
       } else {
-        // File was deleted externally (e.g., storage cleared) — remove from registry
         _downloadedIds.remove(id);
       }
     }
-    if (_downloadedIds.length != (PreferencesService.instance.loadDownloadedIds().length)) {
-      PreferencesService.instance.saveDownloadedIds(_downloadedIds);
+
+    if (_downloadedIds.length != savedCount) {
+      await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
     }
+
+    _refreshTotalBytes();
     notifyListeners();
   }
 
@@ -44,8 +49,7 @@ class DownloadsProvider extends ChangeNotifier {
 
   int get downloadedCount => _downloadedIds.length;
 
-  int get totalDownloadedBytes =>
-      DownloadService.totalBytesSync(_downloadedIds);
+  int get totalDownloadedBytes => _totalDownloadedBytes;
 
   /// Returns local file path if downloaded, null otherwise.
   String? localPathIfDownloaded(String lectureId) {
@@ -63,6 +67,8 @@ class DownloadsProvider extends ChangeNotifier {
     _progress[lecture.id] = 0.0;
     notifyListeners();
 
+    var lastNotifiedProgress = -1.0;
+
     try {
       await DownloadService.download(
         url: lecture.audioUrl,
@@ -70,7 +76,12 @@ class DownloadsProvider extends ChangeNotifier {
         fileSizeBytes: lecture.fileSizeBytes,
         onProgress: (p) {
           _progress[lecture.id] = p;
-          notifyListeners();
+          // Throttle UI updates — avoid flooding the main thread (ANR on Android).
+          final stepped = (p * 100).floorToDouble() / 100;
+          if (stepped != lastNotifiedProgress || p >= 1.0) {
+            lastNotifiedProgress = stepped;
+            notifyListeners();
+          }
         },
       );
 
@@ -78,6 +89,7 @@ class DownloadsProvider extends ChangeNotifier {
       _downloadedIds.add(lecture.id);
       _progress.remove(lecture.id);
       await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
+      _refreshTotalBytes();
     } catch (_) {
       _statuses[lecture.id] = DownloadStatus.failed;
       _progress.remove(lecture.id);
@@ -90,6 +102,7 @@ class DownloadsProvider extends ChangeNotifier {
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _downloadedIds.remove(lectureId);
     await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
+    _refreshTotalBytes();
     notifyListeners();
   }
 
@@ -99,7 +112,12 @@ class DownloadsProvider extends ChangeNotifier {
     }
     _statuses.clear();
     _downloadedIds.clear();
+    _totalDownloadedBytes = 0;
     await PreferencesService.instance.saveDownloadedIds({});
     notifyListeners();
+  }
+
+  void _refreshTotalBytes() {
+    _totalDownloadedBytes = DownloadService.totalBytesSync(_downloadedIds);
   }
 }

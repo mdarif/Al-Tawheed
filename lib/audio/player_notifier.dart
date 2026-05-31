@@ -22,6 +22,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool _playing = false;
   bool _loading = false;
   double _speed = 1.0;
+  DateTime? _lastPositionNotify;
 
   PlayerNotifier(this._handler, this._progress, this._downloads) {
     // Restore saved playback speed immediately so it's applied on first play
@@ -44,7 +45,13 @@ class PlayerNotifier extends ChangeNotifier {
       }),
       _handler.player.positionStream.listen((pos) {
         _position = pos;
-        notifyListeners();
+        final now = DateTime.now();
+        if (_lastPositionNotify == null ||
+            now.difference(_lastPositionNotify!) >=
+                const Duration(milliseconds: 200)) {
+          _lastPositionNotify = now;
+          notifyListeners();
+        }
       }),
       _handler.player.durationStream.listen((dur) {
         if (dur != null) {

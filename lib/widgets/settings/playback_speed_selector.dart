@@ -14,22 +14,20 @@ class PlaybackSpeedSelector extends StatelessWidget {
     final player = context.watch<PlayerNotifier>();
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: _speeds.map((speed) {
-        final selected = (player.speed - speed).abs() < 0.01;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: SelectionChip(
-            label: '${speed}x',
-            selected: selected,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            onTap: () {
-              HapticFeedback.selectionClick();
-              player.setSpeed(speed);
-            },
+      children: [
+        for (var i = 0; i < _speeds.length; i++)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: i < _speeds.length - 1 ? 6 : 0),
+              child: _SpeedChip(
+                speed: _speeds[i],
+                selected: (player.speed - _speeds[i]).abs() < 0.01,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                onSelect: () => player.setSpeed(_speeds[i]),
+              ),
+            ),
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 }
@@ -43,22 +41,53 @@ class PlaybackSpeedSelectorCompact extends StatelessWidget {
     final player = context.watch<PlayerNotifier>();
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: PlaybackSpeedSelector._speeds.map((speed) {
-        final selected = (player.speed - speed).abs() < 0.01;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: SelectionChip(
-            label: '${speed}x',
-            selected: selected,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            onTap: () {
-              HapticFeedback.selectionClick();
-              player.setSpeed(speed);
-            },
+      children: [
+        for (var i = 0; i < PlaybackSpeedSelector._speeds.length; i++)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: i < PlaybackSpeedSelector._speeds.length - 1 ? 4 : 0,
+              ),
+              child: _SpeedChip(
+                speed: PlaybackSpeedSelector._speeds[i],
+                selected: (player.speed - PlaybackSpeedSelector._speeds[i])
+                        .abs() <
+                    0.01,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                onSelect: () =>
+                    player.setSpeed(PlaybackSpeedSelector._speeds[i]),
+              ),
+            ),
           ),
-        );
-      }).toList(),
+      ],
+    );
+  }
+}
+
+class _SpeedChip extends StatelessWidget {
+  final double speed;
+  final bool selected;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback onSelect;
+
+  const _SpeedChip({
+    required this.speed,
+    required this.selected,
+    required this.padding,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SelectionChip(
+      label: '${speed}x',
+      selected: selected,
+      expand: true,
+      padding: padding,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onSelect();
+      },
     );
   }
 }
