@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/widgets/download_button.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 
 class PlayerScreen extends StatelessWidget {
@@ -24,6 +26,11 @@ class PlayerScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           _BookmarkButton(),
+          if (context
+              .watch<FeatureFlagsProvider>()
+              .features
+              .downloads)
+            _PlayerDownloadButton(),
           const SizedBox(width: 4),
         ],
       ),
@@ -266,5 +273,18 @@ class _BookmarkButton extends StatelessWidget {
       onPressed: () =>
           context.read<ProgressProvider>().toggleBookmark(lectureId),
     );
+  }
+}
+
+// ── Player download button ────────────────────────────────────────────────────
+
+class _PlayerDownloadButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final lecture = context.select<PlayerNotifier, dynamic>(
+      (p) => p.current,
+    );
+    if (lecture == null) return const SizedBox.shrink();
+    return DownloadButton(lecture: lecture, size: 22);
   }
 }

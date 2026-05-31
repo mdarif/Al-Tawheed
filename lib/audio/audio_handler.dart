@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
@@ -20,18 +21,26 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   /// Load a lecture and begin playing, optionally resuming from [startFrom].
+  /// If [localFilePath] is provided and exists on disk, plays offline.
   Future<void> loadLecture(
     Lecture lecture, {
     Duration startFrom = Duration.zero,
+    String? localFilePath,
   }) async {
     mediaItem.add(MediaItem(
-      id: lecture.audioUrl,
+      id: lecture.id,
       title: lecture.title,
       artist: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
       duration: Duration(seconds: lecture.durationSeconds),
     ));
-    await _player.setUrl(lecture.audioUrl);
-    if (startFrom > Duration.zero) await _player.seek(startFrom);
+
+    final useLocal =
+        localFilePath != null && File(localFilePath).existsSync();
+    final source = useLocal
+        ? AudioSource.uri(Uri.file(localFilePath))
+        : AudioSource.uri(Uri.parse(lecture.audioUrl));
+
+    await _player.setAudioSource(source, initialPosition: startFrom);
     await play();
   }
 

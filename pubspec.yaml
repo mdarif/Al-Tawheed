@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   # Audio
   just_audio: ^0.9.39
+  path_provider: ^2.1.5
   audio_service: ^0.18.15
   audio_session: ^0.1.21
   # State & navigation

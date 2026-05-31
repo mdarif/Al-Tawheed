@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
@@ -91,6 +93,10 @@ class SettingsScreen extends StatelessWidget {
             ),
           const Divider(height: 32),
 
+          // ── Downloads (only when flag is on) ─────────────────────────────
+          if (context.watch<FeatureFlagsProvider>().features.downloads)
+            _DownloadsSection(),
+
           // ── About ─────────────────────────────────────────────────────────
           _SectionHeader('About'),
           ListTile(
@@ -118,6 +124,76 @@ class _SectionHeader extends StatelessWidget {
         title.toUpperCase(),
         style: context.textTheme.labelSmall,
       ),
+    );
+  }
+}
+
+class _DownloadsSection extends StatelessWidget {
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final downloads = context.watch<DownloadsProvider>();
+    final count = downloads.downloadedCount;
+    final size = downloads.totalDownloadedBytes;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader('Downloads'),
+        ListTile(
+          leading: const Icon(Icons.storage_rounded),
+          title: Text(count == 0
+              ? 'No lectures downloaded'
+              : '$count ${count == 1 ? 'lecture' : 'lectures'} downloaded'),
+          subtitle:
+              count > 0 ? Text('${_formatBytes(size)} used') : null,
+        ),
+        if (count > 0)
+          ListTile(
+            leading: Icon(
+              Icons.delete_outline_rounded,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(
+              'Clear all downloads',
+              style:
+                  TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            onTap: () => showDialog<bool>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Clear all downloads?'),
+                content: Text(
+                  '$count ${count == 1 ? 'lecture' : 'lectures'} '
+                  '(${_formatBytes(size)}) will be deleted from this device.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Delete all',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
+                ],
+              ),
+            ).then((confirmed) {
+              if (confirmed == true && context.mounted) {
+                context.read<DownloadsProvider>().deleteAll();
+              }
+            }),
+          ),
+        const Divider(height: 32),
+      ],
     );
   }
 }

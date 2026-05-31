@@ -78,6 +78,14 @@ class PreferencesService {
     return _p.setString('theme_mode', value);
   }
 
+  // ── Downloads ───────────────────────────────────────────────────────────
+
+  Set<String> loadDownloadedIds() =>
+      Set<String>.from(_p.getStringList('downloaded_lecture_ids') ?? []);
+
+  Future<void> saveDownloadedIds(Set<String> ids) =>
+      _p.setStringList('downloaded_lecture_ids', ids.toList());
+
   // ── Dismissed announcements ─────────────────────────────────────────────
 
   Set<String> loadDismissedAnnouncements() =>

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/widgets/download_button.dart';
 
 class LectureTile extends StatelessWidget {
   final Lecture lecture;
@@ -40,17 +42,8 @@ class LectureTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Selector<ProgressProvider, bool>(
-              selector: (_, p) => p.isBookmarked(lecture.id),
-              builder: (_, isBookmarked, __) => Icon(
-                isBookmarked
-                    ? Icons.bookmark_rounded
-                    : Icons.play_circle_outline_rounded,
-                color: isBookmarked ? context.brandColor : context.mutedIconColor,
-                size: 22,
-              ),
-            ),
+            const SizedBox(width: 4),
+            _TileTrailing(lecture: lecture),
           ],
         ),
       ),
@@ -107,6 +100,58 @@ class _ProgressBadge extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Trailing area of the tile — adapts based on the downloads feature flag.
+///
+/// Downloads ON:  bookmark indicator (if saved) + download button
+/// Downloads OFF: bookmark/play circle (current behaviour)
+class _TileTrailing extends StatelessWidget {
+  final Lecture lecture;
+  const _TileTrailing({required this.lecture});
+
+  @override
+  Widget build(BuildContext context) {
+    final downloadsEnabled = context.select<FeatureFlagsProvider, bool>(
+      (p) => p.features.downloads,
+    );
+
+    if (downloadsEnabled) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Bookmark pip — tiny filled icon, only shows when saved
+          Selector<ProgressProvider, bool>(
+            selector: (_, p) => p.isBookmarked(lecture.id),
+            builder: (_, saved, __) => saved
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: Icon(
+                      Icons.bookmark_rounded,
+                      size: 14,
+                      color: context.brandColor,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          DownloadButton(lecture: lecture, size: 20),
+        ],
+      );
+    }
+
+    // Downloads disabled — original bookmark/play circle
+    return Selector<ProgressProvider, bool>(
+      selector: (_, p) => p.isBookmarked(lecture.id),
+      builder: (_, isBookmarked, __) => Icon(
+        isBookmarked
+            ? Icons.bookmark_rounded
+            : Icons.play_circle_outline_rounded,
+        color:
+            isBookmarked ? context.brandColor : context.mutedIconColor,
+        size: 22,
+      ),
     );
   }
 }

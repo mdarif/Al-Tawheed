@@ -6,6 +6,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
@@ -86,11 +87,15 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => AnnouncementsProvider()..load(), lazy: false),
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
-        // ProgressProvider before PlayerNotifier — PlayerNotifier reads it on creation
+        // ProgressProvider and DownloadsProvider before PlayerNotifier
         ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
+        ChangeNotifierProvider(create: (_) => DownloadsProvider()..load()),
         ChangeNotifierProvider(
-          create: (ctx) =>
-              PlayerNotifier(audioHandler, ctx.read<ProgressProvider>()),
+          create: (ctx) => PlayerNotifier(
+            audioHandler,
+            ctx.read<ProgressProvider>(),
+            ctx.read<DownloadsProvider>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ThemeProvider()..load(),

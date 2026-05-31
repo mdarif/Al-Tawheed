@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 class PlayerNotifier extends ChangeNotifier {
   final TawheedAudioHandler _handler;
   final ProgressProvider _progress;
+  final DownloadsProvider _downloads;
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _saveTimer;
 
@@ -21,7 +23,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool _loading = false;
   double _speed = 1.0;
 
-  PlayerNotifier(this._handler, this._progress) {
+  PlayerNotifier(this._handler, this._progress, this._downloads) {
     // Restore saved playback speed immediately so it's applied on first play
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
@@ -93,7 +95,12 @@ class PlayerNotifier extends ChangeNotifier {
         ? Duration(seconds: saved)
         : Duration.zero;
 
-    await _handler.loadLecture(lecture, startFrom: resumeAt);
+    final localPath = _downloads.localPathIfDownloaded(lecture.id);
+    await _handler.loadLecture(
+      lecture,
+      startFrom: resumeAt,
+      localFilePath: localPath,
+    );
     _startSaveTimer();
   }
 
