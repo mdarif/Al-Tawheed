@@ -1,12 +1,12 @@
 package com.almarfa.tawheed
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
+import android.content.Context
 
-class MainActivity : FlutterActivity() {
-    // Explicit override ensures audio_service can locate the FlutterEngine
-    // through FlutterActivity.getFlutterEngine() when AudioService.init() runs.
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
+class MainActivity : AudioServiceActivity() {
+    // This allows the audio service plugin to safely find the active engine instance
+    override fun provideFlutterEngine(context: Context): FlutterEngine? {
+        return com.ryanheise.audioservice.AudioServicePlugin.getFlutterEngine(context)
     }
 }
