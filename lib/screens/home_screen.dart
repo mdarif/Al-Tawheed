@@ -6,6 +6,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
@@ -16,8 +17,16 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([
+            context.read<AnnouncementsProvider>().refresh(),
+            context.read<FeatureFlagsProvider>().load(),
+          ]);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           SliverAppBar(
             pinned: true,
             title: const Text('Home'),
@@ -34,7 +43,8 @@ class HomeScreen extends StatelessWidget {
               ]),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -302,6 +312,10 @@ class _AnnouncementsBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!context.watch<FeatureFlagsProvider>().features.announcements) {
+      return const SizedBox.shrink();
+    }
+
     final announcements = context.watch<AnnouncementsProvider>().visible;
     if (announcements.isEmpty) return const SizedBox.shrink();
 

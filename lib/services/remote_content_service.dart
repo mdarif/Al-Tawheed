@@ -25,8 +25,14 @@ class RemoteContentService {
     required String url,
     required String cacheKey,
     required int ttlMs,
+    bool forceRefresh = false,
   }) async {
     final prefs = PreferencesService.instance;
+
+    if (forceRefresh) {
+      return _fetchAndCache(url: url, cacheKey: cacheKey);
+    }
+
     final cached = prefs.loadRemoteJson(cacheKey);
     final ageMs = prefs.remoteJsonAgeMs(cacheKey);
 

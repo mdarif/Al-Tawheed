@@ -13,7 +13,7 @@ class AnnouncementsProvider extends ChangeNotifier {
   List<Announcement> get visible =>
       _model.active.where((a) => !_dismissed.contains(a.id)).toList();
 
-  Future<void> load() async {
+  Future<void> load({bool forceRefresh = false}) async {
     _dismissed = PreferencesService.instance.loadDismissedAnnouncements();
 
     try {
@@ -21,20 +21,28 @@ class AnnouncementsProvider extends ChangeNotifier {
         url: AppConfig.announcementsUrl,
         cacheKey: 'announcements',
         ttlMs: AppConfig.announcementsCacheTtlMs,
+        forceRefresh: forceRefresh,
       );
-      final raw = jsonDecode(body) as Map<String, dynamic>;
-      final model = AnnouncementsModel.fromJson(raw);
-
-      if (model.version > AppConfig.maxSupportedAnnouncementsVersion) {
-        return;
-      }
-
-      _model = model;
-      notifyListeners();
+      _applyBody(body);
     } catch (_) {
       // Fetch failed — empty list; no banner shown
     }
   }
+
+  void _applyBody(String body) {
+    final raw = jsonDecode(body) as Map<String, dynamic>;
+    final model = AnnouncementsModel.fromJson(raw);
+
+    if (model.version > AppConfig.maxSupportedAnnouncementsVersion) {
+      return;
+    }
+
+    _model = model;
+    notifyListeners();
+  }
+
+  /// Re-fetch from CDN, bypassing cache TTL (e.g. pull-to-refresh on Home).
+  Future<void> refresh() => load(forceRefresh: true);
 
   /// Dismiss an announcement permanently (survives app restarts).
   Future<void> dismiss(String id) async {

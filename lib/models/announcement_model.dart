@@ -42,10 +42,12 @@ class Announcement {
             ['android', 'ios'],
       );
 
-  bool get isActive {
-    final now = DateTime.now();
-    if (validFrom != null && now.isBefore(validFrom!)) return false;
-    if (validUntil != null && now.isAfter(validUntil!)) return false;
+  bool get isActive => isActiveAt(DateTime.now());
+
+  /// Visible at [moment] — useful for tests and scheduling.
+  bool isActiveAt(DateTime moment) {
+    if (validFrom != null && moment.isBefore(validFrom!)) return false;
+    if (validUntil != null && moment.isAfter(validUntil!)) return false;
     return true;
   }
 
