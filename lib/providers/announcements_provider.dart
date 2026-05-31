@@ -2,15 +2,20 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/announcement_model.dart';
+import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/services/remote_content_service.dart';
 
 class AnnouncementsProvider extends ChangeNotifier {
   AnnouncementsModel _model = AnnouncementsModel.empty;
+  Set<String> _dismissed = {};
 
-  /// Active announcements for the current platform and current date.
-  List<Announcement> get active => _model.active;
+  /// Active, non-dismissed announcements for the current platform and date.
+  List<Announcement> get visible =>
+      _model.active.where((a) => !_dismissed.contains(a.id)).toList();
 
   Future<void> load() async {
+    _dismissed = PreferencesService.instance.loadDismissedAnnouncements();
+
     try {
       final body = await RemoteContentService.fetch(
         url: AppConfig.announcementsUrl,
@@ -27,7 +32,14 @@ class AnnouncementsProvider extends ChangeNotifier {
       _model = model;
       notifyListeners();
     } catch (_) {
-      // Fetch failed — empty list remains; no announcements shown
+      // Fetch failed — empty list; no banner shown
     }
+  }
+
+  /// Dismiss an announcement permanently (survives app restarts).
+  Future<void> dismiss(String id) async {
+    _dismissed.add(id);
+    notifyListeners();
+    await PreferencesService.instance.saveDismissedAnnouncements(_dismissed);
   }
 }

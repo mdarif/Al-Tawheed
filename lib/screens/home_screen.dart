@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
@@ -24,6 +26,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                _AnnouncementsBanner(),
                 _ContinueListeningCard(),
                 const SizedBox(height: 24),
                 _DailyBenefitCard(),
@@ -284,6 +287,130 @@ class _DailyBenefitCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Announcements Banner ──────────────────────────────────────────────────────
+
+class _AnnouncementsBanner extends StatelessWidget {
+  static const _iconForType = {
+    'info': Icons.info_outline_rounded,
+    'warning': Icons.warning_amber_rounded,
+    'success': Icons.check_circle_outline_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final announcements = context.watch<AnnouncementsProvider>().visible;
+    if (announcements.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        for (final a in announcements) ...[
+          _AnnouncementCard(announcement: a),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _AnnouncementCard extends StatelessWidget {
+  final announcement;
+  const _AnnouncementCard({required this.announcement});
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = _AnnouncementsBanner._iconForType[announcement.type] ??
+        Icons.info_outline_rounded;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.groupedSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.groupedBorder, width: 1),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Gold left accent bar — matches the chapter header style
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: context.brandColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(icon, size: 18, color: context.brandColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            announcement.title,
+                            style: context.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context
+                              .read<AnnouncementsProvider>()
+                              .dismiss(announcement.id),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: context.mutedIconColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      announcement.body,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        height: 1.5,
+                        color: context.secondaryTextColor,
+                      ),
+                    ),
+                    if (announcement.ctaUrl != null &&
+                        announcement.ctaLabel != null) ...[
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => launchUrl(
+                          Uri.parse(announcement.ctaUrl!),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        child: Text(
+                          announcement.ctaLabel!,
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.brandColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -78,6 +78,14 @@ class PreferencesService {
     return _p.setString('theme_mode', value);
   }
 
+  // ── Dismissed announcements ─────────────────────────────────────────────
+
+  Set<String> loadDismissedAnnouncements() =>
+      Set<String>.from(_p.getStringList('dismissed_announcements') ?? []);
+
+  Future<void> saveDismissedAnnouncements(Set<String> ids) =>
+      _p.setStringList('dismissed_announcements', ids.toList());
+
   // ── Remote JSON cache ────────────────────────────────────────────────────
   // Each remote file is cached as a raw JSON string + a fetch timestamp.
   // Pattern: saveRemoteJson(key, body) / loadRemoteJson(key) / remoteJsonAge(key)
