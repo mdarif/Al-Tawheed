@@ -103,7 +103,8 @@ Safe defaults (stable = `true`, experimental = `false`) are hardcoded in Dart as
     "announcements": true,
     "shareButton": true,
     "playbackSpeed": true,
-    "continueListening": true
+    "continueListening": true,
+    "language": false
   },
   "experimental": {
     "arabicTranslations": false,

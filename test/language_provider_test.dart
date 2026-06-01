@@ -28,6 +28,24 @@ void main() {
       expect(provider.locale.scriptCode, 'roman');
     });
   });
+
+  group('LanguageProvider feature flag', () {
+    test('effective language is English when feature is disabled', () {
+      final provider = LanguageProvider()
+        ..applyLanguageFeatureFlag(false);
+      expect(provider.language, AppLanguage.english);
+      expect(provider.code, 'en');
+    });
+
+    test('resolve uses en when feature is disabled', () {
+      final provider = LanguageProvider()
+        ..applyLanguageFeatureFlag(false);
+      expect(
+        provider.resolve({'en': 'Hello', 'ur': 'سلام'}),
+        'Hello',
+      );
+    });
+  });
 }
 
 class _RtlProbe {

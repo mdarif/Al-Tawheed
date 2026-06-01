@@ -38,9 +38,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          _SectionHeader(l10n.settingsLanguage),
-          const _LanguageSelector(),
-          const Divider(height: 32),
+          if (context.watch<FeatureFlagsProvider>().features.language) ...[
+            _SectionHeader(l10n.settingsLanguage),
+            const _LanguageSelector(),
+            const Divider(height: 32),
+          ],
 
           _SectionHeader(l10n.settingsPlayback),
           Padding(

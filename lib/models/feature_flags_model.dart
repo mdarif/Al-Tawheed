@@ -7,6 +7,7 @@ class FeatureFlags {
   final bool shareButton;
   final bool playbackSpeed;
   final bool continueListening;
+  final bool language;
 
   const FeatureFlags({
     required this.bookmarks,
@@ -17,6 +18,7 @@ class FeatureFlags {
     required this.shareButton,
     required this.playbackSpeed,
     required this.continueListening,
+    required this.language,
   });
 
   factory FeatureFlags.fromJson(Map<String, dynamic> j) => FeatureFlags(
@@ -28,6 +30,7 @@ class FeatureFlags {
         shareButton: j['shareButton'] as bool? ?? true,
         playbackSpeed: j['playbackSpeed'] as bool? ?? true,
         continueListening: j['continueListening'] as bool? ?? true,
+        language: j['language'] as bool? ?? false,
       );
 
   static const FeatureFlags defaults = FeatureFlags(
@@ -39,6 +42,7 @@ class FeatureFlags {
     shareButton: true,
     playbackSpeed: true,
     continueListening: true,
+    language: false,
   );
 }
 

@@ -126,8 +126,14 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
             create: (_) => ThemeProvider()..load(), lazy: false),
-        ChangeNotifierProvider(
-            create: (_) => LanguageProvider()..load(), lazy: false),
+        ChangeNotifierProxyProvider<FeatureFlagsProvider, LanguageProvider>(
+          create: (_) => LanguageProvider()..load(),
+          update: (_, flags, lang) {
+            lang ??= LanguageProvider()..load();
+            lang.applyLanguageFeatureFlag(flags.features.language);
+            return lang;
+          },
+        ),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, langProvider, _) =>

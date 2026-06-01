@@ -342,7 +342,7 @@ Language change takes effect immediately — no restart needed. All providers re
 - Create `app_en.arb` (extract all UI strings)
 - Create `app_ur.arb` (human-translated Urdu)
 - Add `LanguageProvider` with `resolve()` helper
-- Add language section to Settings
+- Add language section to Settings (gated by `language` in `feature-flags.json`)
 - Register Noto Nastaliq Urdu font
 
 **Content (Al-Tawheed-Content):**

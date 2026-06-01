@@ -16,15 +16,23 @@ enum AppLanguage {
 
 class LanguageProvider extends ChangeNotifier {
   AppLanguage _language = AppLanguage.english;
+  bool _featureEnabled = false;
 
-  AppLanguage get language => _language;
-  String get code => _language.code;
+  /// Whether the remote [language] feature flag is on.
+  bool get isLanguageFeatureEnabled => _featureEnabled;
+
+  /// Effective language — English when the feature flag is off.
+  AppLanguage get language =>
+      _featureEnabled ? _language : AppLanguage.english;
+
+  String get code => language.code;
 
   /// Roman Urdu uses `ur` + script `roman` so Flutter Material localizations
   /// load via the standard `ur` locale while [AppLocalizations] serves Roman
   /// Urdu strings from app_ur_roman.arb. [isRtl] stays false for LTR layout.
   Locale get locale {
-    return switch (_language) {
+    final active = language;
+    return switch (active) {
       AppLanguage.english   => const Locale('en'),
       AppLanguage.urdu      => const Locale('ur'),
       AppLanguage.romanUrdu =>
@@ -33,7 +41,7 @@ class LanguageProvider extends ChangeNotifier {
   }
 
   /// Whether the current language is right-to-left.
-  bool get isRtl => _language == AppLanguage.urdu;
+  bool get isRtl => _featureEnabled && _language == AppLanguage.urdu;
 
   /// Load saved language synchronously — requires [PreferencesService.init]
   /// to have been called before this provider is created.
@@ -46,7 +54,19 @@ class LanguageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sync with remote feature flag — keeps saved preference when re-enabled.
+  void applyLanguageFeatureFlag(bool enabled) {
+    if (_featureEnabled == enabled) return;
+    _featureEnabled = enabled;
+    if (enabled) {
+      load();
+    } else {
+      notifyListeners();
+    }
+  }
+
   Future<void> setLanguage(AppLanguage language) async {
+    if (!_featureEnabled) return;
     if (_language == language) return;
     _language = language;
     await PreferencesService.instance.saveAppLanguage(language.code);
@@ -64,6 +84,10 @@ class LanguageProvider extends ChangeNotifier {
   /// Returns an empty string only if the field map is null or entirely empty.
   String resolve(Map<String, dynamic>? field) {
     if (field == null) return '';
+    if (!_featureEnabled) {
+      final en = field['en'];
+      return en is String ? en : '';
+    }
     final code = _language.code;
 
     // Primary
