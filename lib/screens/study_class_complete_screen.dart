@@ -28,7 +28,7 @@ class StudyClassCompleteScreen extends StatelessWidget {
     }
 
     final nextChapter = study.recommendedChapter;
-    final title = chapter?.title ?? 'Class complete';
+    final title = chapter?.title.en ?? 'Class complete';
 
     return Scaffold(
       appBar: AppBar(

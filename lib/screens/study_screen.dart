@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
@@ -55,7 +56,7 @@ class _StudyScreenState extends State<StudyScreen> {
     if (info.status == ChapterStudyStatus.studied) {
       final restart = await showConfirmDialog(
         context,
-        title: 'Restart ${info.chapter.title}?',
+        title: 'Restart ${info.chapter.title.en}?',
         message:
             'This class is already studied. Restart from the first part?',
         confirmLabel: 'Restart',

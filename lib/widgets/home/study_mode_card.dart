@@ -101,8 +101,8 @@ class StudyModeCard extends StatelessWidget {
 
     final status = study.chapterStatus(recommended.id);
     return switch (status) {
-      ChapterStudyStatus.inProgress => 'Continue ${recommended.title}',
-      ChapterStudyStatus.notStarted => 'Start ${recommended.title}',
+      ChapterStudyStatus.inProgress => 'Continue ${recommended.title.en}',
+      ChapterStudyStatus.notStarted => 'Start ${recommended.title.en}',
       ChapterStudyStatus.studied => 'Open study overview',
     };
   }

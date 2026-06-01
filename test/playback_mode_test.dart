@@ -5,7 +5,7 @@ import 'package:myapp/models/catalog.dart';
 const _chapter = Chapter(
   id: 'class-01',
   number: 1,
-  title: 'Class 01',
+  title: {'en': 'Class 01'},
   lectureCount: 3,
 );
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
@@ -28,7 +29,7 @@ class LectureTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    lecture.title,
+                    context.read<LanguageProvider>().resolve(lecture.title),
                     style: context.textTheme.titleMedium?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,

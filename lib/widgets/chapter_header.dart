@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 class ChapterHeader extends StatelessWidget {
@@ -23,7 +25,7 @@ class ChapterHeader extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            chapter.title,
+            context.read<LanguageProvider>().resolve(chapter.title),
             style: context.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),

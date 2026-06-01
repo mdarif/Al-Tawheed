@@ -90,7 +90,7 @@ class DownloadButton extends StatelessWidget {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Delete download?',
-      message: '${lecture.title} will be removed from offline storage.',
+      message: '${lecture.title.en} will be removed from offline storage.',
       confirmLabel: 'Delete',
     );
     if (confirmed && context.mounted) {

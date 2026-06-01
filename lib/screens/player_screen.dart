@@ -142,7 +142,7 @@ class _TrackInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Selector<PlayerNotifier, String>(
-      selector: (_, player) => player.current?.title ?? '',
+      selector: (_, player) => player.current?.title.en ?? '',
       builder: (_, title, __) => Column(
         children: [
           Text(

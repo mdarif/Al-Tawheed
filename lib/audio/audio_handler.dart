@@ -29,7 +29,7 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
   }) async {
     mediaItem.add(MediaItem(
       id: lecture.id,
-      title: lecture.title,
+      title: lecture.title.en,
       artist: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
       duration: Duration(seconds: lecture.durationSeconds),
     ));

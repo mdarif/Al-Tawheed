@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -66,7 +67,7 @@ class _MiniPlayerBar extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Selector<PlayerNotifier, String>(
-                        selector: (_, player) => player.current?.title ?? '',
+                        selector: (_, player) => player.current?.title.en ?? '',
                         builder: (_, title, __) => Text(
                           title,
                           style: context.textTheme.labelMedium?.copyWith(

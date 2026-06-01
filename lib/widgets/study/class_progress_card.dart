@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/providers/language_provider.dart';
 
 class ClassProgressCard extends StatelessWidget {
   final ChapterStudyInfo info;
@@ -44,7 +46,7 @@ class ClassProgressCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      chapter.title,
+                      context.read<LanguageProvider>().resolve(chapter.title),
                       style: context.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,

@@ -24,5 +24,5 @@ String? formatStudyContextLabel({
     return null;
   }
   final part = currentIndex >= 0 ? currentIndex + 1 : 1;
-  return '${chapter.title} · Part $part of $queueLength';
+  return '${chapter.title.en} · Part $part of $queueLength';
 }

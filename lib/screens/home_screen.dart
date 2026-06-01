@@ -7,6 +7,7 @@ import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
@@ -126,7 +127,7 @@ class _ContinueListeningCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            lecture.title,
+                            context.read<LanguageProvider>().resolve(lecture.title),
                             style: context.textTheme.titleMedium?.copyWith(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
