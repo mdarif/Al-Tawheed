@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/home/study_mode_card.dart';
@@ -64,9 +66,12 @@ void main() {
             ctx.read<CatalogProvider>(),
           )..load(),
         ),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: GoRouter(
           routes: [
             GoRoute(

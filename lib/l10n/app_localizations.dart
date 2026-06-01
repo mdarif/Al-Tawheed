@@ -95,7 +95,8 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ur')
+    Locale('ur'),
+    Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman')
   ];
 
   /// No description provided for @tabLectures.
@@ -176,6 +177,138 @@ abstract class AppLocalizations {
   /// **'{studied} of {total} classes studied'**
   String studyModeSubtitle(int studied, int total);
 
+  /// No description provided for @studyContinueClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue {title}'**
+  String studyContinueClass(String title);
+
+  /// No description provided for @studyStartClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {title}'**
+  String studyStartClass(String title);
+
+  /// No description provided for @studyAllComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes studied — review anytime'**
+  String get studyAllComplete;
+
+  /// No description provided for @studyOpenOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Open study overview'**
+  String get studyOpenOverview;
+
+  /// No description provided for @studyClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get studyClasses;
+
+  /// No description provided for @studyCouldNotLoadClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load classes'**
+  String get studyCouldNotLoadClasses;
+
+  /// No description provided for @studyRestartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart {title}?'**
+  String studyRestartTitle(String title);
+
+  /// No description provided for @studyRestartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This class is already studied. Restart from the first part?'**
+  String get studyRestartMessage;
+
+  /// No description provided for @studyRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get studyRestart;
+
+  /// No description provided for @studyOverallComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'You have completed the full series.'**
+  String get studyOverallComplete;
+
+  /// No description provided for @studyOverallInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Work through each class in order at your own pace.'**
+  String get studyOverallInProgress;
+
+  /// No description provided for @studyClassComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Class Complete'**
+  String get studyClassComplete;
+
+  /// No description provided for @studyClassCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} complete'**
+  String studyClassCompleteTitle(String title);
+
+  /// No description provided for @studyClassCompleteFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Class complete'**
+  String get studyClassCompleteFallback;
+
+  /// No description provided for @studyWellDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Well done — keep going at your own pace.'**
+  String get studyWellDone;
+
+  /// No description provided for @studyContinueToNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to {title}'**
+  String studyContinueToNext(String title);
+
+  /// No description provided for @studyBackToOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Study overview'**
+  String get studyBackToOverview;
+
+  /// No description provided for @studyStatusStudied.
+  ///
+  /// In en, this message translates to:
+  /// **'Studied'**
+  String get studyStatusStudied;
+
+  /// No description provided for @studyStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get studyStatusInProgress;
+
+  /// No description provided for @studyStatusNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get studyStatusNotStarted;
+
+  /// No description provided for @studyRecommendedNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended next'**
+  String get studyRecommendedNext;
+
+  /// No description provided for @studyPartsComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} parts complete'**
+  String studyPartsComplete(int completed, int total);
+
   /// No description provided for @saved.
   ///
   /// In en, this message translates to:
@@ -218,6 +351,24 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguage;
 
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsDarkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark mode'**
+  String get settingsDarkMode;
+
+  /// No description provided for @settingsLightMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Light mode'**
+  String get settingsLightMode;
+
   /// No description provided for @settingsPlayback.
   ///
   /// In en, this message translates to:
@@ -259,6 +410,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About'**
   String get settingsAbout;
+
+  /// No description provided for @settingsAboutLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lectures · {appName}'**
+  String settingsAboutLine(int count, String appName);
+
+  /// No description provided for @settingsAboutBy.
+  ///
+  /// In en, this message translates to:
+  /// **'By {lecturer}'**
+  String settingsAboutBy(String lecturer);
 
   /// No description provided for @settingsDownloads.
   ///
@@ -405,6 +568,18 @@ class _AppLocalizationsDelegate
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'ur':
+      {
+        switch (locale.scriptCode) {
+          case 'roman':
+            return AppLocalizationsUrRoman();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'en':

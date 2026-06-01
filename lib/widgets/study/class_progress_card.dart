@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 class ClassProgressCard extends StatelessWidget {
   final ChapterStudyInfo info;
@@ -17,6 +19,7 @@ class ClassProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chapter = info.chapter;
+    final l10n = context.l10n;
 
     return Material(
       color: info.isRecommended
@@ -53,18 +56,18 @@ class ClassProgressCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _StatusBadge(status: info.status),
+                  _StatusBadge(status: info.status, l10n: l10n),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
-                '${info.totalParts} ${info.totalParts == 1 ? 'part' : 'parts'}',
+                l10n.partsCount(info.totalParts),
                 style: context.textTheme.bodySmall,
               ),
               if (info.isRecommended) ...[
                 const SizedBox(height: 6),
                 Text(
-                  'Recommended next',
+                  l10n.studyRecommendedNext,
                   style: context.textTheme.labelSmall?.copyWith(
                     color: context.brandColor,
                     fontWeight: FontWeight.w600,
@@ -85,7 +88,7 @@ class ClassProgressCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                _progressLabel(info),
+                _progressLabel(info, l10n),
                 style: context.textTheme.bodySmall?.copyWith(
                   color: context.secondaryTextColor,
                 ),
@@ -97,30 +100,31 @@ class ClassProgressCard extends StatelessWidget {
     );
   }
 
-  static String _progressLabel(ChapterStudyInfo info) {
+  static String _progressLabel(ChapterStudyInfo info, AppLocalizations l10n) {
     if (info.status == ChapterStudyStatus.studied) {
-      return 'Studied';
+      return l10n.studyStatusStudied;
     }
-    if (info.completedParts == 0) return 'Not started';
-    return '${info.completedParts} of ${info.totalParts} parts complete';
+    if (info.completedParts == 0) return l10n.studyStatusNotStarted;
+    return l10n.studyPartsComplete(info.completedParts, info.totalParts);
   }
 }
 
 class _StatusBadge extends StatelessWidget {
   final ChapterStudyStatus status;
+  final AppLocalizations l10n;
 
-  const _StatusBadge({required this.status});
+  const _StatusBadge({required this.status, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      ChapterStudyStatus.studied => ('Studied', context.brandColor),
+      ChapterStudyStatus.studied => (l10n.studyStatusStudied, context.brandColor),
       ChapterStudyStatus.inProgress => (
-          'In progress',
+          l10n.studyStatusInProgress,
           context.semantic.brandEmphasis,
         ),
       ChapterStudyStatus.notStarted => (
-          'Not started',
+          l10n.studyStatusNotStarted,
           context.mutedIconColor,
         ),
     };

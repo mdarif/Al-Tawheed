@@ -54,6 +54,86 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String studyContinueClass(String title) {
+    return 'Continue $title';
+  }
+
+  @override
+  String studyStartClass(String title) {
+    return 'Start $title';
+  }
+
+  @override
+  String get studyAllComplete => 'All classes studied — review anytime';
+
+  @override
+  String get studyOpenOverview => 'Open study overview';
+
+  @override
+  String get studyClasses => 'Classes';
+
+  @override
+  String get studyCouldNotLoadClasses => 'Could not load classes';
+
+  @override
+  String studyRestartTitle(String title) {
+    return 'Restart $title?';
+  }
+
+  @override
+  String get studyRestartMessage =>
+      'This class is already studied. Restart from the first part?';
+
+  @override
+  String get studyRestart => 'Restart';
+
+  @override
+  String get studyOverallComplete => 'You have completed the full series.';
+
+  @override
+  String get studyOverallInProgress =>
+      'Work through each class in order at your own pace.';
+
+  @override
+  String get studyClassComplete => 'Class Complete';
+
+  @override
+  String studyClassCompleteTitle(String title) {
+    return '$title complete';
+  }
+
+  @override
+  String get studyClassCompleteFallback => 'Class complete';
+
+  @override
+  String get studyWellDone => 'Well done — keep going at your own pace.';
+
+  @override
+  String studyContinueToNext(String title) {
+    return 'Continue to $title';
+  }
+
+  @override
+  String get studyBackToOverview => 'Back to Study overview';
+
+  @override
+  String get studyStatusStudied => 'Studied';
+
+  @override
+  String get studyStatusInProgress => 'In progress';
+
+  @override
+  String get studyStatusNotStarted => 'Not started';
+
+  @override
+  String get studyRecommendedNext => 'Recommended next';
+
+  @override
+  String studyPartsComplete(int completed, int total) {
+    return '$completed of $total parts complete';
+  }
+
+  @override
   String get saved => 'Saved';
 
   @override
@@ -78,6 +158,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguage => 'Language';
 
   @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsDarkMode => 'Dark mode';
+
+  @override
+  String get settingsLightMode => 'Light mode';
+
+  @override
   String get settingsPlayback => 'Playback';
 
   @override
@@ -97,6 +186,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAbout => 'About';
+
+  @override
+  String settingsAboutLine(int count, String appName) {
+    return '$count lectures · $appName';
+  }
+
+  @override
+  String settingsAboutBy(String lecturer) {
+    return 'By $lecturer';
+  }
 
   @override
   String get settingsDownloads => 'Downloads';

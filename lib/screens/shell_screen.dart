@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/mini_player.dart';
 
 class ShellScreen extends StatelessWidget {
@@ -8,36 +9,37 @@ class ShellScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       body: child,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // MiniPlayer sits above the navigation bar and persists across all tabs
           const MiniPlayer(),
           NavigationBar(
             selectedIndex: _selectedIndex(context),
             onDestinationSelected: (i) => _navigate(context, i),
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.headphones_outlined),
-                selectedIcon: Icon(Icons.headphones_rounded),
-                label: 'Lectures',
+                icon: const Icon(Icons.headphones_outlined),
+                selectedIcon: const Icon(Icons.headphones_rounded),
+                label: l10n.tabLectures,
               ),
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home',
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: const Icon(Icons.home_rounded),
+                label: l10n.tabHome,
               ),
               NavigationDestination(
-                icon: Icon(Icons.bookmark_outline_rounded),
-                selectedIcon: Icon(Icons.bookmark_rounded),
-                label: 'Saved',
+                icon: const Icon(Icons.bookmark_outline_rounded),
+                selectedIcon: const Icon(Icons.bookmark_rounded),
+                label: l10n.tabSaved,
               ),
               NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings_rounded),
-                label: 'Settings',
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings_rounded),
+                label: l10n.tabSettings,
               ),
             ],
           ),

@@ -34,6 +34,49 @@
       "total":   { "type": "int" }
     }
   },
+  "studyContinueClass": "Continue {title}",
+  "@studyContinueClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyStartClass": "Start {title}",
+  "@studyStartClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyAllComplete": "All classes studied — review anytime",
+  "studyOpenOverview": "Open study overview",
+  "studyClasses": "Classes",
+  "studyCouldNotLoadClasses": "Could not load classes",
+  "studyRestartTitle": "Restart {title}?",
+  "@studyRestartTitle": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyRestartMessage": "This class is already studied. Restart from the first part?",
+  "studyRestart": "Restart",
+  "studyOverallComplete": "You have completed the full series.",
+  "studyOverallInProgress": "Work through each class in order at your own pace.",
+  "studyClassComplete": "Class Complete",
+  "studyClassCompleteTitle": "{title} complete",
+  "@studyClassCompleteTitle": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyClassCompleteFallback": "Class complete",
+  "studyWellDone": "Well done — keep going at your own pace.",
+  "studyContinueToNext": "Continue to {title}",
+  "@studyContinueToNext": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyBackToOverview": "Back to Study overview",
+  "studyStatusStudied": "Studied",
+  "studyStatusInProgress": "In progress",
+  "studyStatusNotStarted": "Not started",
+  "studyRecommendedNext": "Recommended next",
+  "studyPartsComplete": "{completed} of {total} parts complete",
+  "@studyPartsComplete": {
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
 
   "saved": "Saved",
   "savedCount": "Saved ({count})",
@@ -47,6 +90,9 @@
   "retry": "Retry",
 
   "settingsLanguage": "Language",
+  "settingsAppearance": "Appearance",
+  "settingsDarkMode": "Dark mode",
+  "settingsLightMode": "Light mode",
   "settingsPlayback": "Playback",
   "settingsPlaybackSpeed": "Playback speed",
   "settingsApp": "App",
@@ -54,6 +100,17 @@
   "settingsShareApp": "Share app",
   "settingsRateApp": "Rate on Play Store",
   "settingsAbout": "About",
+  "settingsAboutLine": "{count} lectures · {appName}",
+  "@settingsAboutLine": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "appName": { "type": "String" }
+    }
+  },
+  "settingsAboutBy": "By {lecturer}",
+  "@settingsAboutBy": {
+    "placeholders": { "lecturer": { "type": "String" } }
+  },
   "settingsDownloads": "Downloads",
   "settingsNoDownloads": "No lectures downloaded",
   "settingsDownloadsCount": "{count} {count, plural, one{lecture} other{lectures}} downloaded",

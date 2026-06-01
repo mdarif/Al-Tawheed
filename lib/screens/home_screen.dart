@@ -11,6 +11,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/home/study_mode_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class HomeScreen extends StatelessWidget {
           slivers: [
           SliverAppBar(
             pinned: true,
-            title: const Text('Home'),
+            title: Text(context.l10n.tabHome),
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
@@ -78,12 +79,13 @@ class _ContinueListeningCard extends StatelessWidget {
     final fraction = progress.getFraction(lastId, lecture.durationSeconds);
     final savedSeconds = progress.getPositionSeconds(lastId);
     final remaining = lecture.durationSeconds - savedSeconds;
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Continue Listening',
+          l10n.continueListening,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -135,8 +137,10 @@ class _ContinueListeningCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '${DurationFormatter.fromSeconds(savedSeconds)} listened'
-                            ' · ${DurationFormatter.fromSeconds(remaining)} left',
+                            l10n.listenedDuration(
+                              DurationFormatter.fromSeconds(savedSeconds),
+                              DurationFormatter.fromSeconds(remaining),
+                            ),
                             style: context.textTheme.bodySmall,
                           ),
                         ],
@@ -169,7 +173,7 @@ class _ContinueListeningCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${(fraction * 100).round()}% complete',
+                  l10n.percentComplete((fraction * 100).round()),
                   style: context.textTheme.bodySmall,
                 ),
               ],
@@ -181,11 +185,12 @@ class _ContinueListeningCard extends StatelessWidget {
   }
 
   Widget _emptyState(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Continue Listening',
+          l10n.continueListening,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -205,7 +210,7 @@ class _ContinueListeningCard extends StatelessWidget {
                   size: 36, color: context.mutedIconColor),
               const SizedBox(height: 10),
               Text(
-                'Start a lecture to resume here',
+                l10n.continueListeningEmpty,
                 style: context.textTheme.bodyMedium?.copyWith(
                   color: context.secondaryTextColor,
                 ),
@@ -232,12 +237,14 @@ class _DailyBenefitCard extends StatelessWidget {
     final dayIndex = DateTime.now().difference(DateTime(2026)).inDays;
     final benefit = benefits[dayIndex % benefits.length];
     final semantic = context.semantic;
+    final lang = context.read<LanguageProvider>();
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Daily Benefit',
+          l10n.dailyBenefit,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -284,7 +291,7 @@ class _DailyBenefitCard extends StatelessWidget {
                 const SizedBox(height: 10),
               ],
               Text(
-                benefit.text,
+                lang.resolve(benefit.text),
                 style: context.textTheme.bodyMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   height: 1.6,
@@ -293,7 +300,7 @@ class _DailyBenefitCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '— ${benefit.source}',
+                '— ${lang.resolve(benefit.source)}',
                 style: context.textTheme.bodySmall?.copyWith(
                   color: semantic.brandEmphasis,
                   fontWeight: FontWeight.w600,
@@ -342,6 +349,7 @@ class _AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.read<LanguageProvider>();
     final icon = _AnnouncementsBanner._iconForType[announcement.type] ??
         Icons.info_outline_rounded;
 
@@ -379,7 +387,7 @@ class _AnnouncementCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            announcement.title,
+                            lang.resolve(announcement.title),
                             style: context.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -402,7 +410,7 @@ class _AnnouncementCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      announcement.body,
+                      lang.resolve(announcement.body),
                       style: context.textTheme.bodySmall?.copyWith(
                         height: 1.5,
                         color: context.secondaryTextColor,
@@ -417,7 +425,7 @@ class _AnnouncementCard extends StatelessWidget {
                           mode: LaunchMode.externalApplication,
                         ),
                         child: Text(
-                          announcement.ctaLabel!,
+                          lang.resolve(announcement.ctaLabel!),
                           style: context.textTheme.labelMedium?.copyWith(
                             color: context.brandColor,
                           ),

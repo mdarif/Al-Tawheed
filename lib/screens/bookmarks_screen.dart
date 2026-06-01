@@ -6,6 +6,7 @@ import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 class BookmarksScreen extends StatelessWidget {
@@ -15,6 +16,7 @@ class BookmarksScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = context.watch<ProgressProvider>();
     final catalog = context.watch<CatalogProvider>();
+    final l10n = context.l10n;
 
     final lectures = catalog.status == CatalogStatus.loaded
         ? catalog.catalog!.lectures
@@ -25,7 +27,9 @@ class BookmarksScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          lectures.isEmpty ? 'Saved' : 'Saved (${lectures.length})',
+          lectures.isEmpty
+              ? l10n.saved
+              : l10n.savedCount(lectures.length),
         ),
       ),
       body: lectures.isEmpty
@@ -64,6 +68,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     if (isLoading) {
       return Center(child: CircularProgressIndicator(color: context.brandColor));
     }
@@ -75,12 +81,12 @@ class _EmptyState extends StatelessWidget {
               size: 52, color: context.mutedIconColor),
           const SizedBox(height: 16),
           Text(
-            'No saved lectures yet',
+            l10n.noSavedLectures,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the bookmark icon in the player to save a lecture',
+            l10n.noSavedHint,
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),

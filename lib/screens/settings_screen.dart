@@ -7,6 +7,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
@@ -17,18 +18,13 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>().config;
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.tabSettings)),
       body: ListView(
         children: [
-          // ── Language ─────────────────────────────────────────────────────
-          _SectionHeader('Language'),
-          _LanguageSelector(),
-          const Divider(height: 32),
-
-          // ── Appearance ───────────────────────────────────────────────────
-          _SectionHeader('Appearance'),
+          _SectionHeader(l10n.settingsAppearance),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
@@ -42,14 +38,17 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          // ── Playback ─────────────────────────────────────────────────────
-          _SectionHeader('Playback'),
+          _SectionHeader(l10n.settingsLanguage),
+          const _LanguageSelector(),
+          const Divider(height: 32),
+
+          _SectionHeader(l10n.settingsPlayback),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Playback speed', style: context.textTheme.bodySmall),
+                Text(l10n.settingsPlaybackSpeed, style: context.textTheme.bodySmall),
                 const SizedBox(height: 12),
                 const PlaybackSpeedSelector(),
               ],
@@ -57,11 +56,10 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          // ── App ──────────────────────────────────────────────────────────
-          _SectionHeader('App'),
+          _SectionHeader(l10n.settingsApp),
           ListTile(
             leading: const Icon(Icons.mail_outline_rounded),
-            title: const Text('Contact Us'),
+            title: Text(l10n.settingsContactUs),
             onTap: () => launchUrl(
               Uri(
                 scheme: 'mailto',
@@ -73,7 +71,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.share_rounded),
-            title: const Text('Share app'),
+            title: Text(l10n.settingsShareApp),
             onTap: () => SharePlus.instance.share(
               ShareParams(text: config.share.message),
             ),
@@ -81,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
           if (config.links.playStore != null)
             ListTile(
               leading: const Icon(Icons.star_outline_rounded),
-              title: const Text('Rate on Play Store'),
+              title: Text(l10n.settingsRateApp),
               onTap: () => launchUrl(
                 Uri.parse(config.links.playStore!),
                 mode: LaunchMode.externalApplication,
@@ -100,17 +98,17 @@ class SettingsScreen extends StatelessWidget {
             ),
           const Divider(height: 32),
 
-          // ── Downloads (only when flag is on) ─────────────────────────────
           if (context.watch<FeatureFlagsProvider>().features.downloads)
-            _DownloadsSection(),
+            const _DownloadsSection(),
 
-          // ── About ─────────────────────────────────────────────────────────
-          _SectionHeader('About'),
+          _SectionHeader(l10n.settingsAbout),
           ListTile(
             leading: const Icon(Icons.info_outline_rounded),
-            title: Text(
-                '${config.about.lectureCount} lectures · ${config.about.appName}'),
-            subtitle: Text('By ${config.about.lecturer}'),
+            title: Text(l10n.settingsAboutLine(
+              config.about.lectureCount,
+              config.about.appName,
+            )),
+            subtitle: Text(l10n.settingsAboutBy(config.about.lecturer)),
           ),
           const SizedBox(height: 24),
         ],
@@ -136,6 +134,8 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _DownloadsSection extends StatelessWidget {
+  const _DownloadsSection();
+
   static String _formatBytes(int bytes) {
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
@@ -146,18 +146,19 @@ class _DownloadsSection extends StatelessWidget {
     final downloads = context.watch<DownloadsProvider>();
     final count = downloads.downloadedCount;
     final size = downloads.totalDownloadedBytes;
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader('Downloads'),
+        _SectionHeader(l10n.settingsDownloads),
         ListTile(
           leading: const Icon(Icons.storage_rounded),
           title: Text(count == 0
-              ? 'No lectures downloaded'
-              : '$count ${count == 1 ? 'lecture' : 'lectures'} downloaded'),
+              ? l10n.settingsNoDownloads
+              : l10n.settingsDownloadsCount(count)),
           subtitle:
-              count > 0 ? Text('${_formatBytes(size)} used') : null,
+              count > 0 ? Text(l10n.settingsStorageUsed(_formatBytes(size))) : null,
         ),
         if (count > 0)
           ListTile(
@@ -166,18 +167,19 @@ class _DownloadsSection extends StatelessWidget {
               color: Theme.of(context).colorScheme.error,
             ),
             title: Text(
-              'Clear all downloads',
+              l10n.settingsClearDownloads,
               style:
                   TextStyle(color: Theme.of(context).colorScheme.error),
             ),
             onTap: () async {
               final confirmed = await showConfirmDialog(
                 context,
-                title: 'Clear all downloads?',
-                message:
-                    '$count ${count == 1 ? 'lecture' : 'lectures'} '
-                    '(${_formatBytes(size)}) will be deleted from this device.',
-                confirmLabel: 'Delete all',
+                title: l10n.clearAllDownloads,
+                message: l10n.clearAllDownloadsMessage(
+                  count,
+                  _formatBytes(size),
+                ),
+                confirmLabel: l10n.deleteAll,
                 destructive: true,
               );
               if (confirmed && context.mounted) {
@@ -191,12 +193,19 @@ class _DownloadsSection extends StatelessWidget {
   }
 }
 
-// ── Language Selector ─────────────────────────────────────────────────────────
-
 class _LanguageSelector extends StatelessWidget {
+  const _LanguageSelector();
+
   @override
   Widget build(BuildContext context) {
     final current = context.watch<LanguageProvider>().language;
+    final l10n = context.l10n;
+
+    String labelFor(AppLanguage lang) => switch (lang) {
+          AppLanguage.english => l10n.languageEnglish,
+          AppLanguage.urdu => l10n.languageUrdu,
+          AppLanguage.romanUrdu => l10n.languageRomanUrdu,
+        };
 
     return RadioGroup<AppLanguage>(
       groupValue: current,
@@ -206,15 +215,16 @@ class _LanguageSelector extends StatelessWidget {
       child: Column(
         children: AppLanguage.values.map((lang) {
           final selected = lang == current;
+          final label = labelFor(lang);
           return RadioListTile<AppLanguage>(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             title: Text(
-              lang.nativeName,
+              label,
               style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
-            subtitle: lang.nativeName != lang.englishName
+            subtitle: label != lang.englishName
                 ? Text(lang.englishName, style: context.textTheme.bodySmall)
                 : null,
             value: lang,

@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
 import 'package:myapp/widgets/study/overall_progress_summary.dart';
 
@@ -17,6 +19,8 @@ class StudyClassCompleteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>().catalog;
     final study = context.watch<StudyProgressProvider>();
+    final lang = context.read<LanguageProvider>();
+    final l10n = context.l10n;
 
     Chapter? chapter;
     if (catalog != null) {
@@ -28,12 +32,14 @@ class StudyClassCompleteScreen extends StatelessWidget {
     }
 
     final nextChapter = study.recommendedChapter;
-    final title = chapter?.title.en ?? 'Class complete';
+    final title = chapter != null
+        ? lang.resolve(chapter.title)
+        : l10n.studyClassCompleteFallback;
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Class Complete'),
+        title: Text(l10n.studyClassComplete),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -56,7 +62,7 @@ class StudyClassCompleteScreen extends StatelessWidget {
                     size: 56, color: context.brandColor),
                 const SizedBox(height: 16),
                 Text(
-                  '$title complete',
+                  l10n.studyClassCompleteTitle(title),
                   style: context.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -64,7 +70,7 @@ class StudyClassCompleteScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Well done — keep going at your own pace.',
+                  l10n.studyWellDone,
                   style: context.textTheme.bodyMedium?.copyWith(
                     color: context.secondaryTextColor,
                   ),
@@ -82,17 +88,19 @@ class StudyClassCompleteScreen extends StatelessWidget {
           if (nextChapter != null) ...[
             FilledButton(
               onPressed: () => _continueToNext(context, nextChapter.id),
-              child: Text('Continue to ${nextChapter.title}'),
+              child: Text(
+                l10n.studyContinueToNext(lang.resolve(nextChapter.title)),
+              ),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => context.go('/study'),
-              child: const Text('Back to Study overview'),
+              child: Text(l10n.studyBackToOverview),
             ),
           ] else
             FilledButton(
               onPressed: () => context.go('/study'),
-              child: const Text('Back to Study overview'),
+              child: Text(l10n.studyBackToOverview),
             ),
         ],
       ),

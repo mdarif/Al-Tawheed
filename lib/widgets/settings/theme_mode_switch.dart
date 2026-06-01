@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 /// Single-tap dark mode control — CupertinoSwitch on iOS, Material Switch on Android.
 class ThemeModeSwitch extends StatelessWidget {
@@ -12,6 +13,7 @@ class ThemeModeSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return SwitchListTile.adaptive(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -29,7 +31,7 @@ class ThemeModeSwitch extends StatelessWidget {
         ),
       ),
       title: Text(
-        isDark ? 'Dark mode' : 'Light mode',
+        isDark ? l10n.settingsDarkMode : l10n.settingsLightMode,
         style: context.textTheme.bodyMedium,
       ),
       value: isDark,

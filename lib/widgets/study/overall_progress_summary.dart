@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 /// Overall study progress — e.g. "3 of 15 classes studied".
 class OverallProgressSummary extends StatelessWidget {
@@ -15,6 +16,7 @@ class OverallProgressSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fraction = totalCount == 0 ? 0.0 : studiedCount / totalCount;
+    final l10n = context.l10n;
 
     return Container(
       width: double.infinity,
@@ -53,7 +55,7 @@ class OverallProgressSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$studiedCount of $totalCount classes studied',
+                  l10n.studyModeSubtitle(studiedCount, totalCount),
                   style: context.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -61,8 +63,8 @@ class OverallProgressSummary extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   studiedCount == totalCount
-                      ? 'You have completed the full series.'
-                      : 'Work through each class in order at your own pace.',
+                      ? l10n.studyOverallComplete
+                      : l10n.studyOverallInProgress,
                   style: context.textTheme.bodySmall?.copyWith(
                     color: context.secondaryTextColor,
                   ),

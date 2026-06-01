@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
@@ -32,17 +34,18 @@ class _StudyScreenState extends State<StudyScreen> {
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Study Mode'),
+        title: Text(l10n.studyMode),
       ),
       body: switch (catalog.status) {
         CatalogStatus.idle || CatalogStatus.loading => Center(
             child: CircularProgressIndicator(color: context.brandColor),
           ),
         CatalogStatus.error => _ErrorBody(
-            message: catalog.error ?? 'Could not load classes',
+            message: catalog.error ?? l10n.studyCouldNotLoadClasses,
             onRetry: catalog.load,
           ),
         CatalogStatus.loaded => _StudyBody(
@@ -53,13 +56,16 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   Future<void> _onClassTap(BuildContext context, ChapterStudyInfo info) async {
+    final l10n = context.l10n;
+    final lang = context.read<LanguageProvider>();
+    final title = lang.resolve(info.chapter.title);
+
     if (info.status == ChapterStudyStatus.studied) {
       final restart = await showConfirmDialog(
         context,
-        title: 'Restart ${info.chapter.title.en}?',
-        message:
-            'This class is already studied. Restart from the first part?',
-        confirmLabel: 'Restart',
+        title: l10n.studyRestartTitle(title),
+        message: l10n.studyRestartMessage,
+        confirmLabel: l10n.studyRestart,
         filledConfirm: true,
       );
       if (!restart || !context.mounted) return;
@@ -80,6 +86,7 @@ class _StudyBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final study = context.watch<StudyProgressProvider>();
     final infos = study.chapterInfos();
+    final l10n = context.l10n;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -90,7 +97,7 @@ class _StudyBody extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'Classes',
+          l10n.studyClasses,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -116,6 +123,8 @@ class _ErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -126,7 +135,7 @@ class _ErrorBody extends StatelessWidget {
                 size: 52, color: context.mutedIconColor),
             const SizedBox(height: 20),
             Text(
-              'Could not load classes',
+              l10n.studyCouldNotLoadClasses,
               style: context.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -140,7 +149,7 @@ class _ErrorBody extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
+              label: Text(l10n.retry),
             ),
           ],
         ),

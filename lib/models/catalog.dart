@@ -6,22 +6,10 @@
 // Use LanguageProvider.resolve(field) in widgets to get the display string.
 // Use field.en for non-UI contexts (audio service lock screen, etc.)
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+import 'package:myapp/data/content_i18n_overlay.dart';
+import 'package:myapp/models/i18n_field.dart';
 
-/// Converts a JSON value that may be a plain String (legacy) or an i18n Map
-/// into a normalised Map<String, dynamic>.
-Map<String, dynamic> _toI18nMap(dynamic value) {
-  if (value is String) return {'en': value};
-  if (value is Map) return Map<String, dynamic>.from(value);
-  return {'en': ''};
-}
-
-// Convenience extension so widgets can write field.en instead of field['en'].
-extension I18nField on Map<String, dynamic> {
-  String get en => (this['en'] as String?) ?? '';
-  String get ur => (this['ur'] as String?) ?? en;
-  String get roman => (this['roman'] as String?) ?? en;
-}
+export 'i18n_field.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -46,8 +34,8 @@ class Book {
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
         id: json['id'] as String,
-        title: _toI18nMap(json['title']),
-        speaker: _toI18nMap(json['speaker']),
+        title: toI18nMap(json['title']),
+        speaker: toI18nMap(json['speaker']),
         totalDurationSeconds: json['totalDurationSeconds'] as int,
         lectureCount: json['lectureCount'] as int,
         coverImageUrl: json['coverImageUrl'] as String,
@@ -71,7 +59,7 @@ class Chapter {
   factory Chapter.fromJson(Map<String, dynamic> json) => Chapter(
         id: json['id'] as String,
         number: json['number'] as int,
-        title: _toI18nMap(json['title']),
+        title: toI18nMap(json['title']),
         lectureCount: json['lectureCount'] as int,
       );
 }
@@ -101,7 +89,7 @@ class Lecture {
         id: json['id'] as String,
         number: json['number'] as int,
         chapterId: json['chapterId'] as String,
-        title: _toI18nMap(json['title']),
+        title: toI18nMap(json['title']),
         audioUrl: json['audioUrl'] as String,
         durationSeconds: json['durationSeconds'] as int,
         fileSizeBytes: json['fileSizeBytes'] as int,
@@ -111,8 +99,8 @@ class Lecture {
 
 class DailyBenefit {
   final String id;
-  final String text;
-  final String source;
+  final Map<String, dynamic> text;
+  final Map<String, dynamic> source;
   final String? textArabic;
 
   const DailyBenefit({
@@ -122,12 +110,18 @@ class DailyBenefit {
     this.textArabic,
   });
 
-  factory DailyBenefit.fromJson(Map<String, dynamic> json) => DailyBenefit(
-        id: json['id'] as String,
-        text: json['text'] as String,
-        source: json['source'] as String,
-        textArabic: json['textArabic'] as String?,
-      );
+  factory DailyBenefit.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String;
+    return DailyBenefit(
+      id: id,
+      text: mergeI18nOverlay(
+        toI18nMap(json['text']),
+        benefitTextOverlays[id],
+      ),
+      source: toI18nMap(json['source']),
+      textArabic: json['textArabic'] as String?,
+    );
+  }
 }
 
 class Catalog {

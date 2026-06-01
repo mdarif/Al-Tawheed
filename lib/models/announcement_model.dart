@@ -1,11 +1,14 @@
 import 'dart:io' show Platform;
 
+import 'package:myapp/data/content_i18n_overlay.dart';
+import 'package:myapp/models/i18n_field.dart';
+
 class Announcement {
   final String id;
   final String type;
-  final String title;
-  final String body;
-  final String? ctaLabel;
+  final Map<String, dynamic> title;
+  final Map<String, dynamic> body;
+  final Map<String, dynamic>? ctaLabel;
   final String? ctaUrl;
   final DateTime? validFrom;
   final DateTime? validUntil;
@@ -23,24 +26,40 @@ class Announcement {
     required this.platforms,
   });
 
-  factory Announcement.fromJson(Map<String, dynamic> j) => Announcement(
-        id: j['id'] as String,
-        type: j['type'] as String? ?? 'info',
-        title: j['title'] as String,
-        body: j['body'] as String,
-        ctaLabel: j['ctaLabel'] as String?,
-        ctaUrl: j['ctaUrl'] as String?,
-        validFrom: j['validFrom'] != null
-            ? DateTime.tryParse(j['validFrom'] as String)
-            : null,
-        validUntil: j['validUntil'] != null
-            ? DateTime.tryParse(j['validUntil'] as String)
-            : null,
-        platforms: (j['platforms'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            ['android', 'ios'],
-      );
+  factory Announcement.fromJson(Map<String, dynamic> j) {
+    final id = j['id'] as String;
+    final overlay = announcementOverlays[id];
+
+    return Announcement(
+      id: id,
+      type: j['type'] as String? ?? 'info',
+      title: mergeI18nOverlay(
+        toI18nMap(j['title']),
+        overlay?['title'],
+      ),
+      body: mergeI18nOverlay(
+        toI18nMap(j['body']),
+        overlay?['body'],
+      ),
+      ctaLabel: j['ctaLabel'] != null
+          ? mergeI18nOverlay(
+              toI18nMap(j['ctaLabel']),
+              overlay?['ctaLabel'],
+            )
+          : null,
+      ctaUrl: j['ctaUrl'] as String?,
+      validFrom: j['validFrom'] != null
+          ? DateTime.tryParse(j['validFrom'] as String)
+          : null,
+      validUntil: j['validUntil'] != null
+          ? DateTime.tryParse(j['validUntil'] as String)
+          : null,
+      platforms: (j['platforms'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          ['android', 'ios'],
+    );
+  }
 
   bool get isActive => isActiveAt(DateTime.now());
 

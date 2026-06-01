@@ -20,12 +20,15 @@ class LanguageProvider extends ChangeNotifier {
   AppLanguage get language => _language;
   String get code => _language.code;
 
-  /// Flutter Locale for this language — used in MaterialApp.locale.
+  /// Roman Urdu uses `ur` + script `roman` so Flutter Material localizations
+  /// load via the standard `ur` locale while [AppLocalizations] serves Roman
+  /// Urdu strings from app_ur_roman.arb. [isRtl] stays false for LTR layout.
   Locale get locale {
     return switch (_language) {
       AppLanguage.english   => const Locale('en'),
       AppLanguage.urdu      => const Locale('ur'),
-      AppLanguage.romanUrdu => const Locale('ur', 'ROMAN'),
+      AppLanguage.romanUrdu =>
+        const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman'),
     };
   }
 

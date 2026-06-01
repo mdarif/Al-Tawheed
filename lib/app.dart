@@ -140,11 +140,14 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           locale: langProvider.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: const [
-            Locale('en'),
-            Locale('ur'),
-            Locale('ur', 'ROMAN'), // Phase 2
-          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) {
+            return Directionality(
+              textDirection:
+                  langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
         ),
       ),
     );

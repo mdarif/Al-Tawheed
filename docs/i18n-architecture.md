@@ -189,12 +189,12 @@ Every multilingual field in every JSON file **must** have an `en` value. All oth
       "title": {
         "en": "iOS App Coming Soon",
         "ur": "آئی او ایس ایپ جلد آ رہی ہے",
-        "roman": "iOS App jald aa rahi hai"
+        "roman": "iOS App Jald Aa Rahi Hai"
       },
       "body": {
         "en": "Available on App Store shortly. JazakAllahu Khayran.",
         "ur": "جلد ایپ اسٹور پر دستیاب ہوگی۔ جزاکم اللہ خیرًا۔",
-        "roman": "Jald App Store par dastiyab hogi. JazakAllahu Khayran."
+        "roman": "Jald App Store Par Dastiyab Hogi. JazakAllahu Khayran."
       }
     }
   ]
@@ -209,7 +209,7 @@ Every multilingual field in every JSON file **must** have an `en` value. All oth
     "message": {
       "en": "The Sharah Kitab Al-Tawheed app — 50 audio lectures...",
       "ur": "شرح کتاب التوحید ایپ — ۵۰ آڈیو دروس...",
-      "roman": "Sharah Kitab al-Tawheed app — 50 audio durus..."
+      "roman": "Sharah Kitab al-Tawheed app — 50 audio duroos..."
     }
   }
 }

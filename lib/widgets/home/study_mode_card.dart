@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 /// Home entry point for Study Mode — visible when [studyMode] flag is on.
 class StudyModeCard extends StatelessWidget {
@@ -20,13 +23,15 @@ class StudyModeCard extends StatelessWidget {
 
     final study = context.watch<StudyProgressProvider>();
     final recommended = study.recommendedChapter;
-    final actionLabel = _actionLabel(study, recommended);
+    final l10n = context.l10n;
+    final lang = context.read<LanguageProvider>();
+    final actionLabel = _actionLabel(context, study, recommended, l10n, lang);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Study Mode',
+          l10n.studyMode,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -63,7 +68,10 @@ class StudyModeCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${study.studiedCount} of ${study.totalChapterCount} classes studied',
+                        l10n.studyModeSubtitle(
+                          study.studiedCount,
+                          study.totalChapterCount,
+                        ),
                         style: context.textTheme.titleMedium?.copyWith(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -92,18 +100,22 @@ class StudyModeCard extends StatelessWidget {
   }
 
   static String _actionLabel(
+    BuildContext context,
     StudyProgressProvider study,
     Chapter? recommended,
+    AppLocalizations l10n,
+    LanguageProvider lang,
   ) {
     if (recommended == null) {
-      return 'All classes studied — review anytime';
+      return l10n.studyAllComplete;
     }
 
+    final title = lang.resolve(recommended.title);
     final status = study.chapterStatus(recommended.id);
     return switch (status) {
-      ChapterStudyStatus.inProgress => 'Continue ${recommended.title.en}',
-      ChapterStudyStatus.notStarted => 'Start ${recommended.title.en}',
-      ChapterStudyStatus.studied => 'Open study overview',
+      ChapterStudyStatus.inProgress => l10n.studyContinueClass(title),
+      ChapterStudyStatus.notStarted => l10n.studyStartClass(title),
+      ChapterStudyStatus.studied => l10n.studyOpenOverview,
     };
   }
 }
