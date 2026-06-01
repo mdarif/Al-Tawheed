@@ -5,7 +5,6 @@ import 'package:myapp/models/feature_flags_model.dart';
 import 'package:myapp/services/remote_content_service.dart';
 
 class FeatureFlagsProvider extends ChangeNotifier {
-  int _version = 1;
   Map<String, dynamic> _featuresJson = const {};
 
   /// Parsed on each read so new flags keys stay safe across hot reload and
@@ -26,7 +25,6 @@ class FeatureFlagsProvider extends ChangeNotifier {
         return; // Keep defaults — unknown schema
       }
 
-      _version = version;
       _featuresJson = Map<String, dynamic>.from(
         raw['features'] as Map<String, dynamic>? ?? {},
       );
