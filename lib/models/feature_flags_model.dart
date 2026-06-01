@@ -21,17 +21,25 @@ class FeatureFlags {
     required this.language,
   });
 
-  factory FeatureFlags.fromJson(Map<String, dynamic> j) => FeatureFlags(
-        bookmarks: j['bookmarks'] as bool? ?? true,
-        downloads: j['downloads'] as bool? ?? false,
-        studyMode: j['studyMode'] as bool? ?? false,
-        dailyBenefits: j['dailyBenefits'] as bool? ?? true,
-        announcements: j['announcements'] as bool? ?? true,
-        shareButton: j['shareButton'] as bool? ?? true,
-        playbackSpeed: j['playbackSpeed'] as bool? ?? true,
-        continueListening: j['continueListening'] as bool? ?? true,
-        language: j['language'] as bool? ?? false,
-      );
+  factory FeatureFlags.fromJson(Map<String, dynamic> j) {
+    const d = FeatureFlags.defaults;
+    return FeatureFlags(
+      bookmarks: _bool(j, 'bookmarks') ?? d.bookmarks,
+      downloads: _bool(j, 'downloads') ?? d.downloads,
+      studyMode: _bool(j, 'studyMode') ?? d.studyMode,
+      dailyBenefits: _bool(j, 'dailyBenefits') ?? d.dailyBenefits,
+      announcements: _bool(j, 'announcements') ?? d.announcements,
+      shareButton: _bool(j, 'shareButton') ?? d.shareButton,
+      playbackSpeed: _bool(j, 'playbackSpeed') ?? d.playbackSpeed,
+      continueListening: _bool(j, 'continueListening') ?? d.continueListening,
+      language: _bool(j, 'language') ?? d.language,
+    );
+  }
+
+  static bool? _bool(Map<String, dynamic> j, String key) {
+    final v = j[key];
+    return v is bool ? v : null;
+  }
 
   static const FeatureFlags defaults = FeatureFlags(
     bookmarks: true,

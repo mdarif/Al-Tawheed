@@ -5,9 +5,12 @@ import 'package:myapp/models/feature_flags_model.dart';
 import 'package:myapp/services/remote_content_service.dart';
 
 class FeatureFlagsProvider extends ChangeNotifier {
-  FeatureFlagsModel _model = FeatureFlagsModel.defaults;
+  int _version = 1;
+  Map<String, dynamic> _featuresJson = const {};
 
-  FeatureFlags get features => _model.features;
+  /// Parsed on each read so new flags keys stay safe across hot reload and
+  /// partial CDN JSON (missing keys fall back via [FeatureFlags.fromJson]).
+  FeatureFlags get features => FeatureFlags.fromJson(_featuresJson);
 
   Future<void> load() async {
     try {
@@ -17,13 +20,16 @@ class FeatureFlagsProvider extends ChangeNotifier {
         ttlMs: AppConfig.featureFlagsCacheTtlMs,
       );
       final raw = jsonDecode(body) as Map<String, dynamic>;
-      final model = FeatureFlagsModel.fromJson(raw);
+      final version = raw['version'] as int? ?? 1;
 
-      if (model.version > AppConfig.maxSupportedFeatureFlagsVersion) {
+      if (version > AppConfig.maxSupportedFeatureFlagsVersion) {
         return; // Keep defaults — unknown schema
       }
 
-      _model = model;
+      _version = version;
+      _featuresJson = Map<String, dynamic>.from(
+        raw['features'] as Map<String, dynamic>? ?? {},
+      );
       notifyListeners();
     } catch (_) {
       // Fetch failed — defaults remain active; no UI impact
