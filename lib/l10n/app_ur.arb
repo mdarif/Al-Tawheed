@@ -1,0 +1,62 @@
+{
+  "@@locale": "ur",
+
+  "tabLectures": "دروس",
+  "tabHome": "ہوم",
+  "tabSaved": "محفوظ",
+  "tabSettings": "ترتیبات",
+
+  "appTitle": "شرح کتاب التوحید",
+  "nowPlaying": "ابھی چل رہا ہے",
+
+  "continueListening": "سننا جاری رکھیں",
+  "continueListeningEmpty": "یہاں سے جاری رکھنے کے لیے کوئی درس شروع کریں",
+  "listenedDuration": "{listened} سنا · {remaining} باقی",
+  "percentComplete": "{percent}٪ مکمل",
+
+  "dailyBenefit": "روزانہ فائدہ",
+  "studyMode": "تعلیمی طریقہ",
+  "studyModeSubtitle": "{total} میں سے {studied} دروس پڑھے",
+
+  "saved": "محفوظ",
+  "savedCount": "محفوظ ({count})",
+  "noSavedLectures": "ابھی تک کوئی درس محفوظ نہیں",
+  "noSavedHint": "کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں",
+
+  "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
+  "retry": "دوبارہ کوشش کریں",
+
+  "settingsLanguage": "زبان",
+  "settingsPlayback": "پلے بیک",
+  "settingsPlaybackSpeed": "پلے بیک رفتار",
+  "settingsApp": "ایپ",
+  "settingsContactUs": "ہم سے رابطہ کریں",
+  "settingsShareApp": "ایپ شیئر کریں",
+  "settingsRateApp": "پلے اسٹور پر ریٹنگ دیں",
+  "settingsAbout": "ایپ کے بارے میں",
+  "settingsDownloads": "ڈاؤن لوڈز",
+  "settingsNoDownloads": "کوئی درس ڈاؤن لوڈ نہیں",
+  "settingsDownloadsCount": "{count} درس ڈاؤن لوڈ شدہ",
+  "settingsClearDownloads": "تمام ڈاؤن لوڈ حذف کریں",
+  "settingsStorageUsed": "{size} استعمال",
+
+  "downloadForOffline": "آف لائن کے لیے ڈاؤن لوڈ کریں",
+  "deleteDownload": "ڈاؤن لوڈ حذف کریں؟",
+  "deleteDownloadMessage": "{title} ڈیوائس سے ہٹا دیا جائے گا۔",
+  "delete": "حذف کریں",
+  "cancel": "منسوخ",
+  "clearAllDownloads": "تمام ڈاؤن لوڈ حذف کریں؟",
+  "clearAllDownloadsMessage": "{count} دروس ({size}) اس ڈیوائس سے حذف کر دیے جائیں گے۔",
+  "deleteAll": "سب حذف کریں",
+
+  "startListening": "سننا شروع کریں",
+
+  "languageEnglish": "English",
+  "languageUrdu": "اردو",
+  "languageRomanUrdu": "Roman Urdu",
+  "languageHindi": "हिंदी",
+  "languageArabic": "العربية",
+
+  "partsCount": "{count} حصے",
+  "lecturesCount": "{count} دروس · {duration}"
+}

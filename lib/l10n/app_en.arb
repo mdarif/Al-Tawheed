@@ -1,0 +1,106 @@
+{
+  "@@locale": "en",
+
+  "tabLectures": "Lectures",
+  "tabHome": "Home",
+  "tabSaved": "Saved",
+  "tabSettings": "Settings",
+
+  "appTitle": "Sharah Kitab al-Tawheed",
+  "nowPlaying": "Now Playing",
+
+  "continueListening": "Continue Listening",
+  "continueListeningEmpty": "Start a lecture to resume here",
+  "listenedDuration": "{listened} listened · {remaining} left",
+  "@listenedDuration": {
+    "placeholders": {
+      "listened": { "type": "String" },
+      "remaining": { "type": "String" }
+    }
+  },
+  "percentComplete": "{percent}% complete",
+  "@percentComplete": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+
+  "dailyBenefit": "Daily Benefit",
+  "studyMode": "Study Mode",
+  "studyModeSubtitle": "{studied} of {total} classes studied",
+  "@studyModeSubtitle": {
+    "placeholders": {
+      "studied": { "type": "int" },
+      "total":   { "type": "int" }
+    }
+  },
+
+  "saved": "Saved",
+  "savedCount": "Saved ({count})",
+  "@savedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noSavedLectures": "No saved lectures yet",
+  "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
+
+  "couldNotLoadLectures": "Could not load lectures",
+  "retry": "Retry",
+
+  "settingsLanguage": "Language",
+  "settingsPlayback": "Playback",
+  "settingsPlaybackSpeed": "Playback speed",
+  "settingsApp": "App",
+  "settingsContactUs": "Contact Us",
+  "settingsShareApp": "Share app",
+  "settingsRateApp": "Rate on Play Store",
+  "settingsAbout": "About",
+  "settingsDownloads": "Downloads",
+  "settingsNoDownloads": "No lectures downloaded",
+  "settingsDownloadsCount": "{count} {count, plural, one{lecture} other{lectures}} downloaded",
+  "@settingsDownloadsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsClearDownloads": "Clear all downloads",
+  "settingsStorageUsed": "{size} used",
+  "@settingsStorageUsed": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+
+  "downloadForOffline": "Download for offline",
+  "deleteDownload": "Delete download?",
+  "deleteDownloadMessage": "{title} will be removed from offline storage.",
+  "@deleteDownloadMessage": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "clearAllDownloads": "Clear all downloads?",
+  "clearAllDownloadsMessage": "{count} {count, plural, one{lecture} other{lectures}} ({size}) will be deleted from this device.",
+  "@clearAllDownloadsMessage": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "size":  { "type": "String" }
+    }
+  },
+  "deleteAll": "Delete all",
+
+  "startListening": "Start Listening",
+
+  "languageEnglish": "English",
+  "languageUrdu": "اردو",
+  "languageRomanUrdu": "Roman Urdu",
+  "languageHindi": "हिंदी",
+  "languageArabic": "العربية",
+
+  "partsCount": "{count, plural, one{{count} part} other{{count} parts}}",
+  "@partsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "lecturesCount": "{count} lectures · {duration}",
+  "@lecturesCount": {
+    "placeholders": {
+      "count":    { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  }
+}

@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   # Audio
   just_audio: ^0.9.39
   path_provider: ^2.1.5
@@ -23,11 +25,13 @@ dependencies:
   shared_preferences: ^2.3.2
   # Networking (catalog fetch)
   http: ^1.2.0
+  # Localisation
+  intl: ^0.20.2
+  google_fonts: ^6.2.1
   # UI utilities
   cupertino_icons: ^1.0.9
   url_launcher: ^6.3.1
   share_plus: ^13.1.0
-  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +40,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true          # enables flutter gen-l10n
   assets:
     - assets/
     - assets/images/

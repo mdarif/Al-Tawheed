@@ -61,6 +61,14 @@ class PreferencesService {
   Future<void> savePlaybackSpeed(double speed) =>
       _p.setDouble('playback_speed', speed);
 
+  // ── Language ─────────────────────────────────────────────────────────────
+
+  /// Returns the saved language code ('en', 'ur', 'roman'), or null if never set.
+  String? get appLanguage => _p.getString('app_language');
+
+  Future<void> saveAppLanguage(String code) =>
+      _p.setString('app_language', code);
+
   // ── Theme ───────────────────────────────────────────────────────────────
 
   ThemeMode get themeMode {

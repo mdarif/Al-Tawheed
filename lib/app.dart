@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
@@ -9,6 +10,7 @@ import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
@@ -123,18 +125,26 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => ThemeProvider()..load(),
-          lazy: false,
-        ),
+            create: (_) => ThemeProvider()..load(), lazy: false),
+        ChangeNotifierProvider(
+            create: (_) => LanguageProvider()..load(), lazy: false),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) => MaterialApp.router(
+      child: Consumer2<ThemeProvider, LanguageProvider>(
+        builder: (context, themeProvider, langProvider, _) =>
+            MaterialApp.router(
           title: 'Sharah Kitab al-Tawheed',
           routerConfig: _router,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeProvider.themeMode,
+          locale: langProvider.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: const [
+            Locale('en'),
+            Locale('ur'),
+            Locale('ur', 'ROMAN'), // Phase 2
+          ],
         ),
       ),
     );

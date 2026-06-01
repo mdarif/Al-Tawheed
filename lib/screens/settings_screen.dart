@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
@@ -21,6 +22,11 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          // ── Language ─────────────────────────────────────────────────────
+          _SectionHeader('Language'),
+          _LanguageSelector(),
+          const Divider(height: 32),
+
           // ── Appearance ───────────────────────────────────────────────────
           _SectionHeader('Appearance'),
           Padding(
@@ -181,6 +187,41 @@ class _DownloadsSection extends StatelessWidget {
           ),
         const Divider(height: 32),
       ],
+    );
+  }
+}
+
+// ── Language Selector ─────────────────────────────────────────────────────────
+
+class _LanguageSelector extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final current = context.watch<LanguageProvider>().language;
+
+    return RadioGroup<AppLanguage>(
+      groupValue: current,
+      onChanged: (v) {
+        if (v != null) context.read<LanguageProvider>().setLanguage(v);
+      },
+      child: Column(
+        children: AppLanguage.values.map((lang) {
+          final selected = lang == current;
+          return RadioListTile<AppLanguage>(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            title: Text(
+              lang.nativeName,
+              style: context.textTheme.bodyMedium?.copyWith(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+            subtitle: lang.nativeName != lang.englishName
+                ? Text(lang.englishName, style: context.textTheme.bodySmall)
+                : null,
+            value: lang,
+            activeColor: context.brandColor,
+          );
+        }).toList(),
+      ),
     );
   }
 }
