@@ -67,7 +67,7 @@ Controls all links, contact details, and static text currently hardcoded in Dart
   "links": {
     "playStore": "https://play.google.com/store/apps/details?id=com.almarfa.tawheed",
     "appStore": null,
-    "website": "https://almarfa.co",
+    "website": "https://kitabattawheed.com",
     "youtube": "https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw"
   },
   "contact": {
@@ -214,7 +214,7 @@ Each new provider: **cache → fetch in background → notify**. Never blocks st
 
 ## Website Sharing
 
-`tawheed.almarfa.co` and the mobile app consume the **same** Cloudflare Pages URLs:
+`https://kitabattawheed.com` and the mobile app consume the **same** Cloudflare Pages URLs:
 
 ```
 https://al-tawheed-content.pages.dev/tawheed/catalog.json

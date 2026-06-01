@@ -4,7 +4,8 @@ class AppConfigLinks {
   final String? website;
   final String? youtube;
 
-  const AppConfigLinks({this.playStore, this.appStore, this.website, this.youtube});
+  const AppConfigLinks(
+      {this.playStore, this.appStore, this.website, this.youtube});
 
   factory AppConfigLinks.fromJson(Map<String, dynamic> j) => AppConfigLinks(
         playStore: j['playStore'] as String?,
@@ -73,14 +74,14 @@ class AppConfigModel {
 
   factory AppConfigModel.fromJson(Map<String, dynamic> j) => AppConfigModel(
         version: j['version'] as int? ?? 1,
-        links: AppConfigLinks.fromJson(
-            j['links'] as Map<String, dynamic>? ?? {}),
+        links:
+            AppConfigLinks.fromJson(j['links'] as Map<String, dynamic>? ?? {}),
         contact: AppConfigContact.fromJson(
             j['contact'] as Map<String, dynamic>? ?? {}),
-        share: AppConfigShare.fromJson(
-            j['share'] as Map<String, dynamic>? ?? {}),
-        about: AppConfigAbout.fromJson(
-            j['about'] as Map<String, dynamic>? ?? {}),
+        share:
+            AppConfigShare.fromJson(j['share'] as Map<String, dynamic>? ?? {}),
+        about:
+            AppConfigAbout.fromJson(j['about'] as Map<String, dynamic>? ?? {}),
       );
 
   /// Safe fallback used when the remote fetch fails and no cache exists.
@@ -89,17 +90,15 @@ class AppConfigModel {
         links: const AppConfigLinks(
           playStore:
               'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
-          website: 'https://almarfa.co',
-          youtube:
-              'https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
+          website: 'https://kitabattawheed.com',
+          youtube: 'https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
         ),
         contact: const AppConfigContact(
           email: 'arif.mohammed@gmail.com',
           subject: 'Sharah Kitab Al-Tawheed — Feedback',
         ),
         share: const AppConfigShare(
-          message:
-              'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
+          message: 'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
               'Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
               'Download from Google Play Store:\n'
               'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
