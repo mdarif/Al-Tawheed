@@ -1,5 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.almarfa.tawheed">
+
+   <!-- Required for background audio playback -->
+   <uses-permission android:name="android.permission.INTERNET" />
+   <uses-permission android:name="android.permission.WAKE_LOCK" />
+   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
    <application
         android:label="At-Tawheed"
         android:icon="@mipmap/ic_launcher">
@@ -33,6 +40,24 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- audio_service: background media playback -->
+        <!-- exported=true required: targetSdk 35 mandates it for services with intent-filter -->
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

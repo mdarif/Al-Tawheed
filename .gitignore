@@ -54,7 +54,9 @@ app.*.map.json
 lib/utilities/keys.dart
 android/key.properties
 android/app/upload-keystore.jks
+android/local.properties
 
+.wrangler/
 .env.example
 .vscode/
 android/app/build_workaround.gradle

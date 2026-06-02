@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Mirrors the CI pipeline locally. Runs on every `git push`.
+set -euo pipefail
+
+echo ""
+echo "┌─────────────────────────────────────┐"
+echo "│  Pre-push checks  (mirrors CI)      │"
+echo "└─────────────────────────────────────┘"
+
+echo ""
+echo "▶  flutter analyze --fatal-warnings"
+flutter analyze --fatal-warnings
+
+echo ""
+echo "▶  flutter test"
+flutter test --reporter=expanded
+
+echo ""
+echo "✓  All checks passed — push allowed."

@@ -1,10 +1,11 @@
-.PHONY: help setup clean test analyze format build release run
+.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
 	@echo ""
 	@echo "Setup & Maintenance:"
-	@echo "  make setup           - Complete project setup"
+	@echo "  make setup           - Complete project setup (installs hooks)"
+	@echo "  make setup-hooks     - Install git pre-push hook (run once after clone)"
 	@echo "  make clean           - Clean build artifacts"
 	@echo "  make pub-get         - Get pub dependencies"
 	@echo "  make pub-upgrade     - Upgrade all dependencies"
@@ -15,10 +16,15 @@ help:
 	@echo "  make run-android     - Run on Android emulator"
 	@echo "  make run-ios         - Run on iOS simulator"
 	@echo ""
+	@echo "CI / CD:"
+	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
+	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
+	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major)"
+	@echo ""
 	@echo "Testing & Quality:"
-	@echo "  make test            - Run all tests"
+	@echo "  make test            - Run tests (mirrors CI)"
 	@echo "  make test-verbose    - Run tests with verbose output"
-	@echo "  make analyze         - Analyze code for issues"
+	@echo "  make analyze         - Analyze code (--fatal-warnings, mirrors CI)"
 	@echo "  make format          - Format all code"
 	@echo "  make coverage        - Generate test coverage report"
 	@echo "  make lint            - Run linter"
@@ -37,11 +43,16 @@ help:
 	@echo "  make devices         - List connected devices"
 
 # Setup
-setup:
+setup: setup-hooks
 	@echo "Setting up Al-Tawheed project..."
 	flutter pub get
-	cd ios && pod install && cd ..
 	@echo "✓ Project setup complete!"
+
+# Install git hooks — run once after cloning
+setup-hooks:
+	@echo "Installing git hooks..."
+	git config core.hooksPath .githooks
+	@echo "✓ Hooks installed (.githooks/pre-push active)"
 
 # Clean
 clean:
@@ -82,20 +93,17 @@ run-release:
 
 # Testing
 test:
-	flutter test
+	flutter test --reporter=expanded
 
 test-verbose:
-	flutter test --verbose
-
-test-android:
-	flutter test test/widget_test.dart
+	flutter test --reporter=expanded --verbose
 
 test-units:
-	flutter test test/unit_tests.dart
+	flutter test test/unit_tests.dart --reporter=expanded
 
 # Analysis & Quality
 analyze:
-	flutter analyze
+	flutter analyze --fatal-warnings
 
 format:
 	flutter format .
@@ -109,6 +117,20 @@ lint:
 
 check-quality: analyze lint test
 	@echo "✓ All quality checks passed!"
+
+# Run the exact same steps as the GitHub Actions CI pipeline locally
+ci:
+	@echo "Running CI pipeline locally..."
+	flutter analyze --fatal-warnings
+	flutter test --reporter=expanded
+	flutter build apk --debug
+	@echo "✓ CI pipeline passed."
+
+# Pull the latest failed CI run logs from GitHub Actions
+ci-logs:
+	@RUN_ID=$$(gh run list --repo mdarif/Al-Tawheed --limit 1 --json databaseId --jq '.[0].databaseId'); \
+	echo "Fetching logs for run $$RUN_ID..."; \
+	gh run view $$RUN_ID --log-failed
 
 # Building
 build-android:
@@ -127,6 +149,22 @@ build-all: build-android build-ios build-web
 	@echo "✓ All builds complete!"
 
 # Release
+# Trigger the GitHub Actions release workflow (runs on master in CI).
+# Usage: make release BUMP=patch  (or minor / major)
+BUMP ?= patch
+release:
+	@echo "Triggering release workflow (bump=$(BUMP))..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "master" ]; then \
+	  echo "Error: releases must be triggered from master (you are on $$BRANCH)"; \
+	  exit 1; \
+	fi
+	gh workflow run flutter-release.yml \
+	  --ref master \
+	  --field bump=$(BUMP)
+	@echo "✓ Release workflow triggered — watch it at:"
+	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
+
 release-android:
 	@echo "Building Android App Bundle for Google Play Store..."
 	flutter build appbundle --release

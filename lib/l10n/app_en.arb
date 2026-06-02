@@ -1,0 +1,180 @@
+{
+  "@@locale": "en",
+
+  "tabLectures": "Lectures",
+  "tabHome": "Home",
+  "tabSaved": "Saved",
+  "tabSettings": "Settings",
+
+  "appTitle": "Sharah Kitab al-Tawheed",
+  "nowPlaying": "Now Playing",
+
+  "continueListening": "Continue Listening",
+  "continueListeningEmpty": "Start a lecture to resume here",
+  "listenedDuration": "{listened} listened · {remaining} left",
+  "@listenedDuration": {
+    "placeholders": {
+      "listened": { "type": "String" },
+      "remaining": { "type": "String" }
+    }
+  },
+  "percentComplete": "{percent}% complete",
+  "@percentComplete": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+
+  "dailyBenefit": "Daily Benefit",
+  "studyMode": "Study Mode",
+  "studyModeSubtitle": "{studied} of {total} classes studied",
+  "@studyModeSubtitle": {
+    "placeholders": {
+      "studied": { "type": "int" },
+      "total":   { "type": "int" }
+    }
+  },
+  "studyContinueClass": "Continue {title}",
+  "@studyContinueClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyStartClass": "Start {title}",
+  "@studyStartClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyAllComplete": "All classes studied — review anytime",
+  "studyOpenOverview": "Open study overview",
+  "studyClasses": "Classes",
+  "studyCouldNotLoadClasses": "Could not load classes",
+  "studyRestartTitle": "Restart {title}?",
+  "@studyRestartTitle": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyRestartMessage": "This class is already studied. Restart from the first part?",
+  "studyRestart": "Restart",
+  "studyOverallComplete": "You have completed the full series.",
+  "studyOverallInProgress": "Work through each class in order at your own pace.",
+  "studyClassComplete": "Class Complete",
+  "studyClassCompleteTitle": "{title} complete",
+  "@studyClassCompleteTitle": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyClassCompleteFallback": "Class complete",
+  "studyWellDone": "Well done — keep going at your own pace.",
+  "studyContinueToNext": "Continue to {title}",
+  "@studyContinueToNext": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyBackToOverview": "Back to Study overview",
+  "studyStatusStudied": "Studied",
+  "studyStatusInProgress": "In progress",
+  "studyStatusNotStarted": "Not started",
+  "studyRecommendedNext": "Recommended next",
+  "studyPartsComplete": "{completed} of {total} parts complete",
+  "@studyPartsComplete": {
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "saved": "Saved",
+  "savedCount": "Saved ({count})",
+  "@savedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noSavedLectures": "No saved lectures yet",
+  "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
+
+  "couldNotLoadLectures": "Could not load lectures",
+  "retry": "Retry",
+
+  "settingsLanguage": "Language",
+  "settingsAppearance": "Appearance",
+  "settingsDarkMode": "Dark mode",
+  "settingsLightMode": "Light mode",
+  "settingsPlayback": "Playback",
+  "settingsPlaybackSpeed": "Playback speed",
+  "settingsApp": "App",
+  "settingsContactUs": "Contact Us",
+  "settingsShareApp": "Share app",
+  "settingsRateApp": "Rate on Play Store",
+  "settingsAbout": "About",
+  "settingsAboutArabicTitle": "شرح کتاب التوحید",
+  "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",
+  "@settingsAboutStats": {
+    "placeholders": {
+      "lectures": { "type": "int" },
+      "classes": { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  },
+  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab al-Tawheed.",
+  "settingsAboutDescriptionLine2": "The Foundation of Islamic Monotheism.",
+  "settingsAboutVersion": "Version {version}",
+  "@settingsAboutVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsAboutLine": "{count} lectures · {appName}",
+  "@settingsAboutLine": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "appName": { "type": "String" }
+    }
+  },
+  "settingsAboutBy": "By {lecturer}",
+  "@settingsAboutBy": {
+    "placeholders": { "lecturer": { "type": "String" } }
+  },
+  "settingsDownloads": "Downloads",
+  "settingsNoDownloads": "No lectures downloaded",
+  "settingsDownloadsCount": "{count} {count, plural, one{lecture} other{lectures}} downloaded",
+  "@settingsDownloadsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsClearDownloads": "Clear all downloads",
+  "settingsStorageUsed": "{size} used",
+  "@settingsStorageUsed": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+
+  "downloadForOffline": "Download for offline",
+  "deleteDownload": "Delete download?",
+  "deleteDownloadMessage": "{title} will be removed from offline storage.",
+  "@deleteDownloadMessage": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "clearAllDownloads": "Clear all downloads?",
+  "clearAllDownloadsMessage": "{count} {count, plural, one{lecture} other{lectures}} ({size}) will be deleted from this device.",
+  "@clearAllDownloadsMessage": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "size":  { "type": "String" }
+    }
+  },
+  "deleteAll": "Delete all",
+
+  "startListening": "Start Listening",
+
+  "languageEnglish": "English",
+  "languageUrdu": "اردو",
+  "languageRomanUrdu": "Roman Urdu",
+  "languageHindi": "हिंदी",
+  "languageArabic": "العربية",
+
+  "partsCount": "{count, plural, one{{count} part} other{{count} parts}}",
+  "@partsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "lecturesCount": "{count} lectures · {duration}",
+  "@lecturesCount": {
+    "placeholders": {
+      "count":    { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  }
+}

@@ -1,69 +1,30 @@
-// @dart=2.12.0
-
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/screens/home_video_screen.dart';
-import 'package:myapp/screens/video_screen.dart';
-import 'package:myapp/screens/welcome.dart';
-import 'package:myapp/screens/readkat_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:myapp/app.dart';
+import 'package:myapp/audio/audio_handler.dart';
+import 'package:myapp/services/download_service.dart';
+import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/theme/app_colors.dart';
 
-//void main() => runApp(MyApp());
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  final Future<FirebaseApp> _fbApp = Firebase.initializeApp();
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sharah Kitab al-Tawheed',
-      // on the FirstScreen widget.
-      initialRoute: '/',
-      routes: {
-        // When navigating to the "/" route, build the FirstScreen widget.
-        '/': (context) => WelcomeScreen(),
-        // When navigating to the "/second" route, build the SecondScreen widget.
-        '/videoscreen': (context) => HomeVideoScreen(),
-        '/video': (context) => VideoScreen(),
-        '/readkat': (context) => ReadKat()
-      },
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // Define the default brightness and colors.
-        brightness: Brightness.light,
-        primaryColor: Colors.limeAccent.shade700,
-        //accentColor: Colors.cyan[600],
+  // Must be initialised before ProgressProvider.load() is called synchronously
+  await PreferencesService.instance.init();
+  // Must be initialised before DownloadsProvider.load() so localPath() is synchronous
+  await DownloadService.init();
 
-        // Define the default font family.
-        fontFamily: 'Nexa',
+  // Explicit type parameter required — without it, type inference fails on iOS.
+  final audioHandler = await AudioService.init<TawheedAudioHandler>(
+    builder: () => TawheedAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.almarfa.tawheed.audio',
+      androidNotificationChannelName: 'Sharah Kitab al-Tawheed',
+      androidNotificationOngoing: true,
+      androidShowNotificationBadge: true,
+      notificationColor: AppColors.goldLightTheme,
+    ),
+  );
 
-        // Define the default TextTheme. Use this to specify the default
-        // text styling for headlines, titles, bodies of text, and more.
-        textTheme: TextTheme(
-          displayLarge: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
-          titleLarge: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
-          bodyMedium: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
-        ),
-      ),
-      /* home: FutureBuilder(
-          future: _fbApp,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              print('You have an error! ${snapshot.error.toString()} ');
-              return Text('Something went wrong');
-            } else if (snapshot.hasData) {
-              return WelcomeScreen();
-            } else {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
-        ) */
-      //HomeScreen(),
-    );
-  }
+  runApp(MyApp(audioHandler: audioHandler));
 }

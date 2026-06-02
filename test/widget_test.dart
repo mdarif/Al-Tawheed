@@ -1,32 +1,54 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-// @dart=2.12.0
-
+// Widget tests for Al-Tawheed V2.
+// MyApp requires async AudioService init, so these tests target
+// individual screens wrapped in a minimal MaterialApp.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/providers/theme_provider.dart';
+import 'package:myapp/screens/welcome.dart';
+import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:myapp/main.dart';
+Widget _wrap(Widget child, {ThemeMode themeMode = ThemeMode.dark}) {
+  return ChangeNotifierProvider(
+    create: (_) => ThemeProvider()..load(),
+    child: Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) => MaterialApp(
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeMode,
+        home: child,
+      ),
+    ),
+  );
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await PreferencesService.instance.init();
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  group('Widget Tests - Sharah Kitab At-Tawheed', () {
+    testWidgets('App starts and displays welcome screen',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(WelcomeScreen()));
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('Welcome screen has correct title',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(WelcomeScreen()));
+      expect(find.textContaining('Sharah Kitab'), findsOneWidget);
+    });
+
+    testWidgets('Welcome screen has START LISTENING button',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(WelcomeScreen()));
+      expect(find.text('START LISTENING'), findsOneWidget);
+    });
   });
 }

@@ -1,0 +1,228 @@
+# CD Phase 1 — Release Automation
+#
+# Trigger this workflow manually from the master branch only.
+# It will bump the version, run CI checks, build the debug APK,
+# tag the commit, and create a GitHub Release — one click.
+#
+# Prerequisites (one-time GitHub setting):
+#   Settings → Branches → master → Bypass list → add github-actions[bot]
+#   Without this, the version-bump push to master will be rejected.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'patch = bug fix · minor = new feature · major = breaking change'
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+# GITHUB_TOKEN needs write access to push the version-bump commit,
+# create the tag, and create the GitHub Release.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Guard: only runs when triggered from master. Prevents accidents.
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      # ------------------------------------------------------------------ #
+      # 1. Full checkout — needed for changelog generation across all tags
+      # ------------------------------------------------------------------ #
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ------------------------------------------------------------------ #
+      # 2. Compute new version from pubspec.yaml + bump type
+      #    pubspec.yaml format:  version: X.Y.Z+BUILD
+      #    Tag format matches existing convention: X.Y.Z  (no v prefix)
+      # ------------------------------------------------------------------ #
+      - name: Compute new version
+        id: version
+        run: |
+          CURRENT=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          SEMVER=$(echo "$CURRENT" | cut -d'+' -f1)
+          BUILD=$(echo "$CURRENT"  | cut -d'+' -f2)
+
+          MAJOR=$(echo "$SEMVER" | cut -d'.' -f1)
+          MINOR=$(echo "$SEMVER" | cut -d'.' -f2)
+          PATCH=$(echo "$SEMVER" | cut -d'.' -f3)
+
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+          BUILD=$((BUILD+1))
+
+          NEW_SEMVER="${MAJOR}.${MINOR}.${PATCH}"
+          NEW_VERSION="${NEW_SEMVER}+${BUILD}"
+          TAG="${NEW_SEMVER}"
+
+          echo "Bumping: ${CURRENT} → ${NEW_VERSION}  (tag: ${TAG})"
+
+          # Abort early if this tag already exists — prevents duplicate releases
+          if git rev-parse "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag ${TAG} already exists. Is this version already released?"
+            exit 1
+          fi
+
+          # Persist outputs for downstream steps
+          echo "current=${CURRENT}"         >> "$GITHUB_OUTPUT"
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"                 >> "$GITHUB_OUTPUT"
+          echo "apk=al-tawheed-${TAG}.apk"  >> "$GITHUB_OUTPUT"
+
+          # Write the new version into pubspec.yaml
+          sed -i "s/^version: .*/version: ${NEW_VERSION}/" pubspec.yaml
+
+      # ------------------------------------------------------------------ #
+      # 3. Java 21 — matches android/app/build.gradle compileOptions
+      # ------------------------------------------------------------------ #
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ------------------------------------------------------------------ #
+      # 4. Flutter stable
+      # ------------------------------------------------------------------ #
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # ------------------------------------------------------------------ #
+      # 5. Cache Gradle
+      # ------------------------------------------------------------------ #
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle', 'android/settings.gradle', 'android/gradle.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # ------------------------------------------------------------------ #
+      # 6. Override Gradle JVM heap (same guard as CI workflow)
+      # ------------------------------------------------------------------ #
+      - name: Override Gradle JVM args
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -Dkotlin.daemon.jvm.options=-Xmx1g" >> android/gradle.properties
+
+      # ------------------------------------------------------------------ #
+      # 7. Install dependencies
+      # ------------------------------------------------------------------ #
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # ------------------------------------------------------------------ #
+      # 8. Analyze — refuse to tag a build with static analysis errors
+      # ------------------------------------------------------------------ #
+      - name: Analyze code
+        run: flutter analyze --fatal-warnings
+
+      # ------------------------------------------------------------------ #
+      # 10. Test — refuse to tag a build with failing tests
+      # ------------------------------------------------------------------ #
+      - name: Run tests
+        run: flutter test --reporter=expanded
+
+      # ------------------------------------------------------------------ #
+      # 11. Build debug APK
+      #     Signed with the Android debug key — no keystore secret needed.
+      #     Release signing (production key) comes in CD Phase 2.
+      # ------------------------------------------------------------------ #
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      # ------------------------------------------------------------------ #
+      # 12. Rename APK to include version tag in filename
+      # ------------------------------------------------------------------ #
+      - name: Rename APK
+        run: |
+          mv build/app/outputs/flutter-apk/app-debug.apk \
+             "${{ steps.version.outputs.apk }}"
+
+      # ------------------------------------------------------------------ #
+      # 13. Auto-generate changelog from commits since the last tag
+      # ------------------------------------------------------------------ #
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="${LAST_TAG}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          NOTES=$(git log "$RANGE" --pretty=format:"- %s" --no-merges)
+          [ -z "$NOTES" ] && NOTES="- Maintenance release"
+
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Changelog since ${LAST_TAG:-beginning}:"
+          echo "$NOTES"
+
+      # ------------------------------------------------------------------ #
+      # 14. Commit version bump, tag, and push
+      #     Requires github-actions[bot] in the master branch bypass list.
+      # ------------------------------------------------------------------ #
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit, tag, and push
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+
+          git add pubspec.yaml
+          git commit -m "chore: release ${TAG}"
+          git tag "${TAG}" -m "Release ${TAG}"
+          git push origin master
+          git push origin "${TAG}"
+
+      # ------------------------------------------------------------------ #
+      # 15. Create GitHub Release and attach the APK
+      # ------------------------------------------------------------------ #
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          APK="${{ steps.version.outputs.apk }}"
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+
+          gh release create "${TAG}" \
+            "${APK}#Al-Tawheed Android APK (debug)" \
+            --title "Al-Tawheed ${TAG}" \
+            --notes "## What's changed
+
+          ${{ steps.changelog.outputs.notes }}
+
+          ---
+          **Build:** \`${NEW_VERSION}\`
+          **APK:** debug build, install via \`adb install ${APK}\`"
