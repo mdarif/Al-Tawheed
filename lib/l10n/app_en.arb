@@ -100,6 +100,23 @@
   "settingsShareApp": "Share app",
   "settingsRateApp": "Rate on Play Store",
   "settingsAbout": "About",
+  "settingsAboutArabicTitle": "شرح کتاب التوحید",
+  "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",
+  "@settingsAboutStats": {
+    "placeholders": {
+      "lectures": { "type": "int" },
+      "classes": { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  },
+  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab al-Tawheed.",
+  "settingsAboutDescriptionLine2": "The Foundation of Islamic Monotheism.",
+  "settingsAboutVersion": "Version {version}",
+  "@settingsAboutVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
   "settingsAboutLine": "{count} lectures · {appName}",
   "@settingsAboutLine": {
     "placeholders": {

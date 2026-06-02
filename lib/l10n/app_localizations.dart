@@ -411,6 +411,36 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsAbout;
 
+  /// No description provided for @settingsAboutArabicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'شرح کتاب التوحید'**
+  String get settingsAboutArabicTitle;
+
+  /// No description provided for @settingsAboutStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{lectures} Lectures · {classes} Classes · {duration}'**
+  String settingsAboutStats(int lectures, int classes, String duration);
+
+  /// No description provided for @settingsAboutDescriptionLine1.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Audio Series on Kitab al-Tawheed.'**
+  String get settingsAboutDescriptionLine1;
+
+  /// No description provided for @settingsAboutDescriptionLine2.
+  ///
+  /// In en, this message translates to:
+  /// **'The Foundation of Islamic Monotheism.'**
+  String get settingsAboutDescriptionLine2;
+
+  /// No description provided for @settingsAboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String settingsAboutVersion(String version);
+
   /// No description provided for @settingsAboutLine.
   ///
   /// In en, this message translates to:

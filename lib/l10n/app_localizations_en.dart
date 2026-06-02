@@ -188,6 +188,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAbout => 'About';
 
   @override
+  String get settingsAboutArabicTitle => 'شرح کتاب التوحید';
+
+  @override
+  String settingsAboutStats(int lectures, int classes, String duration) {
+    return '$lectures Lectures · $classes Classes · $duration';
+  }
+
+  @override
+  String get settingsAboutDescriptionLine1 =>
+      'Complete Audio Series on Kitab al-Tawheed.';
+
+  @override
+  String get settingsAboutDescriptionLine2 =>
+      'The Foundation of Islamic Monotheism.';
+
+  @override
+  String settingsAboutVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
   String settingsAboutLine(int count, String appName) {
     return '$count lectures · $appName';
   }

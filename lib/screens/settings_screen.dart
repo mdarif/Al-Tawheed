@@ -9,6 +9,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
+import 'package:myapp/widgets/settings/about_card.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
@@ -104,13 +105,9 @@ class SettingsScreen extends StatelessWidget {
             const _DownloadsSection(),
 
           _SectionHeader(l10n.settingsAbout),
-          ListTile(
-            leading: const Icon(Icons.info_outline_rounded),
-            title: Text(l10n.settingsAboutLine(
-              config.about.lectureCount,
-              config.about.appName,
-            )),
-            subtitle: Text(l10n.settingsAboutBy(config.about.lecturer)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: AboutCard(about: config.about),
           ),
           const SizedBox(height: 24),
         ],

@@ -40,12 +40,14 @@ class AppConfigAbout {
   final String appName;
   final String lecturer;
   final int lectureCount;
+  final int classCount;
   final String totalDuration;
 
   const AppConfigAbout({
     required this.appName,
     required this.lecturer,
     required this.lectureCount,
+    required this.classCount,
     required this.totalDuration,
   });
 
@@ -53,6 +55,7 @@ class AppConfigAbout {
         appName: j['appName'] as String? ?? '',
         lecturer: j['lecturer'] as String? ?? '',
         lectureCount: j['lectureCount'] as int? ?? 0,
+        classCount: j['classCount'] as int? ?? 15,
         totalDuration: j['totalDuration'] as String? ?? '',
       );
 }
@@ -99,14 +102,15 @@ class AppConfigModel {
         ),
         share: const AppConfigShare(
           message: 'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
-              'Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
+              'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
               'Download from Google Play Store:\n'
               'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
         ),
         about: const AppConfigAbout(
           appName: 'Sharah Kitab al-Tawheed',
-          lecturer: 'Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah',
+          lecturer: 'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
           lectureCount: 50,
+          classCount: 15,
           totalDuration: '27h 7m',
         ),
       );

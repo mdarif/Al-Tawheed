@@ -189,6 +189,25 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAbout => 'ایپ کے بارے میں';
 
   @override
+  String get settingsAboutArabicTitle => 'شرح کتاب التوحید';
+
+  @override
+  String settingsAboutStats(int lectures, int classes, String duration) {
+    return '$lectures دروس · $classes کلاسیں · $duration';
+  }
+
+  @override
+  String get settingsAboutDescriptionLine1 => 'کتاب التوحید پر مکمل آڈیو سلسلہ';
+
+  @override
+  String get settingsAboutDescriptionLine2 => 'اسلامی توحید کی بنیاد';
+
+  @override
+  String settingsAboutVersion(String version) {
+    return 'ورژن $version';
+  }
+
+  @override
   String settingsAboutLine(int count, String appName) {
     return '$count دروس · $appName';
   }
@@ -459,6 +478,27 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsAbout => 'App ke baare mein';
+
+  @override
+  String get settingsAboutArabicTitle => 'شرح کتاب التوحید';
+
+  @override
+  String settingsAboutStats(int lectures, int classes, String duration) {
+    return '$lectures Lectures · $classes Classes · $duration';
+  }
+
+  @override
+  String get settingsAboutDescriptionLine1 =>
+      'Complete Audio Series on Kitab al-Tawheed.';
+
+  @override
+  String get settingsAboutDescriptionLine2 =>
+      'The Foundation of Islamic Monotheism.';
+
+  @override
+  String settingsAboutVersion(String version) {
+    return 'Version $version';
+  }
 
   @override
   String settingsAboutLine(int count, String appName) {
