@@ -1,6 +1,6 @@
 # Sharah Kitab al-Tawheed
 
-A native Android/iOS mobile app consolidating the Sharah Kitaab al-Tawheed YouTube lectures of Fazilat Sheikh Abdullah Nasir Rahmani Hafizahullah.
+A native Android/iOS mobile app consolidating the Sharah Kitaab al-Tawheed YouTube lectures of Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.
 
 **Play Store:** https://play.google.com/store/apps/details?id=com.almarfa.tawheed  
 **YouTube Channel:** https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw

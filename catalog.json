@@ -1,0 +1,1061 @@
+{
+  "version": 1,
+  "book": {
+    "id": "sharah-kitab-al-tawheed",
+    "title": {
+      "en": "Sharah Kitab al-Tawheed",
+      "ur": "شرح کتاب التوحید",
+      "roman": "Sharah Kitab al-Tawheed"
+    },
+    "titleArabic": "شرح كتاب التوحيد",
+    "author": "Muhammad ibn Abd al-Wahhab",
+    "speaker": {
+      "en": "Fazilat Shaikh Abdullah Nasir Rahmani",
+      "ur": "فضیلت شیخ عبداللہ ناصر رحمانی",
+      "roman": "Fazilat Shaikh Abdullah Nasir Rahmani"
+    },
+    "speakerShortName": "Shaikh Rahmani",
+    "totalDurationSeconds": 97617,
+    "lectureCount": 50,
+    "coverImageUrl": "https://al-tawheed-content.pages.dev/tawheed/cover.jpg",
+    "language": "Urdu",
+    "catalogUpdatedAt": "2026-05-30T00:00:00Z"
+  },
+  "chapters": [
+    {
+      "id": "class-01",
+      "number": 1,
+      "title": {
+        "en": "Class 01",
+        "ur": "درس ۰۱",
+        "roman": "Dars 01"
+      },
+      "lectureCount": 2
+    },
+    {
+      "id": "class-02",
+      "number": 2,
+      "title": {
+        "en": "Class 02",
+        "ur": "درس ۰۲",
+        "roman": "Dars 02"
+      },
+      "lectureCount": 3
+    },
+    {
+      "id": "class-03",
+      "number": 3,
+      "title": {
+        "en": "Class 03",
+        "ur": "درس ۰۳",
+        "roman": "Dars 03"
+      },
+      "lectureCount": 3
+    },
+    {
+      "id": "class-04",
+      "number": 4,
+      "title": {
+        "en": "Class 04",
+        "ur": "درس ۰۴",
+        "roman": "Dars 04"
+      },
+      "lectureCount": 3
+    },
+    {
+      "id": "class-05",
+      "number": 5,
+      "title": {
+        "en": "Class 05",
+        "ur": "درس ۰۵",
+        "roman": "Dars 05"
+      },
+      "lectureCount": 4
+    },
+    {
+      "id": "class-06",
+      "number": 6,
+      "title": {
+        "en": "Class 06",
+        "ur": "درس ۰۶",
+        "roman": "Dars 06"
+      },
+      "lectureCount": 4
+    },
+    {
+      "id": "class-07",
+      "number": 7,
+      "title": {
+        "en": "Class 07",
+        "ur": "درس ۰۷",
+        "roman": "Dars 07"
+      },
+      "lectureCount": 2
+    },
+    {
+      "id": "class-08",
+      "number": 8,
+      "title": {
+        "en": "Class 08",
+        "ur": "درس ۰۸",
+        "roman": "Dars 08"
+      },
+      "lectureCount": 4
+    },
+    {
+      "id": "class-09",
+      "number": 9,
+      "title": {
+        "en": "Class 09",
+        "ur": "درس ۰۹",
+        "roman": "Dars 09"
+      },
+      "lectureCount": 2
+    },
+    {
+      "id": "class-10",
+      "number": 10,
+      "title": {
+        "en": "Class 10",
+        "ur": "درس ۱۰",
+        "roman": "Dars 10"
+      },
+      "lectureCount": 4
+    },
+    {
+      "id": "class-11",
+      "number": 11,
+      "title": {
+        "en": "Class 11",
+        "ur": "درس ۱۱",
+        "roman": "Dars 11"
+      },
+      "lectureCount": 4
+    },
+    {
+      "id": "class-12",
+      "number": 12,
+      "title": {
+        "en": "Class 12",
+        "ur": "درس ۱۲",
+        "roman": "Dars 12"
+      },
+      "lectureCount": 5
+    },
+    {
+      "id": "class-13",
+      "number": 13,
+      "title": {
+        "en": "Class 13",
+        "ur": "درس ۱۳",
+        "roman": "Dars 13"
+      },
+      "lectureCount": 3
+    },
+    {
+      "id": "class-14",
+      "number": 14,
+      "title": {
+        "en": "Class 14",
+        "ur": "درس ۱۴",
+        "roman": "Dars 14"
+      },
+      "lectureCount": 5
+    },
+    {
+      "id": "class-15",
+      "number": 15,
+      "title": {
+        "en": "Class 15",
+        "ur": "درس ۱۵",
+        "roman": "Dars 15"
+      },
+      "lectureCount": 2
+    }
+  ],
+  "lectures": [
+    {
+      "id": "lec-001",
+      "number": 1,
+      "chapterId": "class-01",
+      "title": {
+        "en": "Class 01 — Part 01",
+        "ur": "درس ۰۱ — حصہ ۰۱",
+        "roman": "Dars 01 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-001.mp3",
+      "durationSeconds": 2157,
+      "fileSizeBytes": 8628602,
+      "description": null
+    },
+    {
+      "id": "lec-002",
+      "number": 2,
+      "chapterId": "class-01",
+      "title": {
+        "en": "Class 01 — Part 02",
+        "ur": "درس ۰۱ — حصہ ۰۲",
+        "roman": "Dars 01 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-002.mp3",
+      "durationSeconds": 2056,
+      "fileSizeBytes": 8226630,
+      "description": null
+    },
+    {
+      "id": "lec-003",
+      "number": 3,
+      "chapterId": "class-02",
+      "title": {
+        "en": "Class 02 — Part 01",
+        "ur": "درس ۰۲ — حصہ ۰۱",
+        "roman": "Dars 02 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-003.mp3",
+      "durationSeconds": 2494,
+      "fileSizeBytes": 9978611,
+      "description": null
+    },
+    {
+      "id": "lec-004",
+      "number": 4,
+      "chapterId": "class-02",
+      "title": {
+        "en": "Class 02 — Part 02",
+        "ur": "درس ۰۲ — حصہ ۰۲",
+        "roman": "Dars 02 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-004.mp3",
+      "durationSeconds": 2230,
+      "fileSizeBytes": 8922741,
+      "description": null
+    },
+    {
+      "id": "lec-005",
+      "number": 5,
+      "chapterId": "class-02",
+      "title": {
+        "en": "Class 02 — Part 03",
+        "ur": "درس ۰۲ — حصہ ۰۳",
+        "roman": "Dars 02 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-005.mp3",
+      "durationSeconds": 1635,
+      "fileSizeBytes": 6540583,
+      "description": null
+    },
+    {
+      "id": "lec-006",
+      "number": 6,
+      "chapterId": "class-03",
+      "title": {
+        "en": "Class 03 — Part 01",
+        "ur": "درس ۰۳ — حصہ ۰۱",
+        "roman": "Dars 03 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-006.mp3",
+      "durationSeconds": 1984,
+      "fileSizeBytes": 7938552,
+      "description": null
+    },
+    {
+      "id": "lec-007",
+      "number": 7,
+      "chapterId": "class-03",
+      "title": {
+        "en": "Class 03 — Part 02",
+        "ur": "درس ۰۳ — حصہ ۰۲",
+        "roman": "Dars 03 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-007.mp3",
+      "durationSeconds": 2254,
+      "fileSizeBytes": 9018663,
+      "description": null
+    },
+    {
+      "id": "lec-008",
+      "number": 8,
+      "chapterId": "class-03",
+      "title": {
+        "en": "Class 03 — Part 03",
+        "ur": "درس ۰۳ — حصہ ۰۳",
+        "roman": "Dars 03 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-008.mp3",
+      "durationSeconds": 2311,
+      "fileSizeBytes": 9246660,
+      "description": null
+    },
+    {
+      "id": "lec-009",
+      "number": 9,
+      "chapterId": "class-04",
+      "title": {
+        "en": "Class 04 — Part 01",
+        "ur": "درس ۰۴ — حصہ ۰۱",
+        "roman": "Dars 04 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-009.mp3",
+      "durationSeconds": 2613,
+      "fileSizeBytes": 10452576,
+      "description": null
+    },
+    {
+      "id": "lec-010",
+      "number": 10,
+      "chapterId": "class-04",
+      "title": {
+        "en": "Class 04 — Part 02",
+        "ur": "درس ۰۴ — حصہ ۰۲",
+        "roman": "Dars 04 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-010.mp3",
+      "durationSeconds": 2377,
+      "fileSizeBytes": 9510601,
+      "description": null
+    },
+    {
+      "id": "lec-011",
+      "number": 11,
+      "chapterId": "class-04",
+      "title": {
+        "en": "Class 04 — Part 03",
+        "ur": "درس ۰۴ — حصہ ۰۳",
+        "roman": "Dars 04 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-011.mp3",
+      "durationSeconds": 2835,
+      "fileSizeBytes": 11340531,
+      "description": null
+    },
+    {
+      "id": "lec-012",
+      "number": 12,
+      "chapterId": "class-05",
+      "title": {
+        "en": "Class 05 — Part 01",
+        "ur": "درس ۰۵ — حصہ ۰۱",
+        "roman": "Dars 05 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-012.mp3",
+      "durationSeconds": 1981,
+      "fileSizeBytes": 7926535,
+      "description": null
+    },
+    {
+      "id": "lec-013",
+      "number": 13,
+      "chapterId": "class-05",
+      "title": {
+        "en": "Class 05 — Part 02",
+        "ur": "درس ۰۵ — حصہ ۰۲",
+        "roman": "Dars 05 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-013.mp3",
+      "durationSeconds": 1915,
+      "fileSizeBytes": 7662594,
+      "description": null
+    },
+    {
+      "id": "lec-014",
+      "number": 14,
+      "chapterId": "class-05",
+      "title": {
+        "en": "Class 05 — Part 03",
+        "ur": "درس ۰۵ — حصہ ۰۳",
+        "roman": "Dars 05 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-014.mp3",
+      "durationSeconds": 1659,
+      "fileSizeBytes": 6636609,
+      "description": null
+    },
+    {
+      "id": "lec-015",
+      "number": 15,
+      "chapterId": "class-05",
+      "title": {
+        "en": "Class 05 — Part 04",
+        "ur": "درس ۰۵ — حصہ ۰۴",
+        "roman": "Dars 05 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-015.mp3",
+      "durationSeconds": 1696,
+      "fileSizeBytes": 6786552,
+      "description": null
+    },
+    {
+      "id": "lec-016",
+      "number": 16,
+      "chapterId": "class-06",
+      "title": {
+        "en": "Class 06 — Part 01",
+        "ur": "درس ۰۶ — حصہ ۰۱",
+        "roman": "Dars 06 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-016.mp3",
+      "durationSeconds": 2299,
+      "fileSizeBytes": 9198699,
+      "description": null
+    },
+    {
+      "id": "lec-017",
+      "number": 17,
+      "chapterId": "class-06",
+      "title": {
+        "en": "Class 06 — Part 02",
+        "ur": "درس ۰۶ — حصہ ۰۲",
+        "roman": "Dars 06 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-017.mp3",
+      "durationSeconds": 1554,
+      "fileSizeBytes": 6216664,
+      "description": null
+    },
+    {
+      "id": "lec-018",
+      "number": 18,
+      "chapterId": "class-06",
+      "title": {
+        "en": "Class 06 — Part 03",
+        "ur": "درس ۰۶ — حصہ ۰۳",
+        "roman": "Dars 06 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-018.mp3",
+      "durationSeconds": 1867,
+      "fileSizeBytes": 7470542,
+      "description": null
+    },
+    {
+      "id": "lec-019",
+      "number": 19,
+      "chapterId": "class-06",
+      "title": {
+        "en": "Class 06 — Part 04",
+        "ur": "درس ۰۶ — حصہ ۰۴",
+        "roman": "Dars 06 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-019.mp3",
+      "durationSeconds": 2131,
+      "fileSizeBytes": 8526620,
+      "description": null
+    },
+    {
+      "id": "lec-020",
+      "number": 20,
+      "chapterId": "class-07",
+      "title": {
+        "en": "Class 07 — Part 01",
+        "ur": "درس ۰۷ — حصہ ۰۱",
+        "roman": "Dars 07 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-020.mp3",
+      "durationSeconds": 1915,
+      "fileSizeBytes": 7662594,
+      "description": null
+    },
+    {
+      "id": "lec-021",
+      "number": 21,
+      "chapterId": "class-07",
+      "title": {
+        "en": "Class 07 — Part 02",
+        "ur": "درس ۰۷ — حصہ ۰۲",
+        "roman": "Dars 07 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-021.mp3",
+      "durationSeconds": 1852,
+      "fileSizeBytes": 7410774,
+      "description": null
+    },
+    {
+      "id": "lec-022",
+      "number": 22,
+      "chapterId": "class-08",
+      "title": {
+        "en": "Class 08 — Part 01",
+        "ur": "درس ۰۸ — حصہ ۰۱",
+        "roman": "Dars 08 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-022.mp3",
+      "durationSeconds": 1678,
+      "fileSizeBytes": 6714663,
+      "description": null
+    },
+    {
+      "id": "lec-023",
+      "number": 23,
+      "chapterId": "class-08",
+      "title": {
+        "en": "Class 08 — Part 02",
+        "ur": "درس ۰۸ — حصہ ۰۲",
+        "roman": "Dars 08 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-023.mp3",
+      "durationSeconds": 1968,
+      "fileSizeBytes": 7872619,
+      "description": null
+    },
+    {
+      "id": "lec-024",
+      "number": 24,
+      "chapterId": "class-08",
+      "title": {
+        "en": "Class 08 — Part 03",
+        "ur": "درس ۰۸ — حصہ ۰۳",
+        "roman": "Dars 08 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-024.mp3",
+      "durationSeconds": 1711,
+      "fileSizeBytes": 6846529,
+      "description": null
+    },
+    {
+      "id": "lec-025",
+      "number": 25,
+      "chapterId": "class-08",
+      "title": {
+        "en": "Class 08 — Part 04",
+        "ur": "درس ۰۸ — حصہ ۰۴",
+        "roman": "Dars 08 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-025.mp3",
+      "durationSeconds": 1953,
+      "fileSizeBytes": 7812642,
+      "description": null
+    },
+    {
+      "id": "lec-026",
+      "number": 26,
+      "chapterId": "class-09",
+      "title": {
+        "en": "Class 09 — Part 01",
+        "ur": "درس ۰۹ — حصہ ۰۱",
+        "roman": "Dars 09 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-026.mp3",
+      "durationSeconds": 1884,
+      "fileSizeBytes": 7536684,
+      "description": null
+    },
+    {
+      "id": "lec-027",
+      "number": 27,
+      "chapterId": "class-09",
+      "title": {
+        "en": "Class 09 — Part 02",
+        "ur": "درس ۰۹ — حصہ ۰۲",
+        "roman": "Dars 09 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-027.mp3",
+      "durationSeconds": 2611,
+      "fileSizeBytes": 10446516,
+      "description": null
+    },
+    {
+      "id": "lec-028",
+      "number": 28,
+      "chapterId": "class-10",
+      "title": {
+        "en": "Class 10 — Part 01",
+        "ur": "درس ۱۰ — حصہ ۰۱",
+        "roman": "Dars 10 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-028.mp3",
+      "durationSeconds": 1612,
+      "fileSizeBytes": 6450513,
+      "description": null
+    },
+    {
+      "id": "lec-029",
+      "number": 29,
+      "chapterId": "class-10",
+      "title": {
+        "en": "Class 10 — Part 02",
+        "ur": "درس ۱۰ — حصہ ۰۲",
+        "roman": "Dars 10 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-029.mp3",
+      "durationSeconds": 1822,
+      "fileSizeBytes": 7290506,
+      "description": null
+    },
+    {
+      "id": "lec-030",
+      "number": 30,
+      "chapterId": "class-10",
+      "title": {
+        "en": "Class 10 — Part 03",
+        "ur": "درس ۱۰ — حصہ ۰۳",
+        "roman": "Dars 10 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-030.mp3",
+      "durationSeconds": 1915,
+      "fileSizeBytes": 7662594,
+      "description": null
+    },
+    {
+      "id": "lec-031",
+      "number": 31,
+      "chapterId": "class-10",
+      "title": {
+        "en": "Class 10 — Part 04",
+        "ur": "درس ۱۰ — حصہ ۰۴",
+        "roman": "Dars 10 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-031.mp3",
+      "durationSeconds": 2230,
+      "fileSizeBytes": 8922741,
+      "description": null
+    },
+    {
+      "id": "lec-032",
+      "number": 32,
+      "chapterId": "class-11",
+      "title": {
+        "en": "Class 11 — Part 01",
+        "ur": "درس ۱۱ — حصہ ۰۱",
+        "roman": "Dars 11 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-032.mp3",
+      "durationSeconds": 1837,
+      "fileSizeBytes": 7350588,
+      "description": null
+    },
+    {
+      "id": "lec-033",
+      "number": 33,
+      "chapterId": "class-11",
+      "title": {
+        "en": "Class 11 — Part 02",
+        "ur": "درس ۱۱ — حصہ ۰۲",
+        "roman": "Dars 11 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-033.mp3",
+      "durationSeconds": 1368,
+      "fileSizeBytes": 5472593,
+      "description": null
+    },
+    {
+      "id": "lec-034",
+      "number": 34,
+      "chapterId": "class-11",
+      "title": {
+        "en": "Class 11 — Part 03",
+        "ur": "درس ۱۱ — حصہ ۰۳",
+        "roman": "Dars 11 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-034.mp3",
+      "durationSeconds": 1846,
+      "fileSizeBytes": 7386637,
+      "description": null
+    },
+    {
+      "id": "lec-035",
+      "number": 35,
+      "chapterId": "class-11",
+      "title": {
+        "en": "Class 11 — Part 04",
+        "ur": "درس ۱۱ — حصہ ۰۴",
+        "roman": "Dars 11 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-035.mp3",
+      "durationSeconds": 1885,
+      "fileSizeBytes": 7542640,
+      "description": null
+    },
+    {
+      "id": "lec-036",
+      "number": 36,
+      "chapterId": "class-12",
+      "title": {
+        "en": "Class 12 — Part 01",
+        "ur": "درس ۱۲ — حصہ ۰۱",
+        "roman": "Dars 12 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-036.mp3",
+      "durationSeconds": 1948,
+      "fileSizeBytes": 7794565,
+      "description": null
+    },
+    {
+      "id": "lec-037",
+      "number": 37,
+      "chapterId": "class-12",
+      "title": {
+        "en": "Class 12 — Part 02",
+        "ur": "درس ۱۲ — حصہ ۰۲",
+        "roman": "Dars 12 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-037.mp3",
+      "durationSeconds": 1494,
+      "fileSizeBytes": 5976547,
+      "description": null
+    },
+    {
+      "id": "lec-038",
+      "number": 38,
+      "chapterId": "class-12",
+      "title": {
+        "en": "Class 12 — Part 03",
+        "ur": "درس ۱۲ — حصہ ۰۳",
+        "roman": "Dars 12 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-038.mp3",
+      "durationSeconds": 2113,
+      "fileSizeBytes": 8454627,
+      "description": null
+    },
+    {
+      "id": "lec-039",
+      "number": 39,
+      "chapterId": "class-12",
+      "title": {
+        "en": "Class 12 — Part 04",
+        "ur": "درس ۱۲ — حصہ ۰۴",
+        "roman": "Dars 12 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-039.mp3",
+      "durationSeconds": 1773,
+      "fileSizeBytes": 7092498,
+      "description": null
+    },
+    {
+      "id": "lec-040",
+      "number": 40,
+      "chapterId": "class-12",
+      "title": {
+        "en": "Class 12 — Part 05",
+        "ur": "درس ۱۲ — حصہ ۰۵",
+        "roman": "Dars 12 — Hissa 05"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-040.mp3",
+      "durationSeconds": 1009,
+      "fileSizeBytes": 4038679,
+      "description": null
+    },
+    {
+      "id": "lec-041",
+      "number": 41,
+      "chapterId": "class-13",
+      "title": {
+        "en": "Class 13 — Part 01",
+        "ur": "درس ۱۳ — حصہ ۰۱",
+        "roman": "Dars 13 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-041.mp3",
+      "durationSeconds": 1944,
+      "fileSizeBytes": 7776593,
+      "description": null
+    },
+    {
+      "id": "lec-042",
+      "number": 42,
+      "chapterId": "class-13",
+      "title": {
+        "en": "Class 13 — Part 02",
+        "ur": "درس ۱۳ — حصہ ۰۲",
+        "roman": "Dars 13 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-042.mp3",
+      "durationSeconds": 2043,
+      "fileSizeBytes": 8172609,
+      "description": null
+    },
+    {
+      "id": "lec-043",
+      "number": 43,
+      "chapterId": "class-13",
+      "title": {
+        "en": "Class 13 — Part 03",
+        "ur": "درس ۱۳ — حصہ ۰۳",
+        "roman": "Dars 13 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-043.mp3",
+      "durationSeconds": 2212,
+      "fileSizeBytes": 8850643,
+      "description": null
+    },
+    {
+      "id": "lec-044",
+      "number": 44,
+      "chapterId": "class-14",
+      "title": {
+        "en": "Class 14 — Part 01",
+        "ur": "درس ۱۴ — حصہ ۰۱",
+        "roman": "Dars 14 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-044.mp3",
+      "durationSeconds": 1938,
+      "fileSizeBytes": 7752664,
+      "description": null
+    },
+    {
+      "id": "lec-045",
+      "number": 45,
+      "chapterId": "class-14",
+      "title": {
+        "en": "Class 14 — Part 02",
+        "ur": "درس ۱۴ — حصہ ۰۲",
+        "roman": "Dars 14 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-045.mp3",
+      "durationSeconds": 1933,
+      "fileSizeBytes": 7734692,
+      "description": null
+    },
+    {
+      "id": "lec-046",
+      "number": 46,
+      "chapterId": "class-14",
+      "title": {
+        "en": "Class 14 — Part 03",
+        "ur": "درس ۱۴ — حصہ ۰۳",
+        "roman": "Dars 14 — Hissa 03"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-046.mp3",
+      "durationSeconds": 1723,
+      "fileSizeBytes": 6894699,
+      "description": null
+    },
+    {
+      "id": "lec-047",
+      "number": 47,
+      "chapterId": "class-14",
+      "title": {
+        "en": "Class 14 — Part 04",
+        "ur": "درس ۱۴ — حصہ ۰۴",
+        "roman": "Dars 14 — Hissa 04"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-047.mp3",
+      "durationSeconds": 1551,
+      "fileSizeBytes": 6204648,
+      "description": null
+    },
+    {
+      "id": "lec-048",
+      "number": 48,
+      "chapterId": "class-14",
+      "title": {
+        "en": "Class 14 — Part 05",
+        "ur": "درس ۱۴ — حصہ ۰۵",
+        "roman": "Dars 14 — Hissa 05"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-048.mp3",
+      "durationSeconds": 1360,
+      "fileSizeBytes": 5442500,
+      "description": null
+    },
+    {
+      "id": "lec-049",
+      "number": 49,
+      "chapterId": "class-15",
+      "title": {
+        "en": "Class 15 — Part 01",
+        "ur": "درس ۱۵ — حصہ ۰۱",
+        "roman": "Dars 15 — Hissa 01"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-049.mp3",
+      "durationSeconds": 2346,
+      "fileSizeBytes": 9384586,
+      "description": null
+    },
+    {
+      "id": "lec-050",
+      "number": 50,
+      "chapterId": "class-15",
+      "title": {
+        "en": "Class 15 — Part 02",
+        "ur": "درس ۱۵ — حصہ ۰۲",
+        "roman": "Dars 15 — Hissa 02"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-050.mp3",
+      "durationSeconds": 2095,
+      "fileSizeBytes": 8382633,
+      "description": null
+    }
+  ],
+  "dailyBenefits": [
+    {
+      "id": "benefit-001",
+      "textArabic": "مَنْ مَاتَ وَهُوَ يَعْلَمُ أَنَّهُ لَا إِلَهَ إِلَّا اللَّهُ دَخَلَ الْجَنَّةَ",
+      "text": "Whoever dies knowing that there is no god but Allah enters Paradise.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-002",
+      "textArabic": "أَفْضَلُ الذِّكْرِ لَا إِلَهَ إِلَّا اللَّهُ",
+      "text": "The best remembrance is: Lā ilāha illallāh (There is no god but Allah).",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-003",
+      "textArabic": "أَنَا عِنْدَ ظَنِّ عَبْدِي بِي",
+      "text": "Allah says: I am as My servant thinks of Me.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-004",
+      "textArabic": "اعْبُدِ اللَّهَ كَأَنَّكَ تَرَاهُ",
+      "text": "Worship Allah as if you see Him; if you cannot see Him, know that He sees you.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-005",
+      "textArabic": "أَفْضَلُ مَا قُلْتُ أَنَا وَالنَّبِيُّونَ مِنْ قَبْلِي: لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
+      "text": "The best words I and the Prophets before me have ever said: There is no god but Allah alone, with no partner.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-006",
+      "textArabic": "مَنْ أَشْرَكَ بِاللَّهِ فَقَدْ حَرَّمَ اللَّهُ عَلَيْهِ الْجَنَّةَ",
+      "text": "Whoever associates partners with Allah, Allah will forbid him Paradise.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-007",
+      "textArabic": "ادْعُونِي أَسْتَجِبْ لَكُمْ",
+      "text": "Call upon Me — I will respond to you.",
+      "source": "Quran 40:60"
+    },
+    {
+      "id": "benefit-008",
+      "textArabic": "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
+      "text": "Whoever relies upon Allah — He is sufficient for him.",
+      "source": "Quran 65:3"
+    },
+    {
+      "id": "benefit-009",
+      "textArabic": "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
+      "text": "Verily, in the remembrance of Allah do hearts find rest.",
+      "source": "Quran 13:28"
+    },
+    {
+      "id": "benefit-010",
+      "textArabic": "وَنَحْنُ أَقْرَبُ إِلَيْهِ مِنْ حَبْلِ الْوَرِيدِ",
+      "text": "We are closer to him than his jugular vein.",
+      "source": "Quran 50:16"
+    },
+    {
+      "id": "benefit-011",
+      "textArabic": "طَلَبُ الْعِلْمِ فَرِيضَةٌ عَلَى كُلِّ مُسْلِمٍ",
+      "text": "Seeking knowledge is an obligation upon every Muslim.",
+      "source": "Ibn Majah"
+    },
+    {
+      "id": "benefit-012",
+      "textArabic": "مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ",
+      "text": "Whoever treads a path in search of knowledge, Allah will ease for him the path to Paradise.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-013",
+      "textArabic": "إِنَّ اللَّهَ لَا يَقْبِضُ الْعِلْمَ انْتِزَاعًا يَنْتَزِعُهُ مِنَ الْعِبَادِ",
+      "text": "Allah does not take away knowledge by snatching it from people, but by taking away the scholars.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-014",
+      "textArabic": "الدُّعَاءُ هُوَ الْعِبَادَةُ",
+      "text": "Supplication is worship.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-015",
+      "textArabic": "مَنْ قَالَ: سُبْحَانَ اللَّهِ وَبِحَمْدِهِ فِي يَوْمٍ مِائَةَ مَرَّةٍ حُطَّتْ خَطَايَاهُ",
+      "text": "Whoever says 'SubhanAllahi wa bihamdihi' a hundred times a day — his sins are wiped away.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-016",
+      "textArabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+      "text": "There is no god but Allah alone, with no partner. His is the dominion, His is all praise, and He is over all things powerful.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-017",
+      "textArabic": "يَا ابْنَ آدَمَ، لَوْ بَلَغَتْ ذُنُوبُكَ عَنَانَ السَّمَاءِ ثُمَّ اسْتَغْفَرْتَنِي غَفَرْتُ لَكَ",
+      "text": "O son of Adam, were your sins to reach the clouds of the sky and you sought My forgiveness, I would forgive you.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-018",
+      "textArabic": "اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ",
+      "text": "O Allah, You are Peace and from You comes peace.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-019",
+      "textArabic": "إِنَّ اللَّهَ جَمِيلٌ يُحِبُّ الْجَمَالَ",
+      "text": "Allah is beautiful and loves beauty.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-020",
+      "textArabic": "الْمُؤْمِنُ الْقَوِيُّ خَيْرٌ وَأَحَبُّ إِلَى اللَّهِ مِنَ الْمُؤْمِنِ الضَّعِيفِ",
+      "text": "A strong believer is better and more beloved to Allah than a weak believer.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-021",
+      "textArabic": "تَعَلَّمُوا الْعِلْمَ وَتَعَلَّمُوا لِلْعِلْمِ السَّكِينَةَ وَالْوَقَارَ",
+      "text": "Learn knowledge, and for the sake of knowledge learn calmness and dignity.",
+      "source": "Ibn Umar"
+    },
+    {
+      "id": "benefit-022",
+      "textArabic": "مَنْ خَافَ أَدْلَجَ، وَمَنْ أَدْلَجَ بَلَغَ الْمَنْزِلَ",
+      "text": "Whoever fears the journey sets out early, and whoever sets out early reaches the destination.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-023",
+      "textArabic": "أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",
+      "text": "The most beloved deeds to Allah are those that are most consistent, even if they are few.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-024",
+      "textArabic": "وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ",
+      "text": "When My servants ask about Me, I am near. I answer the call of the one who calls when he calls upon Me.",
+      "source": "Quran 2:186"
+    },
+    {
+      "id": "benefit-025",
+      "textArabic": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+      "text": "Our Lord, give us good in this world and good in the Hereafter, and protect us from the punishment of the Fire.",
+      "source": "Quran 2:201"
+    },
+    {
+      "id": "benefit-026",
+      "textArabic": "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ",
+      "text": "Indeed, actions are by intentions.",
+      "source": "Sahih al-Bukhari"
+    },
+    {
+      "id": "benefit-027",
+      "textArabic": "اتَّقِ اللَّهَ حَيْثُمَا كُنْتَ",
+      "text": "Fear Allah wherever you are.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-028",
+      "textArabic": "كُلُّ بَنِي آدَمَ خَطَّاءٌ وَخَيْرُ الْخَطَّائِينَ التَّوَّابُونَ",
+      "text": "Every son of Adam sins, and the best of those who sin are those who repent.",
+      "source": "Tirmidhi"
+    },
+    {
+      "id": "benefit-029",
+      "textArabic": "لَا تَحْقِرَنَّ مِنَ الْمَعْرُوفِ شَيْئًا",
+      "text": "Do not consider any good deed insignificant.",
+      "source": "Sahih Muslim"
+    },
+    {
+      "id": "benefit-030",
+      "textArabic": "الْإِيمَانُ بِضْعٌ وَسَبْعُونَ شُعْبَةً، أَعْلَاهَا قَوْلُ لَا إِلَهَ إِلَّا اللَّهُ",
+      "text": "Faith has over seventy branches; the highest of them is saying Lā ilāha illallāh.",
+      "source": "Sahih al-Bukhari"
+    }
+  ],
+  "catalogUpdatedAt": "2026-06-01T00:00:00Z"
+}

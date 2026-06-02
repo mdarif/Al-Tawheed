@@ -1,27 +1,30 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/screens/home_video_screen.dart';
-import 'package:myapp/screens/video_screen.dart';
-import 'package:myapp/screens/welcome.dart';
-import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/app.dart';
+import 'package:myapp/audio/audio_handler.dart';
+import 'package:myapp/services/download_service.dart';
+import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sharah Kitab al-Tawheed',
-      initialRoute: '/',
-      routes: {
-        '/': (context) => WelcomeScreen(),
-        '/videoscreen': (context) => HomeVideoScreen(),
-        '/video': (context) => VideoScreen(),
-      },
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-    );
-  }
+  // Must be initialised before ProgressProvider.load() is called synchronously
+  await PreferencesService.instance.init();
+  // Must be initialised before DownloadsProvider.load() so localPath() is synchronous
+  await DownloadService.init();
+
+  // Explicit type parameter required — without it, type inference fails on iOS.
+  final audioHandler = await AudioService.init<TawheedAudioHandler>(
+    builder: () => TawheedAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.almarfa.tawheed.audio',
+      androidNotificationChannelName: 'Sharah Kitab al-Tawheed',
+      androidNotificationOngoing: true,
+      androidShowNotificationBadge: true,
+      notificationColor: AppColors.goldLightTheme,
+    ),
+  );
+
+  runApp(MyApp(audioHandler: audioHandler));
 }
