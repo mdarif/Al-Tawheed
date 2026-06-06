@@ -23,8 +23,9 @@ dependencies:
   go_router: ^14.2.0
   # Persistence
   shared_preferences: ^2.3.2
-  # Networking (catalog fetch)
+  # Networking (catalog fetch + connectivity)
   http: ^1.2.0
+  connectivity_plus: ^6.0.0
   # Localisation
   intl: ^0.20.2
   google_fonts: ^6.2.1
@@ -33,6 +34,8 @@ dependencies:
   url_launcher: ^6.3.1
   share_plus: ^13.1.0
   package_info_plus: ^10.1.0
+  # Notifications
+  flutter_local_notifications: ^17.0.0
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/mini_player.dart';
+import 'package:myapp/widgets/offline_status_banner.dart';
 
 class ShellScreen extends StatelessWidget {
   final Widget child;
@@ -12,7 +13,12 @@ class ShellScreen extends StatelessWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      body: child,
+      body: Column(
+        children: [
+          const OfflineStatusBanner(),
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

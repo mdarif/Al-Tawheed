@@ -2,6 +2,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/app.dart';
 import 'package:myapp/audio/audio_handler.dart';
+import 'package:myapp/services/download_notification_service.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_colors.dart';
@@ -13,6 +14,7 @@ Future<void> main() async {
   await PreferencesService.instance.init();
   // Must be initialised before DownloadsProvider.load() so localPath() is synchronous
   await DownloadService.init();
+  await DownloadNotificationService.instance.init();
 
   // Explicit type parameter required — without it, type inference fails on iOS.
   final audioHandler = await AudioService.init<TawheedAudioHandler>(

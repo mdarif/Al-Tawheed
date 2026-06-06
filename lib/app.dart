@@ -7,6 +7,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -17,6 +18,7 @@ import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
+import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
 import 'package:myapp/screens/study_screen.dart';
@@ -61,6 +63,14 @@ final _router = GoRouter(
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+    ),
+
+    // Offline library — root navigator (same as /player) so pushes from the
+    // player sheet or Settings never duplicate ShellRoute page keys.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/offline-library',
+      builder: (context, state) => const OfflineLibraryScreen(),
     ),
 
     // Full-screen player — parentNavigatorKey forces it onto the root
@@ -117,11 +127,13 @@ class MyApp extends StatelessWidget {
           )..load(),
         ),
         ChangeNotifierProvider(create: (_) => DownloadsProvider()..load()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(
             audioHandler,
             ctx.read<ProgressProvider>(),
             ctx.read<DownloadsProvider>(),
+            ctx.read<ConnectivityProvider>(),
           ),
         ),
         ChangeNotifierProvider(

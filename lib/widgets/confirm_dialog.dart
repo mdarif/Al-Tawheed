@@ -1,5 +1,30 @@
 import 'package:flutter/material.dart';
 
+/// Shows a single-action informational dialog. Uses the dialog's [BuildContext]
+/// for the pop so it works correctly under go_router.
+Future<void> showAlertDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String? okLabel,
+}) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(
+            okLabel ?? MaterialLocalizations.of(dialogContext).okButtonLabel,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows a two-action confirmation dialog and returns whether the user confirmed.
 ///
 /// Always pops using the dialog's [BuildContext], not the caller's. Using the

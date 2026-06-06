@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
+import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/download_button.dart';
 
 class LectureTile extends StatelessWidget {
@@ -16,37 +19,81 @@ class LectureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final downloadsEnabled = context.select<FeatureFlagsProvider, bool>(
+      (p) => p.features.downloads,
+    );
+
+    // Offline guard only active when downloads feature is on
+    if (downloadsEnabled) {
+      final isOffline = context.select<ConnectivityProvider, bool>(
+        (c) => c.isOffline,
+      );
+      final isDownloaded = context.select<DownloadsProvider, bool>(
+        (d) => d.isDownloaded(lecture.id),
+      );
+      final blocked = isOffline && !isDownloaded;
+
+      return Opacity(
+        opacity: blocked ? 0.45 : 1.0,
+        child: InkWell(
+          onTap: blocked
+              ? () => _showOfflineSnackBar(context)
+              : onTap,
+          child: _TileContent(lecture: lecture),
+        ),
+      );
+    }
+
     return InkWell(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            _ProgressBadge(lecture: lecture),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.read<LanguageProvider>().resolve(lecture.title),
-                    style: context.textTheme.titleMedium?.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
+      child: _TileContent(lecture: lecture),
+    );
+  }
+
+  void _showOfflineSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.offlineNotDownloaded),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
+class _TileContent extends StatelessWidget {
+  final Lecture lecture;
+  const _TileContent({required this.lecture});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          _ProgressBadge(lecture: lecture),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.read<LanguageProvider>().resolve(lecture.title),
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    DurationFormatter.fromSeconds(lecture.durationSeconds),
-                    style: context.textTheme.bodySmall?.copyWith(fontSize: 12),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  DurationFormatter.fromSeconds(lecture.durationSeconds),
+                  style: context.textTheme.bodySmall?.copyWith(fontSize: 12),
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            _TileTrailing(lecture: lecture),
-          ],
-        ),
+          ),
+          const SizedBox(width: 4),
+          _TileTrailing(lecture: lecture),
+        ],
       ),
     );
   }
@@ -123,7 +170,6 @@ class _TileTrailing extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Bookmark pip — tiny filled icon, only shows when saved
           Selector<ProgressProvider, bool>(
             selector: (_, p) => p.isBookmarked(lecture.id),
             builder: (_, saved, __) => saved
@@ -142,7 +188,6 @@ class _TileTrailing extends StatelessWidget {
       );
     }
 
-    // Downloads disabled — original bookmark/play circle
     return Selector<ProgressProvider, bool>(
       selector: (_, p) => p.isBookmarked(lecture.id),
       builder: (_, isBookmarked, __) => Icon(

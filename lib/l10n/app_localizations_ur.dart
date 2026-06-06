@@ -156,6 +156,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get retry => 'دوبارہ کوشش کریں';
 
   @override
+  String get catalogConnectToLoadTitle =>
+      'دروس لوڈ کرنے کے لیے انٹرنیٹ سے جڑیں';
+
+  @override
+  String get catalogConnectToLoadMessage =>
+      'ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔';
+
+  @override
   String get settingsLanguage => 'زبان';
 
   @override
@@ -291,6 +299,123 @@ class AppLocalizationsUr extends AppLocalizations {
   String lecturesCount(int count, String duration) {
     return '$count دروس · $duration';
   }
+
+  @override
+  String get offlineSourceSaved => 'آف لائن محفوظ';
+
+  @override
+  String get offlineSourceStreaming => 'اسٹریمنگ';
+
+  @override
+  String get offlineNotAvailableOffline => 'آف لائن دستیاب نہیں';
+
+  @override
+  String get offlineBadge => 'آف لائن';
+
+  @override
+  String get retryDownload => 'دوبارہ ڈاؤن لوڈ کریں';
+
+  @override
+  String get offlineNoConnection => 'کوئی کنکشن نہیں';
+
+  @override
+  String get offlineConnectionLost => 'کنکشن ٹوٹ گیا';
+
+  @override
+  String offlineDownloading(int percent) {
+    return 'ڈاؤن لوڈ ہو رہا ہے… $percent%';
+  }
+
+  @override
+  String offlineDownloadLecture(String size) {
+    return 'درس ڈاؤن لوڈ کریں · $size MB';
+  }
+
+  @override
+  String get offlineCancelDownload => 'ڈاؤن لوڈ منسوخ کریں';
+
+  @override
+  String get offlineRemoveDownload => 'ڈاؤن لوڈ حذف کریں';
+
+  @override
+  String get offlineManageDownloads => 'ڈاؤن لوڈز منظم کریں';
+
+  @override
+  String get offlineNextBlockedTitle => 'آف لائن دستیاب نہیں';
+
+  @override
+  String offlineNextBlockedBody(String title) {
+    return '\'$title\' محفوظ نہیں۔ آن لائن آنے پر ڈاؤن لوڈ کریں۔';
+  }
+
+  @override
+  String offlineNextBlockedQueued(String title) {
+    return '\'$title\' آن لائن آنے پر ڈاؤن لوڈ ہوگا۔';
+  }
+
+  @override
+  String get offlineNotDownloaded =>
+      'آف لائن سننے کے لیے یہ درس ڈاؤن لوڈ کریں۔';
+
+  @override
+  String get offlineLibrary => 'ڈاؤن لوڈز';
+
+  @override
+  String get offlineLibraryEmpty => 'ابھی کوئی ڈاؤن لوڈ نہیں';
+
+  @override
+  String get offlineLibraryEmptyHint =>
+      'آف لائن سننے کے لیے کسی درس پر ڈاؤن لوڈ آئیکن ٹیپ کریں';
+
+  @override
+  String get viewOfflineLibrary => 'ڈاؤن لوڈز دیکھیں';
+
+  @override
+  String get downloadOnWifiOnly => 'صرف Wi-Fi پر ڈاؤن لوڈ کریں';
+
+  @override
+  String get downloadOnWifiOnlyHint => 'موبائل ڈیٹا پر ڈاؤن لوڈ روکیں';
+
+  @override
+  String get wifiOnlyBlocked => 'ڈاؤن لوڈ کے لیے Wi-Fi سے جڑیں';
+
+  @override
+  String downloadChapterAll(String size) {
+    return 'باب ڈاؤن لوڈ کریں (~$size MB)';
+  }
+
+  @override
+  String get cancelChapterDownload => 'باب کا ڈاؤن لوڈ منسوخ کریں';
+
+  @override
+  String offlineChapterProgress(int downloaded, int total) {
+    return '$downloaded از $total حصے محفوظ';
+  }
+
+  @override
+  String get deleteChapter => 'باب ہٹائیں';
+
+  @override
+  String get downloadRemaining => 'باقی ڈاؤن لوڈ کریں';
+
+  @override
+  String get deleteChapterConfirm => 'تمام محفوظ حصے ہٹائیں؟';
+
+  @override
+  String offlinePrepTitle(int count) {
+    return 'اگلے $count حصے ڈاؤن لوڈ کریں';
+  }
+
+  @override
+  String offlinePrepSize(String size) {
+    return '~$size MB';
+  }
+
+  @override
+  String get offlinePrepSave => 'ڈاؤن لوڈ کریں';
+
+  @override
+  String get downloadComplete => 'ڈاؤن لوڈ مکمل';
 }
 
 /// The translations for Urdu (`ur_roman`).
@@ -447,6 +572,14 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get retry => 'Dobara koshish karein';
 
   @override
+  String get catalogConnectToLoadTitle =>
+      'Dars load karne ke liye internet se judein';
+
+  @override
+  String get catalogConnectToLoadMessage =>
+      'Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.';
+
+  @override
   String get settingsLanguage => 'Zabaan';
 
   @override
@@ -584,4 +717,121 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String lecturesCount(int count, String duration) {
     return '$count dars · $duration';
   }
+
+  @override
+  String get offlineSourceSaved => 'Offline محفوظ';
+
+  @override
+  String get offlineSourceStreaming => 'Streaming';
+
+  @override
+  String get offlineNotAvailableOffline => 'Offline dastiyab nahi';
+
+  @override
+  String get offlineBadge => 'Offline';
+
+  @override
+  String get retryDownload => 'Dobara download karein';
+
+  @override
+  String get offlineNoConnection => 'Koi connection nahi';
+
+  @override
+  String get offlineConnectionLost => 'Connection toot gaya';
+
+  @override
+  String offlineDownloading(int percent) {
+    return 'Download ho raha hai… $percent%';
+  }
+
+  @override
+  String offlineDownloadLecture(String size) {
+    return 'Dars download karein · $size MB';
+  }
+
+  @override
+  String get offlineCancelDownload => 'Download mansookh karein';
+
+  @override
+  String get offlineRemoveDownload => 'Download hata dein';
+
+  @override
+  String get offlineManageDownloads => 'Downloads manage karein';
+
+  @override
+  String get offlineNextBlockedTitle => 'Offline dastiyab nahi';
+
+  @override
+  String offlineNextBlockedBody(String title) {
+    return '\'$title\' محفوظ نہیں۔ Online aane par download karein.';
+  }
+
+  @override
+  String offlineNextBlockedQueued(String title) {
+    return '\'$title\' online aane par download hoga.';
+  }
+
+  @override
+  String get offlineNotDownloaded =>
+      'Offline sunne ke liye yeh dars download karein.';
+
+  @override
+  String get offlineLibrary => 'Downloads';
+
+  @override
+  String get offlineLibraryEmpty => 'Abhi koi download nahi';
+
+  @override
+  String get offlineLibraryEmptyHint =>
+      'Offline sunne ke liye kisi bhi dars par download icon tap karein';
+
+  @override
+  String get viewOfflineLibrary => 'Downloads dekhein';
+
+  @override
+  String get downloadOnWifiOnly => 'Sirf Wi-Fi par download karein';
+
+  @override
+  String get downloadOnWifiOnlyHint => 'Mobile data par download rokein';
+
+  @override
+  String get wifiOnlyBlocked => 'Download ke liye Wi-Fi se judein';
+
+  @override
+  String downloadChapterAll(String size) {
+    return 'Chapter download karein (~$size MB)';
+  }
+
+  @override
+  String get cancelChapterDownload => 'Chapter download mansookh karein';
+
+  @override
+  String offlineChapterProgress(int downloaded, int total) {
+    return '$downloaded az $total hisse mahfooz';
+  }
+
+  @override
+  String get deleteChapter => 'Chapter hata dein';
+
+  @override
+  String get downloadRemaining => 'Baqi download karein';
+
+  @override
+  String get deleteChapterConfirm => 'Tamam mahfooz hisse hata dein?';
+
+  @override
+  String offlinePrepTitle(int count) {
+    return 'Aglay $count hisse download karein';
+  }
+
+  @override
+  String offlinePrepSize(String size) {
+    return '~$size MB';
+  }
+
+  @override
+  String get offlinePrepSave => 'Download karein';
+
+  @override
+  String get downloadComplete => 'Download mukammal';
 }

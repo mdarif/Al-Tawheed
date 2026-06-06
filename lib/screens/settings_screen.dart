@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
@@ -151,6 +152,21 @@ class _DownloadsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(l10n.settingsDownloads),
+
+        // Wi-Fi only toggle
+        SwitchListTile(
+          secondary: const Icon(Icons.wifi_rounded),
+          title: Text(l10n.downloadOnWifiOnly),
+          subtitle: Text(
+            l10n.downloadOnWifiOnlyHint,
+            style: context.textTheme.bodySmall,
+          ),
+          value: downloads.downloadOnWifiOnly,
+          activeThumbColor: context.brandColor,
+          onChanged: (v) => context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
+        ),
+
+        // Storage summary + library link
         ListTile(
           leading: const Icon(Icons.storage_rounded),
           title: Text(count == 0
@@ -158,17 +174,23 @@ class _DownloadsSection extends StatelessWidget {
               : l10n.settingsDownloadsCount(count)),
           subtitle:
               count > 0 ? Text(l10n.settingsStorageUsed(_formatBytes(size))) : null,
+          trailing: count > 0
+              ? const Icon(Icons.chevron_right_rounded)
+              : null,
+          onTap: count > 0
+              ? () => context.push('/offline-library')
+              : null,
         ),
+
         if (count > 0)
           ListTile(
             leading: Icon(
               Icons.delete_outline_rounded,
-              color: Theme.of(context).colorScheme.error,
+              color: context.colorScheme.error,
             ),
             title: Text(
               l10n.settingsClearDownloads,
-              style:
-                  TextStyle(color: Theme.of(context).colorScheme.error),
+              style: TextStyle(color: context.colorScheme.error),
             ),
             onTap: () async {
               final confirmed = await showConfirmDialog(

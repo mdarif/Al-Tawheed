@@ -345,6 +345,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @catalogConnectToLoadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to load lectures'**
+  String get catalogConnectToLoadTitle;
+
+  /// No description provided for @catalogConnectToLoadMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.'**
+  String get catalogConnectToLoadMessage;
+
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:
@@ -578,6 +590,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} lectures · {duration}'**
   String lecturesCount(int count, String duration);
+
+  /// No description provided for @offlineSourceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved for offline'**
+  String get offlineSourceSaved;
+
+  /// No description provided for @offlineSourceStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get offlineSourceStreaming;
+
+  /// No description provided for @offlineNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get offlineNotAvailableOffline;
+
+  /// No description provided for @offlineBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineBadge;
+
+  /// No description provided for @retryDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry download'**
+  String get retryDownload;
+
+  /// No description provided for @offlineNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get offlineNoConnection;
+
+  /// No description provided for @offlineConnectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost'**
+  String get offlineConnectionLost;
+
+  /// No description provided for @offlineDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {percent}%'**
+  String offlineDownloading(int percent);
+
+  /// No description provided for @offlineDownloadLecture.
+  ///
+  /// In en, this message translates to:
+  /// **'Download lecture · {size} MB'**
+  String offlineDownloadLecture(String size);
+
+  /// No description provided for @offlineCancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get offlineCancelDownload;
+
+  /// No description provided for @offlineRemoveDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove download'**
+  String get offlineRemoveDownload;
+
+  /// No description provided for @offlineManageDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage downloads'**
+  String get offlineManageDownloads;
+
+  /// No description provided for @offlineNextBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get offlineNextBlockedTitle;
+
+  /// No description provided for @offlineNextBlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{title}\' isn\'t saved. Download it when you\'re back online.'**
+  String offlineNextBlockedBody(String title);
+
+  /// No description provided for @offlineNextBlockedQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'\'{title}\' will download when you\'re back online.'**
+  String offlineNextBlockedQueued(String title);
+
+  /// No description provided for @offlineNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Download this lecture to listen offline.'**
+  String get offlineNotDownloaded;
+
+  /// No description provided for @offlineLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get offlineLibrary;
+
+  /// No description provided for @offlineLibraryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloads yet'**
+  String get offlineLibraryEmpty;
+
+  /// No description provided for @offlineLibraryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the download icon on any lecture to listen offline'**
+  String get offlineLibraryEmptyHint;
+
+  /// No description provided for @viewOfflineLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'View downloads'**
+  String get viewOfflineLibrary;
+
+  /// No description provided for @downloadOnWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Download on Wi-Fi only'**
+  String get downloadOnWifiOnly;
+
+  /// No description provided for @downloadOnWifiOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause downloads on mobile data'**
+  String get downloadOnWifiOnlyHint;
+
+  /// No description provided for @wifiOnlyBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Wi-Fi to download'**
+  String get wifiOnlyBlocked;
+
+  /// No description provided for @downloadChapterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Download chapter (~{size} MB)'**
+  String downloadChapterAll(String size);
+
+  /// No description provided for @cancelChapterDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel chapter download'**
+  String get cancelChapterDownload;
+
+  /// No description provided for @offlineChapterProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{downloaded} of {total} parts saved'**
+  String offlineChapterProgress(int downloaded, int total);
+
+  /// No description provided for @deleteChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove chapter'**
+  String get deleteChapter;
+
+  /// No description provided for @downloadRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Download remaining'**
+  String get downloadRemaining;
+
+  /// No description provided for @deleteChapterConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all saved parts?'**
+  String get deleteChapterConfirm;
+
+  /// No description provided for @offlinePrepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download next {count} {count, plural, =1{part} other{parts}} offline'**
+  String offlinePrepTitle(int count);
+
+  /// No description provided for @offlinePrepSize.
+  ///
+  /// In en, this message translates to:
+  /// **'~{size} MB'**
+  String offlinePrepSize(String size);
+
+  /// No description provided for @offlinePrepSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get offlinePrepSave;
+
+  /// No description provided for @downloadComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Download complete'**
+  String get downloadComplete;
 }
 
 class _AppLocalizationsDelegate

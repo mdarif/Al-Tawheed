@@ -45,6 +45,8 @@
 
   "couldNotLoadLectures": "Dars load nahin ho sake",
   "retry": "Dobara koshish karein",
+  "catalogConnectToLoadTitle": "Dars load karne ke liye internet se judein",
+  "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",
 
   "settingsLanguage": "Zabaan",
   "settingsAppearance": "Zahiri shakl",
@@ -88,5 +90,46 @@
   "languageArabic": "العربية",
 
   "partsCount": "{count} hisse",
-  "lecturesCount": "{count} dars · {duration}"
+  "lecturesCount": "{count} dars · {duration}",
+
+  "offlineSourceSaved": "Offline محفوظ",
+  "offlineSourceStreaming": "Streaming",
+  "offlineNotAvailableOffline": "Offline dastiyab nahi",
+  "offlineBadge": "Offline",
+  "retryDownload": "Dobara download karein",
+  "offlineNoConnection": "Koi connection nahi",
+  "offlineConnectionLost": "Connection toot gaya",
+  "offlineDownloading": "Download ho raha hai… {percent}%",
+  "offlineDownloadLecture": "Dars download karein · {size} MB",
+  "offlineCancelDownload": "Download mansookh karein",
+  "offlineRemoveDownload": "Download hata dein",
+  "offlineManageDownloads": "Downloads manage karein",
+  "offlineNextBlockedTitle": "Offline dastiyab nahi",
+  "offlineNextBlockedBody": "'{title}' محفوظ نہیں۔ Online aane par download karein.",
+  "offlineNextBlockedQueued": "'{title}' online aane par download hoga.",
+  "offlineNotDownloaded": "Offline sunne ke liye yeh dars download karein.",
+
+  "offlineLibrary": "Downloads",
+  "offlineLibraryEmpty": "Abhi koi download nahi",
+  "offlineLibraryEmptyHint": "Offline sunne ke liye kisi bhi dars par download icon tap karein",
+  "viewOfflineLibrary": "Downloads dekhein",
+  "downloadOnWifiOnly": "Sirf Wi-Fi par download karein",
+  "downloadOnWifiOnlyHint": "Mobile data par download rokein",
+  "wifiOnlyBlocked": "Download ke liye Wi-Fi se judein",
+  "downloadChapterAll": "Chapter download karein (~{size} MB)",
+  "cancelChapterDownload": "Chapter download mansookh karein",
+  "offlineChapterProgress": "{downloaded} az {total} hisse mahfooz",
+  "deleteChapter": "Chapter hata dein",
+  "downloadRemaining": "Baqi download karein",
+  "deleteChapterConfirm": "Tamam mahfooz hisse hata dein?",
+  "offlinePrepTitle": "Aglay {count} hisse download karein",
+  "@offlinePrepTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlinePrepSize": "~{size} MB",
+  "@offlinePrepSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlinePrepSave": "Download karein",
+  "downloadComplete": "Download mukammal"
 }

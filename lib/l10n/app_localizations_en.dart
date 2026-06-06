@@ -155,6 +155,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get catalogConnectToLoadTitle => 'Connect to load lectures';
+
+  @override
+  String get catalogConnectToLoadMessage =>
+      'Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.';
+
+  @override
   String get settingsLanguage => 'Language';
 
   @override
@@ -310,4 +317,126 @@ class AppLocalizationsEn extends AppLocalizations {
   String lecturesCount(int count, String duration) {
     return '$count lectures · $duration';
   }
+
+  @override
+  String get offlineSourceSaved => 'Saved for offline';
+
+  @override
+  String get offlineSourceStreaming => 'Streaming';
+
+  @override
+  String get offlineNotAvailableOffline => 'Not available offline';
+
+  @override
+  String get offlineBadge => 'Offline';
+
+  @override
+  String get retryDownload => 'Retry download';
+
+  @override
+  String get offlineNoConnection => 'No connection';
+
+  @override
+  String get offlineConnectionLost => 'Connection lost';
+
+  @override
+  String offlineDownloading(int percent) {
+    return 'Downloading… $percent%';
+  }
+
+  @override
+  String offlineDownloadLecture(String size) {
+    return 'Download lecture · $size MB';
+  }
+
+  @override
+  String get offlineCancelDownload => 'Cancel download';
+
+  @override
+  String get offlineRemoveDownload => 'Remove download';
+
+  @override
+  String get offlineManageDownloads => 'Manage downloads';
+
+  @override
+  String get offlineNextBlockedTitle => 'Not available offline';
+
+  @override
+  String offlineNextBlockedBody(String title) {
+    return '\'$title\' isn\'t saved. Download it when you\'re back online.';
+  }
+
+  @override
+  String offlineNextBlockedQueued(String title) {
+    return '\'$title\' will download when you\'re back online.';
+  }
+
+  @override
+  String get offlineNotDownloaded => 'Download this lecture to listen offline.';
+
+  @override
+  String get offlineLibrary => 'Downloads';
+
+  @override
+  String get offlineLibraryEmpty => 'No downloads yet';
+
+  @override
+  String get offlineLibraryEmptyHint =>
+      'Tap the download icon on any lecture to listen offline';
+
+  @override
+  String get viewOfflineLibrary => 'View downloads';
+
+  @override
+  String get downloadOnWifiOnly => 'Download on Wi-Fi only';
+
+  @override
+  String get downloadOnWifiOnlyHint => 'Pause downloads on mobile data';
+
+  @override
+  String get wifiOnlyBlocked => 'Connect to Wi-Fi to download';
+
+  @override
+  String downloadChapterAll(String size) {
+    return 'Download chapter (~$size MB)';
+  }
+
+  @override
+  String get cancelChapterDownload => 'Cancel chapter download';
+
+  @override
+  String offlineChapterProgress(int downloaded, int total) {
+    return '$downloaded of $total parts saved';
+  }
+
+  @override
+  String get deleteChapter => 'Remove chapter';
+
+  @override
+  String get downloadRemaining => 'Download remaining';
+
+  @override
+  String get deleteChapterConfirm => 'Remove all saved parts?';
+
+  @override
+  String offlinePrepTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'parts',
+      one: 'part',
+    );
+    return 'Download next $count $_temp0 offline';
+  }
+
+  @override
+  String offlinePrepSize(String size) {
+    return '~$size MB';
+  }
+
+  @override
+  String get offlinePrepSave => 'Download';
+
+  @override
+  String get downloadComplete => 'Download complete';
 }

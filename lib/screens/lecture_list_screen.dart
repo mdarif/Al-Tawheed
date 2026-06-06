@@ -6,6 +6,8 @@ import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 class LectureListScreen extends StatefulWidget {
@@ -31,7 +33,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
         builder: (context, provider, _) {
           return switch (provider.status) {
             CatalogStatus.idle || CatalogStatus.loading => _buildLoading(),
-            CatalogStatus.error => _buildError(provider.error!, provider),
+            CatalogStatus.error => provider.needsOnlineToLoad
+                ? _buildConnectRequired(provider)
+                : _buildError(provider.error!, provider),
             CatalogStatus.loaded => _buildList(provider.catalog!),
           };
         },
@@ -52,7 +56,19 @@ class _LectureListScreenState extends State<LectureListScreen> {
     );
   }
 
+  Widget _buildConnectRequired(CatalogProvider provider) {
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(null),
+        SliverFillRemaining(
+          child: CatalogConnectRequiredBody(provider: provider),
+        ),
+      ],
+    );
+  }
+
   Widget _buildError(String message, CatalogProvider provider) {
+    final l10n = context.l10n;
     return CustomScrollView(
       slivers: [
         _buildAppBar(null),
@@ -66,7 +82,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
                     size: 52, color: context.mutedIconColor),
                 const SizedBox(height: 20),
                 Text(
-                  'Could not load lectures',
+                  l10n.couldNotLoadLectures,
                   style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -80,7 +96,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
                 FilledButton.icon(
                   onPressed: provider.load,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
+                  label: Text(l10n.retry),
                 ),
               ],
             ),
@@ -107,7 +123,13 @@ class _LectureListScreenState extends State<LectureListScreen> {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final item = items[index];
-              if (item.isChapter) return ChapterHeader(chapter: item.chapter!);
+              if (item.isChapter) {
+                return ChapterHeader(
+                  chapter: item.chapter!,
+                  chapterLectures:
+                      catalog.lecturesForChapter(item.chapter!.id),
+                );
+              }
               return Column(
                 children: [
                   LectureTile(

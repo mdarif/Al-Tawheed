@@ -3,8 +3,10 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
 import 'package:myapp/audio/playback_mode.dart';
+import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -13,8 +15,10 @@ class PlayerNotifier extends ChangeNotifier {
   final TawheedAudioHandler _handler;
   final ProgressProvider _progress;
   final DownloadsProvider _downloads;
+  final ConnectivityProvider _connectivity;
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _saveTimer;
+  Timer? _stuckBufferingTimer;
 
   Lecture? _current;
   List<Lecture> _queue = const [];
@@ -25,25 +29,38 @@ class PlayerNotifier extends ChangeNotifier {
   Duration _duration = Duration.zero;
   bool _playing = false;
   bool _loading = false;
+  bool _isStuckBuffering = false;
   double _speed = 1.0;
   DateTime? _lastPositionNotify;
+  PlaybackSource _playbackSource = PlaybackSource.stream;
+  bool _pendingNextBlocked = false;
+  String? _pendingNextBlockedTitle;
+  Lecture? _pendingNextBlockedLecture;
 
-  PlayerNotifier(this._handler, this._progress, this._downloads) {
-    // Restore saved playback speed immediately so it's applied on first play
+  PlayerNotifier(
+      this._handler, this._progress, this._downloads, this._connectivity) {
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
       _speed = savedSpeed;
       _handler.setSpeed(savedSpeed);
     }
+    _connectivity.addListener(_onConnectivityChanged);
+    _downloads.addListener(_onDownloadsChanged);
     _subs.addAll([
       _handler.playbackState.listen((state) {
+        final wasLoading = _loading;
         final wasPlaying = _playing;
         _playing = state.playing;
         _loading = state.processingState == AudioProcessingState.loading ||
             state.processingState == AudioProcessingState.buffering;
         _speed = state.speed;
-        // Save whenever playback stops for any reason — covers lock screen
-        // pause, incoming calls, headphone disconnect, background kill, etc.
+
+        if (_loading && !wasLoading) {
+          _startStuckBufferingTimer();
+        } else if (!_loading) {
+          _cancelStuckBufferingTimer();
+        }
+
         if (wasPlaying && !_playing) _saveCurrentPosition();
         notifyListeners();
       }),
@@ -74,12 +91,17 @@ class PlayerNotifier extends ChangeNotifier {
   bool get hasAudio => _current != null;
   bool get isPlaying => _playing;
   bool get isLoading => _loading;
+  bool get isStuckBuffering => _isStuckBuffering;
   Duration get position => _position;
   Duration get duration => _duration;
   double get speed => _speed;
   PlaybackMode get playbackMode => _playbackMode;
   Chapter? get studyChapter => _studyChapter;
   String? get pendingStudyChapterCompleteId => _pendingStudyChapterCompleteId;
+  PlaybackSource get playbackSource => _playbackSource;
+  bool get pendingNextBlocked => _pendingNextBlocked;
+  String? get pendingNextBlockedTitle => _pendingNextBlockedTitle;
+  Lecture? get pendingNextBlockedLecture => _pendingNextBlockedLecture;
 
   String? get studyContextLabel => formatStudyContextLabel(
         mode: _playbackMode,
@@ -125,23 +147,35 @@ class PlayerNotifier extends ChangeNotifier {
       _studyChapter = null;
     }
     _pendingStudyChapterCompleteId = null;
-    _saveCurrentPosition(); // persist position of previous lecture before switching
+    _saveCurrentPosition();
     _cancelSaveTimer();
+    _cancelStuckBufferingTimer();
 
     _current = lecture;
     _queue = List.unmodifiable(queue);
     _position = Duration.zero;
     _duration = Duration(seconds: lecture.durationSeconds);
+    _isStuckBuffering = false;
+
+    final localPath = _downloads.localPathIfDownloaded(lecture.id);
+
+    if (_connectivity.isOffline && localPath == null) {
+      _playbackSource = PlaybackSource.blocked;
+      _loading = false;
+      notifyListeners();
+      return;
+    }
+
+    _playbackSource =
+        localPath != null ? PlaybackSource.local : PlaybackSource.stream;
     _loading = true;
     notifyListeners();
 
-    // Restore saved position — skip if within 30s of start or within 30s of end
     final saved = _progress.getPositionSeconds(lecture.id);
     final resumeAt = saved > 30 && saved < lecture.durationSeconds - 30
         ? Duration(seconds: saved)
         : Duration.zero;
 
-    final localPath = _downloads.localPathIfDownloaded(lecture.id);
     await _handler.loadLecture(
       lecture,
       startFrom: resumeAt,
@@ -152,7 +186,7 @@ class PlayerNotifier extends ChangeNotifier {
 
   Future<void> playPause() async {
     if (_playing) {
-      _saveCurrentPosition(); // save before pausing so position survives restart
+      _saveCurrentPosition();
       await _handler.pause();
     } else {
       await _handler.play();
@@ -174,8 +208,16 @@ class PlayerNotifier extends ChangeNotifier {
   Future<void> playNext() async {
     final idx = _currentIndex;
     if (idx >= 0 && idx < _queue.length - 1) {
+      final next = _queue[idx + 1];
+      if (_connectivity.isOffline && !_downloads.isDownloaded(next.id)) {
+        _pendingNextBlocked = true;
+        _pendingNextBlockedTitle = next.title.en;
+        _pendingNextBlockedLecture = next;
+        notifyListeners();
+        return;
+      }
       await loadAndPlay(
-        _queue[idx + 1],
+        next,
         _queue,
         mode: _playbackMode,
         studyChapter: _studyChapter,
@@ -203,16 +245,68 @@ class PlayerNotifier extends ChangeNotifier {
   Future<void> stop() async {
     _saveCurrentPosition();
     _cancelSaveTimer();
+    _cancelStuckBufferingTimer();
     await _handler.stop();
     _current = null;
     _playbackMode = PlaybackMode.casual;
     _studyChapter = null;
     _pendingStudyChapterCompleteId = null;
+    _pendingNextBlocked = false;
+    _pendingNextBlockedTitle = null;
+    _pendingNextBlockedLecture = null;
+    _playbackSource = PlaybackSource.stream;
+    _isStuckBuffering = false;
     notifyListeners();
   }
 
   void clearPendingStudyComplete() {
     _pendingStudyChapterCompleteId = null;
+  }
+
+  void clearPendingNextBlocked() {
+    _pendingNextBlocked = false;
+    _pendingNextBlockedTitle = null;
+    _pendingNextBlockedLecture = null;
+    notifyListeners();
+  }
+
+  // ── Connectivity recovery ────────────────────────────────────────────────
+
+  void _onConnectivityChanged() {
+    if (_connectivity.isOnline && _isStuckBuffering && _current != null) {
+      // Network came back while we were buffering — reload and resume.
+      _isStuckBuffering = false;
+      loadAndPlay(
+        _current!,
+        _queue,
+        mode: _playbackMode,
+        studyChapter: _studyChapter,
+      );
+    } else if (_connectivity.isOnline && _playbackSource == PlaybackSource.blocked && _current != null) {
+      // Was blocked because offline; now online so the UI can unlock.
+      // Don't auto-play — user may have put phone down. Just clear blocked state.
+      _playbackSource = PlaybackSource.stream;
+      notifyListeners();
+    } else {
+      // Went offline — notify so strip appears immediately without waiting for stuck timer.
+      notifyListeners();
+    }
+
+    if (_connectivity.isOnline) {
+      unawaited(_downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi));
+    }
+  }
+
+  void _onDownloadsChanged() {
+    final id = _current?.id;
+    if (id == null || _downloads.isDownloaded(id)) return;
+
+    if (_playbackSource != PlaybackSource.local) return;
+
+    _playbackSource =
+        _connectivity.isOffline ? PlaybackSource.blocked : PlaybackSource.stream;
+    unawaited(_handler.pause());
+    notifyListeners();
   }
 
   // ── Progress persistence ─────────────────────────────────────────────────
@@ -226,6 +320,22 @@ class PlayerNotifier extends ChangeNotifier {
   void _cancelSaveTimer() {
     _saveTimer?.cancel();
     _saveTimer = null;
+  }
+
+  void _startStuckBufferingTimer() {
+    _stuckBufferingTimer?.cancel();
+    _stuckBufferingTimer = Timer(const Duration(seconds: 8), () {
+      if (_loading) {
+        _isStuckBuffering = true;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _cancelStuckBufferingTimer() {
+    _stuckBufferingTimer?.cancel();
+    _stuckBufferingTimer = null;
+    _isStuckBuffering = false;
   }
 
   void _saveCurrentPosition({bool notify = true}) {
@@ -258,8 +368,16 @@ class PlayerNotifier extends ChangeNotifier {
     }
 
     if (idx >= 0 && idx < _queue.length - 1) {
+      final next = _queue[idx + 1];
+      if (_connectivity.isOffline && !_downloads.isDownloaded(next.id)) {
+        _pendingNextBlocked = true;
+        _pendingNextBlockedTitle = next.title.en;
+        _pendingNextBlockedLecture = next;
+        notifyListeners();
+        return;
+      }
       loadAndPlay(
-        _queue[idx + 1],
+        next,
         _queue,
         mode: _playbackMode,
         studyChapter: _studyChapter,
@@ -269,8 +387,11 @@ class PlayerNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    _connectivity.removeListener(_onConnectivityChanged);
+    _downloads.removeListener(_onDownloadsChanged);
     _saveCurrentPosition();
     _cancelSaveTimer();
+    _cancelStuckBufferingTimer();
     for (final s in _subs) {
       s.cancel();
     }

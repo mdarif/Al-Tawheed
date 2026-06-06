@@ -47,6 +47,8 @@
 
   "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
   "retry": "دوبارہ کوشش کریں",
+  "catalogConnectToLoadTitle": "دروس لوڈ کرنے کے لیے انٹرنیٹ سے جڑیں",
+  "catalogConnectToLoadMessage": "ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔",
 
   "settingsLanguage": "زبان",
   "settingsAppearance": "ظاہری شکل",
@@ -90,5 +92,46 @@
   "languageArabic": "العربية",
 
   "partsCount": "{count} حصے",
-  "lecturesCount": "{count} دروس · {duration}"
+  "lecturesCount": "{count} دروس · {duration}",
+
+  "offlineSourceSaved": "آف لائن محفوظ",
+  "offlineSourceStreaming": "اسٹریمنگ",
+  "offlineNotAvailableOffline": "آف لائن دستیاب نہیں",
+  "offlineBadge": "آف لائن",
+  "retryDownload": "دوبارہ ڈاؤن لوڈ کریں",
+  "offlineNoConnection": "کوئی کنکشن نہیں",
+  "offlineConnectionLost": "کنکشن ٹوٹ گیا",
+  "offlineDownloading": "ڈاؤن لوڈ ہو رہا ہے… {percent}%",
+  "offlineDownloadLecture": "درس ڈاؤن لوڈ کریں · {size} MB",
+  "offlineCancelDownload": "ڈاؤن لوڈ منسوخ کریں",
+  "offlineRemoveDownload": "ڈاؤن لوڈ حذف کریں",
+  "offlineManageDownloads": "ڈاؤن لوڈز منظم کریں",
+  "offlineNextBlockedTitle": "آف لائن دستیاب نہیں",
+  "offlineNextBlockedBody": "'{title}' محفوظ نہیں۔ آن لائن آنے پر ڈاؤن لوڈ کریں۔",
+  "offlineNextBlockedQueued": "'{title}' آن لائن آنے پر ڈاؤن لوڈ ہوگا۔",
+  "offlineNotDownloaded": "آف لائن سننے کے لیے یہ درس ڈاؤن لوڈ کریں۔",
+
+  "offlineLibrary": "ڈاؤن لوڈز",
+  "offlineLibraryEmpty": "ابھی کوئی ڈاؤن لوڈ نہیں",
+  "offlineLibraryEmptyHint": "آف لائن سننے کے لیے کسی درس پر ڈاؤن لوڈ آئیکن ٹیپ کریں",
+  "viewOfflineLibrary": "ڈاؤن لوڈز دیکھیں",
+  "downloadOnWifiOnly": "صرف Wi-Fi پر ڈاؤن لوڈ کریں",
+  "downloadOnWifiOnlyHint": "موبائل ڈیٹا پر ڈاؤن لوڈ روکیں",
+  "wifiOnlyBlocked": "ڈاؤن لوڈ کے لیے Wi-Fi سے جڑیں",
+  "downloadChapterAll": "باب ڈاؤن لوڈ کریں (~{size} MB)",
+  "cancelChapterDownload": "باب کا ڈاؤن لوڈ منسوخ کریں",
+  "offlineChapterProgress": "{downloaded} از {total} حصے محفوظ",
+  "deleteChapter": "باب ہٹائیں",
+  "downloadRemaining": "باقی ڈاؤن لوڈ کریں",
+  "deleteChapterConfirm": "تمام محفوظ حصے ہٹائیں؟",
+  "offlinePrepTitle": "اگلے {count} حصے ڈاؤن لوڈ کریں",
+  "@offlinePrepTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlinePrepSize": "~{size} MB",
+  "@offlinePrepSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlinePrepSave": "ڈاؤن لوڈ کریں",
+  "downloadComplete": "ڈاؤن لوڈ مکمل"
 }

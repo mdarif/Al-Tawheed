@@ -6,6 +6,8 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
+import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -44,6 +46,8 @@ class HomeScreen extends StatelessWidget {
                 if (context.watch<FeatureFlagsProvider>().features.studyMode)
                   const SizedBox(height: 24),
                 _ContinueListeningCard(),
+                if (context.watch<FeatureFlagsProvider>().features.downloads)
+                  _OfflinePrepStrip(),
                 const SizedBox(height: 24),
                 _DailyBenefitCard(),
                 const SizedBox(height: 24),
@@ -311,6 +315,170 @@ class _DailyBenefitCard extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// ── Offline preparation strip ─────────────────────────────────────────────────
+
+/// Returns the next ≤3 lectures after [lastId] split into two lists:
+/// [toDownload] (not yet started) and [downloading] (in progress).
+/// Exported for testing; should not be called outside this file or tests.
+@visibleForTesting
+({List<Lecture> toDownload, List<Lecture> downloading}) computeOfflinePrepBatch(
+  List<Lecture> allLectures,
+  String lastId,
+  DownloadsProvider downloads,
+) {
+  final currentIdx = allLectures.indexWhere((l) => l.id == lastId);
+  if (currentIdx < 0 || currentIdx >= allLectures.length - 1) {
+    return (toDownload: [], downloading: []);
+  }
+  final end = (currentIdx + 4).clamp(0, allLectures.length);
+  final batch = allLectures.sublist(currentIdx + 1, end);
+  final toDownload = batch
+      .where((l) =>
+          downloads.statusFor(l.id) == DownloadStatus.notDownloaded ||
+          downloads.statusFor(l.id) == DownloadStatus.failed)
+      .toList();
+  final downloading = batch
+      .where((l) => downloads.statusFor(l.id) == DownloadStatus.downloading)
+      .toList();
+  return (toDownload: toDownload, downloading: downloading);
+}
+
+class _OfflinePrepStrip extends StatefulWidget {
+  @override
+  State<_OfflinePrepStrip> createState() => _OfflinePrepStripState();
+}
+
+class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+
+    final connectivity = context.watch<ConnectivityProvider>();
+    if (connectivity.isOffline) return const SizedBox.shrink();
+
+    final progress = context.watch<ProgressProvider>();
+    final catalog = context.watch<CatalogProvider>();
+    final downloads = context.watch<DownloadsProvider>();
+
+    final lastId = progress.lastLectureId;
+    if (lastId == null || catalog.status != CatalogStatus.loaded) {
+      return const SizedBox.shrink();
+    }
+
+    final allLectures = catalog.catalog!.lectures;
+    final (:toDownload, :downloading) =
+        computeOfflinePrepBatch(allLectures, lastId, downloads);
+
+    if (toDownload.isEmpty && downloading.isEmpty) return const SizedBox.shrink();
+
+    final anyDownloading = downloading.isNotEmpty;
+    final totalBytes = toDownload.fold(0, (sum, l) => sum + l.fileSizeBytes);
+    final sizeMb = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
+    final avgProgress = anyDownloading
+        ? downloading.fold(0.0, (s, l) => s + downloads.progressFor(l.id)) /
+            downloading.length
+        : 0.0;
+
+    final l10n = context.l10n;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.groupedSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.groupedBorder, width: 1),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              anyDownloading
+                  ? Icons.downloading_rounded
+                  : Icons.download_outlined,
+              size: 18,
+              color: context.brandColor,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: anyDownloading
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.offlinePrepTitle(downloading.length + toDownload.length),
+                          style: context.textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: avgProgress,
+                          borderRadius: BorderRadius.circular(2),
+                          minHeight: 3,
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.offlinePrepTitle(toDownload.length),
+                          style: context.textTheme.bodySmall,
+                        ),
+                        if (totalBytes > 0)
+                          Text(
+                            l10n.offlinePrepSize(sizeMb),
+                            style: context.textTheme.bodySmall
+                                ?.copyWith(color: context.secondaryTextColor),
+                          ),
+                      ],
+                    ),
+            ),
+            if (!anyDownloading) ...[
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () => _startDownloads(context, toDownload),
+                child: Text(l10n.offlinePrepSave),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _dismissed = true),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Icon(Icons.close_rounded,
+                      size: 16, color: context.mutedIconColor),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _startDownloads(BuildContext context, List<Lecture> lectures) {
+    final connectivity = context.read<ConnectivityProvider>();
+    final downloads = context.read<DownloadsProvider>();
+    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.l10n.wifiOnlyBlocked),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    for (final l in lectures) {
+      downloads.download(l);
+    }
   }
 }
 

@@ -7,6 +7,7 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
+import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
 import 'package:myapp/widgets/study/overall_progress_summary.dart';
@@ -43,10 +44,12 @@ class _StudyScreenState extends State<StudyScreen> {
         CatalogStatus.idle || CatalogStatus.loading => Center(
             child: CircularProgressIndicator(color: context.brandColor),
           ),
-        CatalogStatus.error => _ErrorBody(
-            message: catalog.error ?? l10n.studyCouldNotLoadClasses,
-            onRetry: catalog.load,
-          ),
+        CatalogStatus.error => catalog.needsOnlineToLoad
+            ? CatalogConnectRequiredBody(provider: catalog)
+            : _ErrorBody(
+                message: catalog.error ?? l10n.studyCouldNotLoadClasses,
+                onRetry: catalog.load,
+              ),
         CatalogStatus.loaded => _StudyBody(
             onClassTap: (info) => _onClassTap(context, info),
           ),

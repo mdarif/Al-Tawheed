@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:myapp/services/content_fetch_exception.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 /// Generic stale-while-revalidate fetch for any remote JSON file.
@@ -48,7 +49,11 @@ class RemoteContentService {
     }
 
     // No cache — must fetch synchronously
-    return _fetchAndCache(url: url, cacheKey: cacheKey);
+    try {
+      return await _fetchAndCache(url: url, cacheKey: cacheKey);
+    } catch (_) {
+      throw NoCachedContentException(cacheKey);
+    }
   }
 
   static Future<void> _refreshInBackground({

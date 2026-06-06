@@ -33,4 +33,10 @@ class FeatureFlagsProvider extends ChangeNotifier {
       // Fetch failed — defaults remain active; no UI impact
     }
   }
+
+  @visibleForTesting
+  void setFeaturesJsonForTest(Map<String, dynamic> json) {
+    _featuresJson = json;
+    notifyListeners();
+  }
 }

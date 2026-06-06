@@ -43,7 +43,7 @@ class FeatureFlags {
 
   static const FeatureFlags defaults = FeatureFlags(
     bookmarks: true,
-    downloads: false,
+    downloads: true,
     studyMode: false,
     dailyBenefits: true,
     announcements: true,

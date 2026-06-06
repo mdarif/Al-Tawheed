@@ -88,6 +88,8 @@
 
   "couldNotLoadLectures": "Could not load lectures",
   "retry": "Retry",
+  "catalogConnectToLoadTitle": "Connect to load lectures",
+  "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",
 
   "settingsLanguage": "Language",
   "settingsAppearance": "Appearance",
@@ -176,5 +178,67 @@
       "count":    { "type": "int" },
       "duration": { "type": "String" }
     }
-  }
+  },
+
+  "offlineSourceSaved": "Saved for offline",
+  "offlineSourceStreaming": "Streaming",
+  "offlineNotAvailableOffline": "Not available offline",
+  "offlineBadge": "Offline",
+  "retryDownload": "Retry download",
+  "offlineNoConnection": "No connection",
+  "offlineConnectionLost": "Connection lost",
+  "offlineDownloading": "Downloading… {percent}%",
+  "@offlineDownloading": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "offlineDownloadLecture": "Download lecture · {size} MB",
+  "@offlineDownloadLecture": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlineCancelDownload": "Cancel download",
+  "offlineRemoveDownload": "Remove download",
+  "offlineManageDownloads": "Manage downloads",
+  "offlineNextBlockedTitle": "Not available offline",
+  "offlineNextBlockedBody": "'{title}' isn't saved. Download it when you're back online.",
+  "@offlineNextBlockedBody": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "offlineNextBlockedQueued": "'{title}' will download when you're back online.",
+  "@offlineNextBlockedQueued": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "offlineNotDownloaded": "Download this lecture to listen offline.",
+
+  "offlineLibrary": "Downloads",
+  "offlineLibraryEmpty": "No downloads yet",
+  "offlineLibraryEmptyHint": "Tap the download icon on any lecture to listen offline",
+  "viewOfflineLibrary": "View downloads",
+  "downloadOnWifiOnly": "Download on Wi-Fi only",
+  "downloadOnWifiOnlyHint": "Pause downloads on mobile data",
+  "wifiOnlyBlocked": "Connect to Wi-Fi to download",
+  "downloadChapterAll": "Download chapter (~{size} MB)",
+  "@downloadChapterAll": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "cancelChapterDownload": "Cancel chapter download",
+  "offlineChapterProgress": "{downloaded} of {total} parts saved",
+  "@offlineChapterProgress": {
+    "placeholders": {
+      "downloaded": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "deleteChapter": "Remove chapter",
+  "downloadRemaining": "Download remaining",
+  "deleteChapterConfirm": "Remove all saved parts?",
+  "offlinePrepTitle": "Download next {count} {count, plural, =1{part} other{parts}} offline",
+  "@offlinePrepTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlinePrepSize": "~{size} MB",
+  "@offlinePrepSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlinePrepSave": "Download",
+  "downloadComplete": "Download complete"
 }
