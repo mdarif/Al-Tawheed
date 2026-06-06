@@ -49,9 +49,15 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
           statusBarIconBrightness:
               isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+          systemStatusBarContrastEnforced: false,
+          systemNavigationBarContrastEnforced: false,
         ),
         titleTextStyle: textTheme.titleMedium?.copyWith(
           fontSize: 17,

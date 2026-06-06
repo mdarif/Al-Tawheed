@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myapp/app.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/services/download_notification_service.dart';
@@ -9,6 +10,7 @@ import 'package:myapp/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // Must be initialised before ProgressProvider.load() is called synchronously
   await PreferencesService.instance.init();
