@@ -43,6 +43,14 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  patrol: ^4.6.1
+
+patrol:
+  app_name: At-Tawheed
+  android:
+    package_name: com.almarfa.tawheed
+  ios:
+    bundle_id: com.testing.tawheed
 
 flutter:
   uses-material-design: true

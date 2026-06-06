@@ -261,7 +261,10 @@ git pull origin master --tags
 | Command | What it does |
 |---|---|
 | `make setup-hooks` | Activate `.githooks/pre-push` for this clone |
-| `make ci` | Run full CI locally: analyze + test + `flutter build apk --debug` |
+| `make ci` | Run CI locally: analyze + unit/widget tests + debug APK |
+| `make integration-test DEVICE=<id>` | Run `integration_test/` on a device |
+| `make patrol-test` | Run Patrol native tests (`patrol_test/native_test.dart`) |
+| `make release-apk DEVICE=<id>` | Full release gate: tests + integration + patrol + release APK |
 | `make ci-logs` | Fetch latest failed GitHub Actions run logs via `gh` |
 | `make release` | Trigger release workflow (patch bump) |
 | `make release BUMP=minor` | Trigger release workflow (minor bump) |
@@ -302,8 +305,8 @@ git pull origin master --tags
 ### Future improvements
 
 - Pin Flutter version (replace `channel: stable` with `flutter-version: 3.x.y`) for fully reproducible builds
-- Add integration tests targeting a real Android emulator
-- Add iOS CI once the iOS app is ready for release
+- Add integration + Patrol tests to CI (Android emulator job)
+- Add iOS CI once RunnerUITests target is wired in Xcode
 - Cache invalidation strategy: clear Gradle cache on AGP/Kotlin version bumps
 
 ---

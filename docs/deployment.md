@@ -103,8 +103,11 @@ silently skipping Kotlin compilation. The fix is in `android/app/build.gradle`
 
 ### Signed release AAB (for Play Store)
 
+Recommended: run the full local release gate first, then build the bundle.
+
 ```sh
 git checkout master && git pull origin master
+make release-apk DEVICE=<device_id>   # analyze, unit, integration, patrol, release APK
 flutter build appbundle --release
 # Output: build/app/outputs/bundle/release/app-release.aab
 # Requires: android/key.properties with correct storeFile path
@@ -245,12 +248,23 @@ GitHub Actions runs on every push to `develop`, `master`, and PRs into both:
 1. Java 21 setup
 2. Flutter stable
 3. Gradle + pub cache
-4. `flutter analyze --fatal-warnings`
-5. `flutter test --reporter=expanded`
-6. `flutter build apk --debug`
-7. Upload APK artifact (7-day retention)
+4. `flutter pub get`
+5. `flutter analyze --fatal-warnings`
+6. `flutter test --reporter=expanded`
+7. `flutter build apk --debug`
+8. Upload APK artifact (7-day retention)
 
 Local equivalent: `make ci`
+
+On-device tests (integration + Patrol) are **not** in CI yet — run locally before release:
+
+```sh
+make integration-test DEVICE=<device_id>
+make patrol-test DEVICE=<device_id>    # optional native scenarios
+make release-apk DEVICE=<device_id>    # full gate: tests + integration + patrol + release APK
+```
+
+See `docs/testing.md` for full test documentation.
 
 Check latest CI run: `make ci-logs`
 
@@ -279,16 +293,24 @@ curl -sI -H "Range: bytes=0-999" \
 
 ```sh
 make help              # all available make targets
-make ci                # run full CI pipeline locally
+make ci                # run CI pipeline locally (analyze + unit/widget + debug APK)
 make ci-logs           # fetch latest failed GitHub Actions run
-make release BUMP=patch # trigger automated release
+make release BUMP=patch # trigger automated GitHub release workflow
 make setup-hooks       # install pre-push git hook
+
+# On-device testing (network + real device/emulator required)
+make integration-test DEVICE=<device_id>
+make patrol-test DEVICE=<device_id>
+make release-apk DEVICE=<device_id>
 
 flutter devices        # list connected devices/simulators
 flutter run -d <UDID>  # run on specific device
 flutter build apk --debug
+flutter build apk --release
 flutter build appbundle --release
 flutter test --reporter=expanded
+flutter test integration_test/ -d <device_id> --timeout 15m
+patrol test -t patrol_test/native_test.dart --timeout 10m
 flutter analyze --fatal-warnings
 
 adb devices                                         # list Android devices
@@ -308,6 +330,7 @@ xcrun simctl list devices                           # list iOS simulators
 | `lib/app_config.dart` | All remote content URLs and version constants |
 | `Al-Tawheed-Content/tawheed/` | All remotely-managed content |
 | `docs/ci-cd.md` | CI/CD pipeline reference |
+| `docs/testing.md` | Unit, integration, and Patrol test guide |
 | `docs/i18n-architecture.md` | Multilingual architecture (ADR-003) |
 | `docs/remote-content-strategy.md` | Remote content strategy (ADR-002) |
 

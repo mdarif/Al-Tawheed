@@ -5,8 +5,7 @@ import 'package:myapp/widgets/lecture_tile.dart';
 
 /// Shared helpers for integration tests — real device/emulator, network required.
 ///
-/// Scenarios that need native OS control (airplane mode, notification shade,
-/// permission dialogs) are out of scope here — add Patrol when needed.
+/// Scenarios that need native OS control live in patrol_test/ (Patrol CLI).
 class AppFlow {
   AppFlow._();
 

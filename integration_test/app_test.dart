@@ -11,9 +11,7 @@ import 'support/app_flow.dart';
 //   (sheet + settings), list tile download state, remove download,
 //   list-tile download start + cancel.
 //
-// Requires Patrol / manual device control (not in this file):
-//   airplane mode, offline banner, undownloaded-tile snackbar offline,
-//   next-lecture blocked dialog offline, notification permission/shade.
+// Native-only scenarios live in patrol_test/native_test.dart (Patrol CLI).
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

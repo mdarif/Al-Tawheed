@@ -1,194 +1,156 @@
-# Testing Guide for Al-Tawheed Project
+# Testing Guide — Al-Tawheed
 
-## Running Tests
-
-### Quick Start
-```bash
-# Run all tests
-flutter test
-
-# Run with verbose output
-flutter test --verbose
-
-# Run specific test file
-flutter test test/widget_test.dart
-flutter test test/unit_tests.dart
-flutter test test/widget_test_updated.dart
-
-# Run with coverage
-flutter test --coverage
-```
-
-## Test Files
-
-### 1. `test/widget_test.dart`
-- **Purpose**: Widget and UI component tests
-- **Type**: Integration tests for Flutter widgets
-- **Run**: `flutter test test/widget_test.dart`
-
-### 2. `test/unit_tests.dart`
-- **Purpose**: Unit tests for models, services, and utilities
-- **Type**: Pure Dart unit tests
-- **Run**: `flutter test test/unit_tests.dart`
-
-### 3. `test/widget_test_updated.dart`
-- **Purpose**: Updated widget tests with better structure
-- **Type**: Widget testing examples
-- **Run**: `flutter test test/widget_test_updated.dart`
-
-## Test Categories
-
-### Widget Tests
-Test Flutter UI components and interactions:
-```bash
-flutter test test/widget_test.dart
-```
-
-### Unit Tests
-Test business logic, models, and services:
-```bash
-flutter test test/unit_tests.dart
-```
-
-### Integration Tests
-Test app flows across multiple screens (requires integration test setup):
-```bash
-flutter drive --target=test_driver/app.dart
-```
-
-## Code Coverage
-
-### Generate Coverage Report
-```bash
-# Generate coverage data
-flutter test --coverage
-
-# View coverage (requires lcov)
-# macOS:
-genhtml coverage/lcov.info -o coverage/html
-open coverage/html/index.html
-```
-
-## Best Practices
-
-### 1. Test Organization
-- Group related tests with `group()`
-- Use descriptive test names
-- Follow AAA pattern: Arrange, Act, Assert
-
-### 2. Widget Testing
-```dart
-testWidgets('Description of what should happen', (WidgetTester tester) async {
-  // Arrange: Build widget
-  await tester.pumpWidget(MyWidget());
-  
-  // Act: Interact with widget
-  await tester.tap(find.byType(Button));
-  await tester.pumpAndSettle();
-  
-  // Assert: Verify results
-  expect(find.text('Expected Text'), findsOneWidget);
-});
-```
-
-### 3. Mocking External Dependencies
-```dart
-import 'package:mockito/mockito.dart';
-
-class MockApiService extends Mock implements ApiService {}
-
-void main() {
-  test('Service test with mock', () {
-    final mockService = MockApiService();
-    when(mockService.fetchData()).thenAnswer((_) async => []);
-  });
-}
-```
-
-## CI/CD Integration
-
-### Pre-commit Testing
-```bash
-# Run before committing code
-flutter analyze && flutter test && flutter build apk --debug
-```
-
-### GitHub Actions Example
-Create `.github/workflows/test.yml`:
-```yaml
-name: Flutter Tests
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-```
-
-## Debugging Tests
-
-### Run with Verbose Output
-```bash
-flutter test --verbose
-```
-
-### Run Single Test
-```bash
-# By test name
-flutter test --name "should_create_channel"
-
-# By grep pattern
-flutter test -p "unit_tests"
-```
-
-### Debug Mode
-```bash
-flutter test test/widget_test.dart -v --start-paused
-```
-
-## Common Test Issues
-
-### Issue: Tests timeout
-**Solution**: Increase timeout
-```dart
-testWidgets('Test name', (WidgetTester tester) async {
-  // test code
-}, timeout: Timeout(Duration(seconds: 30)));
-```
-
-### Issue: Async test hangs
-**Solution**: Use `pumpAndSettle()`
-```dart
-await tester.pumpAndSettle(); // Waits for all animations to complete
-```
-
-### Issue: Widget not found
-**Solution**: Debug with `tester.printToConsole()`
-```dart
-tester.printToConsole();
-print(find.byType(MyWidget).evaluate());
-```
-
-## Test Metrics
-
-Track these metrics for code quality:
-- **Code Coverage**: Aim for >80%
-- **Test Pass Rate**: 100%
-- **Test Execution Time**: <5 minutes total
-- **Test Flakiness**: <1%
-
-## Resources
-
-- [Flutter Testing Documentation](https://flutter.dev/docs/testing)
-- [Mockito Package](https://pub.dev/packages/mockito)
-- [Integration Test Guide](https://flutter.dev/docs/testing/integration-tests)
+Three layers: **unit/widget** (CI, fast), **integration_test** (Flutter UI on device), **Patrol** (native OS interactions on device).
 
 ---
 
-**Last Updated**: February 2026
-**Flutter Version**: 3.0.0+
+## Quick reference
+
+| Layer | Command | Needs device |
+|-------|---------|--------------|
+| Unit + widget | `flutter test` or `make test` | No |
+| Integration (Flutter UI) | `make integration-test DEVICE=<id>` | Yes |
+| Patrol (native OS) | `make patrol-test` or `patrol test -t patrol_test/native_test.dart` | Yes |
+| Full local release gate | `make release-apk DEVICE=<id>` | Yes |
+
+List devices: `flutter devices`
+
+---
+
+## Unit and widget tests
+
+```bash
+flutter test --reporter=expanded
+# or
+make test
+```
+
+Coverage:
+
+```bash
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html   # macOS, requires lcov
+open coverage/html/index.html
+```
+
+CI runs the same command on every push/PR (`flutter-ci.yml`).
+
+---
+
+## Integration tests (`integration_test/`)
+
+Flutter SDK `integration_test` — same `WidgetTester` API as widget tests, runs on a real device or emulator. Covers all **in-app** flows without touching native OS UI.
+
+**Scenarios covered**
+
+- Welcome → catalog → lecture list  
+- Shell tabs (Home, Settings, Lectures)  
+- Player + mini player  
+- Offline sheet, download, local playback  
+- Offline library (sheet + Settings)  
+- List-tile download / cancel  
+
+**Run**
+
+```bash
+flutter test integration_test/app_test.dart -d <device_id> --timeout 15m
+# or
+make integration-test DEVICE=<device_id>
+```
+
+**Notes**
+
+- One sequential `testWidgets` per file (multiple tests reset the widget tree and hang).  
+- Do **not** use `pumpAndSettle` while audio is playing — helpers use fixed `pump` loops.  
+- Network required on first launch (catalog fetch).  
+
+**Out of scope here** → see Patrol below.
+
+---
+
+## Patrol tests (`patrol_test/`)
+
+[Patrol](https://patrol.leancode.co) extends `integration_test` with a native automator (airplane mode, notification shade, permission dialogs).
+
+### One-time setup
+
+```bash
+# 1. Patrol CLI (once per machine)
+dart pub global activate patrol_cli
+
+# 2. Add pub global bin to PATH (required — otherwise: command not found: patrol)
+echo 'export PATH="$PATH:$HOME/.pub-cache/bin"' >> ~/.zshrc
+source ~/.zshrc
+
+# 3. Dependencies (already in pubspec.yaml)
+flutter pub get
+
+# 4. Verify Android/iOS native wiring
+patrol doctor
+```
+
+**Android** — configured in `android/app/build.gradle`:
+
+- `PatrolJUnitRunner`  
+- `MainActivityTest.java` under `android/app/src/androidTest/`  
+
+**iOS** — requires a **RunnerUITests** UI test target in Xcode:
+
+1. Open `ios/Runner.xcworkspace`  
+2. File → New → Target → **UI Testing Bundle** → name `RunnerUITests`  
+3. Replace generated `.m` file with `ios/RunnerUITests/RunnerUITests.m`  
+4. Run `patrol doctor` until iOS checks pass  
+
+### Scenarios covered (`patrol_test/native_test.dart`)
+
+| Test | Native capability |
+|------|-------------------|
+| Offline banner | Airplane mode → **Offline** shell banner |
+| Undownloaded lecture offline | Airplane mode → snackbar on tap |
+| Skip-next blocked | Airplane mode → **Not available offline** dialog |
+| Download notification (Android) | Notification shade while download in progress |
+
+### Run
+
+```bash
+patrol test -t patrol_test/native_test.dart --timeout 10m
+# specific device
+patrol test -t patrol_test/native_test.dart --device <device_id> --timeout 10m
+# or
+make patrol-test
+make patrol-test DEVICE=<device_id>
+```
+
+Patrol generates `patrol_test/test_bundle.dart` locally (gitignored).
+
+---
+
+## Local CI mirror
+
+```bash
+make ci                  # analyze + unit/widget tests + debug APK (no device)
+make release-apk DEVICE=<id>   # full gate before Play Store upload
+```
+
+Pre-push hook (`.githooks/pre-push`): `flutter analyze` + `flutter test` — no device tests.
+
+---
+
+## Debugging
+
+```bash
+flutter test --verbose
+flutter test --name "partial test name"
+patrol test -t patrol_test/native_test.dart --verbose
+patrol develop -t patrol_test/native_test.dart   # hot restart while writing tests
+```
+
+---
+
+## Resources
+
+- [Flutter testing](https://docs.flutter.dev/testing)  
+- [Integration tests](https://docs.flutter.dev/testing/integration-tests)  
+- [Patrol documentation](https://patrol.leancode.co/documentation)  
+
+**Last updated:** June 2026

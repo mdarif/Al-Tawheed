@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios release-apk run ci ci-logs
+.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios release-apk integration-test patrol-test run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -19,6 +19,8 @@ help:
 	@echo "CI / CD:"
 	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
 	@echo "  make release-apk     - Release pipeline: pub get, tests, integration, release APK"
+	@echo "  make integration-test - Run integration_test on device (DEVICE required)"
+	@echo "  make patrol-test     - Run Patrol native tests on device (DEVICE optional)"
 	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
 	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major)"
 	@echo ""
@@ -119,12 +121,27 @@ lint:
 check-quality: analyze lint test
 	@echo "✓ All quality checks passed!"
 
-# Device ID for integration tests — required by release-apk.
+# Device ID for on-device tests — required by integration-test and release-apk.
 # Run `flutter devices` and pass e.g. DEVICE=emulator-5554
 DEVICE ?=
 
+integration-test: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required."; \
+		echo "  flutter devices"; \
+		echo "  make integration-test DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+
+# Patrol native tests (airplane mode, notification shade, permission dialogs).
+# Install CLI once: dart pub global activate patrol_cli
+patrol-test:
+	patrol test -t patrol_test/native_test.dart --timeout 10m \
+		$(if $(DEVICE),--device $(DEVICE),)
+
 # Full release pipeline (local):
-#   pub get → analyze → unit/widget tests → integration tests → release APK
+#   pub get → analyze → unit/widget tests → integration tests → patrol tests → release APK
 # Requires android/key.properties for signing and a connected DEVICE.
 release-apk: pub-get
 	flutter analyze --fatal-warnings
@@ -136,6 +153,7 @@ release-apk: pub-get
 		exit 1; \
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+	patrol test -t patrol_test/native_test.dart --device $(DEVICE) --timeout 10m
 	flutter build apk --release
 	@echo "✓ Release APK: build/app/outputs/flutter-apk/app-release.apk"
 
