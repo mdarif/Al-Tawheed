@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios run ci ci-logs
+.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios release-apk run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -18,6 +18,7 @@ help:
 	@echo ""
 	@echo "CI / CD:"
 	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
+	@echo "  make release-apk     - Release pipeline: pub get, tests, integration, release APK"
 	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
 	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major)"
 	@echo ""
@@ -117,6 +118,26 @@ lint:
 
 check-quality: analyze lint test
 	@echo "✓ All quality checks passed!"
+
+# Device ID for integration tests — required by release-apk.
+# Run `flutter devices` and pass e.g. DEVICE=emulator-5554
+DEVICE ?=
+
+# Full release pipeline (local):
+#   pub get → analyze → unit/widget tests → integration tests → release APK
+# Requires android/key.properties for signing and a connected DEVICE.
+release-apk: pub-get
+	flutter analyze --fatal-warnings
+	flutter test --reporter=expanded
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required for integration tests."; \
+		echo "  flutter devices"; \
+		echo "  make release-apk DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+	flutter build apk --release
+	@echo "✓ Release APK: build/app/outputs/flutter-apk/app-release.apk"
 
 # Run the exact same steps as the GitHub Actions CI pipeline locally
 ci:

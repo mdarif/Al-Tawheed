@@ -148,6 +148,7 @@ jobs:
       # 11. Build debug APK
       #     Signed with the Android debug key — no keystore secret needed.
       #     Release signing (production key) comes in CD Phase 2.
+      #     Run integration tests + release APK locally: make release-apk DEVICE=<id>
       # ------------------------------------------------------------------ #
       - name: Build debug APK
         run: flutter build apk --debug
