@@ -18,7 +18,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(color: semantic.scrimOverlay),
+          Container(color: Colors.black.withValues(alpha: 0.85)),
           SafeArea(
             child: Column(
               children: [
@@ -28,10 +28,11 @@ class WelcomeScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        'Sharah Kitab\nal-Tawheed',
+                        'Sharah\n Kitab al-Tawheed',
                         textAlign: TextAlign.center,
                         style: context.textTheme.displayLarge?.copyWith(
                           color: semantic.onScrim,
+                          fontSize: 38,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -39,18 +40,19 @@ class WelcomeScreen extends StatelessWidget {
                         'شرح کتاب التوحید',
                         textAlign: TextAlign.center,
                         style: context.textTheme.titleMedium?.copyWith(
-                          fontSize: 22,
+                          fontSize: 30,
                           color: context.brandColor,
                           letterSpacing: 1,
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'By Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
+                        'By Shaikh Abdullah Nasir Rahmani Hafizahullah',
                         textAlign: TextAlign.center,
                         style: context.textTheme.bodyMedium?.copyWith(
                           color: semantic.onScrimMuted,
                           height: 1.5,
+                          fontSize: 16,
                         ),
                       ),
                     ],
