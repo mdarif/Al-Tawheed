@@ -1,11 +1,20 @@
 import 'dart:io';
+import 'dart:math';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/catalog.dart';
 
 class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
-  final AudioPlayer _player = AudioPlayer();
+  // just_audio's own `handleInterruptions` can race with a user-initiated
+  // pause: if a focus interruption "begin" event lands while we're playing,
+  // it pauses internally and arms its `_playInterrupted` flag, then an
+  // "end" event auto-resumes — even if the user paused in between. We
+  // disable it and track interruption-vs-user pauses ourselves so a manual
+  // pause (e.g. from the lock screen) always wins and is never overridden.
+  final AudioPlayer _player = AudioPlayer(handleInterruptions: false);
+  bool _pausedByInterruption = false;
 
   TawheedAudioHandler() {
     _init();
@@ -18,6 +27,38 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
+
+    session.becomingNoisyEventStream.listen((_) => pause());
+
+    session.interruptionEventStream.listen((event) {
+      if (event.begin) {
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            _player.setVolume(_player.volume / 2);
+            break;
+          case AudioInterruptionType.pause:
+          case AudioInterruptionType.unknown:
+            if (_player.playing) {
+              _pausedByInterruption = true;
+              _player.pause();
+            }
+            break;
+        }
+      } else {
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            _player.setVolume(min(1.0, _player.volume * 2));
+            break;
+          case AudioInterruptionType.pause:
+            if (_pausedByInterruption) _player.play();
+            _pausedByInterruption = false;
+            break;
+          case AudioInterruptionType.unknown:
+            _pausedByInterruption = false;
+            break;
+        }
+      }
+    });
   }
 
   /// Load a lecture and begin playing, optionally resuming from [startFrom].
@@ -46,10 +87,19 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
 
   // ── BaseAudioHandler overrides ─────────────────────────────────────────
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() {
+    _pausedByInterruption = false;
+    return _player.play();
+  }
 
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> pause() {
+    // A deliberate pause (lock screen, in-app, etc.) always wins — clear the
+    // flag so a subsequent interruption-end event can't resume playback
+    // behind the user's back.
+    _pausedByInterruption = false;
+    return _player.pause();
+  }
 
   @override
   Future<void> seek(Duration position) => _player.seek(position);

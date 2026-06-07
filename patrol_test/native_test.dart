@@ -86,6 +86,55 @@ void main() {
   );
 
   patrolTest(
+    'lock-screen pause keeps playback paused on Android',
+    ($) async {
+      if (!Platform.isAndroid) return;
+
+      await PatrolFlow.bootstrapToLectures($);
+      await AppFlow.openFirstLecture($.tester);
+
+      final pauseIcon = find.byWidgetPredicate(
+        (w) => w is Icon && w.icon == Icons.pause_rounded,
+      );
+      final playIcon = find.byWidgetPredicate(
+        (w) => w is Icon && w.icon == Icons.play_arrow_rounded,
+      );
+      await AppFlow.waitFor(
+        $.tester,
+        pauseIcon,
+        timeout: const Duration(seconds: 30),
+        reason: 'lecture to start playing',
+      );
+
+      // Tap "Pause" on the media notification — the same path a lock-screen
+      // control uses (MediaSession -> AudioHandler.pause).
+      await $.platform.mobile.openNotifications();
+      await AppFlow.pumpFrames($.tester, count: 3);
+      await $.platform.mobile.tapOnNotificationBySelector(
+        Selector(contentDescription: 'Pause'),
+        timeout: const Duration(seconds: 10),
+      );
+      await $.platform.mobile.closeNotifications();
+
+      // It must stay paused — not bounce back to playing a moment later
+      // (regression: just_audio's interruption handling could auto-resume
+      // a deliberate pause).
+      await AppFlow.waitFor(
+        $.tester,
+        playIcon,
+        timeout: const Duration(seconds: 10),
+        reason: 'player to show paused state',
+      );
+      await AppFlow.pumpFrames($.tester, count: 15);
+      expect(playIcon, findsOneWidget);
+      expect(pauseIcon, findsNothing);
+
+      await AppFlow.dismissPlayer($.tester);
+    },
+    timeout: patrolTimeout,
+  );
+
+  patrolTest(
     'shows download progress in the notification shade on Android',
     ($) async {
       if (!Platform.isAndroid) return;
