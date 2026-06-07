@@ -51,7 +51,7 @@ class ConnectivityProvider extends ChangeNotifier {
 
   void _onChanged(List<ConnectivityResult> results) {
     final nowOnline = _resultsOnline(results);
-    final changed = nowOnline != _isOnline || results.toString() != _results.toString();
+    final changed = nowOnline != _isOnline || !listEquals(results, _results);
     if (!changed) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {

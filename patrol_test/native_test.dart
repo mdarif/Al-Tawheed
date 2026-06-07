@@ -12,7 +12,10 @@ import 'support/patrol_flow.dart';
 // notification shade). Requires Patrol CLI + device/emulator.
 //
 //   flutter pub global activate patrol_cli
-//   patrol test -t patrol_test/native_test.dart --timeout 10m
+//   patrol test -t patrol_test/native_test.dart
+//
+// Per-test timeout is set in code via `timeout: patrolTimeout` (see
+// support/patrol_flow.dart) — `patrol test` has no --timeout CLI flag.
 
 void main() {
   patrolTest(

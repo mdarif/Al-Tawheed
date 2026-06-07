@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -7,6 +8,7 @@ class DownloadNotificationService {
   static final instance = DownloadNotificationService._();
 
   final _plugin = FlutterLocalNotificationsPlugin();
+  final Map<String, Timer> _dismissTimers = {};
 
   static const _channelId = 'downloads';
   static const _channelName = 'Downloads';
@@ -35,6 +37,7 @@ class DownloadNotificationService {
   Future<void> showProgress(
       String lectureId, String title, double progress) async {
     if (!Platform.isAndroid) return;
+    _cancelPendingDismiss(lectureId);
     final percent = (progress * 100).round();
     await _plugin.show(
       _idFor(lectureId),
@@ -61,6 +64,7 @@ class DownloadNotificationService {
 
   Future<void> showComplete(String lectureId, String title) async {
     if (!Platform.isAndroid) return;
+    _cancelPendingDismiss(lectureId);
     await _plugin.show(
       _idFor(lectureId),
       title,
@@ -76,12 +80,20 @@ class DownloadNotificationService {
         ),
       ),
     );
-    Future.delayed(
-        const Duration(seconds: 4), () => dismiss(lectureId));
+    _dismissTimers[lectureId] =
+        Timer(const Duration(seconds: 4), () => dismiss(lectureId));
   }
 
   Future<void> dismiss(String lectureId) async {
     if (!Platform.isAndroid) return;
+    _cancelPendingDismiss(lectureId);
     await _plugin.cancel(_idFor(lectureId));
+  }
+
+  /// Cancels a pending auto-dismiss timer so a fresh notification for the same
+  /// lecture (e.g. a re-download started within the 4s window) isn't cancelled
+  /// by a stale timer from the previous completion.
+  void _cancelPendingDismiss(String lectureId) {
+    _dismissTimers.remove(lectureId)?.cancel();
   }
 }

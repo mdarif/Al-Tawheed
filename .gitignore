@@ -63,7 +63,9 @@ android/app/build_workaround.gradle
 android/app/upload-keystore.jks.zip
 android/flutter_helper.gradle
 android/init.gradle
+android/.kotlin/
 patrol_test/test_bundle.dart
 check-env.sh
 setup-env.sh
 setup.sh
+test_bundle.dart

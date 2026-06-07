@@ -7,6 +7,14 @@ import '../../integration_test/support/app_flow.dart';
 class PatrolFlow {
   PatrolFlow._();
 
+  /// Substring of the error Patrol's iOS automator returns when Control
+  /// Center — and thus airplane-mode toggling — is unavailable. Real
+  /// hardware has no real radios, but Apple doesn't expose Control Center's
+  /// network toggles on the Simulator at all; real iOS devices and Android
+  /// support the toggle normally.
+  static const _controlCenterUnavailable =
+      'Control Center is not available on Simulator';
+
   static Future<void> grantNotificationsIfPrompted(PatrolIntegrationTester $) async {
     if (await $.platform.mobile.isPermissionDialogVisible(
       timeout: const Duration(seconds: 8),
@@ -28,10 +36,25 @@ class PatrolFlow {
   ) async {
     try {
       await $.platform.mobile.enableAirplaneMode();
+    } on PatrolActionException catch (e) {
+      if (e.message.contains(_controlCenterUnavailable)) {
+        // Running on iOS Simulator — there's no Control Center to toggle
+        // airplane mode with, so this scenario can't be exercised here.
+        // It still runs on Android and on real iOS devices.
+        return;
+      }
+      rethrow;
+    }
+
+    try {
       await AppFlow.pumpFrames($.tester, count: 10);
       await body();
     } finally {
-      await $.platform.mobile.disableAirplaneMode();
+      try {
+        await $.platform.mobile.disableAirplaneMode();
+      } on PatrolActionException catch (e) {
+        if (!e.message.contains(_controlCenterUnavailable)) rethrow;
+      }
       await AppFlow.pumpFrames($.tester, count: 10);
     }
   }

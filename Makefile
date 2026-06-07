@@ -137,7 +137,7 @@ integration-test: pub-get
 # Patrol native tests (airplane mode, notification shade, permission dialogs).
 # Install CLI once: dart pub global activate patrol_cli
 patrol-test:
-	patrol test -t patrol_test/native_test.dart --timeout 10m \
+	patrol test -t patrol_test/native_test.dart \
 		$(if $(DEVICE),--device $(DEVICE),)
 
 # Full release pipeline (local):
@@ -153,7 +153,7 @@ release-apk: pub-get
 		exit 1; \
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
-	patrol test -t patrol_test/native_test.dart --device $(DEVICE) --timeout 10m
+	patrol test -t patrol_test/native_test.dart --device $(DEVICE)
 	flutter build apk --release
 	@echo "✓ Release APK: build/app/outputs/flutter-apk/app-release.apk"
 
