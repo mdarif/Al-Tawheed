@@ -42,7 +42,7 @@ void main() {
     testWidgets('Welcome screen has correct title',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(WelcomeScreen()));
-      expect(find.textContaining('Sharah Kitab'), findsOneWidget);
+      expect(find.textContaining('Kitab al-Tawheed'), findsOneWidget);
     });
 
     testWidgets('Welcome screen has START LISTENING button',
