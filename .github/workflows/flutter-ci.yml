@@ -2,11 +2,6 @@
 #
 # Triggers: push to develop, PRs into develop, PRs into master.
 # Runs on ubuntu-latest with Java 21 + Flutter stable.
-#
-# KNOWN ISSUE: test/widget_test.dart is the stale Flutter counter template.
-# It is intentionally excluded from the test command below.
-# TODO: delete test/widget_test.dart and run `flutter test --reporter=expanded`
-#       without explicit file args once that file is removed.
 
 name: Flutter CI
 
@@ -115,13 +110,9 @@ jobs:
         run: flutter analyze --fatal-warnings
 
       # ------------------------------------------------------------------ #
-      # 10. Run tests
-      #
-      #    test/widget_test.dart is the unmodified Flutter counter-app
-      #    template and always fails (no counter widget in this app).
-      #    It is excluded by naming only the known-good test files.
-      #    TODO: delete test/widget_test.dart, then simplify to:
-      #          flutter test --reporter=expanded
+      # 9. Run tests — every test/*.dart file, including widget_test.dart
+      #    (rewritten with real welcome-screen tests; no longer the stale
+      #    Flutter counter-app template it once was).
       # ------------------------------------------------------------------ #
       - name: Run tests
         run: flutter test --reporter=expanded

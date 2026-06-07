@@ -10,7 +10,7 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 |---|---|---|
 | CI — analyze + test + build APK | **Active** | `.github/workflows/flutter-ci.yml` |
 | Local pre-push hook | **Active** | `.githooks/pre-push` |
-| CD Phase 1 — Release automation | **Built, pending 1 GitHub setting** | `.github/workflows/flutter-release.yml` |
+| CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
 | CD Phase 2 — Signed release APK | Not started | — |
 | CD Phase 3 — Play Store deployment | Not started | — |
 
@@ -73,37 +73,15 @@ The release workflow commits a version bump directly to master. Without this, st
 
 ---
 
-## Pending Action Items
+## Setup Status (verified 2026-06-07)
 
-These are leftover tasks from the CI/CD setup that are not yet done.
+All of the one-time setup items above are now done:
 
-### High priority
+- ✅ Branch protection is active on both `develop` (requires the `Flutter CI` status check, strict/up-to-date) and `master` (no force-pushes, no deletions)
+- ✅ `github-actions[bot]` is in the master bypass list — confirmed by the successful `1.0.1` release run on 2026-06-02 (the two runs before it failed at the push step with `protected branch hook declined` until the bypass was added)
+- ✅ `android/local.properties` is untracked (`git ls-files` returns nothing for it) and remains in `.gitignore`
 
-- [ ] **Add bypass actor to master branch rule**
-  Settings → Branches → master → Bypass list → `github-actions[bot]`
-  Without this, `make release` will fail at the git push step.
-
-- [ ] **Delete `test/widget_test.dart`**
-  This is the unmodified Flutter counter-app template — it has no relation to this app. It is already excluded from the CI test command but should be removed to avoid confusion.
-  ```sh
-  git rm test/widget_test.dart
-  git commit -m "chore: remove stale counter-app widget test template"
-  ```
-
-- [ ] **Stop tracking `android/local.properties`**
-  This file contains machine-specific SDK paths and is now in `.gitignore`, but it was committed before the rule was added. Untrack it without deleting:
-  ```sh
-  git rm --cached android/local.properties
-  git commit -m "chore: untrack android/local.properties (machine-specific paths)"
-  ```
-
-### Low priority
-
-- [ ] **Set up branch protection rules** (steps 2 and 3 above)
-  The CI status check only becomes available to select after the first successful run.
-
-- [ ] **Trigger the first CI run**
-  Push any commit to `develop`. This populates the `Flutter CI` status check in the branch protection dropdown.
+Nothing is currently pending from the original setup checklist.
 
 ---
 
@@ -120,21 +98,39 @@ Step 3   Set up Flutter stable             ← also writes android/local.propert
 Step 4   Cache pub packages                ← keyed on pubspec.lock
 Step 5   Cache Gradle                      ← keyed on all 5 Gradle files
 Step 6   Override Gradle JVM args          ← guards against -Xmx8g OOM on CI runners
-Step 7   Create stub keys.dart             ← lib/utilities/keys.dart is gitignored
-Step 8   flutter pub get
-Step 9   flutter analyze --fatal-warnings
-Step 10  flutter test (unit + widget)      ← explicit file list, excludes stale template
-Step 11  flutter build apk --debug
-Step 12  Upload APK artifact               ← retained 7 days, downloadable from Actions
+Step 7   flutter pub get
+Step 8   flutter analyze --fatal-warnings
+Step 9   flutter test --reporter=expanded  ← runs every test/*.dart file
+Step 10  flutter build apk --debug
+Step 11  Upload APK artifact               ← retained 7 days, downloadable from Actions
 ```
 
-### Why stub keys.dart?
+> The workflow file's header comment still calls out `test/widget_test.dart` as "the stale Flutter
+> counter template" that's "intentionally excluded." That's no longer true — see below — and the
+> comment/TODO should be removed next time someone touches that file.
 
-`lib/utilities/keys.dart` contains the YouTube Data API key. It is gitignored so the key never reaches the repo. Without a stub, `flutter analyze` fails with `uri_does_not_exist` on `lib/services/api_service.dart`. The stub provides an empty constant that satisfies the import.
+### `test/widget_test.dart` is no longer the stale counter template
 
-### Why specific test files?
+It used to be the unmodified Flutter counter-app template (`find.text('0')`, `Icons.add`) and was
+excluded from the test run. It has since been **rewritten** with real welcome-screen tests
+(`Widget Tests - Sharah Kitab At-Tawheed`) and is now included in the plain
+`flutter test --reporter=expanded` run along with everything else in `test/`. There is nothing to
+delete or exclude — the workflow comments referencing it as a stale template are outdated.
 
-`test/widget_test.dart` is the unmodified Flutter counter-app template. It references widgets (`find.text('0')`, `Icons.add`) that do not exist in this app. Running `flutter test` without arguments discovers it and fails. Until it is deleted, CI explicitly names only the real test files.
+One consequence worth knowing: because it asserts on the literal welcome-screen title string
+(`find.textContaining('Kitab al-Tawheed')`), it will break again if that copy changes — e.g. it
+broke on 2026-06-07 when the title was reformatted to `'Sharah\n Kitab al-Tawheed'` (the old
+assertion `'Sharah Kitab'` no longer matched because the line break moved). Fixed in
+[test/widget_test.dart](../test/widget_test.dart) by matching the more stable substring
+`'Kitab al-Tawheed'`.
+
+### `keys.dart` stub step — removed (no longer needed)
+
+Earlier versions of this app used a YouTube Data API key via `lib/utilities/keys.dart`
+(gitignored), and CI created a stub for it before `flutter analyze`. That code path was removed
+during the V2 audio-app rewrite — there is no `api_service.dart` or `keys.dart` reference left
+anywhere in `lib/`, the workflows, the Makefile, or the pre-push hook. `lib/utilities/` is now an
+empty leftover directory and can be deleted.
 
 ---
 
@@ -144,13 +140,11 @@ The hook at `.githooks/pre-push` runs automatically on every `git push`. It runs
 
 ```
 ▶  flutter analyze --fatal-warnings
-▶  flutter test test/unit_tests.dart test/widget_test_updated.dart
+▶  flutter test
 ✓  All checks passed — push allowed.
 ```
 
 If either step fails, the push is **blocked**. You fix it locally and push again. No CI minutes wasted.
-
-The hook also handles `keys.dart` automatically: creates the stub if the real file is absent, removes it on exit.
 
 ### Bypassing the hook (emergency only)
 
@@ -305,9 +299,35 @@ git pull origin master --tags
 ### Future improvements
 
 - Pin Flutter version (replace `channel: stable` with `flutter-version: 3.x.y`) for fully reproducible builds
-- Add integration + Patrol tests to CI (Android emulator job)
+- Add integration + Patrol tests to CI (Android emulator job — `patrol_test/native_test.dart` now also
+  covers the lock-screen pause regression added 2026-06-07)
 - Add iOS CI once RunnerUITests target is wired in Xcode
 - Cache invalidation strategy: clear Gradle cache on AGP/Kotlin version bumps
+
+---
+
+## ⚠️ Time-Sensitive: GitHub Actions Node.js 20 deprecation
+
+Every recent CI run (e.g. run `27089193259`, 2026-06-07) emits this runner warning:
+
+> Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not
+> work as expected: `actions/cache@v4`, `actions/checkout@v4`, `actions/setup-java@v4`. Actions will
+> be forced to run with Node.js 24 by default starting **June 16th, 2026**. Node.js 20 will be
+> removed from the runner on **September 16th, 2026**.
+
+That first date is 9 days away from now (2026-06-07). Both workflows (`flutter-ci.yml` and
+`flutter-release.yml`) currently pin:
+
+- `actions/checkout@v4`
+- `actions/setup-java@v4`
+- `actions/cache@v4`
+- `actions/upload-artifact@v4`
+- `subosito/flutter-action@v2`
+
+**Before 2026-06-16**, bump these to whatever major versions advertise Node 24 support (check each
+action's release notes/changelog), or opt in early with
+`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` on a test run to confirm nothing breaks. Otherwise the
+forced switch could silently break CI/release runs right around (or after) the next release.
 
 ---
 
@@ -328,14 +348,10 @@ This happens if Gradle is invoked directly (e.g., `./gradlew tasks`) without goi
 
 The `github-actions[bot]` is not in the master branch bypass list. See the one-time setup section above.
 
-### CI fails with `uri_does_not_exist: keys.dart`
-
-The stub creation step ran but the file wasn't created. Check that `lib/utilities/` exists in the repo (it's not excluded by `.gitignore`). The directory itself should be present even if `keys.dart` is ignored.
-
 ### Tag already exists error in release workflow
 
 A tag for the computed version already exists. Either the version in `pubspec.yaml` was not bumped since the last release, or you are re-running a workflow that already succeeded. Choose a higher bump type or manually bump `pubspec.yaml` and push before re-triggering.
 
 ---
 
-*Last updated: 2026-05-30*
+*Last updated: 2026-06-07*
