@@ -11,7 +11,12 @@ class AppFlow {
 
   static Future<void> launchApp(WidgetTester tester) async {
     app.main();
-    await pumpFrames(tester, count: 10);
+    await waitFor(
+      tester,
+      find.text('START LISTENING'),
+      timeout: const Duration(seconds: 30),
+      reason: 'welcome screen after cold start',
+    );
   }
 
   /// Cold start through welcome (if shown) to a loaded lecture list.

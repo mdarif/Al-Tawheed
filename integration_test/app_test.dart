@@ -22,7 +22,7 @@ void main() {
       // ── Cold start & welcome ────────────────────────────────────────────
       await AppFlow.launchApp(tester);
       expect(find.text('START LISTENING'), findsOneWidget);
-      expect(find.textContaining('Sharah Kitab'), findsWidgets);
+      expect(find.textContaining('Kitab al-Tawheed'), findsWidgets);
 
       // ── Catalog load & lecture list ─────────────────────────────────────
       await AppFlow.goToLectureList(tester);
