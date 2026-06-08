@@ -29,7 +29,11 @@ class DownloadNotificationService {
       importance: Importance.low,
       showBadge: false,
     ));
-    await android?.requestNotificationsPermission();
+    // Don't await: on Android 13+ this shows a native system dialog whose
+    // Future only resolves once the user responds — blocking on it here would
+    // delay runApp() until the user dismisses a dialog they haven't even seen
+    // the app behind yet.
+    unawaited(android?.requestNotificationsPermission());
   }
 
   int _idFor(String lectureId) => lectureId.hashCode & 0x7FFFFFFF;
