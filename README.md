@@ -1,122 +1,84 @@
 # Sharah Kitab al-Tawheed
 
-A native Android/iOS mobile app consolidating the Sharah Kitaab al-Tawheed YouTube lectures of Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.
+A native Android/iOS audio lecture player for the Sharah Kitaab al-Tawheed
+series by Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah — offline-first,
+multilingual (English / Urdu / Roman Urdu), with background playback and
+download management.
 
-**Play Store:** https://play.google.com/store/apps/details?id=com.almarfa.tawheed  
+**Play Store:** https://play.google.com/store/apps/details?id=com.almarfa.tawheed
 **YouTube Channel:** https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw
 
 ---
 
-## Project Structure
+## Architecture
+
+UI screens never talk to services directly — they read shared state through
+`provider`/`ChangeNotifier` providers, which in turn wrap the services that
+do networking, persistence, and playback. `lib/app.dart` wires the full
+provider tree with explicit dependency ordering.
 
 ```
 lib/
-  main.dart                  # App entry point, routes, AppTheme wiring
-  theme/
-    app_colors.dart          # Single source of truth for brand colours
-    app_theme.dart           # ThemeData (AppBar, ElevatedButton styles)
-  screens/
-    welcome.dart             # Splash/landing screen
-    home_video_screen.dart   # Video list (fetches from YouTube API)
-    video_screen.dart        # YouTube player with auto-advance
-    main_drawer.dart         # Side drawer (contact, rate, share, YouTube card)
-  models/
-    channel_model.dart
-    video_model.dart
-  services/
-    api_service.dart         # YouTube Data API v3 calls
-  utilities/
-    keys.dart                # ← GITIGNORED — must be created locally
+  app.dart, app_config.dart, main.dart   # App shell, config, entry point
+  screens/                               # Routed pages (home, player, library, settings, ...)
+  widgets/                               # Reusable UI pieces (lecture tiles, offline sheet, ...)
+  providers/                             # ChangeNotifier state: catalog, downloads, progress,
+                                         #   connectivity, language, theme, feature flags, ...
+  services/                              # Networking, persistence, downloads, notifications
+  audio/                                 # just_audio / audio_service integration (handler,
+                                         #   playback orchestration, queue/source modelling)
+  models/                                # Data classes (lecture/catalog, announcements, i18n fields)
+  data/                                  # Bundled/overlay content (e.g. client-side i18n overlays)
+  theme/                                 # AppColors, ThemeData
+  utils/, utilities/                     # Small pure helpers
+  l10n/                                  # Localization resources
 ```
+
+A few services (`PreferencesService`, `CatalogService`,
+`DownloadNotificationService`) are exposed as singletons via `.instance`
+rather than constructor-injected. They need to be initialised synchronously
+*before* the `MultiProvider` tree exists (see `lib/main.dart`), which
+Provider-based DI cannot express — this is a deliberate exception, not an
+oversight.
+
+State management is Provider/`ChangeNotifier` throughout; `setState` is used
+only for genuinely ephemeral local widget state (e.g. dismiss animations,
+in-progress async UI flags).
+
+Offline-first is a first-class concern: `ConnectivityProvider` and
+`DownloadsProvider` drive download state and an offline UI (offline library
+screen, offline player strip, offline sheet), and `RemoteContentService`
+serves cached catalog/announcement content with a stale-while-revalidate
+strategy.
 
 ---
 
 ## Local Setup
 
-### 1. YouTube API Key
-
-Create `lib/utilities/keys.dart` (gitignored — never commit):
-
-```dart
-const String API_KEY = 'YOUR_YOUTUBE_DATA_API_V3_KEY';
-```
-
-### 2. Android signing (release builds only)
-
-Create `android/key.properties` (gitignored):
-
-```
-storePassword=...
-keyPassword=...
-keyAlias=...
-storeFile=path/to/keystore.jks
-```
-
-### 3. Install dependencies
-
 ```bash
 flutter pub get
-```
-
-### 4. Run
-
-```bash
 flutter run -d <device-id>
 ```
 
----
-
-## Theming
-
-All brand colours live in `lib/theme/app_colors.dart` as **getters** (not `static final` — getters are re-evaluated on every access, enabling hot reload to pick up colour changes immediately):
-
-```dart
-static Color get primary => Colors.limeAccent.shade700;
-```
-
-To change the brand colour across the entire app, edit that one line.
-
-`AppTheme.light` (in `lib/theme/app_theme.dart`) wires AppBar background, button colours, and title style into `ThemeData` so individual screens need no colour arguments.
-
----
-
-## Android Build Notes
-
-| Setting | Value | File |
-|---|---|---|
-| Gradle | 8.14 | `gradle-wrapper.properties` |
-| AGP | 8.11.1 | `settings.gradle` |
-| Kotlin | 2.2.20 | `settings.gradle` |
-| compileSdk | 36 | `app/build.gradle` |
-| targetSdk | 35 | `app/build.gradle` |
-| NDK | 28.2.13676358 | `app/build.gradle` |
-| Java/Kotlin JVM target | 21 | `app/build.gradle` |
-
-**Built-in Kotlin** is enabled (`android.builtInKotlin=true` in `gradle.properties`). Flutter's Gradle plugin manages Kotlin compilation — do **not** add `id "org.jetbrains.kotlin.android"` to `app/build.gradle`.
-
-**Kotlin incremental compilation is disabled** (`kotlin.incremental=false`) to avoid a Windows-specific crash that occurs when the project is on a different drive (e.g. `D:`) from the Pub cache (`C:`). The Kotlin daemon cannot compute relative paths across drive roots.
-
-**KGP warnings** for `share_plus` and `url_launcher_android` are third-party plugin issues and cannot be fixed from this project. They are warnings only and do not block builds.
-
----
-
-## Known Warnings (not actionable from this project)
-
-- `share_plus` and `url_launcher_android` apply Kotlin Gradle Plugin directly — plugin authors need to migrate.
-- A few transitive packages (`meta`, `matcher`, `vector_math`, `test_api`) have newer versions with constraints incompatible with our direct deps — no action needed.
+Android release signing requires `android/key.properties` (gitignored — see
+[docs/setup.md](docs/setup.md) for the full local environment setup,
+including signing and platform-specific notes).
 
 ---
 
 ## Documentation
 
-Full guides are in [docs/](docs/README.md).
+Full guides live in [docs/](docs/README.md):
 
 | | |
 |---|---|
-| [Setup](docs/setup.md) | Environment, dependencies, API key |
+| [Setup](docs/setup.md) | Environment, dependencies, signing |
 | [CI/CD](docs/ci-cd.md) | Pipelines, pre-push hook, release workflow |
+| [Deployment](docs/deployment.md) | Store listings, release process |
 | [Git workflow](docs/git-workflow.md) | Branching, commits, PRs |
 | [Testing](docs/testing.md) | Running and writing tests |
+| [i18n architecture](docs/i18n-architecture.md) | Multilingual content strategy |
+| [Remote content strategy](docs/remote-content-strategy.md) | Catalog/announcement caching |
 | [Troubleshooting](docs/troubleshooting.md) | Common errors and fixes |
 
 ---

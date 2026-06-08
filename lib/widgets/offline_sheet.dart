@@ -209,7 +209,7 @@ class _OfflineSheetContent extends StatelessWidget {
       confirmLabel: l10n.offlineRemoveDownload,
       destructive: true,
     ).then((confirmed) {
-      if (confirmed) {
+      if (confirmed && context.mounted) {
         Navigator.pop(context);
         downloads.delete(lecture.id);
       }

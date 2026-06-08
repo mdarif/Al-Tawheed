@@ -1,7 +1,7 @@
-/// Shared helpers for multilingual JSON fields ({en, ur, roman, ...}).
+// Shared helpers for multilingual JSON fields ({en, ur, roman, ...}).
 
 /// Converts a JSON value that may be a plain String (legacy) or an i18n Map
-/// into a normalised Map<String, dynamic>.
+/// into a normalised `Map<String, dynamic>`.
 Map<String, dynamic> toI18nMap(dynamic value) {
   if (value is String) return {'en': value};
   if (value is Map) return Map<String, dynamic>.from(value);

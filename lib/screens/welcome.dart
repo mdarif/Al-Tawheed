@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final semantic = context.semantic;

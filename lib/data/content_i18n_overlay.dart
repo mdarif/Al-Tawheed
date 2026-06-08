@@ -1,5 +1,5 @@
-/// Client-side Urdu / Roman Urdu overlays for CDN content that ships English-only.
-/// Remove entries once the remote JSON includes matching keys.
+// Client-side Urdu / Roman Urdu overlays for CDN content that ships English-only.
+// Remove entries once the remote JSON includes matching keys.
 
 const announcementOverlays = <String, Map<String, Map<String, String>>>{
   'ann-001': {

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/models/announcement_model.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
@@ -512,7 +513,7 @@ class _AnnouncementsBanner extends StatelessWidget {
 }
 
 class _AnnouncementCard extends StatelessWidget {
-  final announcement;
+  final Announcement announcement;
   const _AnnouncementCard({required this.announcement});
 
   @override
