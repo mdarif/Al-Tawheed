@@ -330,28 +330,34 @@ CI runs on the PR. Merge when green.
 
 ---
 
-## ⚠️ Time-Sensitive: GitHub Actions Node.js 20 deprecation
+## ✅ Resolved: GitHub Actions Node.js 20 deprecation
 
-Every recent CI run (e.g. run `27089193259`, 2026-06-07) emits this runner warning:
+CI runs around 2026-06-07 (e.g. run `27089193259`) emitted this runner warning:
 
 > Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not
 > work as expected: `actions/cache@v4`, `actions/checkout@v4`, `actions/setup-java@v4`. Actions will
 > be forced to run with Node.js 24 by default starting **June 16th, 2026**. Node.js 20 will be
 > removed from the runner on **September 16th, 2026**.
 
-That first date is 9 days away from now (2026-06-07). Both workflows (`flutter-ci.yml` and
-`flutter-release.yml`) currently pin:
+Fixed on 2026-06-08 by bumping every pinned action in both `flutter-ci.yml` and
+`flutter-release.yml` to a major version that natively runs on Node 24 (verified via each repo's
+own release notes — `gh release view <tag> -R <owner>/<repo>` — not just version-number guessing):
 
-- `actions/checkout@v4`
-- `actions/setup-java@v4`
-- `actions/cache@v4`
-- `actions/upload-artifact@v4`
-- `subosito/flutter-action@v2`
+| Action | Was | Now | Why it's safe |
+|---|---|---|---|
+| `actions/checkout` | `@v4` | `@v6` | v6 release notes: "Update README to include Node.js 24 support details" |
+| `actions/setup-java` | `@v4` | `@v5` | v5 release notes: "Breaking Changes — Upgrade to node 24" |
+| `actions/cache` | `@v4` | `@v5` | v5 release notes: "runs on the Node.js 24 runtime" |
+| `actions/upload-artifact` | `@v4` | `@v6` | v6 release notes: "now runs on Node.js 24 (`runs.using: node24`) by default" |
+| `subosito/flutter-action` | `@v2` | unchanged | floating `@v2` tag already resolved to `v2.23.0`, which vendors `actions/cache@v5` internally — nothing to bump |
 
-**Before 2026-06-16**, bump these to whatever major versions advertise Node 24 support (check each
-action's release notes/changelog), or opt in early with
-`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` on a test run to confirm nothing breaks. Otherwise the
-forced switch could silently break CI/release runs right around (or after) the next release.
+`setup-java@v5` / `cache@v5` / `upload-artifact@v6` each call out a minimum Actions Runner version
+of `2.327.1` — a non-issue on GitHub-hosted `ubuntu-latest` runners (auto-updated by GitHub), only
+relevant if this project ever moves to self-hosted runners.
+
+**Verify the warning is gone** on the next CI run: `make ci-logs` or check the run summary at
+`github.com/mdarif/Al-Tawheed/actions` — the "Node.js 20 actions are deprecated" banner should no
+longer appear.
 
 ---
 
