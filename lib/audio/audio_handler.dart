@@ -16,6 +16,13 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer(handleInterruptions: false);
   bool _pausedByInterruption = false;
 
+  // The handler is just a thin just_audio wrapper — it doesn't know about the
+  // playback queue (that lives in PlayerNotifier). Lock-screen / notification
+  // skip-to-next/previous taps land here via BaseAudioHandler, so PlayerNotifier
+  // wires these to its own playNext/playPrevious after construction.
+  Future<void> Function()? onSkipToNext;
+  Future<void> Function()? onSkipToPrevious;
+
   TawheedAudioHandler() {
     _init();
     // Pipe just_audio playback events into audio_service's playbackState stream
@@ -100,6 +107,12 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     _pausedByInterruption = false;
     return _player.pause();
   }
+
+  @override
+  Future<void> skipToNext() => onSkipToNext?.call() ?? Future.value();
+
+  @override
+  Future<void> skipToPrevious() => onSkipToPrevious?.call() ?? Future.value();
 
   @override
   Future<void> seek(Duration position) => _player.seek(position);

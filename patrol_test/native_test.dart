@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 import 'package:patrol/patrol.dart';
 
@@ -128,6 +129,93 @@ void main() {
       await AppFlow.pumpFrames($.tester, count: 15);
       expect(playIcon, findsOneWidget);
       expect(pauseIcon, findsNothing);
+
+      await AppFlow.dismissPlayer($.tester);
+    },
+    timeout: patrolTimeout,
+  );
+
+  patrolTest(
+    'lock-screen next/previous controls advance the queue on Android',
+    ($) async {
+      if (!Platform.isAndroid) return;
+
+      await PatrolFlow.bootstrapToLectures($);
+
+      final tiles = find.byType(LectureTile);
+      await AppFlow.waitFor(
+        $.tester,
+        tiles,
+        timeout: const Duration(seconds: 15),
+        reason: 'lecture list before reading titles',
+      );
+      if (tiles.evaluate().length < 2) {
+        // Catalog has only one lecture — nothing to skip to.
+        return;
+      }
+
+      final firstTitle =
+          $.tester.widget<LectureTile>(tiles.at(0)).lecture.title.en;
+      final secondTitle =
+          $.tester.widget<LectureTile>(tiles.at(1)).lecture.title.en;
+
+      await AppFlow.openFirstLecture($.tester);
+
+      final nextButton = find.ancestor(
+        of: find.byIcon(Icons.skip_next_rounded),
+        matching: find.byType(IconButton),
+      );
+      if ($.tester.widget<IconButton>(nextButton).onPressed == null) {
+        // First lecture in its queue has no next track — nothing to skip to.
+        await AppFlow.dismissPlayer($.tester);
+        return;
+      }
+
+      await AppFlow.waitFor(
+        $.tester,
+        find.text(firstTitle),
+        timeout: const Duration(seconds: 15),
+        reason: 'first lecture title on player screen',
+      );
+
+      // Tap "Next" on the media notification — the same path a lock-screen
+      // control uses (MediaSession -> AudioHandler.skipToNext ->
+      // PlayerNotifier.playNext). Regression: BaseAudioHandler's default
+      // skipToNext/skipToPrevious are no-ops, so without the fix this tap
+      // would do nothing and the title below would never change.
+      await $.platform.mobile.openNotifications();
+      await AppFlow.pumpFrames($.tester, count: 3);
+      await $.platform.mobile.tapOnNotificationBySelector(
+        Selector(contentDescription: 'Next'),
+        timeout: const Duration(seconds: 10),
+      );
+      await $.platform.mobile.closeNotifications();
+
+      await AppFlow.waitFor(
+        $.tester,
+        find.text(secondTitle),
+        timeout: const Duration(seconds: 30),
+        reason: 'queue to advance to the next lecture after lock-screen Next',
+      );
+      expect(find.text(firstTitle), findsNothing);
+
+      // Now "Previous" should bring the queue back to the first lecture.
+      await $.platform.mobile.openNotifications();
+      await AppFlow.pumpFrames($.tester, count: 3);
+      await $.platform.mobile.tapOnNotificationBySelector(
+        Selector(contentDescription: 'Previous'),
+        timeout: const Duration(seconds: 10),
+      );
+      await $.platform.mobile.closeNotifications();
+
+      await AppFlow.waitFor(
+        $.tester,
+        find.text(firstTitle),
+        timeout: const Duration(seconds: 30),
+        reason:
+            'queue to return to the previous lecture after lock-screen Previous',
+      );
+      expect(find.text(secondTitle), findsNothing);
 
       await AppFlow.dismissPlayer($.tester);
     },

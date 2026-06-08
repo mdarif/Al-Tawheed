@@ -46,6 +46,11 @@ class PlayerNotifier extends ChangeNotifier {
     }
     _connectivity.addListener(_onConnectivityChanged);
     _downloads.addListener(_onDownloadsChanged);
+    // Lock-screen / notification skip-to-next/previous taps land in the
+    // handler (BaseAudioHandler.skipToNext/Previous) — wire them to our
+    // queue logic, since the handler itself doesn't know about the queue.
+    _handler.onSkipToNext = playNext;
+    _handler.onSkipToPrevious = playPrevious;
     _subs.addAll([
       _handler.playbackState.listen((state) {
         final wasLoading = _loading;
