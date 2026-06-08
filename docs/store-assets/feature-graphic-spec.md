@@ -39,6 +39,10 @@ Google Play **requires** a feature graphic. It appears at the top of your store 
 4. **Small line** — `Fazilat Shaikh Abdullah Nasir Rahmani حفظه الله`  
    - Size: ~16px, secondary color
 
+5. **Website bar (bottom)** — `kitabattawheed.com`  
+   - Full-width dark green bar (~56px tall) with gold accent line above  
+   - URL in white, bold serif, centered — must be clearly readable at thumbnail size
+
 **Optional:** Small headphone icon or waveform line in gold (minimal, not cluttered).
 
 **Do not include:** “Download on Google Play” badge (Play adds its own), QR codes, pricing, or outdated “YouTube videos” wording.
@@ -51,7 +55,8 @@ Google Play **requires** a feature graphic. It appears at the top of your store 
 
 ## Checklist before upload
 
-- [ ] Readable at thumbnail size (test zoom to 25%)
+- [ ] Exactly **1024 × 500** pixels (verify with Preview or `sips -g pixelWidth -g pixelHeight`)
+- [ ] `kitabattawheed.com` visible in bottom branding bar
 - [ ] No spelling “Sheikh” — use **Shaikh**
 - [ ] Says **audio lectures**, not video
 - [ ] File under 1 MB if possible (JPEG quality 85%)
