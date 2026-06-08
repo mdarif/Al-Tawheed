@@ -66,13 +66,21 @@ class WelcomeScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        textStyle: context.textTheme.labelLarge,
+                        textStyle: context.textTheme.labelLarge
+                            ?.copyWith(color: semantic.onBrand),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      icon: const Icon(Icons.headphones_rounded, size: 22),
-                      label: const Text('START LISTENING'),
+                      icon: Icon(
+                        Icons.headphones_rounded,
+                        size: 22,
+                        color: semantic.onBrand,
+                      ),
+                      label: Text(
+                        'START LISTENING',
+                        style: TextStyle(color: semantic.onBrand),
+                      ),
                       onPressed: () => context.go('/lectures'),
                     ),
                   ),
