@@ -73,15 +73,16 @@ The release workflow commits a version bump directly to master. Without this, st
 
 ---
 
-## Setup Status (verified 2026-06-07)
+## Setup Status (re-verified live 2026-06-07, post-1.0.1)
 
-All of the one-time setup items above are now done:
+What's actually configured right now (`gh api repos/.../branches/<branch>/protection`, `gh api repos/.../rulesets`):
 
-- ✅ Branch protection is active on both `develop` (requires the `Flutter CI` status check, strict/up-to-date) and `master` (no force-pushes, no deletions)
-- ✅ `github-actions[bot]` is in the master bypass list — confirmed by the successful `1.0.1` release run on 2026-06-02 (the two runs before it failed at the push step with `protected branch hook declined` until the bypass was added)
+- ✅ `develop` requires the `Flutter CI` status check (strict — must be up to date with the base branch) before merging
+- ✅ `master` blocks force-pushes and branch deletions
+- ⚠️ **Neither branch requires a pull request, review, or has a bypass-actor list configured** — no repository rulesets exist either. This means a direct `git merge develop && git push origin master` succeeds with no prompts, which is why the bot's version-bump push and manual merges both go through cleanly. (An earlier version of this doc claimed a PR requirement + `github-actions[bot]` bypass list were active — that's no longer the case, whether it changed since the `1.0.1` release or was never actually enforced. Treat the live `gh api` output as the source of truth, not this doc, if you need to confirm before relying on it.)
 - ✅ `android/local.properties` is untracked (`git ls-files` returns nothing for it) and remains in `.gitignore`
 
-Nothing is currently pending from the original setup checklist.
+If you want PR review enforced on `master` going forward (e.g. before a Play Store release), re-add it via **Settings → Branches → master rule → Require a pull request before merging**, and remember the release bot will then need a bypass — Repository Rulesets (not classic branch protection) are the only mechanism with a bypass-actor field.
 
 ---
 
@@ -230,23 +231,46 @@ CI runs on the PR. Merge when green.
 
 ## Release Workflow
 
+> **Full step-by-step runbook lives in `docs/deployment.md` → "Release
+> Runbook"** — including the local release gate (`make release-apk`), the
+> push-verification steps that catch a `master` drift before it ships (added
+> after the 2026-06-07 incident where a release shipped the wrong code because
+> a local merge was never actually pushed), and post-release checks. Follow
+> that doc when actually cutting a release; the summary below is just the
+> shape of it.
+
 ```
-1. Ensure develop is merged into master (open PR, get approval, merge)
-2. Switch to master: git checkout master && git pull origin master
-3. Trigger release:
+1. Promote develop → master and PROVE the push landed
+     git checkout master && git pull origin master
+     git merge develop && git push origin master
+     git fetch origin && git status   # must say "up to date with origin/master"
+   (No PR/review is required on master — see "Setup Status" above. Don't skip
+   the verification, though: an unpushed local merge is exactly what caused
+   make release to ship the wrong code on 2026-06-07.)
+2. Run the local release gate (builds + tests + signed APK on a real device):
+     make release-apk DEVICE=<device_id>
+3. Re-verify master is still up to date, then trigger the release:
      make release            # patch
      make release BUMP=minor # minor
 4. Watch the run:
      GitHub → Actions → Release
      or: gh run watch
-5. When complete: GitHub Release is created with APK attached
+5. Verify it shipped: new tag + GitHub Release exist, then sync local master
+     git pull origin master --tags
+6. (Play Store only) Build the signed AAB and submit via Play Console
+7. Close out: sync the version bump back into develop (don't skip — otherwise
+   the next release's merge hits a pubspec.yaml version conflict):
+     git checkout develop && git pull origin develop
+     git merge master && git push origin develop
 ```
 
-The version bump commit (`chore: release X.Y.Z`) is pushed to master automatically. Pull after the release to sync your local master:
-
-```sh
-git pull origin master --tags
-```
+> **Looking for a record of what shipped in each release** (version history,
+> changelog, what the cycle accomplished)? That's **GitHub Releases**
+> (`gh release list` / `github.com/mdarif/Al-Tawheed/releases`) — the release
+> workflow generates it automatically from commits (Step 14 in the table
+> above) and attaches the APK. There's no separate in-repo "release document"
+> to maintain; this doc and `deployment.md` are purely the *how* (CI/CD
+> mechanics and the execution runbook), not the *what shipped*.
 
 ---
 
