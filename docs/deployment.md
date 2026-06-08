@@ -353,15 +353,62 @@ fast-forward while the bump is still fresh:
 ```sh
 git checkout develop
 git pull origin develop
-git merge master      # fast-forwards cleanly — develop has no competing
-                       # pubspec.yaml change since the last promotion
+git merge --ff-only master
 git push origin develop
 ```
 
-If this *doesn't* fast-forward cleanly (i.e. `develop` picked up its own
-`pubspec.yaml` edits since the last release), resolve the `version:` conflict
-by keeping the higher of the two numbers — that's the one already public on
-`master` / tagged in the release.
+**What you should see, step by step:**
+
+- `git checkout develop` — switches branches. If you're *already* on `develop`,
+  Git just says so; that's fine, continue.
+- `git pull origin develop` — make sure your local `develop` matches the
+  remote before merging anything into it.
+- `git merge --ff-only master` — this is the actual sync. In the normal case
+  (nobody has committed anything to `develop` since the last time it was
+  promoted to `master`), `develop` is sitting exactly at the merge-base with
+  `master`, so this is a **fast-forward**: Git just slides the `develop`
+  pointer up to `master`'s tip — no merge commit, linear history, and the
+  output is literally `Fast-forward` (or `Already up to date` if `develop`
+  somehow already has everything — also fine, nothing left to do, just
+  continue to the push/verify below).
+  - We deliberately use `--ff-only` instead of a plain `git merge master` —
+    it *guarantees* you get a fast-forward-or-nothing. If `develop` has picked
+    up its own commits since the last promotion (so a clean fast-forward isn't
+    possible), `--ff-only` **refuses and exits cleanly** instead of silently
+    creating a merge commit or a conflict mid-flight. See the recovery box
+    below for what to do if that happens.
+- `git push origin develop` — pushes the synced commits to GitHub. **Don't
+  skip this** — `git merge` only updates your *local* `develop`; until you
+  push, `origin/develop` is still behind and `git branch -vv` will show your
+  local `develop` as `ahead N` of `origin/develop`.
+
+#### Now verify the push landed (same discipline as Step 1)
+
+```sh
+git fetch origin
+git status
+# must say: "Your branch is up to date with 'origin/develop'"
+```
+
+If it says "ahead by N commits" instead, the push didn't go through (or you
+forgot to run it) — run `git push origin develop` again and re-check.
+
+#### If `--ff-only` refuses ("Not possible to fast-forward, aborting")
+
+This means `develop` picked up commits of its own (most likely its own
+`pubspec.yaml` edits) since the last time it was promoted to `master` — a
+true three-way merge is needed, and a `version:` conflict is the most likely
+outcome:
+
+```sh
+git merge master
+# resolve the `version:` conflict in pubspec.yaml — keep the HIGHER of the
+# two numbers, since that's the one already public on master / tagged in
+# the release
+git add pubspec.yaml
+git commit
+git push origin develop
+```
 
 ---
 
