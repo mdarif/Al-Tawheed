@@ -1,0 +1,47 @@
+version: 2
+
+updates:
+  # ── Dart / Flutter pub packages ──────────────────────────────────────────
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Karachi
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    # Group all non-breaking (minor + patch) updates into a single weekly PR
+    # to keep noise low. Major-version bumps arrive individually so each gets
+    # an explicit review.
+    groups:
+      pub-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # SDK constraints are managed via flutter-action in CI, not here.
+      - dependency-name: flutter
+      - dependency-name: dart
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Karachi
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    # Bundle all Actions updates into one PR — each action update is low-risk
+    # and doesn't need its own review cycle.
+    groups:
+      github-actions-all:
+        patterns:
+          - "*"
