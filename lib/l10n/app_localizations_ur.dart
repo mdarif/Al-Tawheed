@@ -194,7 +194,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsRateApp => 'پلے اسٹور پر ریٹنگ دیں';
 
   @override
+  String get settingsYouTubeChannel => 'یوٹیوب چینل';
+
+  @override
   String get settingsAbout => 'ایپ کے بارے میں';
+
+  @override
+  String get statLectures => 'دروس';
+
+  @override
+  String get statClasses => 'کلاسیں';
+
+  @override
+  String get statOfflineReady => 'آف لائن تیار';
 
   @override
   String get settingsAboutArabicTitle => 'شرح کتاب التوحید';
@@ -610,7 +622,19 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get settingsRateApp => 'Play Store par rating dein';
 
   @override
+  String get settingsYouTubeChannel => 'YouTube channel';
+
+  @override
   String get settingsAbout => 'App ke baare mein';
+
+  @override
+  String get statLectures => 'Lectures';
+
+  @override
+  String get statClasses => 'Classes';
+
+  @override
+  String get statOfflineReady => 'Offline Ready';
 
   @override
   String get settingsAboutArabicTitle => 'شرح کتاب التوحید';

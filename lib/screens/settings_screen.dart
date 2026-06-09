@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:myapp/models/app_config_model.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -100,6 +102,16 @@ class SettingsScreen extends StatelessWidget {
                 mode: LaunchMode.externalApplication,
               ),
             ),
+          if (config.links.youtube != null)
+            ListTile(
+              leading: const Icon(Icons.play_circle_outline_rounded),
+              title: Text(config.branding.appBrand),
+              subtitle: Text(l10n.settingsYouTubeChannel),
+              onTap: () => launchUrl(
+                Uri.parse(config.links.youtube!),
+                mode: LaunchMode.externalApplication,
+              ),
+            ),
           const Divider(height: 32),
 
           if (context.watch<FeatureFlagsProvider>().features.downloads)
@@ -110,8 +122,100 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: AboutCard(about: config.about),
           ),
+          _BrandingFooter(branding: config.branding),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class _BrandingFooter extends StatefulWidget {
+  final AppConfigBranding branding;
+  const _BrandingFooter({required this.branding});
+
+  @override
+  State<_BrandingFooter> createState() => _BrandingFooterState();
+}
+
+class _BrandingFooterState extends State<_BrandingFooter> {
+  String? _version;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((PackageInfo info) {
+      if (mounted) setState(() => _version = info.version);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        children: [
+          _BrandLink(
+            label: widget.branding.appBrand,
+            url: widget.branding.appBrandUrl,
+          ),
+          const SizedBox(height: 2),
+          _BrandLink(
+            label: widget.branding.poweredByLabel,
+            url: widget.branding.publisherUrl,
+            muted: true,
+          ),
+          if (_version != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.settingsAboutVersion(_version!),
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.mutedIconColor,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BrandLink extends StatelessWidget {
+  final String label;
+  final String url;
+  final bool muted;
+
+  const _BrandLink({
+    required this.label,
+    required this.url,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = muted ? context.mutedIconColor : context.brandColor;
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () => launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: muted ? FontWeight.w400 : FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.open_in_new_rounded, size: 10, color: color),
+          ],
+        ),
       ),
     );
   }

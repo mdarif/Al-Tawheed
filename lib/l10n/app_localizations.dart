@@ -417,11 +417,35 @@ abstract class AppLocalizations {
   /// **'Rate on Play Store'**
   String get settingsRateApp;
 
+  /// No description provided for @settingsYouTubeChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube channel'**
+  String get settingsYouTubeChannel;
+
   /// No description provided for @settingsAbout.
   ///
   /// In en, this message translates to:
   /// **'About'**
   String get settingsAbout;
+
+  /// No description provided for @statLectures.
+  ///
+  /// In en, this message translates to:
+  /// **'Lectures'**
+  String get statLectures;
+
+  /// No description provided for @statClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get statClasses;
+
+  /// No description provided for @statOfflineReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Ready'**
+  String get statOfflineReady;
 
   /// No description provided for @settingsAboutArabicTitle.
   ///

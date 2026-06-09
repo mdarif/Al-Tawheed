@@ -36,6 +36,40 @@ class AppConfigShare {
       AppConfigShare(message: j['message'] as String? ?? '');
 }
 
+class AppConfigBranding {
+  final String appBrand;
+  final String appBrandUrl;
+  final String publisher;
+  final String publisherUrl;
+  final String poweredByLabel;
+
+  const AppConfigBranding({
+    required this.appBrand,
+    required this.appBrandUrl,
+    required this.publisher,
+    required this.publisherUrl,
+    required this.poweredByLabel,
+  });
+
+  factory AppConfigBranding.fromJson(Map<String, dynamic> j) => AppConfigBranding(
+        appBrand: j['appBrand'] as String? ?? 'Al Marfa Duroos',
+        appBrandUrl:
+            j['appBrandUrl'] as String? ?? 'https://www.youtube.com/@almarfaduroos',
+        publisher: j['publisher'] as String? ?? 'Al Marfa Technologies',
+        publisherUrl: j['publisherUrl'] as String? ?? 'http://almarfa.co',
+        poweredByLabel:
+            j['poweredByLabel'] as String? ?? 'Powered by Al Marfa Technologies',
+      );
+
+  static const AppConfigBranding defaults = AppConfigBranding(
+    appBrand: 'Al Marfa Duroos',
+    appBrandUrl: 'https://www.youtube.com/@almarfaduroos',
+    publisher: 'Al Marfa Technologies',
+    publisherUrl: 'http://almarfa.co',
+    poweredByLabel: 'Powered by Al Marfa Technologies',
+  );
+}
+
 class AppConfigAbout {
   final String appName;
   final String lecturer;
@@ -66,6 +100,7 @@ class AppConfigModel {
   final AppConfigContact contact;
   final AppConfigShare share;
   final AppConfigAbout about;
+  final AppConfigBranding branding;
 
   const AppConfigModel({
     required this.version,
@@ -73,6 +108,7 @@ class AppConfigModel {
     required this.contact,
     required this.share,
     required this.about,
+    required this.branding,
   });
 
   factory AppConfigModel.fromJson(Map<String, dynamic> j) => AppConfigModel(
@@ -85,6 +121,8 @@ class AppConfigModel {
             AppConfigShare.fromJson(j['share'] as Map<String, dynamic>? ?? {}),
         about:
             AppConfigAbout.fromJson(j['about'] as Map<String, dynamic>? ?? {}),
+        branding: AppConfigBranding.fromJson(
+            j['branding'] as Map<String, dynamic>? ?? {}),
       );
 
   /// Safe fallback used when the remote fetch fails and no cache exists.
@@ -94,7 +132,7 @@ class AppConfigModel {
           playStore:
               'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
           website: 'https://kitabattawheed.com',
-          youtube: 'https://www.youtube.com/channel/UCCCp4iPyMgqduVahr2gmLVw',
+          youtube: 'https://www.youtube.com/@almarfaduroos',
         ),
         contact: const AppConfigContact(
           email: 'arif.mohammed@gmail.com',
@@ -108,10 +146,11 @@ class AppConfigModel {
         ),
         about: const AppConfigAbout(
           appName: 'Sharah Kitab al-Tawheed',
-          lecturer: 'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah',
+          lecturer: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
           lectureCount: 50,
           classCount: 15,
           totalDuration: '27h 7m',
         ),
+        branding: AppConfigBranding.defaults,
       );
 }

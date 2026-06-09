@@ -192,7 +192,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRateApp => 'Rate on Play Store';
 
   @override
+  String get settingsYouTubeChannel => 'YouTube channel';
+
+  @override
   String get settingsAbout => 'About';
+
+  @override
+  String get statLectures => 'Lectures';
+
+  @override
+  String get statClasses => 'Classes';
+
+  @override
+  String get statOfflineReady => 'Offline Ready';
 
   @override
   String get settingsAboutArabicTitle => 'شرح کتاب التوحید';

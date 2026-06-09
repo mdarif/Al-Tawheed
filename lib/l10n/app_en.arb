@@ -101,7 +101,11 @@
   "settingsContactUs": "Contact Us",
   "settingsShareApp": "Share app",
   "settingsRateApp": "Rate on Play Store",
+  "settingsYouTubeChannel": "YouTube channel",
   "settingsAbout": "About",
+  "statLectures": "Lectures",
+  "statClasses": "Classes",
+  "statOfflineReady": "Offline Ready",
   "settingsAboutArabicTitle": "شرح کتاب التوحید",
   "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",
   "@settingsAboutStats": {
