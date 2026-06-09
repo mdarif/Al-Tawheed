@@ -1,0 +1,114 @@
+# Flutter Regression — Integration tests on iOS Simulator
+#
+# Runs on:
+#   • Every PR into master  (release gate — must pass before merging)
+#   • Nightly at 02:00 UTC  (catches develop drift before it reaches master)
+#   • Manual dispatch        (on-demand re-run without a commit)
+#
+# Intentionally NOT triggered on every push to develop — macOS runners cost
+# ~10× more than ubuntu and integration tests take 5–8 min to build + run.
+# The fast gate (analyze + unit tests) in flutter-ci.yml covers develop pushes.
+
+name: Flutter Regression
+
+on:
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 2 * * *'   # 02:00 UTC daily
+  workflow_dispatch:       # manual trigger from Actions tab
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Integration tests — iOS Simulator
+    runs-on: macos-latest
+
+    steps:
+      # ------------------------------------------------------------------ #
+      # 1. Checkout
+      # ------------------------------------------------------------------ #
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # ------------------------------------------------------------------ #
+      # 2. Flutter stable
+      # ------------------------------------------------------------------ #
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # ------------------------------------------------------------------ #
+      # 3. Cache pub packages
+      # ------------------------------------------------------------------ #
+      - name: Cache pub packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-cache-${{ runner.os }}-
+
+      # ------------------------------------------------------------------ #
+      # 4. Install dependencies
+      # ------------------------------------------------------------------ #
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # ------------------------------------------------------------------ #
+      # 5. Analyze (fast sanity check before booting a simulator)
+      # ------------------------------------------------------------------ #
+      - name: Analyze code
+        run: flutter analyze --fatal-warnings
+
+      # ------------------------------------------------------------------ #
+      # 6. Boot iOS Simulator
+      #    Picks the first available iPhone on the runner, boots it, and
+      #    exports the UDID so the test step can target it explicitly.
+      # ------------------------------------------------------------------ #
+      - name: Boot iOS Simulator
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in sorted(data['devices'].items(), reverse=True):
+              if 'iOS' not in runtime:
+                  continue
+              for d in devices:
+                  if 'iPhone' in d['name'] and d.get('isAvailable', False):
+                      print(d['udid'])
+                      exit()
+          " 2>/dev/null)
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found" && exit 1
+          fi
+          xcrun simctl boot "$UDID"
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------------ #
+      # 7. Run integration tests
+      #    Timeout is generous (15 min) — first run fetches the catalog
+      #    from the CDN and may download audio metadata.
+      # ------------------------------------------------------------------ #
+      - name: Run integration tests
+        run: |
+          flutter test integration_test/app_test.dart \
+            -d "$SIMULATOR_UDID" \
+            --timeout 15m
+
+      # ------------------------------------------------------------------ #
+      # 8. Upload .xcresult on failure (attached to the workflow run)
+      # ------------------------------------------------------------------ #
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: xcresult
+          path: build/**/*.xcresult
+          retention-days: 7

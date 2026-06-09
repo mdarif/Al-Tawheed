@@ -1,0 +1,18 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto        # require coverage to stay at or above current level
+        threshold: 1%       # allow 1% drop before failing the PR
+    patch:
+      default:
+        target: 50%         # new code in a PR should be at least 50% covered
+
+ignore:
+  # Generated l10n files — no point covering boilerplate
+  - "lib/l10n/app_localizations.dart"
+  - "lib/l10n/app_localizations_en.dart"
+  - "lib/l10n/app_localizations_ur.dart"
+  - "lib/l10n/app_localizations_ur_roman.dart"
+  # Generated plugin registrant
+  - "lib/generated_plugin_registrant.dart"

@@ -64,7 +64,10 @@ class AppFlow {
 
   static Future<void> navigateToTab(WidgetTester tester, String label) async {
     await dismissOverlays(tester);
-    final tab = find.text(label);
+    final tab = find.descendant(
+      of: find.byType(NavigationBar),
+      matching: find.text(label),
+    );
     expect(tab, findsOneWidget);
     await tester.tap(tab);
     await pumpFrames(tester, count: 5);

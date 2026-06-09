@@ -1,5 +1,8 @@
 # Sharah Kitab al-Tawheed
 
+[![CI](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml)
+[![codecov](https://codecov.io/gh/mdarif/Al-Tawheed/graph/badge.svg)](https://codecov.io/gh/mdarif/Al-Tawheed)
+
 A native Android/iOS audio lecture player for the Sharah Kitaab al-Tawheed
 series by Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah — offline-first,
 multilingual (English / Urdu / Roman Urdu), with background playback and

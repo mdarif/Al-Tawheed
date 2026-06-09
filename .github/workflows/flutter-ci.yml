@@ -110,12 +110,27 @@ jobs:
         run: flutter analyze --fatal-warnings
 
       # ------------------------------------------------------------------ #
-      # 9. Run tests — every test/*.dart file, including widget_test.dart
-      #    (rewritten with real welcome-screen tests; no longer the stale
-      #    Flutter counter-app template it once was).
+      # 9. Run tests with coverage
+      #    --coverage writes coverage/lcov.info.
+      #    Generated l10n files are stripped from the report via codecov.yml
+      #    ignore rules (filtering here would require lcov which isn't
+      #    installed on the ubuntu runner by default).
       # ------------------------------------------------------------------ #
       - name: Run tests
-        run: flutter test --reporter=expanded
+        run: flutter test --coverage --reporter=expanded
+
+      # ------------------------------------------------------------------ #
+      # 10. Upload coverage to Codecov
+      #     Token is required for private repos; set CODECOV_TOKEN in
+      #     Settings → Secrets and Variables → Actions.
+      #     For public repos the upload works without a token.
+      # ------------------------------------------------------------------ #
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          fail_ci_if_error: false   # don't fail the build if Codecov is down
 
       # ------------------------------------------------------------------ #
       # 11. Build Android debug APK
