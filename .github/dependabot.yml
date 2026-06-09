@@ -26,6 +26,10 @@ updates:
       # SDK constraints are managed via flutter-action in CI, not here.
       - dependency-name: flutter
       - dependency-name: dart
+      # v22 changed initialize() and show() to named params — needs a migration.
+      # Remove this entry once download_notification_service.dart is updated.
+      - dependency-name: flutter_local_notifications
+        update-types: ["version-update:semver-major"]
 
   # ── GitHub Actions ────────────────────────────────────────────────────────
   - package-ecosystem: github-actions

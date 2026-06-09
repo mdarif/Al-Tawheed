@@ -124,8 +124,16 @@ class DownloadService {
 
   static Future<void> delete(String lectureId) async {
     cancel(lectureId);
-    final file = File(localPath(lectureId));
-    if (await file.exists()) await file.delete();
+    // The cancel above is synchronous but its file-cleanup runs asynchronously.
+    // If the download's catch block deletes the partial file between our
+    // exists() check and delete() call, swallow the PathNotFoundException —
+    // the file is already gone, which is the desired outcome.
+    try {
+      final file = File(localPath(lectureId));
+      if (await file.exists()) await file.delete();
+    } on PathNotFoundException {
+      // Already removed by cancel cleanup — nothing to do.
+    }
   }
 
   /// Total bytes used by all downloaded lectures.
