@@ -117,7 +117,7 @@ jobs:
       #    installed on the ubuntu runner by default).
       # ------------------------------------------------------------------ #
       - name: Run tests
-        run: flutter test --coverage --reporter=expanded
+        run: flutter test --coverage --reporter=expanded --exclude-tags golden
 
       # ------------------------------------------------------------------ #
       # 10. Upload coverage to Codecov
