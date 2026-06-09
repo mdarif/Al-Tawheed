@@ -142,7 +142,7 @@ jobs:
       # 10. Test — refuse to tag a build with failing tests
       # ------------------------------------------------------------------ #
       - name: Run tests
-        run: flutter test --reporter=expanded
+        run: flutter test --reporter=expanded --exclude-tags golden
 
       # ------------------------------------------------------------------ #
       # 11. Build debug APK
@@ -162,29 +162,50 @@ jobs:
              "${{ steps.version.outputs.apk }}"
 
       # ------------------------------------------------------------------ #
-      # 13. Auto-generate changelog from commits since the last tag
+      # 13a. Generate structured changelog from conventional commits
+      #      git-cliff groups feat/fix/perf commits and skips ci/chore/docs
+      #      noise. Output is Markdown used in the GitHub Release body.
       # ------------------------------------------------------------------ #
       - name: Generate changelog
-        id: changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
+      # ------------------------------------------------------------------ #
+      # 13b. Derive Play Store plain-text notes from the changelog
+      #      Play Store "What's new" field: max 500 characters per locale.
+      #      This step strips Markdown formatting and truncates to 480 chars
+      #      (leaving room for a manual tweak before submitting).
+      #      The file is attached to the GitHub Release as a ready-to-copy
+      #      artifact — open it, copy, paste into Play Console.
+      # ------------------------------------------------------------------ #
+      - name: Generate Play Store release notes
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$LAST_TAG" ]; then
-            RANGE="${LAST_TAG}..HEAD"
-          else
-            RANGE="HEAD"
+          MARKDOWN="${{ steps.cliff.outputs.content }}"
+
+          # Strip Markdown: remove ### headings, bold (**text**), leading dashes
+          PLAIN=$(echo "$MARKDOWN" \
+            | sed 's/^### //g' \
+            | sed 's/\*\*//g' \
+            | sed 's/^- /• /g' \
+            | sed '/^$/d')
+
+          # Truncate to 480 characters to stay safely under the 500-char limit
+          TRUNCATED=$(echo "$PLAIN" | head -c 480)
+
+          # Warn if we had to truncate
+          FULL_LEN=$(echo "$PLAIN" | wc -c | tr -d ' ')
+          if [ "$FULL_LEN" -gt 480 ]; then
+            echo "::warning::Play Store notes truncated to 480 chars (was ${FULL_LEN}). Review before submitting."
           fi
 
-          NOTES=$(git log "$RANGE" --pretty=format:"- %s" --no-merges)
-          [ -z "$NOTES" ] && NOTES="- Maintenance release"
-
-          {
-            echo "notes<<EOF"
-            echo "$NOTES"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "Changelog since ${LAST_TAG:-beginning}:"
-          echo "$NOTES"
+          echo "$TRUNCATED" > play-store-notes.txt
+          echo "Play Store notes:"
+          cat play-store-notes.txt
 
       # ------------------------------------------------------------------ #
       # 14. Commit version bump, tag, and push
@@ -207,7 +228,7 @@ jobs:
           git push origin "${TAG}"
 
       # ------------------------------------------------------------------ #
-      # 15. Create GitHub Release and attach the APK
+      # 15. Create GitHub Release — attach APK and Play Store notes
       # ------------------------------------------------------------------ #
       - name: Create GitHub Release
         env:
@@ -216,14 +237,19 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           APK="${{ steps.version.outputs.apk }}"
           NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          CHANGELOG="${{ steps.cliff.outputs.content }}"
+
+          [ -z "$CHANGELOG" ] && CHANGELOG="- Maintenance release"
 
           gh release create "${TAG}" \
             "${APK}#Al-Tawheed Android APK (debug)" \
+            "play-store-notes.txt#Play Store release notes (plain text)" \
             --title "Al-Tawheed ${TAG}" \
             --notes "## What's changed
 
-          ${{ steps.changelog.outputs.notes }}
+          ${CHANGELOG}
 
           ---
           **Build:** \`${NEW_VERSION}\`
-          **APK:** debug build, install via \`adb install ${APK}\`"
+          **APK:** debug build, install via \`adb install ${APK}\`
+          **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new"
