@@ -31,13 +31,17 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader(l10n.settingsAppearance),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: context.groupedSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: context.groupedBorder, width: 1),
+            child: Material(
+              color: context.groupedSurface,
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: context.groupedBorder, width: 1),
+                ),
+                child: const ThemeModeSwitch(),
               ),
-              child: const ThemeModeSwitch(),
             ),
           ),
           const Divider(height: 32),
