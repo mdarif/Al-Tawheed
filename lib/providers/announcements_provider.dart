@@ -44,6 +44,13 @@ class AnnouncementsProvider extends ChangeNotifier {
   /// Re-fetch from CDN, bypassing cache TTL (e.g. pull-to-refresh on Home).
   Future<void> refresh() => load(forceRefresh: true);
 
+  /// Injects announcements without network — for tests only.
+  @visibleForTesting
+  void setAnnouncementsForTest(List<Announcement> announcements) {
+    _model = AnnouncementsModel(version: 1, announcements: announcements);
+    notifyListeners();
+  }
+
   /// Dismiss an announcement permanently (survives app restarts).
   Future<void> dismiss(String id) async {
     _dismissed.add(id);
