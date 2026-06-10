@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabHome => 'Home';
 
   @override
-  String get tabSaved => 'Saved';
+  String get tabStudyMode => 'Study';
 
   @override
   String get tabSettings => 'Settings';
@@ -126,6 +126,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studyStatusNotStarted => 'Not started';
 
   @override
+  String get studyStart => 'Start';
+
+  @override
+  String get studyYourProgress => 'Your progress';
+
+  @override
   String get studyRecommendedNext => 'Recommended next';
 
   @override
@@ -202,6 +208,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statClasses => 'Classes';
+
+  @override
+  String get statDuration => 'Duration';
 
   @override
   String get statOfflineReady => 'Offline Ready';

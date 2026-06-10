@@ -1,7 +1,7 @@
 {
   "tabLectures": "Duroos",
   "tabHome": "Home",
-  "tabSaved": "Mehfooz",
+  "tabStudyMode": "Taleem",
   "tabSettings": "Tarteebat",
 
   "appTitle": "Sharah Kitab al-Tawheed",
@@ -35,6 +35,8 @@
   "studyStatusStudied": "Parha hua",
   "studyStatusInProgress": "Jari",
   "studyStatusNotStarted": "Shuru nahin",
+  "studyStart": "Shuru karein",
+  "studyYourProgress": "Aap ki pesh raft",
   "studyRecommendedNext": "Agla tajweez shuda",
   "studyPartsComplete": "{total} mein se {completed} hisse mukammal",
 
@@ -62,6 +64,7 @@
   "settingsAbout": "App ke baare mein",
   "statLectures": "Lectures",
   "statClasses": "Classes",
+  "statDuration": "Duration",
   "statOfflineReady": "Offline Ready",
   "settingsAboutArabicTitle": "شرح کتاب التوحید",
   "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",

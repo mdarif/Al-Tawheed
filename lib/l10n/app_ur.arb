@@ -3,7 +3,7 @@
 
   "tabLectures": "دروس",
   "tabHome": "ہوم",
-  "tabSaved": "محفوظ",
+  "tabStudyMode": "تعلیم",
   "tabSettings": "ترتیبات",
 
   "appTitle": "شرح کتاب التوحید",
@@ -37,6 +37,8 @@
   "studyStatusStudied": "پڑھا ہوا",
   "studyStatusInProgress": "جاری",
   "studyStatusNotStarted": "شروع نہیں",
+  "studyStart": "شروع کریں",
+  "studyYourProgress": "آپ کی پیش رفت",
   "studyRecommendedNext": "اگلا تجویز شدہ",
   "studyPartsComplete": "{total} میں سے {completed} حصے مکمل",
 
@@ -64,6 +66,7 @@
   "settingsAbout": "ایپ کے بارے میں",
   "statLectures": "دروس",
   "statClasses": "کلاسیں",
+  "statDuration": "دورانیہ",
   "statOfflineReady": "آف لائن تیار",
   "settingsAboutArabicTitle": "شرح کتاب التوحید",
   "settingsAboutStats": "{lectures} دروس · {classes} کلاسیں · {duration}",

@@ -15,7 +15,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get tabHome => 'ہوم';
 
   @override
-  String get tabSaved => 'محفوظ';
+  String get tabStudyMode => 'تعلیم';
 
   @override
   String get tabSettings => 'ترتیبات';
@@ -127,6 +127,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get studyStatusNotStarted => 'شروع نہیں';
 
   @override
+  String get studyStart => 'شروع کریں';
+
+  @override
+  String get studyYourProgress => 'آپ کی پیش رفت';
+
+  @override
   String get studyRecommendedNext => 'اگلا تجویز شدہ';
 
   @override
@@ -204,6 +210,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get statClasses => 'کلاسیں';
+
+  @override
+  String get statDuration => 'دورانیہ';
 
   @override
   String get statOfflineReady => 'آف لائن تیار';
@@ -441,7 +450,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get tabHome => 'Home';
 
   @override
-  String get tabSaved => 'Mehfooz';
+  String get tabStudyMode => 'Taleem';
 
   @override
   String get tabSettings => 'Tarteebat';
@@ -555,6 +564,12 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get studyStatusNotStarted => 'Shuru nahin';
 
   @override
+  String get studyStart => 'Shuru karein';
+
+  @override
+  String get studyYourProgress => 'Aap ki pesh raft';
+
+  @override
   String get studyRecommendedNext => 'Agla tajweez shuda';
 
   @override
@@ -632,6 +647,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get statClasses => 'Classes';
+
+  @override
+  String get statDuration => 'Duration';
 
   @override
   String get statOfflineReady => 'Offline Ready';

@@ -10,7 +10,7 @@ import 'package:myapp/utils/study_session.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
-import 'package:myapp/widgets/study/overall_progress_summary.dart';
+import 'package:myapp/widgets/study/study_dashboard_card.dart';
 
 class StudyScreen extends StatefulWidget {
   const StudyScreen({super.key});
@@ -88,14 +88,19 @@ class _StudyBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final study = context.watch<StudyProgressProvider>();
     final infos = study.chapterInfos();
+    final stats = study.stats;
     final l10n = context.l10n;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        OverallProgressSummary(
+        StudyDashboardCard(
           studiedCount: study.studiedCount,
-          totalCount: study.totalChapterCount,
+          totalChapterCount: study.totalChapterCount,
+          completedLectures: stats.completedLectures,
+          totalLectures: stats.totalLectures,
+          completedSeconds: stats.completedSeconds,
+          totalSeconds: stats.totalSeconds,
         ),
         const SizedBox(height: 24),
         Text(

@@ -38,7 +38,7 @@ class StudyModeCard extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         GestureDetector(
-          onTap: () => context.push('/study'),
+          onTap: () => context.go('/study'),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),

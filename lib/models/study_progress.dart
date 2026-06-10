@@ -26,6 +26,21 @@ class ChapterStudyInfo {
       totalParts == 0 ? 0.0 : completedParts / totalParts;
 }
 
+/// Aggregate study progress across the whole catalog — for the dashboard.
+class StudyStats {
+  final int completedLectures;
+  final int totalLectures;
+  final int completedSeconds;
+  final int totalSeconds;
+
+  const StudyStats({
+    required this.completedLectures,
+    required this.totalLectures,
+    required this.completedSeconds,
+    required this.totalSeconds,
+  });
+}
+
 /// Pure study-progress helpers — no persistence or side effects.
 class StudyProgress {
   StudyProgress._();
@@ -104,6 +119,39 @@ class StudyProgress {
         isRecommended: recommended?.id == chapter.id,
       );
     }).toList();
+  }
+
+  /// Aggregate lecture/duration progress across all chapters. A chapter
+  /// marked studied counts all of its parts as complete, even if per-lecture
+  /// progress wasn't fully recorded — mirrors the per-card progress display.
+  static StudyStats stats(
+    Catalog catalog,
+    Set<String> studiedChapterIds,
+    ProgressProvider progress,
+  ) {
+    var completedLectures = 0;
+    var totalLectures = 0;
+    var completedSeconds = 0;
+    var totalSeconds = 0;
+
+    for (final chapter in catalog.chapters) {
+      final studied = studiedChapterIds.contains(chapter.id);
+      for (final part in catalog.lecturesForChapter(chapter.id)) {
+        totalLectures++;
+        totalSeconds += part.durationSeconds;
+        if (studied || isPartComplete(progress, part)) {
+          completedLectures++;
+          completedSeconds += part.durationSeconds;
+        }
+      }
+    }
+
+    return StudyStats(
+      completedLectures: completedLectures,
+      totalLectures: totalLectures,
+      completedSeconds: completedSeconds,
+      totalSeconds: totalSeconds,
+    );
   }
 
   /// Lecture to play when starting or resuming a class session.

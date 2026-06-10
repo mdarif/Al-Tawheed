@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/study_progress_label.dart';
+import 'package:myapp/widgets/study/parts_progress_bar.dart';
+import 'package:myapp/widgets/study/study_status_chip.dart';
 
 class ClassProgressCard extends StatelessWidget {
   final ChapterStudyInfo info;
@@ -20,77 +22,119 @@ class ClassProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final chapter = info.chapter;
     final l10n = context.l10n;
+    final studied = info.status == ChapterStudyStatus.studied;
+    final semantic = context.semantic;
+
+    final decoration = info.isRecommended
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                semantic.accentGradientStart,
+                semantic.accentGradientEnd,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.brandColor.withValues(alpha: 0.38)),
+            boxShadow: [
+              BoxShadow(
+                color: context.brandColor.withValues(alpha: 0.14),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: context.groupedSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.groupedBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          );
 
     return Material(
-      color: info.isRecommended
-          ? context.semantic.brandSubtle.withValues(
-              alpha: context.isDarkTheme ? 0.35 : 0.5,
-            )
-          : context.groupedSurface,
-      borderRadius: BorderRadius.circular(14),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: info.isRecommended
-                  ? context.brandColor.withValues(alpha: 0.45)
-                  : context.groupedBorder,
-              width: info.isRecommended ? 1.5 : 1,
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          decoration: decoration,
+          padding: const EdgeInsets.all(14),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      context.read<LanguageProvider>().resolve(chapter.title),
-                      style: context.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+              _ChapterBadge(status: info.status, number: chapter.number),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (info.isRecommended) ...[
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome_rounded,
+                              size: 12, color: context.brandColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            l10n.studyRecommendedNext.toUpperCase(),
+                            style: context.textTheme.labelSmall?.copyWith(
+                              fontSize: 10,
+                              color: context.brandColor,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 4),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            context
+                                .read<LanguageProvider>()
+                                .resolve(chapter.title),
+                            style: context.textTheme.titleSmall?.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        StudyStatusChip(status: info.status),
+                      ],
                     ),
-                  ),
-                  _StatusBadge(status: info.status, l10n: l10n),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.partsCount(info.totalParts),
-                style: context.textTheme.bodySmall,
-              ),
-              if (info.isRecommended) ...[
-                const SizedBox(height: 6),
-                Text(
-                  l10n.studyRecommendedNext,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: context.brandColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: info.status == ChapterStudyStatus.studied
-                      ? 1.0
-                      : info.fraction,
-                  backgroundColor: context.progressTrackColor,
-                  color: context.brandColor,
-                  minHeight: 4,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _progressLabel(info, l10n),
-                style: context.textTheme.bodySmall?.copyWith(
-                  color: context.secondaryTextColor,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: PartsProgressBar(
+                            completed: studied
+                                ? info.totalParts
+                                : info.completedParts,
+                            total: info.totalParts,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          studyProgressLabel(info, l10n),
+                          style: context.textTheme.bodySmall?.copyWith(
+                            color: context.secondaryTextColor,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -99,49 +143,57 @@ class ClassProgressCard extends StatelessWidget {
       ),
     );
   }
-
-  static String _progressLabel(ChapterStudyInfo info, AppLocalizations l10n) {
-    if (info.status == ChapterStudyStatus.studied) {
-      return l10n.studyStatusStudied;
-    }
-    if (info.completedParts == 0) return l10n.studyStatusNotStarted;
-    return l10n.studyPartsComplete(info.completedParts, info.totalParts);
-  }
 }
 
-class _StatusBadge extends StatelessWidget {
+class _ChapterBadge extends StatelessWidget {
   final ChapterStudyStatus status;
-  final AppLocalizations l10n;
+  final int number;
 
-  const _StatusBadge({required this.status, required this.l10n});
+  const _ChapterBadge({required this.status, required this.number});
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      ChapterStudyStatus.studied => (l10n.studyStatusStudied, context.brandColor),
+    final semantic = context.semantic;
+
+    final (background, foreground, border, borderWidth) = switch (status) {
+      ChapterStudyStatus.studied => (
+          context.brandColor,
+          context.onBrandColor,
+          context.brandColor,
+          1.0,
+        ),
       ChapterStudyStatus.inProgress => (
-          l10n.studyStatusInProgress,
-          context.semantic.brandEmphasis,
+          semantic.brandSubtle,
+          context.brandColor,
+          context.brandColor,
+          2.0,
         ),
       ChapterStudyStatus.notStarted => (
-          l10n.studyStatusNotStarted,
-          context.mutedIconColor,
+          Colors.transparent,
+          context.primaryTextColor,
+          context.surfaceTintColor,
+          1.5,
         ),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        color: background,
+        shape: BoxShape.circle,
+        border: Border.all(color: border, width: borderWidth),
       ),
-      child: Text(
-        label,
-        style: context.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: status == ChapterStudyStatus.studied
+          ? Icon(Icons.check_rounded, color: foreground, size: 22)
+          : Text(
+              number.toString().padLeft(2, '0'),
+              style: context.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: foreground,
+              ),
+            ),
     );
   }
 }

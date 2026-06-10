@@ -111,11 +111,11 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get tabHome;
 
-  /// No description provided for @tabSaved.
+  /// No description provided for @tabStudyMode.
   ///
   /// In en, this message translates to:
-  /// **'Saved'**
-  String get tabSaved;
+  /// **'Study'**
+  String get tabStudyMode;
 
   /// No description provided for @tabSettings.
   ///
@@ -297,6 +297,18 @@ abstract class AppLocalizations {
   /// **'Not started'**
   String get studyStatusNotStarted;
 
+  /// No description provided for @studyStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get studyStart;
+
+  /// No description provided for @studyYourProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress'**
+  String get studyYourProgress;
+
   /// No description provided for @studyRecommendedNext.
   ///
   /// In en, this message translates to:
@@ -440,6 +452,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Classes'**
   String get statClasses;
+
+  /// No description provided for @statDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get statDuration;
 
   /// No description provided for @statOfflineReady.
   ///

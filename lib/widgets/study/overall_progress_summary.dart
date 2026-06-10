@@ -16,6 +16,8 @@ class OverallProgressSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fraction = totalCount == 0 ? 0.0 : studiedCount / totalCount;
+    final percent = (fraction * 100).round();
+    final complete = totalCount > 0 && studiedCount == totalCount;
     final l10n = context.l10n;
 
     return Container(
@@ -23,33 +25,34 @@ class OverallProgressSummary extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: context.groupedBorder, width: 1),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 64,
-            height: 64,
+            width: 76,
+            height: 76,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 CircularProgressIndicator(
                   value: fraction,
-                  strokeWidth: 5,
+                  strokeWidth: 6,
+                  strokeCap: StrokeCap.round,
                   backgroundColor: context.progressTrackColor,
                   color: context.brandColor,
                 ),
                 Text(
-                  '$studiedCount',
+                  '$percent%',
                   style: context.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,13 +64,24 @@ class OverallProgressSummary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  studiedCount == totalCount
-                      ? l10n.studyOverallComplete
-                      : l10n.studyOverallInProgress,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.secondaryTextColor,
-                  ),
+                Row(
+                  children: [
+                    if (complete) ...[
+                      Icon(Icons.workspace_premium_rounded,
+                          size: 16, color: context.brandColor),
+                      const SizedBox(width: 6),
+                    ],
+                    Expanded(
+                      child: Text(
+                        complete
+                            ? l10n.studyOverallComplete
+                            : l10n.studyOverallInProgress,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

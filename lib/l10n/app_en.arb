@@ -3,7 +3,7 @@
 
   "tabLectures": "Lectures",
   "tabHome": "Home",
-  "tabSaved": "Saved",
+  "tabStudyMode": "Study",
   "tabSettings": "Settings",
 
   "appTitle": "Sharah Kitab al-Tawheed",
@@ -69,6 +69,8 @@
   "studyStatusStudied": "Studied",
   "studyStatusInProgress": "In progress",
   "studyStatusNotStarted": "Not started",
+  "studyStart": "Start",
+  "studyYourProgress": "Your progress",
   "studyRecommendedNext": "Recommended next",
   "studyPartsComplete": "{completed} of {total} parts complete",
   "@studyPartsComplete": {
@@ -105,6 +107,7 @@
   "settingsAbout": "About",
   "statLectures": "Lectures",
   "statClasses": "Classes",
+  "statDuration": "Duration",
   "statOfflineReady": "Offline Ready",
   "settingsAboutArabicTitle": "شرح کتاب التوحید",
   "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",

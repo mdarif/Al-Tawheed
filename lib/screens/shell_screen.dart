@@ -38,9 +38,9 @@ class ShellScreen extends StatelessWidget {
                 label: l10n.tabHome,
               ),
               NavigationDestination(
-                icon: const Icon(Icons.bookmark_outline_rounded),
-                selectedIcon: const Icon(Icons.bookmark_rounded),
-                label: l10n.tabSaved,
+                icon: const Icon(Icons.school_outlined),
+                selectedIcon: const Icon(Icons.school_rounded),
+                label: l10n.tabStudyMode,
               ),
               NavigationDestination(
                 icon: const Icon(Icons.settings_outlined),
@@ -58,7 +58,7 @@ class ShellScreen extends StatelessWidget {
     final path = GoRouterState.of(context).uri.path;
     if (path.startsWith('/lectures')) return 0;
     if (path.startsWith('/home')) return 1;
-    if (path.startsWith('/bookmarks')) return 2;
+    if (path.startsWith('/study')) return 2;
     if (path.startsWith('/settings')) return 3;
     return 0;
   }
@@ -70,7 +70,7 @@ class ShellScreen extends StatelessWidget {
       case 1:
         context.go('/home');
       case 2:
-        context.go('/bookmarks');
+        context.go('/study');
       case 3:
         context.go('/settings');
     }

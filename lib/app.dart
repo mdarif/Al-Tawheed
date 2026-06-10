@@ -55,14 +55,23 @@ final _router = GoRouter(
           builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
-          path: '/bookmarks',
-          builder: (context, state) => const BookmarksScreen(),
+          path: '/study',
+          builder: (context, state) => const StudyScreen(),
         ),
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+    ),
+
+    // Bookmarks — root navigator so it opens as a full-screen pushed view
+    // (with a back button) from the Saved shortcut on Home, rather than
+    // occupying a bottom nav slot.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/bookmarks',
+      builder: (context, state) => const BookmarksScreen(),
     ),
 
     // Offline library — root navigator (same as /player) so pushes from the
@@ -82,11 +91,6 @@ final _router = GoRouter(
         fullscreenDialog: true,
         child: PlayerScreen(),
       ),
-    ),
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/study',
-      builder: (context, state) => const StudyScreen(),
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,

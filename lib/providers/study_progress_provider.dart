@@ -55,6 +55,19 @@ class StudyProgressProvider extends ChangeNotifier {
     );
   }
 
+  StudyStats get stats {
+    final catalog = _catalog.catalog;
+    if (catalog == null) {
+      return const StudyStats(
+        completedLectures: 0,
+        totalLectures: 0,
+        completedSeconds: 0,
+        totalSeconds: 0,
+      );
+    }
+    return StudyProgress.stats(catalog, _studiedChapterIds, _progress);
+  }
+
   Chapter? get recommendedChapter {
     final catalog = _catalog.catalog;
     if (catalog == null) return null;

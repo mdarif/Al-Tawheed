@@ -36,6 +36,13 @@ class HomeScreen extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             title: Text(context.l10n.tabHome),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.bookmark_outline_rounded),
+                tooltip: context.l10n.saved,
+                onPressed: () => context.push('/bookmarks'),
+              ),
+            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
