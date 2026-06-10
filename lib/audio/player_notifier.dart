@@ -275,6 +275,22 @@ class PlayerNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Injects playback state for the offline status strip without touching
+  /// the audio player — for tests only.
+  @visibleForTesting
+  void setPlaybackStateForTest(
+    Lecture lecture, {
+    PlaybackSource source = PlaybackSource.stream,
+    bool isStuckBuffering = false,
+  }) {
+    _current = lecture;
+    _queue = [lecture];
+    _duration = Duration(seconds: lecture.durationSeconds);
+    _playbackSource = source;
+    _isStuckBuffering = isStuckBuffering;
+    notifyListeners();
+  }
+
   // ── Connectivity recovery ────────────────────────────────────────────────
 
   void _onConnectivityChanged() {

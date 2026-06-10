@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/audio/audio_handler.dart';
+import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
@@ -40,6 +41,7 @@ Future<PlayerNotifier> _pumpPlayer(
   DownloadsProvider? downloads,
   FeatureFlagsProvider? featureFlags,
   void Function(DownloadsProvider)? seedAfterLoad,
+  void Function(PlayerNotifier)? configurePlayer,
 }) async {
   final progress = ProgressProvider()..load();
   final downloadsProvider = downloads ?? DownloadsProvider();
@@ -79,6 +81,15 @@ Future<PlayerNotifier> _pumpPlayer(
     ),
   ));
   await tester.pumpAndSettle();
+
+  // Configured after the initial pump — the audio handler's playbackState
+  // stream emits its initial (idle) value asynchronously, which would
+  // otherwise reset isStuckBuffering back to false before this runs.
+  if (configurePlayer != null) {
+    configurePlayer(player);
+    await tester.pumpAndSettle();
+  }
+
   return player;
 }
 
@@ -144,6 +155,47 @@ void main() {
 
       expect(find.text('Saved for offline'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows "Streaming" when playing online and not downloaded',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        connectivity: ConnectivityProvider.testOnline(),
+        configurePlayer: (p) =>
+            p.setPlaybackStateForTest(_lectures[0], source: PlaybackSource.stream),
+      );
+
+      expect(find.text('Streaming'), findsOneWidget);
+      expect(find.byIcon(Icons.podcasts_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows "Connection lost" when stuck buffering', (tester) async {
+      await _pumpPlayer(
+        tester,
+        connectivity: ConnectivityProvider.testOnline(),
+        configurePlayer: (p) => p.setPlaybackStateForTest(
+          _lectures[0],
+          source: PlaybackSource.stream,
+          isStuckBuffering: true,
+        ),
+      );
+
+      expect(find.text('Connection lost'), findsOneWidget);
+      expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows "No connection" when offline mid-stream (not blocked)',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        connectivity: ConnectivityProvider.testOffline(),
+        configurePlayer: (p) =>
+            p.setPlaybackStateForTest(_lectures[0], source: PlaybackSource.stream),
+      );
+
+      expect(find.text('No connection'), findsOneWidget);
+      expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
     });
   });
 
