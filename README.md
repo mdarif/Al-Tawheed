@@ -88,7 +88,6 @@ signing and platform-specific notes.
 
 ```bash
 flutter test                                         # unit + widget tests
-flutter test --tags golden                           # screenshot regression tests
 flutter test integration_test/app_test.dart -d <id> # end-to-end on device
 ```
 

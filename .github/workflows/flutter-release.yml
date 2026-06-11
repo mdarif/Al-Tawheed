@@ -142,7 +142,7 @@ jobs:
       # 10. Test — refuse to tag a build with failing tests
       # ------------------------------------------------------------------ #
       - name: Run tests
-        run: flutter test --reporter=expanded --exclude-tags golden
+        run: flutter test --reporter=expanded
 
       # ------------------------------------------------------------------ #
       # 11. Build debug APK

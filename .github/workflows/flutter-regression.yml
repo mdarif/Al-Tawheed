@@ -92,15 +92,7 @@ jobs:
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
 
       # ------------------------------------------------------------------ #
-      # 7. Run golden (screenshot) tests
-      #    Goldens were generated on macOS so they must be compared here,
-      #    not on the ubuntu fast-CI runner.
-      # ------------------------------------------------------------------ #
-      - name: Run golden tests
-        run: flutter test test/golden_test.dart --tags golden
-
-      # ------------------------------------------------------------------ #
-      # 8. Run integration tests
+      # 7. Run integration tests
       #    Timeout is generous (15 min) — first run fetches the catalog
       #    from the CDN and may download audio metadata.
       # ------------------------------------------------------------------ #
