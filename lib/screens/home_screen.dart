@@ -15,7 +15,6 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
-import 'package:myapp/widgets/home/study_mode_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -49,10 +48,6 @@ class HomeScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _AnnouncementsBanner(),
-                if (context.watch<FeatureFlagsProvider>().features.studyMode)
-                  const StudyModeCard(),
-                if (context.watch<FeatureFlagsProvider>().features.studyMode)
-                  const SizedBox(height: 24),
                 _ContinueListeningCard(),
                 if (context.watch<FeatureFlagsProvider>().features.downloads)
                   _OfflinePrepStrip(),

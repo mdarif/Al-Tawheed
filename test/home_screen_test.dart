@@ -314,23 +314,4 @@ void main() {
       expect(find.text('— Test Source'), findsOneWidget);
     });
   });
-
-  group('HomeScreen — study mode card', () {
-    testWidgets('hidden by default', (tester) async {
-      await tester.pumpWidget(_wrap());
-      await tester.pumpAndSettle();
-
-      expect(find.text('Study Mode'), findsNothing);
-    });
-
-    testWidgets('shown when studyMode feature flag is enabled', (tester) async {
-      await tester.pumpWidget(_wrap(
-        featureFlags: FeatureFlagsProvider()
-          ..setFeaturesJsonForTest({'studyMode': true}),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Study Mode'), findsOneWidget);
-    });
-  });
 }
