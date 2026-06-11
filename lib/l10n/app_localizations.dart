@@ -243,17 +243,17 @@ abstract class AppLocalizations {
   /// **'Work through each class in order at your own pace.'**
   String get studyOverallInProgress;
 
+  /// No description provided for @studyOverallProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Progress'**
+  String get studyOverallProgress;
+
   /// No description provided for @studyClassComplete.
   ///
   /// In en, this message translates to:
   /// **'Class Complete'**
   String get studyClassComplete;
-
-  /// No description provided for @studyClassCompleteTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{title} complete'**
-  String studyClassCompleteTitle(String title);
 
   /// No description provided for @studyClassCompleteFallback.
   ///
@@ -261,11 +261,17 @@ abstract class AppLocalizations {
   /// **'Class complete'**
   String get studyClassCompleteFallback;
 
-  /// No description provided for @studyWellDone.
+  /// No description provided for @studyCompletedLabel.
   ///
   /// In en, this message translates to:
-  /// **'Well done — keep going at your own pace.'**
-  String get studyWellDone;
+  /// **'Completed'**
+  String get studyCompletedLabel;
+
+  /// No description provided for @studyCelebrationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'May Allah increase you in beneficial knowledge.'**
+  String get studyCelebrationMessage;
 
   /// No description provided for @studyContinueToNext.
   ///
@@ -273,10 +279,16 @@ abstract class AppLocalizations {
   /// **'Continue to {title}'**
   String studyContinueToNext(String title);
 
+  /// No description provided for @studyNextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Up'**
+  String get studyNextUp;
+
   /// No description provided for @studyBackToOverview.
   ///
   /// In en, this message translates to:
-  /// **'Back to Study overview'**
+  /// **'Back to Study Mode'**
   String get studyBackToOverview;
 
   /// No description provided for @studyStatusStudied.

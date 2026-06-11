@@ -179,5 +179,47 @@ void main() {
       expect(infos[1].isRecommended, isTrue);
       expect(infos[1].chapter.id, 'class-02');
     });
+
+    test('markChapterStudied marks the chapter studied even if parts are incomplete',
+        () async {
+      // Simulates jumping to the last part of a chapter and finishing it
+      // without playing the earlier parts — only lec-004 (class-02's last
+      // part) is complete, lec-003 never played.
+      await progress.saveProgress('lec-004', 100);
+      expect(
+        StudyProgress.isChapterLiveComplete(progress, catalog, 'class-02'),
+        isFalse,
+      );
+
+      await study.markChapterStudied('class-02');
+
+      expect(study.isChapterStudied('class-02'), isTrue);
+      expect(study.studiedCount, 1);
+      expect(study.chapterStatus('class-02'), ChapterStudyStatus.studied);
+      expect(
+        PreferencesService.instance.loadStudiedChapterIds(),
+        {'class-02'},
+      );
+    });
+
+    test('markChapterStudied advances the recommended next chapter', () async {
+      await study.markChapterStudied('class-01');
+
+      expect(study.studiedCount, 1);
+      expect(study.recommendedChapter?.id, 'class-02');
+
+      final infos = study.chapterInfos();
+      expect(infos[0].status, ChapterStudyStatus.studied);
+      expect(infos[0].isRecommended, isFalse);
+      expect(infos[1].isRecommended, isTrue);
+      expect(infos[1].chapter.id, 'class-02');
+    });
+
+    test('markChapterStudied is idempotent', () async {
+      await study.markChapterStudied('class-01');
+      await study.markChapterStudied('class-01');
+
+      expect(study.studiedCount, 1);
+    });
   });
 }

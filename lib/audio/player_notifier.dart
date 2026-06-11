@@ -291,6 +291,13 @@ class PlayerNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Simulates the last lecture of a study chapter finishing — for tests only.
+  @visibleForTesting
+  void setPendingStudyCompleteForTest(String chapterId) {
+    _pendingStudyChapterCompleteId = chapterId;
+    notifyListeners();
+  }
+
   // ── Connectivity recovery ────────────────────────────────────────────────
 
   void _onConnectivityChanged() {

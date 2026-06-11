@@ -54,18 +54,17 @@
   "studyRestart": "Restart",
   "studyOverallComplete": "You have completed the full series.",
   "studyOverallInProgress": "Work through each class in order at your own pace.",
+  "studyOverallProgress": "Overall Progress",
   "studyClassComplete": "Class Complete",
-  "studyClassCompleteTitle": "{title} complete",
-  "@studyClassCompleteTitle": {
-    "placeholders": { "title": { "type": "String" } }
-  },
   "studyClassCompleteFallback": "Class complete",
-  "studyWellDone": "Well done — keep going at your own pace.",
+  "studyCompletedLabel": "Completed",
+  "studyCelebrationMessage": "May Allah increase you in beneficial knowledge.",
   "studyContinueToNext": "Continue to {title}",
   "@studyContinueToNext": {
     "placeholders": { "title": { "type": "String" } }
   },
-  "studyBackToOverview": "Back to Study overview",
+  "studyNextUp": "Next Up",
+  "studyBackToOverview": "Back to Study Mode",
   "studyStatusStudied": "Studied",
   "studyStatusInProgress": "In progress",
   "studyStatusNotStarted": "Not started",

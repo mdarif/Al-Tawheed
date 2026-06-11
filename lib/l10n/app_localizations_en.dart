@@ -95,18 +95,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Work through each class in order at your own pace.';
 
   @override
-  String get studyClassComplete => 'Class Complete';
+  String get studyOverallProgress => 'Overall Progress';
 
   @override
-  String studyClassCompleteTitle(String title) {
-    return '$title complete';
-  }
+  String get studyClassComplete => 'Class Complete';
 
   @override
   String get studyClassCompleteFallback => 'Class complete';
 
   @override
-  String get studyWellDone => 'Well done — keep going at your own pace.';
+  String get studyCompletedLabel => 'Completed';
+
+  @override
+  String get studyCelebrationMessage =>
+      'May Allah increase you in beneficial knowledge.';
 
   @override
   String studyContinueToNext(String title) {
@@ -114,7 +116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get studyBackToOverview => 'Back to Study overview';
+  String get studyNextUp => 'Next Up';
+
+  @override
+  String get studyBackToOverview => 'Back to Study Mode';
 
   @override
   String get studyStatusStudied => 'Studied';

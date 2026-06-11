@@ -96,18 +96,20 @@ class AppLocalizationsUr extends AppLocalizations {
       'ہر درس کو ترتیب سے اپنے وقت پر مکمل کریں۔';
 
   @override
-  String get studyClassComplete => 'درس مکمل';
+  String get studyOverallProgress => 'مجموعی پیش رفت';
 
   @override
-  String studyClassCompleteTitle(String title) {
-    return '$title مکمل';
-  }
+  String get studyClassComplete => 'درس مکمل';
 
   @override
   String get studyClassCompleteFallback => 'درس مکمل';
 
   @override
-  String get studyWellDone => 'بہت خوب — اپنے وقت پر آگے بڑھتے رہیں۔';
+  String get studyCompletedLabel => 'مکمل';
+
+  @override
+  String get studyCelebrationMessage =>
+      'اللہ تعالیٰ آپ کے علمِ نافع میں اضافہ فرمائے۔';
 
   @override
   String studyContinueToNext(String title) {
@@ -115,7 +117,10 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get studyBackToOverview => 'تعلیمی جائزے پر واپس';
+  String get studyNextUp => 'اگلا درس';
+
+  @override
+  String get studyBackToOverview => 'تعلیمی طریقہ پر واپس';
 
   @override
   String get studyStatusStudied => 'پڑھا ہوا';
@@ -533,18 +538,20 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
       'Har dars ko tarteeb se apne waqt par mukammal karein.';
 
   @override
-  String get studyClassComplete => 'Dars mukammal';
+  String get studyOverallProgress => 'Majmui Pesh Raft';
 
   @override
-  String studyClassCompleteTitle(String title) {
-    return '$title mukammal';
-  }
+  String get studyClassComplete => 'Dars mukammal';
 
   @override
   String get studyClassCompleteFallback => 'Dars mukammal';
 
   @override
-  String get studyWellDone => 'Bohat khoob — apne waqt par aage barhte rahein.';
+  String get studyCompletedLabel => 'Mukammal';
+
+  @override
+  String get studyCelebrationMessage =>
+      'Allah Ta\'ala aap ke ilm-e-nafe mein izafa farmaye.';
 
   @override
   String studyContinueToNext(String title) {
@@ -552,7 +559,10 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   }
 
   @override
-  String get studyBackToOverview => 'Taleemi jaize par wapas';
+  String get studyNextUp => 'Agla Dars';
+
+  @override
+  String get studyBackToOverview => 'Taleemi Tareeqa par wapas';
 
   @override
   String get studyStatusStudied => 'Parha hua';

@@ -8,6 +8,7 @@ import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -192,6 +193,11 @@ class _StudyCompletionListenerState extends State<_StudyCompletionListener> {
         if (!mounted) return;
         final notifier = context.read<PlayerNotifier>();
         notifier.clearPendingStudyComplete();
+        // Mark the chapter studied immediately so the completion screen's
+        // "Next Up" recommendation and overall progress reflect it — even if
+        // the session started mid-chapter and per-part progress hasn't all
+        // crossed the live-complete threshold yet.
+        context.read<StudyProgressProvider>().markChapterStudied(pending);
         Navigator.of(context).pop();
         context.push('/study/complete?chapterId=$pending');
       });
