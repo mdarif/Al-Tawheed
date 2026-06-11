@@ -54,7 +54,6 @@ class PlayerScreen extends StatelessWidget {
                   const _CoverArt(),
                   const SizedBox(height: 32),
                   const _TrackInfo(),
-                  const _StudyContextStrip(),
                   const _OfflineStatusStrip(),
                   const SizedBox(height: 32),
                   const _SeekBar(),
@@ -443,12 +442,15 @@ class _TrackInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, String>(
-      selector: (_, player) => player.current?.title.en ?? '',
-      builder: (_, title, __) => Column(
+    return Selector<PlayerNotifier, _TrackInfoSnapshot>(
+      selector: (_, player) => _TrackInfoSnapshot(
+        title: player.current?.title.en ?? '',
+        studyLabel: player.studyContextLabel,
+      ),
+      builder: (_, snapshot, __) => Column(
         children: [
           Text(
-            title,
+            snapshot.studyLabel ?? snapshot.title,
             style: context.textTheme.headlineSmall,
             textAlign: TextAlign.center,
             maxLines: 2,
@@ -467,39 +469,20 @@ class _TrackInfo extends StatelessWidget {
   }
 }
 
-// ── Study context strip ───────────────────────────────────────────────────────
+class _TrackInfoSnapshot {
+  final String title;
+  final String? studyLabel;
 
-class _StudyContextStrip extends StatelessWidget {
-  const _StudyContextStrip();
+  const _TrackInfoSnapshot({required this.title, required this.studyLabel});
 
   @override
-  Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, String?>(
-      selector: (_, player) => player.studyContextLabel,
-      builder: (_, label, __) {
-        if (label == null) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: context.semantic.brandSubtle.withValues(
-                alpha: context.isDarkTheme ? 0.35 : 0.55,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              label,
-              style: context.textTheme.labelMedium?.copyWith(
-                color: context.brandColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  bool operator ==(Object other) =>
+      other is _TrackInfoSnapshot &&
+      other.title == title &&
+      other.studyLabel == studyLabel;
+
+  @override
+  int get hashCode => Object.hash(title, studyLabel);
 }
 
 // ── Seek bar ─────────────────────────────────────────────────────────────────
