@@ -12,6 +12,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -69,18 +70,19 @@ class _ContinueListeningCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = context.watch<ProgressProvider>();
     final catalog = context.watch<CatalogProvider>();
+    final study = context.watch<StudyProgressProvider>();
 
     final lastId = progress.lastLectureId;
 
     if (lastId == null || catalog.status != CatalogStatus.loaded) {
-      return _emptyState(context);
+      return _emptyState(context, study);
     }
 
     Lecture? lecture;
     try {
       lecture = catalog.catalog!.lectures.firstWhere((l) => l.id == lastId);
     } catch (_) {
-      return _emptyState(context);
+      return _emptyState(context, study);
     }
 
     final fraction = progress.getFraction(lastId, lecture.durationSeconds);
@@ -91,12 +93,7 @@ class _ContinueListeningCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.continueListening,
-          style: context.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        _header(context, study),
         const SizedBox(height: 12),
         GestureDetector(
           onTap: () {
@@ -191,10 +188,11 @@ class _ContinueListeningCard extends StatelessWidget {
     );
   }
 
-  Widget _emptyState(BuildContext context) {
+  Widget _header(BuildContext context, StudyProgressProvider study) {
     final l10n = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final stats = study.stats;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           l10n.continueListening,
@@ -202,6 +200,23 @@ class _ContinueListeningCard extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+        if (stats.totalLectures > 0)
+          _OverallProgressStats(
+            completedLectures: stats.completedLectures,
+            totalLectures: stats.totalLectures,
+            studiedClasses: study.studiedCount,
+            totalClasses: study.totalChapterCount,
+          ),
+      ],
+    );
+  }
+
+  Widget _emptyState(BuildContext context, StudyProgressProvider study) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _header(context, study),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
@@ -225,6 +240,42 @@ class _ContinueListeningCard extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Compact "X/Y lectures · X/Y classes" summary shown beside the
+/// "Continue Listening" header — overall progress at a glance.
+class _OverallProgressStats extends StatelessWidget {
+  final int completedLectures;
+  final int totalLectures;
+  final int studiedClasses;
+  final int totalClasses;
+
+  const _OverallProgressStats({
+    required this.completedLectures,
+    required this.totalLectures,
+    required this.studiedClasses,
+    required this.totalClasses,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.textTheme.labelSmall?.copyWith(
+      color: context.secondaryTextColor,
+      fontWeight: FontWeight.w600,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.headphones_rounded, size: 13, color: context.mutedIconColor),
+        const SizedBox(width: 3),
+        Text('$completedLectures/$totalLectures', style: style),
+        const SizedBox(width: 10),
+        Icon(Icons.menu_book_rounded, size: 13, color: context.mutedIconColor),
+        const SizedBox(width: 3),
+        Text('$studiedClasses/$totalClasses', style: style),
       ],
     );
   }
@@ -390,81 +441,113 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
     final l10n = context.l10n;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.groupedSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.groupedBorder, width: 1),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(
-              anyDownloading
-                  ? Icons.downloading_rounded
-                  : Icons.download_outlined,
-              size: 18,
-              color: context.brandColor,
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.offlineLibrary,
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: anyDownloading
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.offlinePrepTitle(downloading.length + toDownload.length),
-                          style: context.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: context.groupedSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.groupedBorder, width: 1),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: context.semantic.brandSubtle,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    anyDownloading
+                        ? Icons.downloading_rounded
+                        : Icons.download_outlined,
+                    color: context.brandColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: anyDownloading
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.offlinePrepTitle(
+                                  downloading.length + toDownload.length),
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: context.secondaryTextColor,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                value: avgProgress,
+                                backgroundColor: context.progressTrackColor,
+                                color: context.brandColor,
+                                minHeight: 4,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.offlinePrepTitle(toDownload.length),
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: context.secondaryTextColor,
+                              ),
+                            ),
+                            if (totalBytes > 0) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                l10n.offlinePrepSize(sizeMb),
+                                style: context.textTheme.bodySmall?.copyWith(
+                                    color: context.secondaryTextColor),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        LinearProgressIndicator(
-                          value: avgProgress,
-                          borderRadius: BorderRadius.circular(2),
-                          minHeight: 3,
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.offlinePrepTitle(toDownload.length),
-                          style: context.textTheme.bodySmall,
-                        ),
-                        if (totalBytes > 0)
-                          Text(
-                            l10n.offlinePrepSize(sizeMb),
-                            style: context.textTheme.bodySmall
-                                ?.copyWith(color: context.secondaryTextColor),
-                          ),
-                      ],
+                ),
+                if (!anyDownloading) ...[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
+                    onPressed: () => _startDownloads(context, toDownload),
+                    child: Text(l10n.offlinePrepSave),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _dismissed = true),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(Icons.close_rounded,
+                          size: 16, color: context.mutedIconColor),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            if (!anyDownloading) ...[
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: () => _startDownloads(context, toDownload),
-                child: Text(l10n.offlinePrepSave),
-              ),
-              GestureDetector(
-                onTap: () => setState(() => _dismissed = true),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Icon(Icons.close_rounded,
-                      size: 16, color: context.mutedIconColor),
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
