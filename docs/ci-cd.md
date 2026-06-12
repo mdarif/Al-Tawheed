@@ -231,13 +231,12 @@ CI runs on the PR. Merge when green.
 
 ## Release Workflow
 
-> **Full step-by-step runbook lives in `docs/deployment.md` → "Release
-> Runbook"** — including the local release gate (`make release-apk`), the
-> push-verification steps that catch a `master` drift before it ships (added
-> after the 2026-06-07 incident where a release shipped the wrong code because
-> a local merge was never actually pushed), and post-release checks. Follow
-> that doc when actually cutting a release; the summary below is just the
-> shape of it.
+> **Full step-by-step runbook lives in `docs/release-runbook.md`** —
+> including the local release gate (`make release-apk`), the push-verification
+> steps that catch a `master` drift before it ships (added after the
+> 2026-06-07 incident where a release shipped the wrong code because a local
+> merge was never actually pushed), and post-release checks. Follow that doc
+> when actually cutting a release; the summary below is just the shape of it.
 
 ```
 1. Promote develop → master and PROVE the push landed
@@ -269,7 +268,7 @@ CI runs on the PR. Merge when green.
 > (`gh release list` / `github.com/mdarif/Al-Tawheed/releases`) — the release
 > workflow generates it automatically from commits (Step 14 in the table
 > above) and attaches the APK. There's no separate in-repo "release document"
-> to maintain; this doc and `deployment.md` are purely the *how* (CI/CD
+> to maintain; this doc and `release-runbook.md` are purely the *how* (CI/CD
 > mechanics and the execution runbook), not the *what shipped*.
 
 ---

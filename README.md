@@ -99,7 +99,8 @@ flutter test integration_test/app_test.dart -d <id> # end-to-end on device
 |---|---|
 | [Setup](docs/setup.md) | Environment, dependencies, signing |
 | [CI/CD](docs/ci-cd.md) | Pipelines, pre-push hook, release workflow |
-| [Deployment](docs/deployment.md) | Store listings, release process |
+| [Deployment](docs/deployment.md) | Build & machine setup guide |
+| [Release Runbook](docs/release-runbook.md) | Step-by-step production release process |
 | [Git workflow](docs/git-workflow.md) | Branching, commits, PRs |
 | [Testing](docs/testing.md) | Running and writing tests |
 | [i18n architecture](docs/i18n-architecture.md) | Multilingual content strategy |
