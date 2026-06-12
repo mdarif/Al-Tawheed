@@ -45,6 +45,20 @@ jobs:
           fetch-depth: 0
 
       # ------------------------------------------------------------------ #
+      # Free disk space — ubuntu-latest runners ship with large unused
+      # toolchains (.NET, GHC, CodeQL) that leave little headroom for the
+      # Android SDK + Gradle cache + APK build. Without this, packaging can
+      # fail with "No space left on device" (hit on 2026-06-12).
+      # ------------------------------------------------------------------ #
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      # ------------------------------------------------------------------ #
       # 2. Compute new version from pubspec.yaml + bump type
       #    pubspec.yaml format:  version: X.Y.Z+BUILD
       #    Tag format matches existing convention: X.Y.Z  (no v prefix)

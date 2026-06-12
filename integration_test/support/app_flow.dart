@@ -253,13 +253,26 @@ class AppFlow {
     await scrollToSettingsDownloads(tester);
     final storageRow = find.byIcon(Icons.storage_rounded);
     expect(storageRow, findsOneWidget);
-    await tester.tap(storageRow);
-    await waitFor(
-      tester,
-      find.widgetWithText(AppBar, 'Downloads'),
-      timeout: const Duration(seconds: 15),
-      reason: 'offline library from settings',
-    );
+
+    // scrollToSettingsDownloads only checks the element tree, not the
+    // viewport — on small screens the row can exist via ListView's
+    // cacheExtent without being scrolled into view yet, so a tap on its
+    // (off-screen) center lands on the route overlay instead. Scroll it
+    // fully into view before tapping.
+    await tester.ensureVisible(storageRow);
+    await pumpFrames(tester, count: 3);
+
+    final appBar = find.widgetWithText(AppBar, 'Downloads');
+    final end = DateTime.now().add(const Duration(seconds: 15));
+    while (DateTime.now().isBefore(end)) {
+      if (tester.any(appBar)) return;
+      if (tester.any(storageRow)) {
+        await tester.tap(storageRow, warnIfMissed: false);
+      }
+      await pumpFrames(tester, count: 2);
+    }
+    if (tester.any(appBar)) return;
+    fail('Timed out after 15s waiting for offline library from settings');
   }
 
   static Future<void> startDownloadFromListTile(WidgetTester tester) async {
