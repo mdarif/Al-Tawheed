@@ -28,7 +28,7 @@ dependencies:
   connectivity_plus: ^6.0.0
   # Localisation
   intl: ^0.20.2
-  google_fonts: ^6.2.1
+  google_fonts: ^8.1.0
   # UI utilities
   cupertino_icons: ^1.0.9
   url_launcher: ^6.3.1
