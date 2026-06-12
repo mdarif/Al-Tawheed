@@ -11,7 +11,7 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | CI — analyze + test + build APK | **Active** | `.github/workflows/flutter-ci.yml` |
 | Local pre-push hook | **Active** | `.githooks/pre-push` |
 | CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
-| CD Phase 1.5 — Promote + sync automation | Not started | `.github/workflows/flutter-release.yml` |
+| CD Phase 1.5 — Promote + sync automation | **Implemented** — not yet used for a release | `.github/workflows/flutter-release.yml` |
 | CD Phase 2 — Signed release APK/AAB | Not started | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
 | CD Phase 3 — Play Store internal-track upload | Not started | `.github/workflows/flutter-release.yml` |
 | CD Phase 4 — Android emulator CI gate | Not started | new: `.github/workflows/flutter-android-emulator.yml` |
@@ -159,41 +159,55 @@ Do not use this routinely.
 
 ---
 
-## CD Phase 1 — Release Automation
+## CD Phase 1 / 1.5 — Release Automation
 
-**Trigger:** manual, from master branch only.
+**Trigger:** manual (`workflow_dispatch`), from `develop` (one-click) or `master` (traditional).
 
 ```
-GitHub → Actions → Release → Run workflow → bump: patch | minor | major → Run
+GitHub → Actions → Release → Run workflow
+  → bump: patch | minor | major
+  → confirm_promote (required when dispatched from develop)
+  → dry_run (analyze/test/build only, nothing pushed/tagged/released)
+  → Run
 ```
 
-Or from the terminal (must be on master):
+Or from the terminal:
 
 ```sh
-make release            # patch bump (default)
-make release BUMP=minor
-make release BUMP=major
+# One-click, from develop: promotes develop -> master, releases, syncs develop back
+make release-auto BUMP=patch
+make release-auto BUMP=patch DRY_RUN=true   # validate without shipping anything
+
+# Traditional, from master: release only (sync-develop still runs after)
+make release BUMP=patch
 ```
 
 ### What happens
 
+Three jobs run in sequence — `promote` → `release` → `sync-develop`:
+
 ```
-Step 1   Compute new version (semver + build number from pubspec.yaml)
-Step 2   Guard: abort if the tag already exists
-Step 3   Update pubspec.yaml with new version
-Step 4-6 Java 21 + Flutter + Gradle cache
-Step 7   Override Gradle JVM args
-Step 8   Create stub keys.dart
-Step 9   flutter pub get
-Step 10  flutter analyze --fatal-warnings   ← refuses to tag a broken build
-Step 11  flutter test                        ← refuses to tag a failing build
-Step 12  flutter build apk --debug
-Step 13  Rename APK → al-tawheed-X.Y.Z.apk
-Step 14  Generate changelog (git log since last tag, merge commits excluded)
-Step 15  Commit version bump → master (chore: release X.Y.Z)
-Step 16  Tag the commit (X.Y.Z, matching existing convention — no v prefix)
-Step 17  Push commit + tag
-Step 18  Create GitHub Release with APK attached and changelog in body
+promote        (skipped unless dispatched from develop)
+  - Require confirm_promote=true, else fail the run
+  - git merge --ff-only develop -> master, push
+
+release        (skipped if promote failed)
+  - Checkout the promoted SHA (or current ref, for master / dry runs)
+  - Compute new version (semver + build number from pubspec.yaml)
+  - Guard: abort if the tag already exists
+  - Update pubspec.yaml with new version
+  - Java 21 + Flutter + Gradle cache, flutter pub get
+  - flutter analyze --fatal-warnings   ← refuses to tag a broken build
+  - flutter test                        ← refuses to tag a failing build
+  - flutter build apk --debug
+  - Rename APK → al-tawheed-X.Y.Z.apk
+  - Generate changelog (git-cliff --unreleased) + Play Store notes
+  - [skipped if dry_run] Commit version bump -> master (chore: release X.Y.Z),
+    tag it (X.Y.Z, no v prefix), push commit + tag
+  - [skipped if dry_run] Create GitHub Release with APK + changelog attached
+
+sync-develop   (skipped unless release succeeded, or if dry_run)
+  - git merge --ff-only master -> develop, push
 ```
 
 ### Version format
@@ -234,44 +248,30 @@ CI runs on the PR. Merge when green.
 ## Release Workflow
 
 > **Full step-by-step runbook lives in `docs/release-runbook.md`** —
-> including the local release gate (`make release-apk`), the push-verification
-> steps that catch a `master` drift before it ships (added after the
-> 2026-06-07 incident where a release shipped the wrong code because a local
-> merge was never actually pushed), and post-release checks. Follow that doc
-> when actually cutting a release; the summary below is just the shape of it.
+> including the local release gate (`make release-apk`), the one-click
+> trigger, and the manual fallback for when `master` has genuinely diverged
+> from `develop`. Follow that doc when actually cutting a release; the
+> summary below is just the shape of it.
 
 ```
-1. Promote develop → master and PROVE the push landed
-     git checkout master && git pull origin master
-     git merge develop && git push origin master
-     git fetch origin && git status   # must say "up to date with origin/master"
-   (No PR/review is required on master — see "Setup Status" above. Don't skip
-   the verification, though: an unpushed local merge is exactly what caused
-   make release to ship the wrong code on 2026-06-07.)
-2. Run the local release gate (builds + tests + signed APK on a real device):
+1. Run the local release gate (builds + tests + signed APK on a real device):
      make release-apk DEVICE=<device_id>
-3. Re-verify master is still up to date, then trigger the release:
-     make release            # patch
-     make release BUMP=minor # minor
-4. Watch the run:
-     GitHub → Actions → Release
-     or: gh run watch
-5. Verify it shipped: new tag + GitHub Release exist, then sync local master
-     git pull origin master --tags
-6. (Play Store only) Build the signed AAB and submit via Play Console
-7. Close out: sync the version bump back into develop (don't skip — otherwise
-   the next release's merge hits a pubspec.yaml version conflict):
-     git checkout develop && git pull origin develop
-     git merge master && git push origin develop
+2. Trigger the one-click release from develop:
+     make release-auto BUMP=patch     # or BUMP=minor / BUMP=major
+   CI promotes develop -> master, releases, and syncs develop back —
+   no manual branch juggling needed. Watch it: gh run watch
+3. Verify it shipped: new tag + GitHub Release exist
+     gh release view --web
+4. (Play Store only) Build the signed AAB and submit via Play Console
 ```
 
 > **Looking for a record of what shipped in each release** (version history,
 > changelog, what the cycle accomplished)? That's **GitHub Releases**
 > (`gh release list` / `github.com/mdarif/Al-Tawheed/releases`) — the release
-> workflow generates it automatically from commits (Step 14 in the table
-> above) and attaches the APK. There's no separate in-repo "release document"
-> to maintain; this doc and `release-runbook.md` are purely the *how* (CI/CD
-> mechanics and the execution runbook), not the *what shipped*.
+> workflow generates it automatically from commits and attaches the APK.
+> There's no separate in-repo "release document" to maintain; this doc and
+> `release-runbook.md` are purely the *how* (CI/CD mechanics and the
+> execution runbook), not the *what shipped*.
 
 ---
 
@@ -306,35 +306,10 @@ CI runs on the PR. Merge when green.
 
 ## Roadmap
 
-Four phases turn today's "one click triggers tag + GitHub Release" (CD Phase
-1) into a genuinely one-click production release. Each phase removes a
-specific manual step from [release-runbook.md](release-runbook.md).
-
-### CD Phase 1.5 — Promote + sync automation (next, no new secrets)
-
-Removes Runbook Steps 1, 3, and 6 (promote `develop` → `master`, trigger the
-workflow, sync the version bump back to `develop`) by letting the workflow do
-all three when dispatched from `develop`.
-
-Restructure `flutter-release.yml` into three jobs:
-
-- **`promote`** (`if: github.ref == 'refs/heads/develop'`) — fast-forward
-  merges `develop` into `master`, pushes, and outputs the resulting SHA.
-  Skipped when dispatched from `master` (today's flow keeps working
-  unchanged).
-- **`release`** (`needs: promote`) — today's existing logic, checking out the
-  SHA `promote` produced.
-- **`sync-develop`** (`needs: release`) — `git merge --ff-only master` into
-  `develop` (now includes the version-bump commit + tag), then pushes.
-
-New `workflow_dispatch` inputs:
-- `confirm_promote` (boolean, default `false`) — `promote` exits early unless
-  `true`, so an accidental `--ref develop` dispatch can't silently ship.
-- `dry_run` (boolean, default `false`) — runs analyze/test only, skips
-  push/tag/release/sync. Use this to test workflow edits safely.
-
-Makefile: extend the `release` target to allow triggering from `develop` once
-`confirm_promote=true` is wired through.
+Three remaining phases turn the one-click promote/release/sync flow (CD Phase
+1.5, implemented — see "CD Phase 1 / 1.5 — Release Automation" above) into a
+fully automated production release. Each phase removes a specific manual step
+from [release-runbook.md](release-runbook.md).
 
 ### CD Phase 2 — Signed release APK/AAB
 
@@ -355,7 +330,7 @@ caveat from the runbook.
 
 ### CD Phase 3 — Play Store internal-track auto-upload
 
-Removes half of Runbook Step 5 (building and uploading the AAB).
+Removes half of Runbook Step 4 (building and uploading the AAB).
 
 - New secret: `GOOGLE_PLAY_SERVICE_ACCOUNT` (JSON key, Release Manager access
   on the Play Console).
@@ -367,7 +342,7 @@ Removes half of Runbook Step 5 (building and uploading the AAB).
 
 ### CD Phase 4 — Android emulator CI gate
 
-Removes Runbook Step 2's on-device integration/patrol test run.
+Removes Runbook Step 1's on-device integration/patrol test run.
 
 - **4a (non-blocking)** — new `flutter-android-emulator.yml`, mirroring
   `flutter-regression.yml`'s iOS-simulator pattern but using

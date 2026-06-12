@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks clean test analyze format build release release-android release-ios release-apk integration-test patrol-test run ci ci-logs
+.PHONY: help setup setup-hooks clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -22,7 +22,8 @@ help:
 	@echo "  make integration-test - Run integration_test on device (DEVICE required)"
 	@echo "  make patrol-test     - Run Patrol native tests on device (DEVICE optional)"
 	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
-	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major)"
+	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major), from master"
+	@echo "  make release-auto    - One-click release from develop (promotes, releases, syncs back)"
 	@echo ""
 	@echo "Testing & Quality:"
 	@echo "  make test            - Run tests (mirrors CI)"
@@ -201,6 +202,28 @@ release:
 	gh workflow run flutter-release.yml \
 	  --ref master \
 	  --field bump=$(BUMP)
+	@echo "✓ Release workflow triggered — watch it at:"
+	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
+
+# One-click release (CD Phase 1.5): promotes develop -> master, releases,
+# and syncs the version bump back to develop — all in CI. Must be run from
+# develop. Use DRY_RUN=true to validate analyze/test/build without pushing,
+# tagging, or releasing anything.
+# Usage: make release-auto BUMP=patch
+#        make release-auto BUMP=patch DRY_RUN=true
+DRY_RUN ?= false
+release-auto:
+	@echo "Triggering one-click release workflow (bump=$(BUMP), dry_run=$(DRY_RUN))..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "develop" ]; then \
+	  echo "Error: release-auto must be triggered from develop (you are on $$BRANCH)"; \
+	  exit 1; \
+	fi
+	gh workflow run flutter-release.yml \
+	  --ref develop \
+	  --field bump=$(BUMP) \
+	  --field confirm_promote=true \
+	  --field dry_run=$(DRY_RUN)
 	@echo "✓ Release workflow triggered — watch it at:"
 	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
 

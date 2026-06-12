@@ -1,8 +1,15 @@
-# CD Phase 1 — Release Automation
+# CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation)
 #
-# Trigger this workflow manually from the master branch only.
-# It will bump the version, run CI checks, build the debug APK,
-# tag the commit, and create a GitHub Release — one click.
+# One-click release: dispatch from `develop` with `confirm_promote: true`.
+# This fast-forwards `develop` into `master`, bumps the version, runs CI
+# checks, builds the debug APK, tags the commit, creates a GitHub Release,
+# and syncs the version bump back into `develop` — all in one run.
+#
+# Traditional flow: dispatch from `master` (the promote/sync jobs are
+# skipped) — this is the original CD Phase 1 behaviour, unchanged.
+#
+# Use `dry_run: true` to run analyze/test/build only — no commits, tags,
+# releases, or pushes of any kind. Useful for testing workflow changes.
 #
 # Prerequisites (one-time GitHub setting):
 #   Settings → Branches → master → Bypass list → add github-actions[bot]
@@ -22,27 +29,92 @@ on:
           - patch
           - minor
           - major
+      confirm_promote:
+        description: 'Required (true) to promote develop -> master when dispatched from develop. Ignored when dispatched from master.'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Run analyze/test/build only - skip promote, tag, release, and the develop sync.'
+        required: false
+        default: false
+        type: boolean
 
-# GITHUB_TOKEN needs write access to push the version-bump commit,
-# create the tag, and create the GitHub Release.
+# GITHUB_TOKEN needs write access to push the version-bump commit, the tag,
+# the develop sync, and to create the GitHub Release.
 permissions:
   contents: write
 
 jobs:
+  # ------------------------------------------------------------------ #
+  # Promote develop -> master (CD Phase 1.5)
+  #
+  # Only runs when dispatched from develop with dry_run=false. Fast-forward
+  # only: if master has diverged from develop in a way that can't
+  # fast-forward, this job fails rather than guessing at a merge - see
+  # docs/release-runbook.md -> Troubleshooting -> "release-auto failed at
+  # promote: 'not possible to fast-forward'" for the manual recovery.
+  # ------------------------------------------------------------------ #
+  promote:
+    name: Promote develop to master
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && inputs.dry_run != true
+    outputs:
+      sha: ${{ steps.merge.outputs.sha }}
+
+    steps:
+      - name: Require confirm_promote
+        if: inputs.confirm_promote != true
+        run: |
+          echo "::error::Dispatched from develop without confirm_promote=true. Refusing to promote develop -> master (this guards against accidentally shipping stale code on master). Re-run with confirm_promote: true, or dispatch from master for the traditional flow."
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fast-forward master to develop
+        id: merge
+        run: |
+          git fetch origin develop master
+          git checkout -B master origin/master
+          git merge --ff-only origin/develop
+          git push origin master
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # ------------------------------------------------------------------ #
+  # Release (CD Phase 1)
+  # ------------------------------------------------------------------ #
   release:
     name: Release
     runs-on: ubuntu-latest
-    # Guard: only runs when triggered from master. Prevents accidents.
-    if: github.ref == 'refs/heads/master'
+    needs: [promote]
+    # Run when dispatched from master (promote skipped) or from develop with
+    # a successful promote (or a skipped one, for dry runs). Anything else
+    # (promote failed/cancelled, or an unrelated ref) skips this job too.
+    if: |
+      always() &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop') &&
+      (needs.promote.result == 'success' || needs.promote.result == 'skipped')
 
     steps:
       # ------------------------------------------------------------------ #
-      # 1. Full checkout — needed for changelog generation across all tags
+      # 1. Full checkout — needed for changelog generation across all tags.
+      #    Checks out the SHA `promote` just pushed to master, or falls back
+      #    to the triggering ref itself (master in the traditional flow, or
+      #    develop for a dry run dispatched from develop).
       # ------------------------------------------------------------------ #
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ needs.promote.outputs.sha || github.ref_name }}
 
       # ------------------------------------------------------------------ #
       # Free disk space — ubuntu-latest runners ship with large unused
@@ -224,13 +296,16 @@ jobs:
       # ------------------------------------------------------------------ #
       # 14. Commit version bump, tag, and push
       #     Requires github-actions[bot] in the master branch bypass list.
+      #     Skipped for dry runs — nothing is committed, tagged, or pushed.
       # ------------------------------------------------------------------ #
       - name: Configure git identity
+        if: inputs.dry_run != true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Commit, tag, and push
+        if: inputs.dry_run != true
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           NEW_VERSION="${{ steps.version.outputs.new_version }}"
@@ -243,8 +318,10 @@ jobs:
 
       # ------------------------------------------------------------------ #
       # 15. Create GitHub Release — attach APK and Play Store notes
+      #     Skipped for dry runs.
       # ------------------------------------------------------------------ #
       - name: Create GitHub Release
+        if: inputs.dry_run != true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -267,3 +344,48 @@ jobs:
           **Build:** \`${NEW_VERSION}\`
           **APK:** debug build, install via \`adb install ${APK}\`
           **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new"
+
+      # ------------------------------------------------------------------ #
+      # Dry run summary — confirms analyze/test/build succeeded without
+      # touching master, develop, tags, or releases.
+      # ------------------------------------------------------------------ #
+      - name: Dry run summary
+        if: inputs.dry_run == true
+        run: |
+          echo "::notice::Dry run complete for ${{ github.ref_name }} — analyze, test, and build succeeded. Nothing was committed, tagged, pushed, or released."
+
+  # ------------------------------------------------------------------ #
+  # Sync develop with master (CD Phase 1.5)
+  #
+  # The release job above commits the version bump + tag directly to
+  # master. Fast-forward that into develop so the next release's promote
+  # doesn't hit a pubspec.yaml version conflict. Fast-forward only - if
+  # develop has picked up its own commits since the last sync, this job
+  # fails rather than guessing at a merge.
+  # ------------------------------------------------------------------ #
+  sync-develop:
+    name: Sync develop with master
+    runs-on: ubuntu-latest
+    needs: [release]
+    if: always() && needs.release.result == 'success' && inputs.dry_run != true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fast-forward develop to master
+        run: |
+          git fetch origin develop master
+          git checkout -B develop origin/develop
+          git merge --ff-only origin/master || {
+            echo "::error::develop has diverged from master and cannot be fast-forwarded (develop likely picked up its own commits since the last sync). See docs/release-runbook.md -> Troubleshooting -> \"sync-develop failed: 'not possible to fast-forward'\" for the manual recovery (resolve the pubspec.yaml version conflict on develop, then push)."
+            exit 1
+          }
+          git push origin develop
