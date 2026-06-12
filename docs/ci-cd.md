@@ -11,8 +11,10 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | CI — analyze + test + build APK | **Active** | `.github/workflows/flutter-ci.yml` |
 | Local pre-push hook | **Active** | `.githooks/pre-push` |
 | CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
-| CD Phase 2 — Signed release APK | Not started | — |
-| CD Phase 3 — Play Store deployment | Not started | — |
+| CD Phase 1.5 — Promote + sync automation | Not started | `.github/workflows/flutter-release.yml` |
+| CD Phase 2 — Signed release APK/AAB | Not started | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
+| CD Phase 3 — Play Store internal-track upload | Not started | `.github/workflows/flutter-release.yml` |
+| CD Phase 4 — Android emulator CI gate | Not started | new: `.github/workflows/flutter-android-emulator.yml` |
 
 ---
 
@@ -304,26 +306,97 @@ CI runs on the PR. Merge when green.
 
 ## Roadmap
 
-### CD Phase 2 — Signed Release APK (next)
+Four phases turn today's "one click triggers tag + GitHub Release" (CD Phase
+1) into a genuinely one-click production release. Each phase removes a
+specific manual step from [release-runbook.md](release-runbook.md).
 
-- Store keystore as a base64-encoded GitHub secret (`KEYSTORE_BASE64`)
-- Store `key.properties` values as secrets (`KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD`)
-- Decode keystore in CI, write `android/key.properties`
-- Switch release workflow from `flutter build apk --debug` to `flutter build apk --release`
-- APK is properly signed and installable without enabling "install from unknown sources"
+### CD Phase 1.5 — Promote + sync automation (next, no new secrets)
 
-### CD Phase 3 — Play Store deployment
+Removes Runbook Steps 1, 3, and 6 (promote `develop` → `master`, trigger the
+workflow, sync the version bump back to `develop`) by letting the workflow do
+all three when dispatched from `develop`.
 
-- Requires a Google Play service account JSON (stored as GitHub secret)
-- Upload the signed AAB (`flutter build appbundle --release`) to the internal track
-- Promote internal → alpha → production manually or automatically
-- Tools: `gh` CLI + Google Play API, or Fastlane (when introduced)
+Restructure `flutter-release.yml` into three jobs:
+
+- **`promote`** (`if: github.ref == 'refs/heads/develop'`) — fast-forward
+  merges `develop` into `master`, pushes, and outputs the resulting SHA.
+  Skipped when dispatched from `master` (today's flow keeps working
+  unchanged).
+- **`release`** (`needs: promote`) — today's existing logic, checking out the
+  SHA `promote` produced.
+- **`sync-develop`** (`needs: release`) — `git merge --ff-only master` into
+  `develop` (now includes the version-bump commit + tag), then pushes.
+
+New `workflow_dispatch` inputs:
+- `confirm_promote` (boolean, default `false`) — `promote` exits early unless
+  `true`, so an accidental `--ref develop` dispatch can't silently ship.
+- `dry_run` (boolean, default `false`) — runs analyze/test only, skips
+  push/tag/release/sync. Use this to test workflow edits safely.
+
+Makefile: extend the `release` target to allow triggering from `develop` once
+`confirm_promote=true` is wired through.
+
+### CD Phase 2 — Signed release APK/AAB
+
+Removes the "Step 2's locally-built APK is the only properly-signed one"
+caveat from the runbook.
+
+- New secrets — set via `gh secret set <NAME>` in your **terminal**, never
+  pasted in chat: `KEYSTORE_BASE64` (the `.jks`, base64-encoded), `KEY_ALIAS`,
+  `KEY_PASSWORD`, `STORE_PASSWORD` (mirrors `android/key.properties`).
+- New step before "Build debug APK": decode `KEYSTORE_BASE64` to
+  `android/app/upload-keystore.jks`, write `android/key.properties` from the
+  other three secrets (matches `signingConfigs.release` in
+  `android/app/build.gradle`).
+- Switch `flutter build apk --debug` → `flutter build apk --release`, and add
+  `flutter build appbundle --release` for the AAB Phase 3 needs.
+- APK is properly signed and installable without enabling "install from
+  unknown sources".
+
+### CD Phase 3 — Play Store internal-track auto-upload
+
+Removes half of Runbook Step 5 (building and uploading the AAB).
+
+- New secret: `GOOGLE_PLAY_SERVICE_ACCOUNT` (JSON key, Release Manager access
+  on the Play Console).
+- New step after Phase 2's AAB build: `r0adkll/upload-google-play@v1`,
+  `track: internal`, with the generated `play-store-notes.txt` as release
+  notes.
+- Promoting internal → production stays a **manual** step in Play Console —
+  a deliberate human safety gate before the app reaches end users.
+
+### CD Phase 4 — Android emulator CI gate
+
+Removes Runbook Step 2's on-device integration/patrol test run.
+
+- **4a (non-blocking)** — new `flutter-android-emulator.yml`, mirroring
+  `flutter-regression.yml`'s iOS-simulator pattern but using
+  `reactivecircus/android-emulator-runner` on `ubuntu-latest`. Runs
+  `integration_test/app_test.dart` (+ patrol tests if portable). Same
+  triggers as the iOS regression workflow (PRs into master, nightly, manual
+  dispatch). Adds ~8-12 min/run; failures surface in Actions but don't block
+  anything yet.
+- **4b (blocking)** — once stable, make it a required check for the
+  `promote` job (Phase 1.5) or a required status check on `master`. At that
+  point `make release-apk` on a physical device becomes optional — CI
+  provides the on-device gate instead.
+
+### End state — true one-click release
+
+```sh
+gh workflow run flutter-release.yml --ref develop \
+  -f bump=patch -f confirm_promote=true
+```
+
+...does everything: promotes, runs unit *and* on-device tests, builds a signed
+APK + AAB, tags, creates the GitHub Release, uploads to the Play Store
+internal track, and syncs `develop`. What stays manual by design: promoting
+internal → production in Play Console, and reviewing the auto-generated
+"What's new" text.
 
 ### Future improvements
 
 - Pin Flutter version (replace `channel: stable` with `flutter-version: 3.x.y`) for fully reproducible builds
-- Add integration + Patrol tests to CI (Android emulator job — `patrol_test/native_test.dart` now also
-  covers the lock-screen pause regression added 2026-06-07)
 - Add iOS CI once RunnerUITests target is wired in Xcode
 - Cache invalidation strategy: clear Gradle cache on AGP/Kotlin version bumps
 
@@ -383,4 +456,4 @@ A tag for the computed version already exists. Either the version in `pubspec.ya
 
 ---
 
-*Last updated: 2026-06-07*
+*Last updated: 2026-06-13*
