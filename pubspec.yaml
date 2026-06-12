@@ -25,7 +25,7 @@ dependencies:
   shared_preferences: ^2.3.2
   # Networking (catalog fetch + connectivity)
   http: ^1.2.0
-  connectivity_plus: ^6.0.0
+  connectivity_plus: ^7.1.1
   # Localisation
   intl: ^0.20.2
   google_fonts: ^6.2.1
