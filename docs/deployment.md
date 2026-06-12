@@ -306,8 +306,11 @@ The workflow (`flutter-release.yml`):
 
 - [ ] New tag exists: `git fetch --tags && git tag --sort=-creatordate | head -3`
 - [ ] New release is live: `gh release view --web` (or
-      `github.com/mdarif/Al-Tawheed/releases`) — check the changelog reads
-      sensibly and the APK is attached and downloadable
+      `github.com/mdarif/Al-Tawheed/releases`) — check the changelog actually
+      describes THIS release's commits (compare against
+      `git log <previous-tag>..<new-tag> --oneline` if anything looks like it
+      could be from a previous release — see "Release Scenarios &
+      Troubleshooting" below) and the APK is attached and downloadable
 - [ ] Sync your local master with the bot's commit + tag:
       `git pull origin master --tags`
 - [ ] (Optional) Download and install the release-workflow APK on a second
@@ -435,6 +438,25 @@ assets" commit, missing the entire offline-mode feature set). To recover:
    "up to date"), *then* trigger a fresh release — it'll bump past the bad
    tag automatically since the version comes from `pubspec.yaml`, not from
    which tags exist
+
+**"The changelog describes the PREVIOUS release's changes, not this one (but
+the APK itself is correct)"**
+This was a workflow ordering bug, fixed on 2026-06-13: `flutter-release.yml`'s
+"Generate changelog" step ran `git-cliff --latest` *before* the "Commit, tag,
+and push" step created the new tag — so `--latest` resolved against the
+still-current tag and produced ITS changelog instead of the new one.
+The fix changed the arg to `--unreleased` (changelog for commits since the
+last tag that aren't tagged yet), which is correct regardless of step
+ordering. If you see this again on a release after this fix, the workflow has
+regressed — check the "Generate changelog" step's args first.
+
+To regenerate the correct changelog for an already-published release and fix
+it in place:
+```sh
+npx --yes git-cliff --config cliff.toml --strip header <previous-tag>..<bad-tag> \
+  > /tmp/changelog.md
+gh release edit <bad-tag> --notes-file /tmp/changelog.md
+```
 
 **"The integration test failed during `make release-apk` with
 `Found 0 widgets with text "START LISTENING"`"**
