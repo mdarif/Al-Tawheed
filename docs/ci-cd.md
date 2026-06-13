@@ -398,8 +398,19 @@ internal → production in Play Console, and reviewing the auto-generated
 
 ### Future improvements
 
-- Pin Flutter version (replace `channel: stable` with `flutter-version: 3.x.y`) for fully reproducible builds
-- Add iOS CI once RunnerUITests target is wired in Xcode
+- ✅ ~~Pin Flutter version~~ — done: all 4 workflows
+  (`flutter-ci.yml`, `flutter-release.yml`, `flutter-regression.yml`,
+  `flutter-android-emulator.yml`) use `flutter-version: 3.41.1` instead of
+  `channel: stable`. To bump, update `flutter-version` in all 4 files (and
+  confirm `flutter --version` locally matches before pushing).
+- Add iOS CI for `patrol_test/native_test.dart` once it's worth the runtime —
+  `ios/RunnerUITests` is wired (Patrol native iOS runner), but on the iOS
+  Simulator `withAirplaneMode()` short-circuits ("Control Center is not
+  available on Simulator") and 3 of the 6 native tests are
+  `if (!Platform.isAndroid) return`, so today this would mostly re-test
+  Patrol's bootstrap + one player open/close — coverage already implied by
+  `flutter-regression.yml`. Revisit if more iOS-specific native scenarios are
+  added to that file.
 - Cache invalidation strategy: clear Gradle cache on AGP/Kotlin version bumps
 
 ---

@@ -1,7 +1,7 @@
 # Flutter CI — Al-Tawheed Islamic Education App
 #
 # Triggers: push to develop, PRs into develop, PRs into master.
-# Runs on ubuntu-latest with Java 21 + Flutter stable.
+# Runs on ubuntu-latest with Java 21 + Flutter 3.41.1 (pinned).
 
 name: Flutter CI
 
@@ -44,15 +44,15 @@ jobs:
           java-version: "21"
 
       # ------------------------------------------------------------------ #
-      # 3. Flutter stable
+      # 3. Flutter (pinned)
       #    subosito/flutter-action writes android/local.properties with the
       #    flutter.sdk path that android/settings.gradle reads. Without this
       #    the Gradle build fails: "flutter.sdk not set in local.properties".
       # ------------------------------------------------------------------ #
-      - name: Set up Flutter (stable)
+      - name: Set up Flutter (pinned)
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: 3.41.1
           cache: true
 
       # ------------------------------------------------------------------ #
