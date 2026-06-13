@@ -14,7 +14,7 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | CD Phase 1.5 — Promote + sync automation | **Implemented** — not yet used for a release | `.github/workflows/flutter-release.yml` |
 | CD Phase 2 — Signed release APK/AAB | **Implemented** — needs the 4 signing secrets set, then unused for a release | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
 | CD Phase 3 — Play Store internal-track upload | **Implemented** — needs the `GOOGLE_PLAY_SERVICE_ACCOUNT` secret set, then unused for a release | `.github/workflows/flutter-release.yml` |
-| CD Phase 4 — Android emulator CI gate | Not started | new: `.github/workflows/flutter-android-emulator.yml` |
+| CD Phase 4 — Android emulator CI gate | **4a Implemented** (non-blocking) — 4b (required check) not started | `.github/workflows/flutter-android-emulator.yml` |
 
 ---
 
@@ -362,17 +362,26 @@ last manual step from [release-runbook.md](release-runbook.md).
 
 Removes Runbook Step 1's on-device integration/patrol test run.
 
-- **4a (non-blocking)** — new `flutter-android-emulator.yml`, mirroring
+- **4a (non-blocking, implemented)** — new
+  `.github/workflows/flutter-android-emulator.yml`, mirroring
   `flutter-regression.yml`'s iOS-simulator pattern but using
-  `reactivecircus/android-emulator-runner` on `ubuntu-latest`. Runs
-  `integration_test/app_test.dart` (+ patrol tests if portable). Same
-  triggers as the iOS regression workflow (PRs into master, nightly, manual
-  dispatch). Adds ~8-12 min/run; failures surface in Actions but don't block
-  anything yet.
+  `reactivecircus/android-emulator-runner` (API 34, `google_apis`, `x86_64`)
+  on `ubuntu-latest`. Runs `integration_test/app_test.dart`. Same triggers as
+  the iOS regression workflow (PRs into master, nightly, manual dispatch).
+  Failures surface in Actions but don't block anything yet.
+
+  Patrol native tests (`patrol_test/native_test.dart`) are **not** included:
+  they need `patrol_cli` plus an instrumented test build (roughly doubling
+  the job's runtime) and exercise airplane mode / notification shade
+  automation, which is significantly flakier on emulators than on a physical
+  device. They remain part of Runbook Step 1 (`make release-apk` on a
+  connected device).
 - **4b (blocking)** — once stable, make it a required check for the
   `promote` job (Phase 1.5) or a required status check on `master`. At that
   point `make release-apk` on a physical device becomes optional — CI
-  provides the on-device gate instead.
+  provides the on-device gate instead. Patrol's native scenarios would still
+  need a separate plan (physical-device farm, or an emulator-based
+  `patrol test` job) since 4a deliberately excludes them.
 
 ### End state — true one-click release
 
