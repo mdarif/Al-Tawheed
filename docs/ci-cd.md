@@ -13,7 +13,7 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
 | CD Phase 1.5 — Promote + sync automation | **Implemented** — not yet used for a release | `.github/workflows/flutter-release.yml` |
 | CD Phase 2 — Signed release APK/AAB | **Implemented** — needs the 4 signing secrets set, then unused for a release | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
-| CD Phase 3 — Play Store internal-track upload | Not started | `.github/workflows/flutter-release.yml` |
+| CD Phase 3 — Play Store internal-track upload | **Implemented** — needs the `GOOGLE_PLAY_SERVICE_ACCOUNT` secret set, then unused for a release | `.github/workflows/flutter-release.yml` |
 | CD Phase 4 — Android emulator CI gate | Not started | new: `.github/workflows/flutter-android-emulator.yml` |
 
 ---
@@ -91,6 +91,29 @@ gh secret set KEY_ALIAS --repo mdarif/Al-Tawheed       # value: upload
 gh secret set KEY_PASSWORD --repo mdarif/Al-Tawheed    # from android/key.properties
 gh secret set STORE_PASSWORD --repo mdarif/Al-Tawheed  # from android/key.properties
 ```
+
+### 6. Add CD Phase 3 Play Store secret
+
+The release workflow now uploads `app-release.aab` to the Play Store
+**internal track** automatically. This needs a Google Play service account
+with Release Manager access:
+
+1. Play Console → Setup → API access → create (or link) a Google Cloud
+   service account
+2. Play Console → Users and permissions → grant that service account
+   **Release Manager** access to Al-Tawheed
+3. Download its JSON key, then set the secret — run in your **terminal**,
+   never paste the JSON in chat:
+
+```sh
+gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT --repo mdarif/Al-Tawheed < /path/to/service-account.json
+```
+
+> **First-time Play Store API use?** Google requires at least one release to
+> have been uploaded to a track **manually** via Play Console before the API
+> can upload to it. If the workflow fails at "Upload to Play Store" with a
+> "no application was found" / track-not-found style error, do one manual
+> upload to the **internal** track via Play Console first, then re-run.
 
 ---
 
@@ -178,7 +201,7 @@ Do not use this routinely.
 
 ---
 
-## CD Phase 1 / 1.5 / 2 — Release Automation
+## CD Phase 1 / 1.5 / 2 / 3 — Release Automation
 
 **Trigger:** manual (`workflow_dispatch`), from `develop` (one-click) or `master` (traditional).
 
@@ -221,9 +244,12 @@ release        (skipped if promote failed)
   - Configure release signing (decode KEYSTORE_BASE64 -> upload-keystore.jks,
     write key.properties from KEY_ALIAS/KEY_PASSWORD/STORE_PASSWORD)
   - flutter build apk --release
-  - flutter build appbundle --release   (AAB, for CD Phase 3)
+  - flutter build appbundle --release
   - Rename APK → al-tawheed-X.Y.Z.apk
   - Generate changelog (git-cliff --unreleased) + Play Store notes
+  - [skipped if dry_run] Upload app-release.aab to the Play Store internal
+    track (r0adkll/upload-google-play, status: completed, What's new from
+    play-store-notes.txt)
   - [skipped if dry_run] Commit version bump -> master (chore: release X.Y.Z),
     tag it (X.Y.Z, no v prefix), push commit + tag
   - [skipped if dry_run] Create GitHub Release with APK + changelog attached
@@ -327,22 +353,10 @@ CI runs on the PR. Merge when green.
 
 ## Roadmap
 
-Two remaining phases turn the one-click promote/release/sync flow (CD Phases
-1.5 and 2, implemented — see "CD Phase 1 / 1.5 / 2 — Release Automation"
-above) into a fully automated production release. Each phase removes a
-specific manual step from [release-runbook.md](release-runbook.md).
-
-### CD Phase 3 — Play Store internal-track auto-upload
-
-Removes half of Runbook Step 4 (building and uploading the AAB).
-
-- New secret: `GOOGLE_PLAY_SERVICE_ACCOUNT` (JSON key, Release Manager access
-  on the Play Console).
-- New step after Phase 2's AAB build: `r0adkll/upload-google-play@v1`,
-  `track: internal`, with the generated `play-store-notes.txt` as release
-  notes.
-- Promoting internal → production stays a **manual** step in Play Console —
-  a deliberate human safety gate before the app reaches end users.
+One remaining phase turns the one-click promote/release/sync flow (CD Phases
+1.5, 2, and 3, implemented — see "CD Phase 1 / 1.5 / 2 / 3 — Release
+Automation" above) into a fully automated production release. It removes the
+last manual step from [release-runbook.md](release-runbook.md).
 
 ### CD Phase 4 — Android emulator CI gate
 

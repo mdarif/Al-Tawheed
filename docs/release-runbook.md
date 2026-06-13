@@ -24,6 +24,12 @@ looks like, and what to do if it doesn't go to plan.
       [ci-cd.md → One-Time Setup → "Add CD Phase 2 signing
       secrets"](ci-cd.md#5-add-cd-phase-2-signing-secrets) — Step 2 will fail
       at "Configure release signing" without them.
+- [ ] (One-time, CD Phase 3) Play Store secret is set —
+      `gh secret list --repo mdarif/Al-Tawheed` should list
+      `GOOGLE_PLAY_SERVICE_ACCOUNT`. If missing, see
+      [ci-cd.md → One-Time Setup → "Add CD Phase 3 Play Store
+      secret"](ci-cd.md#6-add-cd-phase-3-play-store-secret) — Step 2 will fail
+      at "Require Play Store service account" without it.
 
 ## Step 1 — Run the local release gate
 
@@ -89,9 +95,10 @@ The workflow runs three jobs:
 2. **`release`** — bumps `pubspec.yaml`, re-runs analyze + tests (refuses to
    tag a broken build even if Step 1 passed — different machine, same
    checks), builds a **production-signed** APK + AAB (CD Phase 2 — same
-   upload key as Step 1's local build), commits the version bump to
-   `master`, tags it, pushes both, and creates a GitHub Release with the APK
-   and an auto-generated changelog.
+   upload key as Step 1's local build), uploads the AAB to the Play Store
+   **internal track** (CD Phase 3), commits the version bump to `master`,
+   tags it, pushes both, and creates a GitHub Release with the APK and an
+   auto-generated changelog.
 3. **`sync-develop`** — fast-forward merges `master` (now including the
    version bump + tag) back into `develop` and pushes. This is the step that
    used to be a manual "close out the release" chore — it's now automatic.
@@ -176,28 +183,41 @@ develop" step needed even in this fallback flow.
 - [ ] (Optional) Install the release-workflow APK on a second device to
       confirm it launches. As of CD Phase 2 it's production-signed (same key
       as Step 1's build) — a good final smoke test before Step 4.
+- [ ] New internal-track release is live: play.google.com/console →
+      Al-Tawheed → Testing → Internal testing — confirm version `<TAG>` /
+      build `<NEW_VERSION>` is present (CD Phase 3)
 
 If the workflow fails, `make ci-logs` fetches the failed run's logs directly
 — no need to open a browser. Common failure points are in Troubleshooting
 below.
 
-## Step 4 — (Play Store only) Build the signed AAB and submit
+## Step 4 — (Play Store only) Promote internal → production
 
 Not every release needs this — only do it when you're ready to push to
 production on the Play Store.
 
-```sh
-flutter build appbundle --release
-# Output: build/app/outputs/bundle/release/app-release.aab
-# Requires: android/key.properties with the correct storeFile path
-```
+CD Phase 3's `release` job already uploaded `app-release.aab` to the
+**internal track** (status: completed) with the auto-generated
+`play-store-notes.txt` as the "What's new" text — nothing to build or upload
+manually.
 
-1. play.google.com/console → Al-Tawheed → Production → Create new release
-2. Upload `app-release.aab`
-3. Fill in release notes ("What's new")
+1. play.google.com/console → Al-Tawheed → Testing → Internal testing → open
+   the release for version `<TAG>` / build `<NEW_VERSION>`
+2. **Promote release** → choose **Production** as the target track — this
+   carries over the AAB and release notes
+3. Review the carried-over "What's new" text (edit if needed)
 4. If you see an "Advertising ID" error → click **"Release without
    permission"** (the app has no ads)
 5. Review → Start rollout to Production (or save as a draft first)
+
+> **CI's Play Store upload failed, or `GOOGLE_PLAY_SERVICE_ACCOUNT` isn't set
+> yet?** Build and upload the AAB by hand:
+> ```sh
+> flutter build appbundle --release
+> # Output: build/app/outputs/bundle/release/app-release.aab
+> # Requires: android/key.properties with the correct storeFile path
+> ```
+> Then upload it directly to whichever track you need via Play Console.
 
 ---
 
@@ -210,6 +230,33 @@ One or more of `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEY_PASSWORD`,
 `docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 2 signing secrets" for the
 exact `gh secret set` commands — run them in your terminal, never paste
 secret values in chat.
+
+**"Release workflow failed at 'Require Play Store service account': secret
+is not set"**
+`GOOGLE_PLAY_SERVICE_ACCOUNT` isn't set as a repo secret yet (CD Phase 3). See
+`docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 3 Play Store secret".
+
+**"Release workflow failed at 'Upload to Play Store' with 'no application was
+found' / track not found"**
+Google requires at least one **manual** upload to a track via Play Console
+before the API can publish to it. Build the AAB locally (Step 4's fallback
+box), upload it to the **internal** track by hand once, then re-run
+`make release-auto`.
+
+**"Release workflow failed at 'Upload to Play Store' with 'APK/Bundle
+... versionCode ... has already been used'"**
+The `versionCode` (the `+BUILD` number in `pubspec.yaml`) was already used by
+a release on this or another track — most likely from a manual upload that
+used a higher build number than the repo's `pubspec.yaml`. Bump
+`pubspec.yaml`'s `+BUILD` past whatever the highest `versionCode` is in Play
+Console (Release → any track → release details), commit, push, and re-run.
+
+**"Release workflow failed at 'Upload to Play Store' with a permission /
+403 error"**
+The service account in `GOOGLE_PLAY_SERVICE_ACCOUNT` doesn't have **Release
+Manager** access to Al-Tawheed yet, or that access hasn't propagated. Play
+Console → Users and permissions → confirm the service account's email has
+Release Manager (or Admin) on this app, then re-run.
 
 **"`release-auto` failed at `promote`: 'not possible to fast-forward'"**
 `master` has diverged from `develop` — most likely someone pushed directly to

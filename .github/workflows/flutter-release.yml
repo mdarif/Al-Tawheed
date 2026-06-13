@@ -1,24 +1,29 @@
 # CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation,
-# CD Phase 2 — production-signed APK/AAB)
+# CD Phase 2 — production-signed APK/AAB, CD Phase 3 — Play Store
+# internal-track upload)
 #
 # One-click release: dispatch from `develop` with `confirm_promote: true`.
 # This fast-forwards `develop` into `master`, bumps the version, runs CI
-# checks, builds a production-signed release APK + AAB, tags the commit,
-# creates a GitHub Release, and syncs the version bump back into `develop` —
-# all in one run.
+# checks, builds a production-signed release APK + AAB, uploads the AAB to
+# the Play Store internal track, tags the commit, creates a GitHub Release,
+# and syncs the version bump back into `develop` — all in one run.
 #
 # Traditional flow: dispatch from `master` (the promote/sync jobs are
 # skipped) — this is the original CD Phase 1 behaviour, unchanged.
 #
 # Use `dry_run: true` to run analyze/test/build only — no commits, tags,
-# releases, or pushes of any kind. Useful for testing workflow changes.
+# releases, pushes, or Play Store uploads of any kind. Useful for testing
+# workflow changes.
 #
 # Prerequisites (one-time GitHub settings):
 #   - Settings → Branches → master → Bypass list → add github-actions[bot]
 #     Without this, the version-bump push to master will be rejected.
 #   - Repo secrets for release signing (CD Phase 2): KEYSTORE_BASE64,
 #     KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD (mirrors
-#     android/key.properties). See docs/ci-cd.md -> "One-Time Setup".
+#     android/key.properties).
+#   - Repo secret for Play Store upload (CD Phase 3):
+#     GOOGLE_PLAY_SERVICE_ACCOUNT (service account JSON, Release Manager
+#     access). See docs/ci-cd.md -> "One-Time Setup".
 
 name: Release
 
@@ -330,6 +335,46 @@ jobs:
           cat play-store-notes.txt
 
       # ------------------------------------------------------------------ #
+      # CD Phase 3 — prepare Play Store "What's new" text for upload
+      #     r0adkll/upload-google-play expects a directory of locale-named
+      #     files (whatsnew-<locale>). Assumes en-US is the Play Console
+      #     default listing language — rename the file below if yours
+      #     differs.
+      # ------------------------------------------------------------------ #
+      - name: Prepare Play Store release notes for upload
+        run: |
+          mkdir -p distribution/whatsnew
+          cp play-store-notes.txt distribution/whatsnew/whatsnew-en-US
+
+      # ------------------------------------------------------------------ #
+      # CD Phase 3 — upload AAB to the Play Store internal track
+      #     Skipped for dry runs - this creates a real release in Play
+      #     Console. Internal track testers get it immediately
+      #     (status: completed). Promoting internal -> production stays a
+      #     manual step in Play Console — a deliberate human safety gate.
+      # ------------------------------------------------------------------ #
+      - name: Require Play Store service account
+        if: inputs.dry_run != true
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT" ]; then
+            echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT secret is not set. See docs/ci-cd.md -> 'One-Time Setup' -> 'Add CD Phase 3 Play Store secret'."
+            exit 1
+          fi
+
+      - name: Upload to Play Store (internal track)
+        if: inputs.dry_run != true
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          packageName: com.almarfa.tawheed
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+
+      # ------------------------------------------------------------------ #
       # 14. Commit version bump, tag, and push
       #     Requires github-actions[bot] in the master branch bypass list.
       #     Skipped for dry runs — nothing is committed, tagged, or pushed.
@@ -388,7 +433,7 @@ jobs:
       - name: Dry run summary
         if: inputs.dry_run == true
         run: |
-          echo "::notice::Dry run complete for ${{ github.ref_name }} — analyze, test, and build succeeded. Nothing was committed, tagged, pushed, or released."
+          echo "::notice::Dry run complete for ${{ github.ref_name }} — analyze, test, and build succeeded. Nothing was committed, tagged, pushed, released, or uploaded to the Play Store."
 
   # ------------------------------------------------------------------ #
   # Sync develop with master (CD Phase 1.5)
