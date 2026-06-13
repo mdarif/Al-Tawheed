@@ -104,10 +104,17 @@ class SeriesProvider extends ChangeNotifier {
 /// persists the selection, and reloads the catalog/progress/study/downloads
 /// state for the new series.
 Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
-  await context.read<PlayerNotifier>().stop();
-  await context.read<SeriesProvider>().selectSeries(newSeries);
-  await context.read<CatalogProvider>().load(newSeries);
-  context.read<ProgressProvider>().reload();
-  context.read<StudyProgressProvider>().reload();
-  await context.read<DownloadsProvider>().reload();
+  final player = context.read<PlayerNotifier>();
+  final series = context.read<SeriesProvider>();
+  final catalog = context.read<CatalogProvider>();
+  final progress = context.read<ProgressProvider>();
+  final study = context.read<StudyProgressProvider>();
+  final downloads = context.read<DownloadsProvider>();
+
+  await player.stop();
+  await series.selectSeries(newSeries);
+  await catalog.load(newSeries);
+  progress.reload();
+  study.reload();
+  await downloads.reload();
 }
