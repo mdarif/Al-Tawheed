@@ -94,6 +94,7 @@
 
   "settingsLanguage": "Language",
   "settingsAppearance": "Appearance",
+  "settingsSeries": "Series",
   "settingsDarkMode": "Dark mode",
   "settingsLightMode": "Light mode",
   "settingsPlayback": "Playback",
@@ -166,7 +167,17 @@
   },
   "deleteAll": "Delete all",
 
+  "changeSeriesConfirmTitle": "Change Series?",
+  "changeSeriesConfirmMessage": "Switching to \"{seriesName}\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.",
+  "@changeSeriesConfirmMessage": {
+    "placeholders": { "seriesName": { "type": "String" } }
+  },
+  "changeSeriesConfirm": "Switch",
+
   "startListening": "Start Listening",
+
+  "chooseSeriesTitle": "Choose Your Series",
+  "chooseSeriesSubtitle": "Pick the series you'd like to study. You can change this later in Settings.",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

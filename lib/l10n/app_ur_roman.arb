@@ -54,6 +54,7 @@
 
   "settingsLanguage": "Zabaan",
   "settingsAppearance": "Zahiri shakl",
+  "settingsSeries": "Silsila",
   "settingsDarkMode": "Dark mode",
   "settingsLightMode": "Light mode",
   "settingsPlayback": "Playback",
@@ -90,7 +91,14 @@
   "clearAllDownloadsMessage": "{count} dars ({size}) is device se hata diye jayenge.",
   "deleteAll": "Sab hata dein",
 
+  "changeSeriesConfirmTitle": "Silsila tabdeel karein?",
+  "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se aap ke active dars tabdeel ho jayenge. Aap ki progress, downloads aur bookmarks alag se mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",
+  "changeSeriesConfirm": "Tabdeel karein",
+
   "startListening": "Sunna shuru karein",
+
+  "chooseSeriesTitle": "Apna Silsila Muntakhab Karein",
+  "chooseSeriesSubtitle": "Wo silsila muntakhab karein jis ka aap mutala karna chahte hain. Aap baad mein settings mein ise tabdeel kar sakte hain.",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

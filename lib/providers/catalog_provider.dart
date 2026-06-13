@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/services/catalog_service.dart';
 import 'package:myapp/services/content_fetch_exception.dart';
 
@@ -21,7 +22,7 @@ class CatalogProvider extends ChangeNotifier {
       _failureReason == CatalogFailureReason.noCacheOffline;
   bool get isLoading => _status == CatalogStatus.loading;
 
-  Future<void> load() async {
+  Future<void> load([SeriesConfig? series]) async {
     if (_status == CatalogStatus.loading) return;
     _status = CatalogStatus.loading;
     _error = null;
@@ -29,7 +30,7 @@ class CatalogProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _catalog = await CatalogService.instance.fetchCatalog();
+      _catalog = await CatalogService.instance.fetchCatalog(series);
       _status = CatalogStatus.loaded;
     } on NoCachedContentException {
       _failureReason = CatalogFailureReason.noCacheOffline;

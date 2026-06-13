@@ -9,6 +9,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/announcement_model.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
@@ -16,6 +17,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -65,6 +67,7 @@ Widget _wrap({
   FeatureFlagsProvider? featureFlags,
   AnnouncementsProvider? announcements,
   ProgressProvider? progress,
+  SeriesProvider? series,
 }) {
   final catalogProvider = CatalogProvider()..setCatalogForTest(catalog ?? _catalog());
 
@@ -77,6 +80,7 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: featureFlags ?? FeatureFlagsProvider()),
       ChangeNotifierProvider.value(value: announcements ?? AnnouncementsProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider.value(value: series ?? (SeriesProvider()..load(false))),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),
@@ -312,6 +316,37 @@ void main() {
       expect(find.text('Daily Benefit'), findsOneWidget);
       expect(find.text('Test benefit text'), findsOneWidget);
       expect(find.text('— Test Source'), findsOneWidget);
+    });
+  });
+
+  group('HomeScreen — overall progress stats', () {
+    testWidgets('shows the classes stat when the series has study mode',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    });
+
+    testWidgets('hides the classes stat when the series has no study mode',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(const SeriesConfig(
+          id: 'tawheed-ar',
+          catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+          storagePrefix: 'ar_',
+          hasStudyMode: false,
+          language: 'ar',
+          displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+          speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+        ));
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.menu_book_rounded), findsNothing);
+      expect(find.byIcon(Icons.headphones_rounded), findsWidgets);
     });
   });
 }

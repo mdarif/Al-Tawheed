@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "book": {
+    "id": "kitab-at-tawheed-ar",
+    "title": {
+      "en": "Kitab at-Tawheed",
+      "ar": "كتاب التوحيد"
+    },
+    "titleArabic": "كتاب التوحيد",
+    "author": "Muhammad ibn Abd al-Wahhab",
+    "speaker": {
+      "en": "Shaykh Salih Al-Fawzan",
+      "ar": "الشيخ صالح الفوزان"
+    },
+    "speakerShortName": "Shaykh Al-Fawzan",
+    "totalDurationSeconds": 6011,
+    "lectureCount": 5,
+    "coverImageUrl": "https://al-tawheed-content.pages.dev/tawheed/images/cover.jpg",
+    "language": "Arabic",
+    "catalogUpdatedAt": "2026-06-13T00:00:00Z"
+  },
+  "chapters": [],
+  "lectures": [
+    {
+      "id": "lec-001",
+      "number": 1,
+      "chapterId": "",
+      "title": {
+        "en": "Dars 1",
+        "ar": "الدرس الأول"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-001.mp3",
+      "durationSeconds": 1260,
+      "fileSizeBytes": 14553097,
+      "description": null
+    },
+    {
+      "id": "lec-002",
+      "number": 2,
+      "chapterId": "",
+      "title": {
+        "en": "Dars 2",
+        "ar": "الدرس الثاني"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-002.mp3",
+      "durationSeconds": 1358,
+      "fileSizeBytes": 15723992,
+      "description": null
+    },
+    {
+      "id": "lec-003",
+      "number": 3,
+      "chapterId": "",
+      "title": {
+        "en": "Dars 3",
+        "ar": "الدرس الثالث"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-003.mp3",
+      "durationSeconds": 1106,
+      "fileSizeBytes": 12973457,
+      "description": null
+    },
+    {
+      "id": "lec-004",
+      "number": 4,
+      "chapterId": "",
+      "title": {
+        "en": "Dars 4",
+        "ar": "الدرس الرابع"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-004.mp3",
+      "durationSeconds": 1263,
+      "fileSizeBytes": 14630622,
+      "description": null
+    },
+    {
+      "id": "lec-005",
+      "number": 5,
+      "chapterId": "",
+      "title": {
+        "en": "Dars 5",
+        "ar": "الدرس الخامس"
+      },
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-005.mp3",
+      "durationSeconds": 1024,
+      "fileSizeBytes": 10979650,
+      "description": null
+    }
+  ],
+  "dailyBenefits": []
+}

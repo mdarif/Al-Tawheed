@@ -6,6 +6,7 @@ import 'package:myapp/audio/playback_mode.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -16,6 +17,7 @@ class PlayerNotifier extends ChangeNotifier {
   final ProgressProvider _progress;
   final DownloadsProvider _downloads;
   final ConnectivityProvider _connectivity;
+  final CatalogProvider? _catalog;
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _saveTimer;
   Timer? _stuckBufferingTimer;
@@ -37,8 +39,8 @@ class PlayerNotifier extends ChangeNotifier {
   String? _pendingNextBlockedTitle;
   Lecture? _pendingNextBlockedLecture;
 
-  PlayerNotifier(
-      this._handler, this._progress, this._downloads, this._connectivity) {
+  PlayerNotifier(this._handler, this._progress, this._downloads,
+      this._connectivity, [this._catalog]) {
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
       _speed = savedSpeed;
@@ -181,10 +183,13 @@ class PlayerNotifier extends ChangeNotifier {
         ? Duration(seconds: saved)
         : Duration.zero;
 
+    final speaker = _catalog?.catalog?.book.speaker['en'] as String?;
+
     await _handler.loadLecture(
       lecture,
       startFrom: resumeAt,
       localFilePath: localPath,
+      artist: speaker ?? 'Sharah Kitab al-Tawheed',
     );
     _startSaveTimer();
   }

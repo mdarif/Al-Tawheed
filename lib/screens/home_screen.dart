@@ -12,6 +12,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
@@ -191,6 +192,8 @@ class _ContinueListeningCard extends StatelessWidget {
   Widget _header(BuildContext context, StudyProgressProvider study) {
     final l10n = context.l10n;
     final stats = study.stats;
+    final hasStudyMode =
+        context.watch<SeriesProvider>().currentSeries.hasStudyMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -206,6 +209,7 @@ class _ContinueListeningCard extends StatelessWidget {
             totalLectures: stats.totalLectures,
             studiedClasses: study.studiedCount,
             totalClasses: study.totalChapterCount,
+            showClasses: hasStudyMode,
           ),
       ],
     );
@@ -252,12 +256,14 @@ class _OverallProgressStats extends StatelessWidget {
   final int totalLectures;
   final int studiedClasses;
   final int totalClasses;
+  final bool showClasses;
 
   const _OverallProgressStats({
     required this.completedLectures,
     required this.totalLectures,
     required this.studiedClasses,
     required this.totalClasses,
+    this.showClasses = true,
   });
 
   @override
@@ -272,10 +278,13 @@ class _OverallProgressStats extends StatelessWidget {
         Icon(Icons.headphones_rounded, size: 13, color: context.mutedIconColor),
         const SizedBox(width: 3),
         Text('$completedLectures/$totalLectures', style: style),
-        const SizedBox(width: 10),
-        Icon(Icons.menu_book_rounded, size: 13, color: context.mutedIconColor),
-        const SizedBox(width: 3),
-        Text('$studiedClasses/$totalClasses', style: style),
+        if (showClasses) ...[
+          const SizedBox(width: 10),
+          Icon(Icons.menu_book_rounded,
+              size: 13, color: context.mutedIconColor),
+          const SizedBox(width: 3),
+          Text('$studiedClasses/$totalClasses', style: style),
+        ],
       ],
     );
   }

@@ -179,6 +179,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearance => 'Appearance';
 
   @override
+  String get settingsSeries => 'Series';
+
+  @override
   String get settingsDarkMode => 'Dark mode';
 
   @override
@@ -311,7 +314,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAll => 'Delete all';
 
   @override
+  String get changeSeriesConfirmTitle => 'Change Series?';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return 'Switching to \"$seriesName\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'Switch';
+
+  @override
   String get startListening => 'Start Listening';
+
+  @override
+  String get chooseSeriesTitle => 'Choose Your Series';
+
+  @override
+  String get chooseSeriesSubtitle =>
+      'Pick the series you\'d like to study. You can change this later in Settings.';
 
   @override
   String get languageEnglish => 'English';

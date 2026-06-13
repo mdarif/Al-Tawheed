@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
+
+  Future<void> _startListening(BuildContext context) async {
+    final series = context.read<SeriesProvider>();
+    if (series.hasSelectedSeries) {
+      context.go('/lectures');
+      return;
+    }
+    if (series.availableSeries.length > 1) {
+      context.go('/choose-series');
+      return;
+    }
+    // Manifest unavailable / single-series — select it and continue
+    // without showing the picker.
+    await switchSeries(context, series.availableSeries.first);
+    if (!context.mounted) return;
+    context.go('/lectures');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,16 +66,6 @@ class WelcomeScreen extends StatelessWidget {
                           letterSpacing: 1,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'By Shaikh Abdullah Nasir Rahmani Hafizahullah',
-                        textAlign: TextAlign.center,
-                        style: context.textTheme.bodyMedium?.copyWith(
-                          color: semantic.onScrimMuted,
-                          height: 1.5,
-                          fontSize: 16,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -83,7 +92,7 @@ class WelcomeScreen extends StatelessWidget {
                         'START LISTENING',
                         style: TextStyle(color: semantic.onBrand),
                       ),
-                      onPressed: () => context.go('/lectures'),
+                      onPressed: () => _startListening(context),
                     ),
                   ),
                 ),

@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/app_config_model.dart';
+import 'package:myapp/models/series.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
@@ -45,6 +48,13 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const Divider(height: 32),
+
+          if (context.watch<FeatureFlagsProvider>().multiSeriesEnabled &&
+              context.watch<SeriesProvider>().availableSeries.length > 1) ...[
+            _SectionHeader(l10n.settingsSeries),
+            const _SeriesSection(),
+            const Divider(height: 32),
+          ],
 
           if (context.watch<FeatureFlagsProvider>().features.language) ...[
             _SectionHeader(l10n.settingsLanguage),
@@ -124,7 +134,10 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader(l10n.settingsAbout),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: AboutCard(about: config.about),
+            child: AboutCard(
+              about: config.about,
+              catalog: context.watch<CatalogProvider>().catalog,
+            ),
           ),
           _BrandingFooter(branding: config.branding),
           const SizedBox(height: 24),
@@ -318,6 +331,114 @@ class _DownloadsSection extends StatelessWidget {
           ),
         const Divider(height: 32),
       ],
+    );
+  }
+}
+
+class _SeriesSection extends StatelessWidget {
+  const _SeriesSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final current = context.watch<SeriesProvider>().currentSeries;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Material(
+        color: context.groupedSurface,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.groupedBorder, width: 1),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.library_books_rounded),
+            title: Text(lang.resolve(current.displayName)),
+            subtitle: Text(lang.resolve(current.speakerName)),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => _openPicker(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPicker(BuildContext context) async {
+    final chosen = await showModalBottomSheet<SeriesConfig>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _SeriesPickerSheet(),
+    );
+    if (chosen == null || !context.mounted) return;
+
+    final current = context.read<SeriesProvider>().currentSeries;
+    if (chosen.id == current.id) return;
+
+    final l10n = context.l10n;
+    final seriesName =
+        context.read<LanguageProvider>().resolve(chosen.displayName);
+    final confirmed = await showConfirmDialog(
+      context,
+      title: l10n.changeSeriesConfirmTitle,
+      message: l10n.changeSeriesConfirmMessage(seriesName),
+      confirmLabel: l10n.changeSeriesConfirm,
+      filledConfirm: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    await switchSeries(context, chosen);
+    if (!context.mounted) return;
+    context.go('/lectures');
+  }
+}
+
+class _SeriesPickerSheet extends StatelessWidget {
+  const _SeriesPickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final series = context.watch<SeriesProvider>();
+    final current = series.currentSeries;
+    final l10n = context.l10n;
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                l10n.settingsSeries,
+                style: context.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          ...series.availableSeries.map((s) {
+            final selected = s.id == current.id;
+            return ListTile(
+              leading: Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected ? context.brandColor : context.mutedIconColor,
+              ),
+              title: Text(lang.resolve(s.displayName)),
+              subtitle: Text(lang.resolve(s.speakerName)),
+              onTap: () => Navigator.pop(context, s),
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 }

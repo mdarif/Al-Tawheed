@@ -56,6 +56,7 @@
 
   "settingsLanguage": "زبان",
   "settingsAppearance": "ظاہری شکل",
+  "settingsSeries": "سلسلہ",
   "settingsDarkMode": "ڈارک موڈ",
   "settingsLightMode": "لائٹ موڈ",
   "settingsPlayback": "پلے بیک",
@@ -92,7 +93,14 @@
   "clearAllDownloadsMessage": "{count} دروس ({size}) اس ڈیوائس سے حذف کر دیے جائیں گے۔",
   "deleteAll": "سب حذف کریں",
 
+  "changeSeriesConfirmTitle": "سلسلہ تبدیل کریں؟",
+  "changeSeriesConfirmMessage": "\"{seriesName}\" پر سوئچ کرنے سے آپ کے فعال دروس تبدیل ہو جائیں گے۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔",
+  "changeSeriesConfirm": "تبدیل کریں",
+
   "startListening": "سننا شروع کریں",
+
+  "chooseSeriesTitle": "اپنا سلسلہ منتخب کریں",
+  "chooseSeriesSubtitle": "وہ سلسلہ منتخب کریں جسے آپ پڑھنا چاہتے ہیں۔ آپ بعد میں ترتیبات میں اسے تبدیل کر سکتے ہیں۔",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

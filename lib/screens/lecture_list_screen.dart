@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -22,7 +24,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CatalogProvider>().load();
+      context
+          .read<CatalogProvider>()
+          .load(context.read<SeriesProvider>().currentSeries);
     });
   }
 
@@ -109,10 +113,17 @@ class _LectureListScreenState extends State<LectureListScreen> {
   Widget _buildList(Catalog catalog) {
     final lectures = catalog.lectures;
     final items = <_ListItem>[];
-    for (final chapter in catalog.chapters) {
-      items.add(_ListItem.chapter(chapter));
-      for (final lecture in catalog.lecturesForChapter(chapter.id)) {
+    if (catalog.chapters.isEmpty) {
+      // Flat series (e.g. standalone duroos) — no chapter headers.
+      for (final lecture in lectures) {
         items.add(_ListItem.lecture(lecture));
+      }
+    } else {
+      for (final chapter in catalog.chapters) {
+        items.add(_ListItem.chapter(chapter));
+        for (final lecture in catalog.lecturesForChapter(chapter.id)) {
+          items.add(_ListItem.lecture(lecture));
+        }
       }
     }
 
@@ -162,6 +173,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
   }
 
   SliverAppBar _buildAppBar(Catalog? catalog) {
+    final title = catalog != null
+        ? context.read<LanguageProvider>().resolve(catalog.book.title)
+        : context.l10n.appTitle;
     return SliverAppBar(
       pinned: true,
       expandedHeight: catalog != null ? 140 : 80,
@@ -173,7 +187,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sharah Kitab al-Tawheed',
+              title,
               style: context.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),

@@ -393,6 +393,12 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get settingsAppearance;
 
+  /// No description provided for @settingsSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get settingsSeries;
+
   /// No description provided for @settingsDarkMode.
   ///
   /// In en, this message translates to:
@@ -597,11 +603,41 @@ abstract class AppLocalizations {
   /// **'Delete all'**
   String get deleteAll;
 
+  /// No description provided for @changeSeriesConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Series?'**
+  String get changeSeriesConfirmTitle;
+
+  /// No description provided for @changeSeriesConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to \"{seriesName}\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.'**
+  String changeSeriesConfirmMessage(String seriesName);
+
+  /// No description provided for @changeSeriesConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get changeSeriesConfirm;
+
   /// No description provided for @startListening.
   ///
   /// In en, this message translates to:
   /// **'Start Listening'**
   String get startListening;
+
+  /// No description provided for @chooseSeriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Series'**
+  String get chooseSeriesTitle;
+
+  /// No description provided for @chooseSeriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the series you\'d like to study. You can change this later in Settings.'**
+  String get chooseSeriesSubtitle;
 
   /// No description provided for @languageEnglish.
   ///

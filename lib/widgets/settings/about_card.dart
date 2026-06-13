@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:myapp/models/app_config_model.dart';
+import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 /// Two-zone About card.
 ///
 /// Top zone — content identity: cover image, app name, Arabic title, lecturer.
-/// Bottom strip — stats: lecture count, class count, offline-ready indicator.
+/// Bottom strip — stats: lecture count, class/duration count, offline-ready indicator.
 class AboutCard extends StatelessWidget {
   final AppConfigAbout about;
+  final Catalog? catalog;
 
-  const AboutCard({super.key, required this.about});
+  const AboutCard({super.key, required this.about, this.catalog});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final about = this.about;
+    final catalog = this.catalog;
+    final book = catalog?.book;
+    final lang = context.read<LanguageProvider>();
+
+    final appName = book != null ? lang.resolve(book.title) : about.appName;
+    final arabicTitle = book?.titleArabic ?? l10n.settingsAboutArabicTitle;
+    final lecturer = book != null ? lang.resolve(book.speaker) : about.lecturer;
+    final lectureCount = book?.lectureCount ?? about.lectureCount;
+    final hasClasses = catalog?.chapters.isNotEmpty ?? true;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -44,7 +58,7 @@ class AboutCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    about.appName,
+                    appName,
                     textAlign: TextAlign.center,
                     style: context.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -52,7 +66,7 @@ class AboutCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    l10n.settingsAboutArabicTitle,
+                    arabicTitle,
                     textAlign: TextAlign.center,
                     style: context.textTheme.titleMedium?.copyWith(
                       fontSize: 20,
@@ -63,7 +77,7 @@ class AboutCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    l10n.settingsAboutBy(about.lecturer),
+                    l10n.settingsAboutBy(lecturer),
                     textAlign: TextAlign.center,
                     style: context.textTheme.bodyMedium?.copyWith(
                       color: context.secondaryTextColor,
@@ -82,7 +96,7 @@ class AboutCard extends StatelessWidget {
                 child: Row(
                   children: [
                     _StatColumn(
-                      value: '${about.lectureCount}',
+                      value: '$lectureCount',
                       label: l10n.statLectures,
                     ),
                     VerticalDivider(
@@ -90,10 +104,18 @@ class AboutCard extends StatelessWidget {
                       thickness: 1,
                       color: context.groupedBorder,
                     ),
-                    _StatColumn(
-                      value: '${about.classCount}',
-                      label: l10n.statClasses,
-                    ),
+                    if (hasClasses)
+                      _StatColumn(
+                        value: '${catalog?.chapters.length ?? about.classCount}',
+                        label: l10n.statClasses,
+                      )
+                    else
+                      _StatColumn(
+                        value: DurationFormatter.toHoursMinutes(
+                          catalog!.book.totalDurationSeconds,
+                        ),
+                        label: l10n.statDuration,
+                      ),
                     VerticalDivider(
                       width: 1,
                       thickness: 1,

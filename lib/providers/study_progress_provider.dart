@@ -1,25 +1,39 @@
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 /// Study-mode progress: chapter status, sticky studied count, session helpers.
 class StudyProgressProvider extends ChangeNotifier {
-  StudyProgressProvider(this._progress, this._catalog)
+  StudyProgressProvider(this._progress, this._catalog, [this._series])
       : _prefs = PreferencesService.instance;
 
   final ProgressProvider _progress;
   final CatalogProvider _catalog;
   final PreferencesService _prefs;
+  final SeriesProvider? _series;
+
+  String get _prefix =>
+      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback)
+          .storagePrefix;
 
   Set<String> _studiedChapterIds = {};
 
   void load() {
-    _studiedChapterIds = _prefs.loadStudiedChapterIds();
+    _studiedChapterIds = _prefs.loadStudiedChapterIds(prefix: _prefix);
     _progress.addListener(_onProgressChanged);
     _catalog.addListener(_onCatalogChanged);
+    notifyListeners();
+  }
+
+  /// Re-reads studied-chapter state for the current series — call after
+  /// switching series.
+  void reload() {
+    _studiedChapterIds = _prefs.loadStudiedChapterIds(prefix: _prefix);
     notifyListeners();
   }
 
@@ -100,7 +114,7 @@ class StudyProgressProvider extends ChangeNotifier {
     if (_studiedChapterIds.contains(chapterId)) return;
     _studiedChapterIds = {..._studiedChapterIds, chapterId};
     notifyListeners();
-    await _prefs.saveStudiedChapterIds(_studiedChapterIds);
+    await _prefs.saveStudiedChapterIds(_studiedChapterIds, prefix: _prefix);
   }
 
   /// After progress updates, promote live-complete chapters to studied.
@@ -117,7 +131,7 @@ class StudyProgressProvider extends ChangeNotifier {
 
     _studiedChapterIds = {..._studiedChapterIds, ...added};
     notifyListeners();
-    await _prefs.saveStudiedChapterIds(_studiedChapterIds);
+    await _prefs.saveStudiedChapterIds(_studiedChapterIds, prefix: _prefix);
   }
 
   void _onProgressChanged() {

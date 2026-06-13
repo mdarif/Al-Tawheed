@@ -181,6 +181,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAppearance => 'ظاہری شکل';
 
   @override
+  String get settingsSeries => 'سلسلہ';
+
+  @override
   String get settingsDarkMode => 'ڈارک موڈ';
 
   @override
@@ -299,7 +302,25 @@ class AppLocalizationsUr extends AppLocalizations {
   String get deleteAll => 'سب حذف کریں';
 
   @override
+  String get changeSeriesConfirmTitle => 'سلسلہ تبدیل کریں؟';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return '\"$seriesName\" پر سوئچ کرنے سے آپ کے فعال دروس تبدیل ہو جائیں گے۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'تبدیل کریں';
+
+  @override
   String get startListening => 'سننا شروع کریں';
+
+  @override
+  String get chooseSeriesTitle => 'اپنا سلسلہ منتخب کریں';
+
+  @override
+  String get chooseSeriesSubtitle =>
+      'وہ سلسلہ منتخب کریں جسے آپ پڑھنا چاہتے ہیں۔ آپ بعد میں ترتیبات میں اسے تبدیل کر سکتے ہیں۔';
 
   @override
   String get languageEnglish => 'English';
@@ -623,6 +644,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get settingsAppearance => 'Zahiri shakl';
 
   @override
+  String get settingsSeries => 'Silsila';
+
+  @override
   String get settingsDarkMode => 'Dark mode';
 
   @override
@@ -743,7 +767,25 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get deleteAll => 'Sab hata dein';
 
   @override
+  String get changeSeriesConfirmTitle => 'Silsila tabdeel karein?';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return '\"$seriesName\" par switch karne se aap ke active dars tabdeel ho jayenge. Aap ki progress, downloads aur bookmarks alag se mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'Tabdeel karein';
+
+  @override
   String get startListening => 'Sunna shuru karein';
+
+  @override
+  String get chooseSeriesTitle => 'Apna Silsila Muntakhab Karein';
+
+  @override
+  String get chooseSeriesSubtitle =>
+      'Wo silsila muntakhab karein jis ka aap mutala karna chahte hain. Aap baad mein settings mein ise tabdeel kar sakte hain.';
 
   @override
   String get languageEnglish => 'English';

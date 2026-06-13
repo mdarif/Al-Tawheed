@@ -27,32 +27,40 @@ class PreferencesService {
   // ── Progress ────────────────────────────────────────────────────────────
 
   /// Persists [positionSeconds] for [lectureId] and records it as last played.
-  Future<void> saveProgress(String lectureId, int positionSeconds) async {
+  /// [prefix] namespaces the keys for a non-default series (e.g. `'ar_'`).
+  Future<void> saveProgress(String lectureId, int positionSeconds,
+      {String prefix = ''}) async {
     await Future.wait([
-      _p.setInt('progress_$lectureId', positionSeconds),
-      _p.setString('last_lecture_id', lectureId),
-      _p.setInt('last_position', positionSeconds),
+      _p.setInt('${prefix}progress_$lectureId', positionSeconds),
+      _p.setString('${prefix}last_lecture_id', lectureId),
+      _p.setInt('${prefix}last_position', positionSeconds),
     ]);
   }
 
   /// Returns a map of lectureId → saved position in seconds.
-  Map<String, int> loadAllProgress() {
+  Map<String, int> loadAllProgress({String prefix = ''}) {
+    final progressKey = '${prefix}progress_';
     return {
-      for (final key in _p.getKeys().where((k) => k.startsWith('progress_')))
-        key.substring('progress_'.length): _p.getInt(key) ?? 0,
+      for (final key in _p.getKeys().where((k) => k.startsWith(progressKey)))
+        key.substring(progressKey.length): _p.getInt(key) ?? 0,
     };
   }
 
   String? get lastLectureId => _p.getString('last_lecture_id');
   int get lastPositionSeconds => _p.getInt('last_position') ?? 0;
 
+  String? lastLectureIdFor(String prefix) =>
+      _p.getString('${prefix}last_lecture_id');
+  int lastPositionSecondsFor(String prefix) =>
+      _p.getInt('${prefix}last_position') ?? 0;
+
   // ── Bookmarks ───────────────────────────────────────────────────────────
 
-  Set<String> loadBookmarks() =>
-      Set<String>.from(_p.getStringList('bookmarks') ?? []);
+  Set<String> loadBookmarks({String prefix = ''}) =>
+      Set<String>.from(_p.getStringList('${prefix}bookmarks') ?? []);
 
-  Future<void> saveBookmarks(Set<String> ids) =>
-      _p.setStringList('bookmarks', ids.toList());
+  Future<void> saveBookmarks(Set<String> ids, {String prefix = ''}) =>
+      _p.setStringList('${prefix}bookmarks', ids.toList());
 
   // ── Playback speed ──────────────────────────────────────────────────────
 
@@ -94,11 +102,11 @@ class PreferencesService {
 
   // ── Downloads ───────────────────────────────────────────────────────────
 
-  Set<String> loadDownloadedIds() =>
-      Set<String>.from(_p.getStringList('downloaded_lecture_ids') ?? []);
+  Set<String> loadDownloadedIds({String prefix = ''}) => Set<String>.from(
+      _p.getStringList('${prefix}downloaded_lecture_ids') ?? []);
 
-  Future<void> saveDownloadedIds(Set<String> ids) =>
-      _p.setStringList('downloaded_lecture_ids', ids.toList());
+  Future<void> saveDownloadedIds(Set<String> ids, {String prefix = ''}) =>
+      _p.setStringList('${prefix}downloaded_lecture_ids', ids.toList());
 
   bool get downloadOnWifiOnly => _p.getBool('download_wifi_only') ?? false;
 
@@ -107,11 +115,19 @@ class PreferencesService {
 
   // ── Study mode ──────────────────────────────────────────────────────────
 
-  Set<String> loadStudiedChapterIds() =>
-      Set<String>.from(_p.getStringList('studied_chapter_ids') ?? []);
+  Set<String> loadStudiedChapterIds({String prefix = ''}) => Set<String>.from(
+      _p.getStringList('${prefix}studied_chapter_ids') ?? []);
 
-  Future<void> saveStudiedChapterIds(Set<String> ids) =>
-      _p.setStringList('studied_chapter_ids', ids.toList());
+  Future<void> saveStudiedChapterIds(Set<String> ids, {String prefix = ''}) =>
+      _p.setStringList('${prefix}studied_chapter_ids', ids.toList());
+
+  // ── Selected series ──────────────────────────────────────────────────────
+  // Global (not prefixed) — identifies which series.json entry is active.
+
+  String? get selectedSeriesId => _p.getString('selected_series_id');
+
+  Future<void> saveSelectedSeriesId(String id) =>
+      _p.setString('selected_series_id', id);
 
   // ── Dismissed announcements ─────────────────────────────────────────────
 

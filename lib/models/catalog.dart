@@ -21,6 +21,7 @@ class Book {
   final int lectureCount;
   final String coverImageUrl;
   final String language;
+  final String? titleArabic;
 
   const Book({
     required this.id,
@@ -30,6 +31,7 @@ class Book {
     required this.lectureCount,
     required this.coverImageUrl,
     required this.language,
+    this.titleArabic,
   });
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
@@ -40,6 +42,7 @@ class Book {
         lectureCount: json['lectureCount'] as int,
         coverImageUrl: json['coverImageUrl'] as String,
         language: json['language'] as String? ?? 'ur',
+        titleArabic: json['titleArabic'] as String?,
       );
 }
 
@@ -73,6 +76,7 @@ class Lecture {
   final int durationSeconds;
   final int fileSizeBytes;
   final String? description;
+  final String? titleArabic;
 
   const Lecture({
     required this.id,
@@ -83,6 +87,7 @@ class Lecture {
     required this.durationSeconds,
     required this.fileSizeBytes,
     this.description,
+    this.titleArabic,
   });
 
   factory Lecture.fromJson(Map<String, dynamic> json) => Lecture(
@@ -94,6 +99,7 @@ class Lecture {
         durationSeconds: json['durationSeconds'] as int,
         fileSizeBytes: json['fileSizeBytes'] as int,
         description: json['description'] as String?,
+        titleArabic: json['titleArabic'] as String?,
       );
 }
 

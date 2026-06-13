@@ -76,6 +76,20 @@ class _TileContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (lecture.titleArabic != null) ...[
+                  Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Text(
+                      lecture.titleArabic!,
+                      textAlign: TextAlign.right,
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                ],
                 Text(
                   context.read<LanguageProvider>().resolve(lecture.title),
                   style: context.textTheme.titleMedium?.copyWith(

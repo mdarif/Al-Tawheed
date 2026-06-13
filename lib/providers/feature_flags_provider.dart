@@ -6,10 +6,16 @@ import 'package:myapp/services/remote_content_service.dart';
 
 class FeatureFlagsProvider extends ChangeNotifier {
   Map<String, dynamic> _featuresJson = const {};
+  Map<String, dynamic> _experimentalJson = const {};
 
   /// Parsed on each read so new flags keys stay safe across hot reload and
   /// partial CDN JSON (missing keys fall back via [FeatureFlags.fromJson]).
   FeatureFlags get features => FeatureFlags.fromJson(_featuresJson);
+
+  /// Whether multi-series support (series picker + switcher) is enabled.
+  /// Defaults to `false` — until `series.json` and the Arabic catalog/audio
+  /// are live, the app behaves exactly as it does today.
+  bool get multiSeriesEnabled => _experimentalJson['multiSeries'] == true;
 
   Future<void> load() async {
     try {
@@ -28,6 +34,9 @@ class FeatureFlagsProvider extends ChangeNotifier {
       _featuresJson = Map<String, dynamic>.from(
         raw['features'] as Map<String, dynamic>? ?? {},
       );
+      _experimentalJson = Map<String, dynamic>.from(
+        raw['experimental'] as Map<String, dynamic>? ?? {},
+      );
       notifyListeners();
     } catch (_) {
       // Fetch failed — defaults remain active; no UI impact
@@ -37,6 +46,12 @@ class FeatureFlagsProvider extends ChangeNotifier {
   @visibleForTesting
   void setFeaturesJsonForTest(Map<String, dynamic> json) {
     _featuresJson = json;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void setExperimentalJsonForTest(Map<String, dynamic> json) {
+    _experimentalJson = json;
     notifyListeners();
   }
 }

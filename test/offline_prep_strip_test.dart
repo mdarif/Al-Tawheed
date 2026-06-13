@@ -11,6 +11,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -79,6 +80,7 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: connectivity),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),

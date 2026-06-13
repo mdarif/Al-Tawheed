@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -12,9 +14,11 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
+import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
@@ -56,6 +60,10 @@ final _router = GoRouter(
         ),
         GoRoute(
           path: '/study',
+          redirect: (context, state) =>
+              context.read<SeriesProvider>().currentSeries.hasStudyMode
+                  ? null
+                  : '/home',
           builder: (context, state) => const StudyScreen(),
         ),
         GoRoute(
@@ -63,6 +71,14 @@ final _router = GoRouter(
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+    ),
+
+    // Series picker — root navigator, full-screen (no bottom nav), shown
+    // only to genuinely fresh installs when multi-series is enabled.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/choose-series',
+      builder: (context, state) => const ChooseSeriesScreen(),
     ),
 
     // Bookmarks — root navigator so it opens as a full-screen pushed view
@@ -121,16 +137,38 @@ class MyApp extends StatelessWidget {
             create: (_) => FeatureFlagsProvider()..load(), lazy: false),
         ChangeNotifierProvider(
             create: (_) => AnnouncementsProvider()..load(), lazy: false),
+        // SeriesProvider re-resolves whenever the multiSeries flag updates —
+        // lazy: false so its currentSeries is ready before the providers
+        // below read it.
+        ChangeNotifierProxyProvider<FeatureFlagsProvider, SeriesProvider>(
+          create: (_) => SeriesProvider()..load(false),
+          update: (_, flags, series) {
+            series ??= SeriesProvider();
+            series.load(flags.multiSeriesEnabled);
+            if (flags.multiSeriesEnabled) {
+              unawaited(series.loadManifest());
+            }
+            return series;
+          },
+          lazy: false,
+        ),
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
-        ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) =>
+              ProgressProvider(ctx.read<SeriesProvider>())..load(),
+        ),
         ChangeNotifierProvider(
           create: (ctx) => StudyProgressProvider(
             ctx.read<ProgressProvider>(),
             ctx.read<CatalogProvider>(),
+            ctx.read<SeriesProvider>(),
           )..load(),
         ),
-        ChangeNotifierProvider(create: (_) => DownloadsProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) =>
+              DownloadsProvider(ctx.read<SeriesProvider>())..load(),
+        ),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(
@@ -138,6 +176,7 @@ class MyApp extends StatelessWidget {
             ctx.read<ProgressProvider>(),
             ctx.read<DownloadsProvider>(),
             ctx.read<ConnectivityProvider>(),
+            ctx.read<CatalogProvider>(),
           ),
         ),
         ChangeNotifierProvider(
