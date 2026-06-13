@@ -24,10 +24,11 @@ const _arabicSeries = SeriesConfig(
   hasStudyMode: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
-Widget _wrap({required SeriesProvider series, String initialLocation = '/lectures'}) {
+Widget _wrap(
+    {required SeriesProvider series, String initialLocation = '/lectures'}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
@@ -56,19 +57,23 @@ Widget _wrap({required SeriesProvider series, String initialLocation = '/lecture
             routes: [
               GoRoute(
                 path: '/lectures',
-                builder: (_, __) => const Scaffold(body: Center(child: Text('Lectures'))),
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Lectures'))),
               ),
               GoRoute(
                 path: '/home',
-                builder: (_, __) => const Scaffold(body: Center(child: Text('Home'))),
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Home'))),
               ),
               GoRoute(
                 path: '/study',
-                builder: (_, __) => const Scaffold(body: Center(child: Text('Study'))),
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Study'))),
               ),
               GoRoute(
                 path: '/settings',
-                builder: (_, __) => const Scaffold(body: Center(child: Text('Settings'))),
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Settings'))),
               ),
             ],
           ),

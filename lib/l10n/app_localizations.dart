@@ -633,12 +633,6 @@ abstract class AppLocalizations {
   /// **'Choose Your Series'**
   String get chooseSeriesTitle;
 
-  /// No description provided for @chooseSeriesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick the series you\'d like to study. You can change this later in Settings.'**
-  String get chooseSeriesSubtitle;
-
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:

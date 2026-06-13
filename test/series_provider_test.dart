@@ -13,7 +13,7 @@ const _arabicSeries = SeriesConfig(
   hasStudyMode: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
 void main() {
@@ -50,8 +50,7 @@ void main() {
       expect(provider.hasSelectedSeries, isTrue);
     });
 
-    test('existing progress silently pins to Urdu and persists it',
-        () async {
+    test('existing progress silently pins to Urdu and persists it', () async {
       await PreferencesService.instance.saveProgress('lec-001', 30);
 
       final provider = SeriesProvider()..load(true);
@@ -59,7 +58,8 @@ void main() {
 
       expect(provider.hasSelectedSeries, isTrue);
       expect(provider.currentSeries.id, SeriesConfig.legacyId);
-      expect(PreferencesService.instance.selectedSeriesId, SeriesConfig.legacyId);
+      expect(
+          PreferencesService.instance.selectedSeriesId, SeriesConfig.legacyId);
     });
 
     test('existing bookmarks alone count as legacy data', () async {
@@ -135,7 +135,7 @@ void main() {
               'hasStudyMode': false,
               'language': 'ar',
               'displayName': {'en': 'Kitab at-Tawheed (Arabic)'},
-              'speakerName': {'en': 'Shaykh Salih Al-Fawzan'},
+              'speakerName': {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
             },
           ],
         }),

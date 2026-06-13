@@ -28,7 +28,7 @@ const _arabicSeries = SeriesConfig(
   hasStudyMode: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
 Map<String, dynamic> _catalogJson(String bookId) => {
@@ -95,7 +95,8 @@ Widget _wrap({required SeriesProvider series}) {
           ),
           GoRoute(
             path: '/lectures',
-            builder: (_, __) => const Scaffold(body: Center(child: Text('Lectures'))),
+            builder: (_, __) =>
+                const Scaffold(body: Center(child: Text('Lectures'))),
           ),
         ],
       ),
@@ -121,11 +122,12 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    expect(find.text('Kitab at-Tawheed (Urdu)'), findsOneWidget);
-    expect(find.text('Kitab at-Tawheed (Arabic)'), findsOneWidget);
+    expect(find.text('Kitab at-Tawheed'), findsNWidgets(2));
+    expect(find.text('(Urdu)'), findsOneWidget);
+    expect(find.text('(Arabic)'), findsOneWidget);
     expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
         findsOneWidget);
-    expect(find.text('Shaykh Salih Al-Fawzan'), findsOneWidget);
+    expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsOneWidget);
   });
 
   testWidgets('selecting a series switches to it and continues to /lectures',
@@ -144,7 +146,7 @@ void main() {
     // Tapping shows a CircularProgressIndicator while switching, which
     // animates forever — so settle via runAsync (switchSeries does real
     // async work, e.g. TawheedAudioHandler.stop()) instead of pumpAndSettle().
-    await tester.tap(find.text('Kitab at-Tawheed (Arabic)'));
+    await tester.tap(find.text('(Arabic)'));
     await tester.pump();
 
     await tester.runAsync(() async {

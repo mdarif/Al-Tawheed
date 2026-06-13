@@ -30,7 +30,7 @@ const _arabicSeries = SeriesConfig(
   hasStudyMode: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
 Map<String, dynamic> _lectureJson(String id, int number) => {
@@ -47,15 +47,16 @@ Map<String, dynamic> _catalogJson({
   required String bookId,
   required List<Map<String, dynamic>> chapters,
   required List<Map<String, dynamic>> lectures,
-}) => {
+}) =>
+    {
       'version': 1,
       'book': {
         'id': bookId,
         'title': {'en': 'Test Book'},
         'titleArabic': '',
         'speaker': {'en': 'Speaker'},
-        'totalDurationSeconds': lectures
-            .fold<int>(0, (sum, l) => sum + (l['durationSeconds'] as int)),
+        'totalDurationSeconds': lectures.fold<int>(
+            0, (sum, l) => sum + (l['durationSeconds'] as int)),
         'lectureCount': lectures.length,
         'coverImageUrl': '',
         'language': 'English',
@@ -121,7 +122,12 @@ void main() {
       jsonEncode(_catalogJson(
         bookId: 'legacy-book',
         chapters: const [
-          {'id': 'ch-01', 'number': 1, 'title': {'en': 'Chapter One'}, 'lectureCount': 2},
+          {
+            'id': 'ch-01',
+            'number': 1,
+            'title': {'en': 'Chapter One'},
+            'lectureCount': 2
+          },
         ],
         lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
       )),
@@ -136,14 +142,19 @@ void main() {
     expect(find.byType(LectureTile), findsNWidgets(2));
   });
 
-  testWidgets('renders a flat lecture list with no chapter headers for a series with no chapters',
+  testWidgets(
+      'renders a flat lecture list with no chapter headers for a series with no chapters',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
       jsonEncode(_catalogJson(
         bookId: 'arabic-book',
         chapters: const [],
-        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2), _lectureJson('lec-003', 3)],
+        lectures: [
+          _lectureJson('lec-001', 1),
+          _lectureJson('lec-002', 2),
+          _lectureJson('lec-003', 3)
+        ],
       )),
     );
 

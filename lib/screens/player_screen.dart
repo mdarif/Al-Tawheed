@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
@@ -447,24 +449,32 @@ class _TrackInfo extends StatelessWidget {
         title: player.current?.title.en ?? '',
         studyLabel: player.studyContextLabel,
       ),
-      builder: (_, snapshot, __) => Column(
-        children: [
-          Text(
-            snapshot.studyLabel ?? snapshot.title,
-            style: context.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Shaikh Abdullah Nasir Rahmani Hafizahullah',
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: context.secondaryTextColor,
+      builder: (_, snapshot, __) {
+        final catalog = context.watch<CatalogProvider>().catalog;
+        final speaker = catalog != null
+            ? context.read<LanguageProvider>().resolve(catalog.book.speaker)
+            : '';
+        return Column(
+          children: [
+            Text(
+              snapshot.studyLabel ?? snapshot.title,
+              style: context.textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
-      ),
+            if (speaker.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                speaker,
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: context.secondaryTextColor,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

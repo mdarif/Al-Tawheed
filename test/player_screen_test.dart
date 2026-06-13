@@ -9,6 +9,7 @@ import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -68,6 +69,7 @@ Future<PlayerNotifier> _pumpPlayer(
       ChangeNotifierProvider.value(value: downloadsProvider),
       ChangeNotifierProvider.value(value: connectivityProvider),
       ChangeNotifierProvider.value(value: featureFlags ?? FeatureFlagsProvider()),
+      ChangeNotifierProvider.value(value: CatalogProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,

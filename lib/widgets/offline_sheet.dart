@@ -11,7 +11,12 @@ import 'package:myapp/widgets/confirm_dialog.dart';
 
 void showOfflineSheet(BuildContext context, Lecture lecture) {
   final catalog = context.read<CatalogProvider>().catalog;
-  final chapterLectures = catalog?.lecturesForChapter(lecture.chapterId) ?? [];
+  // Flat-list series (no chapters) have no "whole chapter" concept — treat
+  // each lecture as its own single-item group so the bulk download option
+  // below stays hidden for them.
+  final chapterLectures = (catalog != null && catalog.chapters.isNotEmpty)
+      ? catalog.lecturesForChapter(lecture.chapterId)
+      : <Lecture>[lecture];
 
   showModalBottomSheet<void>(
     context: context,

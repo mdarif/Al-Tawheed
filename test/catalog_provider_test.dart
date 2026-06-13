@@ -27,7 +27,7 @@ const _arabicSeries = SeriesConfig(
   hasStudyMode: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
 Map<String, dynamic> _catalogJson(String bookId) => {

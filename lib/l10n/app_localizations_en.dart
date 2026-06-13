@@ -331,10 +331,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseSeriesTitle => 'Choose Your Series';
 
   @override
-  String get chooseSeriesSubtitle =>
-      'Pick the series you\'d like to study. You can change this later in Settings.';
-
-  @override
   String get languageEnglish => 'English';
 
   @override

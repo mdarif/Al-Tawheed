@@ -319,10 +319,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chooseSeriesTitle => 'اپنا سلسلہ منتخب کریں';
 
   @override
-  String get chooseSeriesSubtitle =>
-      'وہ سلسلہ منتخب کریں جسے آپ پڑھنا چاہتے ہیں۔ آپ بعد میں ترتیبات میں اسے تبدیل کر سکتے ہیں۔';
-
-  @override
   String get languageEnglish => 'English';
 
   @override
@@ -782,10 +778,6 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get chooseSeriesTitle => 'Apna Silsila Muntakhab Karein';
-
-  @override
-  String get chooseSeriesSubtitle =>
-      'Wo silsila muntakhab karein jis ka aap mutala karna chahte hain. Aap baad mein settings mein ise tabdeel kar sakte hain.';
 
   @override
   String get languageEnglish => 'English';

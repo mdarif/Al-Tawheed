@@ -176,9 +176,12 @@ class _LectureListScreenState extends State<LectureListScreen> {
     final title = catalog != null
         ? context.read<LanguageProvider>().resolve(catalog.book.title)
         : context.l10n.appTitle;
+    final speaker = catalog != null
+        ? context.read<LanguageProvider>().resolve(catalog.book.speaker)
+        : '';
     return SliverAppBar(
       pinned: true,
-      expandedHeight: catalog != null ? 140 : 80,
+      expandedHeight: catalog != null ? 158 : 80,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -192,7 +195,18 @@ class _LectureListScreenState extends State<LectureListScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            if (catalog != null)
+            if (speaker.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                speaker,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+              ),
+            ],
+            if (catalog != null) ...[
+              const SizedBox(height: 2),
               Text(
                 '${catalog.book.lectureCount} lectures · '
                 '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}',
@@ -201,6 +215,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
                       fontWeight: FontWeight.w400,
                     ),
               ),
+            ],
           ],
         ),
       ),

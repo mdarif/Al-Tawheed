@@ -69,18 +69,24 @@ Widget _wrap({
   ProgressProvider? progress,
   SeriesProvider? series,
 }) {
-  final catalogProvider = CatalogProvider()..setCatalogForTest(catalog ?? _catalog());
+  final catalogProvider = CatalogProvider()
+    ..setCatalogForTest(catalog ?? _catalog());
 
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: catalogProvider),
-      ChangeNotifierProvider.value(value: progress ?? (ProgressProvider()..load())),
+      ChangeNotifierProvider.value(
+          value: progress ?? (ProgressProvider()..load())),
       ChangeNotifierProvider.value(value: downloads ?? DownloadsProvider()),
-      ChangeNotifierProvider.value(value: connectivity ?? ConnectivityProvider.testOnline()),
-      ChangeNotifierProvider.value(value: featureFlags ?? FeatureFlagsProvider()),
-      ChangeNotifierProvider.value(value: announcements ?? AnnouncementsProvider()),
+      ChangeNotifierProvider.value(
+          value: connectivity ?? ConnectivityProvider.testOnline()),
+      ChangeNotifierProvider.value(
+          value: featureFlags ?? FeatureFlagsProvider()),
+      ChangeNotifierProvider.value(
+          value: announcements ?? AnnouncementsProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
-      ChangeNotifierProvider.value(value: series ?? (SeriesProvider()..load(false))),
+      ChangeNotifierProvider.value(
+          value: series ?? (SeriesProvider()..load(false))),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),
@@ -105,7 +111,8 @@ Widget _wrap({
           GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
           GoRoute(
             path: '/player',
-            builder: (_, __) => const Scaffold(body: Center(child: Text('Player'))),
+            builder: (_, __) =>
+                const Scaffold(body: Center(child: Text('Player'))),
           ),
         ],
       ),
@@ -123,14 +130,16 @@ void main() {
   });
 
   group('HomeScreen — continue listening', () {
-    testWidgets('shows empty state when nothing has been played', (tester) async {
+    testWidgets('shows empty state when nothing has been played',
+        (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
       expect(find.text('Start a lecture to resume here'), findsOneWidget);
     });
 
-    testWidgets('shows lecture title and progress when resuming', (tester) async {
+    testWidgets('shows lecture title and progress when resuming',
+        (tester) async {
       final progress = ProgressProvider()..load();
       await progress.saveProgress('l1', 60);
 
@@ -238,7 +247,8 @@ void main() {
   });
 
   group('HomeScreen — announcements', () {
-    testWidgets('hidden when there are no active announcements', (tester) async {
+    testWidgets('hidden when there are no active announcements',
+        (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
@@ -270,7 +280,8 @@ void main() {
       expect(find.text('Test Announcement'), findsNothing);
     });
 
-    testWidgets('hidden when announcements feature flag is off', (tester) async {
+    testWidgets('hidden when announcements feature flag is off',
+        (tester) async {
       final announcements = AnnouncementsProvider()
         ..setAnnouncementsForTest(const [
           Announcement(
@@ -339,7 +350,7 @@ void main() {
           hasStudyMode: false,
           language: 'ar',
           displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-          speakerName: {'en': 'Shaykh Salih Al-Fawzan'},
+          speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
         ));
 
       await tester.pumpWidget(_wrap(series: series));
