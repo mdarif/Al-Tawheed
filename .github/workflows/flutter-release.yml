@@ -1,9 +1,11 @@
-# CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation)
+# CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation,
+# CD Phase 2 — production-signed APK/AAB)
 #
 # One-click release: dispatch from `develop` with `confirm_promote: true`.
 # This fast-forwards `develop` into `master`, bumps the version, runs CI
-# checks, builds the debug APK, tags the commit, creates a GitHub Release,
-# and syncs the version bump back into `develop` — all in one run.
+# checks, builds a production-signed release APK + AAB, tags the commit,
+# creates a GitHub Release, and syncs the version bump back into `develop` —
+# all in one run.
 #
 # Traditional flow: dispatch from `master` (the promote/sync jobs are
 # skipped) — this is the original CD Phase 1 behaviour, unchanged.
@@ -11,9 +13,12 @@
 # Use `dry_run: true` to run analyze/test/build only — no commits, tags,
 # releases, or pushes of any kind. Useful for testing workflow changes.
 #
-# Prerequisites (one-time GitHub setting):
-#   Settings → Branches → master → Bypass list → add github-actions[bot]
-#   Without this, the version-bump push to master will be rejected.
+# Prerequisites (one-time GitHub settings):
+#   - Settings → Branches → master → Bypass list → add github-actions[bot]
+#     Without this, the version-bump push to master will be rejected.
+#   - Repo secrets for release signing (CD Phase 2): KEYSTORE_BASE64,
+#     KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD (mirrors
+#     android/key.properties). See docs/ci-cd.md -> "One-Time Setup".
 
 name: Release
 
@@ -231,20 +236,51 @@ jobs:
         run: flutter test --reporter=expanded
 
       # ------------------------------------------------------------------ #
-      # 11. Build debug APK
-      #     Signed with the Android debug key — no keystore secret needed.
-      #     Release signing (production key) comes in CD Phase 2.
+      # CD Phase 2 — configure production signing
+      #     Decodes KEYSTORE_BASE64 into android/app/upload-keystore.jks and
+      #     writes android/key.properties from KEY_ALIAS / KEY_PASSWORD /
+      #     STORE_PASSWORD, matching signingConfigs.release in
+      #     android/app/build.gradle. See docs/ci-cd.md -> "One-Time Setup"
+      #     for how to set these secrets.
+      # ------------------------------------------------------------------ #
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$STORE_PASSWORD" ]; then
+            echo "::error::One or more signing secrets (KEYSTORE_BASE64, KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD) are not set. See docs/ci-cd.md -> 'One-Time Setup' -> 'Add CD Phase 2 signing secrets'."
+            exit 1
+          fi
+
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      # ------------------------------------------------------------------ #
+      # 11. Build release APK + AAB
+      #     Signed with the production upload key (configured above) — the
+      #     same signer as Step 1's local `make release-apk` build.
       #     Run integration tests + release APK locally: make release-apk DEVICE=<id>
       # ------------------------------------------------------------------ #
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
 
       # ------------------------------------------------------------------ #
       # 12. Rename APK to include version tag in filename
       # ------------------------------------------------------------------ #
       - name: Rename APK
         run: |
-          mv build/app/outputs/flutter-apk/app-debug.apk \
+          mv build/app/outputs/flutter-apk/app-release.apk \
              "${{ steps.version.outputs.apk }}"
 
       # ------------------------------------------------------------------ #
@@ -333,7 +369,7 @@ jobs:
           [ -z "$CHANGELOG" ] && CHANGELOG="- Maintenance release"
 
           gh release create "${TAG}" \
-            "${APK}#Al-Tawheed Android APK (debug)" \
+            "${APK}#Al-Tawheed Android APK (release, signed)" \
             "play-store-notes.txt#Play Store release notes (plain text)" \
             --title "Al-Tawheed ${TAG}" \
             --notes "## What's changed
@@ -342,7 +378,7 @@ jobs:
 
           ---
           **Build:** \`${NEW_VERSION}\`
-          **APK:** debug build, install via \`adb install ${APK}\`
+          **APK:** release build, signed with the production key — install via \`adb install ${APK}\`
           **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new"
 
       # ------------------------------------------------------------------ #

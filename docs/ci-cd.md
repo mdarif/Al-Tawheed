@@ -12,7 +12,7 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | Local pre-push hook | **Active** | `.githooks/pre-push` |
 | CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
 | CD Phase 1.5 — Promote + sync automation | **Implemented** — not yet used for a release | `.github/workflows/flutter-release.yml` |
-| CD Phase 2 — Signed release APK/AAB | Not started | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
+| CD Phase 2 — Signed release APK/AAB | **Implemented** — needs the 4 signing secrets set, then unused for a release | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
 | CD Phase 3 — Play Store internal-track upload | Not started | `.github/workflows/flutter-release.yml` |
 | CD Phase 4 — Android emulator CI gate | Not started | new: `.github/workflows/flutter-android-emulator.yml` |
 
@@ -72,6 +72,25 @@ Same as develop, plus:
 The release workflow commits a version bump directly to master. Without this, step 14 of the release workflow fails.
 
 **Settings → Branches → Edit master rule → Bypass list → Add `github-actions[bot]`**
+
+### 5. Add CD Phase 2 signing secrets
+
+The release workflow now builds a **production-signed** APK + AAB, using the
+same upload key as `android/key.properties`. Without these 4 repo secrets,
+the "Configure release signing" step fails fast with a clear error.
+
+Run these in your **terminal** — never paste secret values into Claude Code
+chat:
+
+```sh
+# 1. Base64-encode your keystore (KEY_ALIAS is "upload" per android/key.properties)
+base64 -i /path/to/upload-keystore.jks | tr -d '\n' | gh secret set KEYSTORE_BASE64 --repo mdarif/Al-Tawheed
+
+# 2. gh prompts for each value — type it in, it's never echoed or logged
+gh secret set KEY_ALIAS --repo mdarif/Al-Tawheed       # value: upload
+gh secret set KEY_PASSWORD --repo mdarif/Al-Tawheed    # from android/key.properties
+gh secret set STORE_PASSWORD --repo mdarif/Al-Tawheed  # from android/key.properties
+```
 
 ---
 
@@ -159,7 +178,7 @@ Do not use this routinely.
 
 ---
 
-## CD Phase 1 / 1.5 — Release Automation
+## CD Phase 1 / 1.5 / 2 — Release Automation
 
 **Trigger:** manual (`workflow_dispatch`), from `develop` (one-click) or `master` (traditional).
 
@@ -199,7 +218,10 @@ release        (skipped if promote failed)
   - Java 21 + Flutter + Gradle cache, flutter pub get
   - flutter analyze --fatal-warnings   ← refuses to tag a broken build
   - flutter test                        ← refuses to tag a failing build
-  - flutter build apk --debug
+  - Configure release signing (decode KEYSTORE_BASE64 -> upload-keystore.jks,
+    write key.properties from KEY_ALIAS/KEY_PASSWORD/STORE_PASSWORD)
+  - flutter build apk --release
+  - flutter build appbundle --release   (AAB, for CD Phase 3)
   - Rename APK → al-tawheed-X.Y.Z.apk
   - Generate changelog (git-cliff --unreleased) + Play Store notes
   - [skipped if dry_run] Commit version bump -> master (chore: release X.Y.Z),
@@ -297,7 +319,6 @@ CI runs on the PR. Merge when green.
 
 | Constraint | Reason | Resolution |
 |---|---|---|
-| APK is debug-signed | No keystore secret in repo | CD Phase 2 adds production signing |
 | `widget_test.dart` excluded | Stale Flutter template | Delete the file |
 | `flutter analyze --fatal-infos` not used | Third-party packages emit uncontrollable info hints | Intentional |
 | Release requires `github-actions[bot]` bypass | Branch protection blocks bot push to master | One-time setting, documented above |
@@ -306,27 +327,10 @@ CI runs on the PR. Merge when green.
 
 ## Roadmap
 
-Three remaining phases turn the one-click promote/release/sync flow (CD Phase
-1.5, implemented — see "CD Phase 1 / 1.5 — Release Automation" above) into a
-fully automated production release. Each phase removes a specific manual step
-from [release-runbook.md](release-runbook.md).
-
-### CD Phase 2 — Signed release APK/AAB
-
-Removes the "Step 2's locally-built APK is the only properly-signed one"
-caveat from the runbook.
-
-- New secrets — set via `gh secret set <NAME>` in your **terminal**, never
-  pasted in chat: `KEYSTORE_BASE64` (the `.jks`, base64-encoded), `KEY_ALIAS`,
-  `KEY_PASSWORD`, `STORE_PASSWORD` (mirrors `android/key.properties`).
-- New step before "Build debug APK": decode `KEYSTORE_BASE64` to
-  `android/app/upload-keystore.jks`, write `android/key.properties` from the
-  other three secrets (matches `signingConfigs.release` in
-  `android/app/build.gradle`).
-- Switch `flutter build apk --debug` → `flutter build apk --release`, and add
-  `flutter build appbundle --release` for the AAB Phase 3 needs.
-- APK is properly signed and installable without enabling "install from
-  unknown sources".
+Two remaining phases turn the one-click promote/release/sync flow (CD Phases
+1.5 and 2, implemented — see "CD Phase 1 / 1.5 / 2 — Release Automation"
+above) into a fully automated production release. Each phase removes a
+specific manual step from [release-runbook.md](release-runbook.md).
 
 ### CD Phase 3 — Play Store internal-track auto-upload
 

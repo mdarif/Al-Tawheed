@@ -18,6 +18,12 @@ looks like, and what to do if it doesn't go to plan.
       `git status`
 - [ ] An Android device is connected and authorized: `flutter devices`
       (required for Step 1 — the on-device test gate)
+- [ ] (One-time, CD Phase 2) Signing secrets are set —
+      `gh secret list --repo mdarif/Al-Tawheed` should list `KEYSTORE_BASE64`,
+      `KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD`. If any are missing, see
+      [ci-cd.md → One-Time Setup → "Add CD Phase 2 signing
+      secrets"](ci-cd.md#5-add-cd-phase-2-signing-secrets) — Step 2 will fail
+      at "Configure release signing" without them.
 
 ## Step 1 — Run the local release gate
 
@@ -82,11 +88,10 @@ The workflow runs three jobs:
    Fails fast if that's not possible (see Troubleshooting).
 2. **`release`** — bumps `pubspec.yaml`, re-runs analyze + tests (refuses to
    tag a broken build even if Step 1 passed — different machine, same
-   checks), builds a **debug-signed** APK (CD Phase 2 — CI-side production
-   signing isn't wired up yet; Step 1's locally-built APK is the one to
-   distribute), commits the version bump to `master`, tags it, pushes both,
-   and creates a GitHub Release with the APK and an auto-generated
-   changelog.
+   checks), builds a **production-signed** APK + AAB (CD Phase 2 — same
+   upload key as Step 1's local build), commits the version bump to
+   `master`, tags it, pushes both, and creates a GitHub Release with the APK
+   and an auto-generated changelog.
 3. **`sync-develop`** — fast-forward merges `master` (now including the
    version bump + tag) back into `develop` and pushes. This is the step that
    used to be a manual "close out the release" chore — it's now automatic.
@@ -169,8 +174,8 @@ develop" step needed even in this fallback flow.
 - [ ] `develop` and `master` are both up to date locally:
       `git fetch origin --tags`
 - [ ] (Optional) Install the release-workflow APK on a second device to
-      confirm it launches. It's debug-signed (not Step 1's build) — a
-      smoke-test artifact, not for end users or the Play Store.
+      confirm it launches. As of CD Phase 2 it's production-signed (same key
+      as Step 1's build) — a good final smoke test before Step 4.
 
 If the workflow fails, `make ci-logs` fetches the failed run's logs directly
 — no need to open a browser. Common failure points are in Troubleshooting
@@ -197,6 +202,14 @@ flutter build appbundle --release
 ---
 
 ## Troubleshooting
+
+**"Release workflow failed at 'Configure release signing': signing secrets
+are not set"**
+One or more of `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEY_PASSWORD`,
+`STORE_PASSWORD` aren't set as repo secrets yet (CD Phase 2). See
+`docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 2 signing secrets" for the
+exact `gh secret set` commands — run them in your terminal, never paste
+secret values in chat.
 
 **"`release-auto` failed at `promote`: 'not possible to fast-forward'"**
 `master` has diverged from `develop` — most likely someone pushed directly to
