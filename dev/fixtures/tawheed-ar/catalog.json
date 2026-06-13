@@ -29,7 +29,7 @@
         "en": "Dars 1",
         "ar": "الدرس الأول"
       },
-      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-001.mp3",
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/tawheed-ar/lec-001.mp3",
       "durationSeconds": 1260,
       "fileSizeBytes": 14553097,
       "description": null
@@ -42,7 +42,7 @@
         "en": "Dars 2",
         "ar": "الدرس الثاني"
       },
-      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-002.mp3",
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/tawheed-ar/lec-002.mp3",
       "durationSeconds": 1358,
       "fileSizeBytes": 15723992,
       "description": null
@@ -55,7 +55,7 @@
         "en": "Dars 3",
         "ar": "الدرس الثالث"
       },
-      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-003.mp3",
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/tawheed-ar/lec-003.mp3",
       "durationSeconds": 1106,
       "fileSizeBytes": 12973457,
       "description": null
@@ -68,7 +68,7 @@
         "en": "Dars 4",
         "ar": "الدرس الرابع"
       },
-      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-004.mp3",
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/tawheed-ar/lec-004.mp3",
       "durationSeconds": 1263,
       "fileSizeBytes": 14630622,
       "description": null
@@ -81,7 +81,7 @@
         "en": "Dars 5",
         "ar": "الدرس الخامس"
       },
-      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/ar/lec-005.mp3",
+      "audioUrl": "https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/tawheed-ar/lec-005.mp3",
       "durationSeconds": 1024,
       "fileSizeBytes": 10979650,
       "description": null
