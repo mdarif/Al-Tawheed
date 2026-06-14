@@ -108,17 +108,19 @@ class _SeriesCard extends StatelessWidget {
   final SeriesConfig series;
   final VoidCallback onTap;
 
-  /// Splits "Kitab at-Tawheed (Urdu)" into ("Kitab at-Tawheed", "(Urdu)") so
-  /// the language qualifier can be highlighted in the brand color.
+  /// Splits "Kitab at-Tawheed (Urdu)" into ("Kitab at-Tawheed", "Urdu") so
+  /// the language qualifier can be shown as its own metric chip.
   static (String, String?) _splitTitle(String name) {
     final i = name.lastIndexOf(' (');
-    if (i == -1) return (name, null);
-    return (name.substring(0, i), name.substring(i + 1));
+    if (i == -1 || !name.endsWith(')')) return (name, null);
+    final suffix = name.substring(i + 2, name.length - 1);
+    return (name.substring(0, i), suffix.isEmpty ? null : suffix);
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = context.read<LanguageProvider>();
+    final l10n = context.l10n;
     final displayName = lang.resolve(series.displayName);
     final speakerName = lang.resolve(series.speakerName);
     final (baseTitle, suffix) = _splitTitle(displayName);
@@ -135,21 +137,9 @@ class _SeriesCard extends StatelessWidget {
           border: Border.all(color: context.groupedBorder, width: 1),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: context.brandColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.menu_book_rounded,
-                color: context.brandColor,
-                size: 26,
-              ),
-            ),
+            _LanguageThumbnail(series: series),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -160,33 +150,39 @@ class _SeriesCard extends StatelessWidget {
                     style: context.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  if (suffix != null)
-                    Text(
-                      suffix,
-                      style: context.textTheme.titleSmall?.copyWith(
-                        color: context.brandColor,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  if (suffix != null || series.hasStudyMode) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (suffix != null) _MetricChip(label: suffix),
+                        if (series.hasStudyMode)
+                          _MetricChip(
+                            icon: Icons.menu_book_rounded,
+                            label: l10n.studyMode,
+                          ),
+                      ],
                     ),
+                  ],
                   if (speakerName.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Divider(height: 1, color: context.groupedBorder),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.person_outline_rounded,
                           size: 14,
                           color: context.secondaryTextColor,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             speakerName,
-                            style: context.textTheme.bodySmall?.copyWith(
-                                color: context.secondaryTextColor),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            style: context.textTheme.bodySmall
+                                ?.copyWith(color: context.secondaryTextColor),
                           ),
                         ),
                       ],
@@ -195,22 +191,87 @@ class _SeriesCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.elevatedSurface,
-              ),
-              child: Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: context.brandColor,
-              ),
-            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Gold square showing the series' content language in its own script — a
+/// glanceable visual identifier distinguishing the Urdu and Arabic series.
+class _LanguageThumbnail extends StatelessWidget {
+  const _LanguageThumbnail({required this.series});
+
+  final SeriesConfig series;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final label = switch (series.language) {
+      'ar' => l10n.languageArabic,
+      'ur' => l10n.languageUrdu,
+      _ => series.language.toUpperCase(),
+    };
+
+    return Container(
+      width: 56,
+      height: 56,
+      padding: const EdgeInsets.all(8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: context.brandColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: context.onBrandColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small pill used in a series card's metrics row — e.g. the language
+/// qualifier or Study Mode availability.
+class _MetricChip extends StatelessWidget {
+  const _MetricChip({this.icon, required this.label});
+
+  final IconData? icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: context.elevatedSurface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: context.brandColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: context.textTheme.labelSmall?.copyWith(
+              color: context.secondaryTextColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -630,7 +630,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseSeriesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose Your Series'**
+  /// **'Begin Your Journey'**
   String get chooseSeriesTitle;
 
   /// No description provided for @languageEnglish.

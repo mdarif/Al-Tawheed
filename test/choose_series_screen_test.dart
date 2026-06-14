@@ -123,8 +123,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Kitab at-Tawheed'), findsNWidgets(2));
-    expect(find.text('(Urdu)'), findsOneWidget);
-    expect(find.text('(Arabic)'), findsOneWidget);
+    expect(find.text('Urdu'), findsOneWidget);
+    expect(find.text('Arabic'), findsOneWidget);
     expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
         findsOneWidget);
     expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsOneWidget);
@@ -146,7 +146,7 @@ void main() {
     // Tapping shows a CircularProgressIndicator while switching, which
     // animates forever — so settle via runAsync (switchSeries does real
     // async work, e.g. TawheedAudioHandler.stop()) instead of pumpAndSettle().
-    await tester.tap(find.text('(Arabic)'));
+    await tester.tap(find.text('Arabic'));
     await tester.pump();
 
     await tester.runAsync(() async {
