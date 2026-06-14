@@ -3,15 +3,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/offline_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const _arabicSeries = SeriesConfig(
+  id: 'tawheed-ar',
+  catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+  storagePrefix: 'ar_',
+  hasStudyMode: false,
+  language: 'ar',
+  displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+);
+
+/// Single Arabic-series lecture (no chapter section shown).
+Lecture _arabicLec() => Lecture(
+      id: 'lec-ar',
+      number: 2,
+      chapterId: 'ch-ar',
+      title: const {'en': 'Dars 02', 'ar': 'الدرس 2'},
+      audioUrl: 'https://example.com/audio.mp3',
+      durationSeconds: 120,
+      fileSizeBytes: 5 * 1024 * 1024, // 5 MB
+    );
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -88,6 +111,7 @@ Widget _wrap({
   required DownloadsProvider downloads,
   ConnectivityProvider? connectivity,
   List<Lecture> allLectures = const [],
+  SeriesProvider? series,
 }) {
   final chapters = allLectures.isEmpty
       ? <Chapter>[]
@@ -126,6 +150,8 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider.value(
           value: connectivity ?? ConnectivityProvider.testOnline()),
+      ChangeNotifierProvider.value(
+          value: series ?? (SeriesProvider()..load(false))),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     child: MaterialApp.router(
@@ -325,6 +351,110 @@ void main() {
       await tester.pump();
 
       expect(find.byType(SnackBar), findsOneWidget);
+    });
+  });
+
+  // ── Arabic series ─────────────────────────────────────────────────────────
+
+  group('OfflineSheet — Arabic series', () {
+    testWidgets(
+        'shows Arabic lecture title and chrome labels when not downloaded',
+        (tester) async {
+      final lec = _arabicLec();
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        lecture: lec,
+        downloads: DownloadsProvider(),
+        series: series,
+      ));
+      await tester.pumpAndSettle();
+
+      // Header shows the Arabic lecture title, not the English one.
+      expect(find.text('الدرس 2'), findsOneWidget);
+      expect(find.text('Dars 02'), findsNothing);
+
+      // "Download lecture" and "Manage downloads" chrome in Arabic.
+      expect(find.text('تحميل الدرس · 5.0 MB'), findsOneWidget);
+      expect(find.textContaining('Download lecture'), findsNothing);
+      expect(find.text('إدارة التنزيلات'), findsOneWidget);
+      expect(find.text('Manage downloads'), findsNothing);
+    });
+
+    testWidgets(
+        'shows Arabic "Remove download" tile and confirm-dialog buttons when downloaded',
+        (tester) async {
+      final lec = _arabicLec();
+      final downloads = DownloadsProvider()..seedDownloadedForTest(lec.id);
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        lecture: lec,
+        downloads: downloads,
+        series: series,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('إزالة التحميل'), findsOneWidget);
+      expect(find.text('Remove download'), findsNothing);
+
+      await tester.tap(find.text('إزالة التحميل'));
+      await tester.pumpAndSettle();
+
+      // Confirm dialog title, message (lecture title), and confirm/cancel
+      // buttons all render in Arabic.
+      expect(find.text('إزالة التحميل'), findsNWidgets(3));
+      expect(find.text('الدرس 2'), findsNWidgets(2));
+      expect(find.text('إلغاء'), findsOneWidget);
+      expect(find.text('Cancel'), findsNothing);
+    });
+
+    testWidgets('shows Arabic downloading progress label and "Cancel download"',
+        (tester) async {
+      final lec = _arabicLec();
+      final downloads = DownloadsProvider()..seedDownloadingForTest(lec.id);
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        lecture: lec,
+        downloads: downloads,
+        series: series,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('جارٍ التحميل... 50%'), findsOneWidget);
+      expect(find.textContaining('Downloading'), findsNothing);
+      expect(find.text('إلغاء التحميل'), findsOneWidget);
+      expect(find.text('Cancel download'), findsNothing);
+    });
+
+    testWidgets('shows Arabic Wi-Fi-only snackbar message', (tester) async {
+      final lec = _arabicLec();
+      final downloads = DownloadsProvider();
+      await downloads.setDownloadOnWifiOnly(true);
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        lecture: lec,
+        downloads: downloads,
+        connectivity: ConnectivityProvider.testOnlineMobile(),
+        series: series,
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('تحميل الدرس'));
+      await tester.pump();
+
+      expect(find.text('اتصل بشبكة Wi-Fi للتحميل'), findsOneWidget);
+      expect(find.text('Connect to Wi-Fi to download'), findsNothing);
     });
   });
 }

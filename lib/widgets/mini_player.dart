@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
-import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -66,15 +67,28 @@ class _MiniPlayerBar extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Selector<PlayerNotifier, String>(
-                        selector: (_, player) => player.current?.title.en ?? '',
-                        builder: (_, title, __) => Text(
-                          title,
-                          style: context.textTheme.labelMedium?.copyWith(
-                            color: context.primaryTextColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      child: Selector<PlayerNotifier, Map<String, dynamic>?>(
+                        selector: (_, player) => player.current?.title,
+                        builder: (_, titleMap, __) {
+                          final series =
+                              context.read<SeriesProvider>().currentSeries;
+                          final title = context
+                              .read<LanguageProvider>()
+                              .resolveForSeries(titleMap, series);
+                          final titleWidget = Text(
+                            title,
+                            textAlign: series.isRtl ? TextAlign.right : null,
+                            style: context.textTheme.labelMedium?.copyWith(
+                              color: context.primaryTextColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          );
+                          return series.isRtl
+                              ? Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: titleWidget)
+                              : titleWidget;
+                        },
                       ),
                     ),
                     const SizedBox(width: 4),

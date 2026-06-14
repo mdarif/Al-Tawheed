@@ -5,9 +5,22 @@ import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
+
+// Offline-sheet chrome strings shown in Arabic for the Arabic series,
+// independent of the app's UI language (which still governs other
+// screens' navigation/chrome).
+const _arCancelDownload = 'إلغاء التحميل';
+const _arRemoveDownload = 'إزالة التحميل';
+const _arManageDownloads = 'إدارة التنزيلات';
+const _arCancel = 'إلغاء';
+const _arConnectWifiToDownload = 'اتصل بشبكة Wi-Fi للتحميل';
+String _arDownloadLecture(String sizeMb) => 'تحميل الدرس · $sizeMb MB';
+String _arDownloading(int percent) => 'جارٍ التحميل... $percent%';
 
 void showOfflineSheet(BuildContext context, Lecture lecture) {
   final catalog = context.read<CatalogProvider>().catalog;
@@ -29,6 +42,8 @@ void showOfflineSheet(BuildContext context, Lecture lecture) {
         ChangeNotifierProvider.value(value: context.read<DownloadsProvider>()),
         ChangeNotifierProvider.value(
             value: context.read<ConnectivityProvider>()),
+        ChangeNotifierProvider.value(value: context.read<SeriesProvider>()),
+        ChangeNotifierProvider.value(value: context.read<LanguageProvider>()),
       ],
       child: _OfflineSheetContent(
           lecture: lecture, chapterLectures: chapterLectures),
@@ -47,6 +62,7 @@ class _OfflineSheetContent extends StatelessWidget {
     final l10n = context.l10n;
     final downloads = context.watch<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     final status = downloads.statusFor(lecture.id);
     final isDownloaded = status == DownloadStatus.downloaded;
     final isDownloading = status == DownloadStatus.downloading;
@@ -74,7 +90,7 @@ class _OfflineSheetContent extends StatelessWidget {
               const SizedBox(height: 4),
               _SheetTile(
                 icon: Icons.cancel_outlined,
-                label: l10n.offlineCancelDownload,
+                label: isArabic ? _arCancelDownload : l10n.offlineCancelDownload,
                 color: context.colorScheme.error,
                 onTap: () {
                   Navigator.pop(context);
@@ -84,14 +100,16 @@ class _OfflineSheetContent extends StatelessWidget {
             ] else if (isDownloaded) ...[
               _SheetTile(
                 icon: Icons.delete_outline_rounded,
-                label: l10n.offlineRemoveDownload,
+                label: isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
                 color: context.colorScheme.error,
                 onTap: () => _confirmDeleteLecture(context, downloads),
               ),
             ] else ...[
               _SheetTile(
                 icon: Icons.download_rounded,
-                label: l10n.offlineDownloadLecture(sizeMb),
+                label: isArabic
+                    ? _arDownloadLecture(sizeMb)
+                    : l10n.offlineDownloadLecture(sizeMb),
                 onTap: () => _startDownload(context, downloads, connectivity),
               ),
             ],
@@ -121,7 +139,7 @@ class _OfflineSheetContent extends StatelessWidget {
             const SizedBox(height: 4),
             _SheetTile(
               icon: Icons.folder_open_rounded,
-              label: l10n.offlineManageDownloads,
+              label: isArabic ? _arManageDownloads : l10n.offlineManageDownloads,
               color: context.secondaryTextColor,
               onTap: () {
                 // Capture the router and delay the push to the next frame.
@@ -159,9 +177,11 @@ class _OfflineSheetContent extends StatelessWidget {
   bool _wifiOnlyBlocked(BuildContext context, DownloadsProvider downloads,
       ConnectivityProvider connectivity) {
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
+      final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.wifiOnlyBlocked),
+          content: Text(
+              isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -181,37 +201,51 @@ class _OfflineSheetContent extends StatelessWidget {
         ),
       );
 
-  Widget _header(BuildContext context, bool isDownloaded) => Row(
-        children: [
-          Icon(
-            isDownloaded
-                ? Icons.check_circle_outline_rounded
-                : Icons.headphones_rounded,
-            size: 20,
-            color: isDownloaded
-                ? context.brandColor
-                : context.secondaryTextColor,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              lecture.title.en,
-              style: context.textTheme.titleSmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
+  Widget _header(BuildContext context, bool isDownloaded) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final title =
+        context.read<LanguageProvider>().resolveForSeries(lecture.title, series);
+    final titleWidget = Text(
+      title,
+      style: context.textTheme.titleSmall,
+      textAlign: series.isRtl ? TextAlign.right : null,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+    return Row(
+      children: [
+        Icon(
+          isDownloaded
+              ? Icons.check_circle_outline_rounded
+              : Icons.headphones_rounded,
+          size: 20,
+          color:
+              isDownloaded ? context.brandColor : context.secondaryTextColor,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: series.isRtl
+              ? Directionality(
+                  textDirection: TextDirection.rtl, child: titleWidget)
+              : titleWidget,
+        ),
+      ],
+    );
+  }
 
   void _confirmDeleteLecture(
       BuildContext context, DownloadsProvider downloads) {
     final l10n = context.l10n;
+    final series = context.read<SeriesProvider>().currentSeries;
+    final isArabic = series.isRtl;
+    final title =
+        context.read<LanguageProvider>().resolveForSeries(lecture.title, series);
     showConfirmDialog(
       context,
-      title: l10n.offlineRemoveDownload,
-      message: lecture.title.en,
-      confirmLabel: l10n.offlineRemoveDownload,
+      title: isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
+      message: title,
+      confirmLabel: isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
+      cancelLabel: isArabic ? _arCancel : 'Cancel',
       destructive: true,
     ).then((confirmed) {
       if (confirmed && context.mounted) {
@@ -239,6 +273,7 @@ class _ProgressRow extends StatelessWidget {
     );
     final l10n = context.l10n;
     final percent = (progress * 100).round();
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -246,7 +281,7 @@ class _ProgressRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.offlineDownloading(percent),
+            isArabic ? _arDownloading(percent) : l10n.offlineDownloading(percent),
             style: context.textTheme.bodySmall
                 ?.copyWith(color: context.secondaryTextColor),
           ),

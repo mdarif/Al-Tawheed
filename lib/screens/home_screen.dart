@@ -90,6 +90,23 @@ class _ContinueListeningCard extends StatelessWidget {
     final savedSeconds = progress.getPositionSeconds(lastId);
     final remaining = lecture.durationSeconds - savedSeconds;
     final l10n = context.l10n;
+    final series = context.read<SeriesProvider>().currentSeries;
+    final lectureTitle =
+        context.read<LanguageProvider>().resolveForSeries(lecture.title, series);
+    final titleWidget = SizedBox(
+      width: double.infinity,
+      child: Text(
+        lectureTitle,
+        textAlign: series.isRtl ? TextAlign.right : null,
+        style: context.textTheme.titleMedium?.copyWith(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+    final titleCell = series.isRtl
+        ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
+        : titleWidget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,13 +150,7 @@ class _ContinueListeningCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            context.read<LanguageProvider>().resolve(lecture.title),
-                            style: context.textTheme.titleMedium?.copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          titleCell,
                           const SizedBox(height: 3),
                           Text(
                             l10n.listenedDuration(

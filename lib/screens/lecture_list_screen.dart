@@ -173,51 +173,76 @@ class _LectureListScreenState extends State<LectureListScreen> {
   }
 
   SliverAppBar _buildAppBar(Catalog? catalog) {
+    final lang = context.read<LanguageProvider>();
+    final series = context.read<SeriesProvider>().currentSeries;
+    final isArabicContent = catalog != null && series.isRtl;
+
     final title = catalog != null
-        ? context.read<LanguageProvider>().resolve(catalog.book.title)
+        ? lang.resolveForSeries(catalog.book.title, series)
         : context.l10n.appTitle;
     final speaker = catalog != null
-        ? context.read<LanguageProvider>().resolve(catalog.book.speaker)
+        ? lang.resolveForSeries(catalog.book.speaker, series)
         : '';
+    final countLine = catalog == null
+        ? ''
+        : isArabicContent
+            ? '${toArabicDigits(catalog.book.lectureCount)} محاضرة · '
+                '${DurationFormatter.toArabicHoursMinutes(catalog.book.totalDurationSeconds)}'
+            : '${catalog.book.lectureCount} lectures · '
+                '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}';
+
+    final titleColumn = SizedBox(
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            textAlign: isArabicContent ? TextAlign.right : null,
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (speaker.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              speaker,
+              textAlign: isArabicContent ? TextAlign.right : null,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+            ),
+          ],
+          if (countLine.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              countLine,
+              textAlign: isArabicContent ? TextAlign.right : null,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+
     return SliverAppBar(
       pinned: true,
+      centerTitle: false,
       expandedHeight: catalog != null ? 158 : 80,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: context.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (speaker.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(
-                speaker,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                    ),
-              ),
-            ],
-            if (catalog != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                '${catalog.book.lectureCount} lectures · '
-                '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-              ),
-            ],
-          ],
-        ),
+        title: isArabicContent
+            ? Directionality(
+                textDirection: TextDirection.rtl,
+                child: titleColumn,
+              )
+            : titleColumn,
       ),
     );
   }

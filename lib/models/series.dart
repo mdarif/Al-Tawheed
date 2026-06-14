@@ -23,6 +23,12 @@ class SeriesConfig {
     required this.speakerName,
   });
 
+  /// Whether this series' content (titles, speaker names, lecture
+  /// titles, etc.) is right-to-left Arabic — used to force Arabic-script
+  /// display for that content independent of the app's UI language, which
+  /// governs navigation/chrome separately.
+  bool get isRtl => language == 'ar';
+
   factory SeriesConfig.fromJson(Map<String, dynamic> json) => SeriesConfig(
         id: json['id'] as String,
         catalogUrl: json['catalogUrl'] as String,

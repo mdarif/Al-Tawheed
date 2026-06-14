@@ -6,6 +6,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -90,13 +91,7 @@ class _TileContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                 ],
-                Text(
-                  context.read<LanguageProvider>().resolve(lecture.title),
-                  style: context.textTheme.titleMedium?.copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                _buildTitle(context),
                 const SizedBox(height: 3),
                 Text(
                   DurationFormatter.fromSeconds(lecture.durationSeconds),
@@ -110,6 +105,26 @@ class _TileContent extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final title = context.read<LanguageProvider>().resolveForSeries(
+          lecture.title,
+          series,
+        );
+    final style = context.textTheme.titleMedium?.copyWith(
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+    );
+
+    if (series.isRtl) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Text(title, textAlign: TextAlign.right, style: style),
+      );
+    }
+    return Text(title, style: style);
   }
 }
 

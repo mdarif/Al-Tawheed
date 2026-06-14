@@ -33,11 +33,15 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
-Map<String, dynamic> _lectureJson(String id, int number) => {
+Map<String, dynamic> _lectureJson(String id, int number, {String? titleAr}) =>
+    {
       'id': id,
       'number': number,
       'chapterId': 'ch-01',
-      'title': {'en': 'Lecture $number'},
+      'title': {
+        'en': 'Lecture $number',
+        if (titleAr != null) 'ar': titleAr,
+      },
       'audioUrl': 'https://example.com/$id.mp3',
       'durationSeconds': 60,
       'fileSizeBytes': 1000,
@@ -47,14 +51,16 @@ Map<String, dynamic> _catalogJson({
   required String bookId,
   required List<Map<String, dynamic>> chapters,
   required List<Map<String, dynamic>> lectures,
+  Map<String, dynamic>? bookTitle,
+  Map<String, dynamic>? bookSpeaker,
 }) =>
     {
       'version': 1,
       'book': {
         'id': bookId,
-        'title': {'en': 'Test Book'},
+        'title': bookTitle ?? {'en': 'Test Book'},
         'titleArabic': '',
-        'speaker': {'en': 'Speaker'},
+        'speaker': bookSpeaker ?? {'en': 'Speaker'},
         'totalDurationSeconds': lectures.fold<int>(
             0, (sum, l) => sum + (l['durationSeconds'] as int)),
         'lectureCount': lectures.length,
@@ -170,5 +176,42 @@ void main() {
     expect(find.text('Lecture 1'), findsOneWidget);
     expect(find.text('Lecture 2'), findsOneWidget);
     expect(find.text('Lecture 3'), findsOneWidget);
+  });
+
+  testWidgets(
+      'renders Arabic book/speaker/lecture titles and a left-aligned header for the Arabic series',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+        bookSpeaker: const {
+          'en': 'Shaikh Salih al-Fawzan Hafizahullah',
+          'ar': 'الشيخ صالح الفوزان حفظه الله',
+        },
+        lectures: [
+          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+        ],
+      )),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    final appBar = tester.widget<SliverAppBar>(find.byType(SliverAppBar));
+    expect(appBar.centerTitle, isFalse);
+
+    expect(find.text('كتاب التوحيد'), findsOneWidget);
+    expect(find.text('الشيخ صالح الفوزان حفظه الله'), findsOneWidget);
+    expect(find.textContaining('محاضرة'), findsOneWidget);
+    expect(find.text('الدرس الأول'), findsOneWidget);
+    expect(find.text('الدرس الثاني'), findsOneWidget);
   });
 }

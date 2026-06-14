@@ -40,6 +40,16 @@ const _ch1 = Chapter(
   lectureCount: 5,
 );
 
+const _arabicSeries = SeriesConfig(
+  id: 'tawheed-ar',
+  catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+  storagePrefix: 'ar_',
+  hasStudyMode: false,
+  language: 'ar',
+  displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+);
+
 Lecture _lec(String id, int num) => Lecture(
       id: id,
       number: num,
@@ -50,7 +60,19 @@ Lecture _lec(String id, int num) => Lecture(
       fileSizeBytes: 1048576,
     );
 
+Lecture _arabicLec(String id, int num) => Lecture(
+      id: id,
+      number: num,
+      chapterId: 'ch-1',
+      title: {'en': 'Lecture $num', 'ar': 'الدرس $num'},
+      audioUrl: 'https://example.com/$id.mp3',
+      durationSeconds: 600,
+      fileSizeBytes: 1048576,
+    );
+
 final _lectures = List.generate(5, (i) => _lec('l${i + 1}', i + 1));
+final _arabicLectures =
+    List.generate(5, (i) => _arabicLec('l${i + 1}', i + 1));
 
 Catalog _catalog({List<DailyBenefit> dailyBenefits = const []}) => Catalog(
       version: 1,
@@ -58,6 +80,25 @@ Catalog _catalog({List<DailyBenefit> dailyBenefits = const []}) => Catalog(
       chapters: const [_ch1],
       lectures: _lectures,
       dailyBenefits: dailyBenefits,
+    );
+
+Catalog _arabicCatalog() => Catalog(
+      version: 1,
+      book: const Book(
+        id: 'arabic-book',
+        title: {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+        speaker: {
+          'en': 'Shaikh Salih al-Fawzan Hafizahullah',
+          'ar': 'الشيخ صالح الفوزان حفظه الله',
+        },
+        totalDurationSeconds: 3000,
+        lectureCount: 5,
+        coverImageUrl: '',
+        language: 'Arabic',
+      ),
+      chapters: const [],
+      lectures: _arabicLectures,
+      dailyBenefits: const [],
     );
 
 Widget _wrap({
@@ -166,6 +207,29 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Player'), findsOneWidget);
+    });
+
+    testWidgets(
+        'shows the Arabic lecture title for the Arabic series, with l10n chrome unchanged',
+        (tester) async {
+      final progress = ProgressProvider()..load();
+      await progress.saveProgress('l1', 60);
+
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        progress: progress,
+        series: series,
+        catalog: _arabicCatalog(),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('الدرس 1'), findsOneWidget);
+      expect(find.text('Lecture 1'), findsNothing);
+      expect(find.text('1:00 listened · 9:00 left'), findsOneWidget);
+      expect(find.text('10% complete'), findsOneWidget);
     });
   });
 
@@ -343,15 +407,7 @@ void main() {
         (tester) async {
       final series = SeriesProvider()
         ..load(false)
-        ..setCurrentSeriesForTest(const SeriesConfig(
-          id: 'tawheed-ar',
-          catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
-          storagePrefix: 'ar_',
-          hasStudyMode: false,
-          language: 'ar',
-          displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-          speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
-        ));
+        ..setCurrentSeriesForTest(_arabicSeries);
 
       await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();

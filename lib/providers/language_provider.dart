@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 /// Supported language codes.
@@ -103,6 +104,19 @@ class LanguageProvider extends ChangeNotifier {
     // Terminal — English always exists
     final en = field['en'];
     return en is String ? en : '';
+  }
+
+  /// Resolve a multilingual field map for content belonging to [series].
+  ///
+  /// Arabic-series content (`series.isRtl`) displays in Arabic regardless of
+  /// the app's UI language — navigation/chrome stay governed by [resolve].
+  /// Falls back to [resolve] when no `ar` entry exists.
+  String resolveForSeries(Map<String, dynamic>? field, SeriesConfig series) {
+    if (series.isRtl) {
+      final ar = field?['ar'];
+      if (ar is String && ar.isNotEmpty) return ar;
+    }
+    return resolve(field);
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

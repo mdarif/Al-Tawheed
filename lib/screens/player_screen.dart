@@ -10,6 +10,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
@@ -20,11 +21,25 @@ import 'package:myapp/widgets/download_button.dart';
 import 'package:myapp/widgets/offline_sheet.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 
+// Player-screen chrome strings shown in Arabic for the Arabic series,
+// independent of the app's UI language (which still governs other
+// screens' navigation/chrome).
+const _arNowPlaying = 'يتم التشغيل الآن';
+const _arStreaming = 'بث مباشر';
+const _arSavedOffline = 'محفوظ للاستماع دون اتصال';
+const _arNotAvailableOffline = 'غير متاح دون اتصال';
+const _arNoConnection = 'لا يوجد اتصال';
+const _arConnectionLost = 'انقطع الاتصال';
+const _arBookmark = 'إضافة إشارة مرجعية';
+const _arRemoveBookmark = 'إزالة الإشارة المرجعية';
+String _arDownloading(int percent) => 'جارٍ التحميل... $percent%';
+
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     return _NextBlockedListener(
       child: _StudyCompletionListener(
         child: Scaffold(
@@ -34,7 +49,7 @@ class PlayerScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              'Now Playing',
+              isArabic ? _arNowPlaying : 'Now Playing',
               style: context.textTheme.titleMedium?.copyWith(fontSize: 14),
             ),
             centerTitle: true,
@@ -303,11 +318,14 @@ class _OfflineStatusStrip extends StatelessWidget {
     OfflineStripResolution resolution,
   ) {
     final l10n = context.l10n;
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
           icon: Icons.download_rounded,
-          label: l10n.offlineDownloading(resolution.downloadPercent),
+          label: isArabic
+              ? _arDownloading(resolution.downloadPercent)
+              : l10n.offlineDownloading(resolution.downloadPercent),
           fgColor: context.brandColor,
           bgColor: context.brandColor,
           showProgress: true,
@@ -315,35 +333,37 @@ class _OfflineStatusStrip extends StatelessWidget {
         ),
       OfflineStripKind.saved => _StripConfig(
           icon: Icons.check_circle_outline_rounded,
-          label: l10n.offlineSourceSaved,
+          label: isArabic ? _arSavedOffline : l10n.offlineSourceSaved,
           fgColor: const Color(0xFF2E7D32),
           bgColor: const Color(0xFF2E7D32),
           tappable: true,
         ),
       OfflineStripKind.streaming => _StripConfig(
           icon: Icons.podcasts_rounded,
-          label: l10n.offlineSourceStreaming,
+          label: isArabic ? _arStreaming : l10n.offlineSourceStreaming,
           fgColor: context.secondaryTextColor,
           bgColor: context.brandColor,
           tappable: true,
         ),
       OfflineStripKind.connectionLost => _StripConfig(
           icon: Icons.wifi_off_rounded,
-          label: l10n.offlineConnectionLost,
+          label: isArabic ? _arConnectionLost : l10n.offlineConnectionLost,
           fgColor: context.colorScheme.error,
           bgColor: context.colorScheme.error,
           tappable: true,
         ),
       OfflineStripKind.noConnection => _StripConfig(
           icon: Icons.wifi_off_rounded,
-          label: l10n.offlineNoConnection,
+          label: isArabic ? _arNoConnection : l10n.offlineNoConnection,
           fgColor: const Color(0xFFE65100),
           bgColor: const Color(0xFFE65100),
           tappable: true,
         ),
       OfflineStripKind.notAvailableOffline => _StripConfig(
           icon: Icons.cloud_off_rounded,
-          label: l10n.offlineNotAvailableOffline,
+          label: isArabic
+              ? _arNotAvailableOffline
+              : l10n.offlineNotAvailableOffline,
           fgColor: const Color(0xFFE65100),
           bgColor: const Color(0xFFE65100),
           tappable: true,
@@ -401,6 +421,14 @@ class _CoverArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final catalog = context.watch<CatalogProvider>().catalog;
+    final wordmark = series.isRtl && catalog != null
+        ? context
+            .read<LanguageProvider>()
+            .resolveForSeries(catalog.book.title, series)
+        : 'شرح كتاب التوحيد';
+
     return Container(
       width: 240,
       height: 240,
@@ -425,7 +453,7 @@ class _CoverArt extends StatelessWidget {
               size: 72, color: context.brandColor),
           const SizedBox(height: 12),
           Text(
-            'شرح كتاب التوحيد',
+            wordmark,
             style: context.textTheme.titleMedium?.copyWith(
               color: context.brandColor,
               letterSpacing: 0.5,
@@ -444,20 +472,26 @@ class _TrackInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final lang = context.read<LanguageProvider>();
     return Selector<PlayerNotifier, _TrackInfoSnapshot>(
       selector: (_, player) => _TrackInfoSnapshot(
-        title: player.current?.title.en ?? '',
+        lectureId: player.current?.id,
+        title: player.current?.title,
         studyLabel: player.studyContextLabel,
       ),
       builder: (_, snapshot, __) {
         final catalog = context.watch<CatalogProvider>().catalog;
         final speaker = catalog != null
-            ? context.read<LanguageProvider>().resolve(catalog.book.speaker)
+            ? lang.resolveForSeries(catalog.book.speaker, series)
             : '';
-        return Column(
+        final title =
+            snapshot.studyLabel ?? lang.resolveForSeries(snapshot.title, series);
+
+        final content = Column(
           children: [
             Text(
-              snapshot.studyLabel ?? snapshot.title,
+              title,
               style: context.textTheme.headlineSmall,
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -470,29 +504,39 @@ class _TrackInfo extends StatelessWidget {
                 style: context.textTheme.bodyMedium?.copyWith(
                   color: context.secondaryTextColor,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ],
         );
+
+        return series.isRtl
+            ? Directionality(textDirection: TextDirection.rtl, child: content)
+            : content;
       },
     );
   }
 }
 
 class _TrackInfoSnapshot {
-  final String title;
+  final String? lectureId;
+  final Map<String, dynamic>? title;
   final String? studyLabel;
 
-  const _TrackInfoSnapshot({required this.title, required this.studyLabel});
+  const _TrackInfoSnapshot({
+    required this.lectureId,
+    required this.title,
+    required this.studyLabel,
+  });
 
   @override
   bool operator ==(Object other) =>
       other is _TrackInfoSnapshot &&
-      other.title == title &&
+      other.lectureId == lectureId &&
       other.studyLabel == studyLabel;
 
   @override
-  int get hashCode => Object.hash(title, studyLabel);
+  int get hashCode => Object.hash(lectureId, studyLabel);
 }
 
 // ── Seek bar ─────────────────────────────────────────────────────────────────
@@ -717,9 +761,12 @@ class _BookmarkButton extends StatelessWidget {
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
     );
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return IconButton(
-      tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark',
+      tooltip: isArabic
+          ? (isBookmarked ? _arRemoveBookmark : _arBookmark)
+          : (isBookmarked ? 'Remove bookmark' : 'Bookmark'),
       icon: Icon(
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
         color: isBookmarked ? context.brandColor : context.primaryTextColor,
