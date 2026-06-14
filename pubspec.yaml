@@ -44,6 +44,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   patrol: ^4.6.1
+  # Faking ConnectivityPlatform in connectivity_provider_test.dart
+  connectivity_plus_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.8
 
 patrol:
   app_name: At-Tawheed
