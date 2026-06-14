@@ -97,14 +97,15 @@ jobs:
           arch: x86_64
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          # android-emulator-runner runs each line of `script` as its own
+          # `sh -c` invocation (not as one multi-line script), so the
+          # `flutter test` command must stay on a single line — a trailing
+          # `\` continuation becomes a literal extra argument that Flutter
+          # misclassifies as a unit-test path.
           script: |
-            set +e
-            flutter test integration_test/app_test.dart \
-              -d emulator-5554 \
-              --timeout 15m
-            status=$?
+            flutter test integration_test/app_test.dart -d emulator-5554 --timeout 15m; echo $? > /tmp/flutter_test_status
             adb logcat -d > /tmp/emulator.log
-            exit $status
+            exit $(cat /tmp/flutter_test_status)
 
       # ------------------------------------------------------------------ #
       # 8. Upload logcat on failure (attached to the workflow run)
