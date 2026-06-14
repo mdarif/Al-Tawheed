@@ -5,10 +5,16 @@ import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
+
+// Confirm-delete dialog chrome shown in Arabic for the Arabic series,
+// matching offline_sheet.dart's per-lecture delete confirmation.
+const _arRemoveDownload = 'إزالة التحميل';
+const _arCancel = 'إلغاء';
 
 class OfflineLibraryScreen extends StatelessWidget {
   const OfflineLibraryScreen({super.key});
@@ -19,16 +25,39 @@ class OfflineLibraryScreen extends StatelessWidget {
     final catalog = context.watch<CatalogProvider>().catalog;
     final downloads = context.watch<DownloadsProvider>();
 
-    final chaptersWithDownloads = catalog == null
-        ? <_ChapterGroup>[]
-        : catalog.chapters
-            .map((ch) {
-              final lectures = catalog.lecturesForChapter(ch.id);
-              final saved = lectures.where((l) => downloads.isDownloaded(l.id)).toList();
-              return _ChapterGroup(chapter: ch, allLectures: lectures, savedLectures: saved);
-            })
-            .where((g) => g.savedLectures.isNotEmpty)
-            .toList();
+    if (catalog == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.offlineLibrary)),
+        body: _EmptyState(),
+      );
+    }
+
+    if (catalog.chapters.isEmpty) {
+      // Flat series (e.g. standalone duroos) — no chapter grouping, just
+      // list the downloaded lectures directly.
+      final saved = catalog.lectures
+          .where((l) => downloads.isDownloaded(l.id))
+          .toList();
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.offlineLibrary)),
+        body: saved.isEmpty
+            ? _EmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.only(top: 8, bottom: 32),
+                itemCount: saved.length,
+                itemBuilder: (context, i) => _LectureTile(lecture: saved[i]),
+              ),
+      );
+    }
+
+    final chaptersWithDownloads = catalog.chapters
+        .map((ch) {
+          final lectures = catalog.lecturesForChapter(ch.id);
+          final saved = lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+          return _ChapterGroup(chapter: ch, allLectures: lectures, savedLectures: saved);
+        })
+        .where((g) => g.savedLectures.isNotEmpty)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.offlineLibrary)),
@@ -251,9 +280,24 @@ class _LectureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final title = context
+        .read<LanguageProvider>()
+        .resolveForSeries(lecture.title, series);
     final sizeMb = lecture.fileSizeBytes > 0
         ? '${(lecture.fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB'
         : '';
+
+    final titleWidget = Text(
+      title,
+      style: context.textTheme.bodyMedium,
+      textAlign: series.isRtl ? TextAlign.right : null,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final removeLabel =
+        series.isRtl ? _arRemoveDownload : context.l10n.offlineRemoveDownload;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -271,12 +315,9 @@ class _LectureTile extends StatelessWidget {
               ?.copyWith(color: context.brandColor),
         ),
       ),
-      title: Text(
-        context.read<LanguageProvider>().resolve(lecture.title),
-        style: context.textTheme.bodyMedium,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: series.isRtl
+          ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
+          : titleWidget,
       subtitle: Text(
         '${DurationFormatter.fromSeconds(lecture.durationSeconds)}  ·  $sizeMb',
         style: context.textTheme.bodySmall
@@ -285,19 +326,21 @@ class _LectureTile extends StatelessWidget {
       trailing: IconButton(
         icon: Icon(Icons.delete_outline_rounded,
             size: 20, color: context.mutedIconColor),
-        onPressed: () => _confirmDelete(context),
-        tooltip: context.l10n.offlineRemoveDownload,
+        onPressed: () => _confirmDelete(context, title, removeLabel),
+        tooltip: removeLabel,
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context) async {
-    final l10n = context.l10n;
+  void _confirmDelete(
+      BuildContext context, String title, String removeLabel) async {
+    final series = context.read<SeriesProvider>().currentSeries;
     final confirmed = await showConfirmDialog(
       context,
-      title: l10n.offlineRemoveDownload,
-      message: lecture.title.en,
-      confirmLabel: l10n.offlineRemoveDownload,
+      title: removeLabel,
+      message: title,
+      confirmLabel: removeLabel,
+      cancelLabel: series.isRtl ? _arCancel : 'Cancel',
       destructive: true,
     );
     if (confirmed && context.mounted) {

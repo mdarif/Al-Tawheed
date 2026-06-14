@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -56,17 +58,59 @@ Catalog _catalog() => Catalog(
       dailyBenefits: const [],
     );
 
+// ── Arabic series fixtures (flat list, no chapters) ─────────────────────────
+
+const _arabicSeries = SeriesConfig(
+  id: 'tawheed-ar',
+  catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+  storagePrefix: 'ar_',
+  hasStudyMode: false,
+  language: 'ar',
+  displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+);
+
+Lecture _arabicLec(String id, int num) => Lecture(
+      id: id,
+      number: num,
+      chapterId: 'ch-ar',
+      title: {'en': 'Dars 0$num', 'ar': 'الدرس $num'},
+      audioUrl: 'https://example.com/$id.mp3',
+      durationSeconds: 120,
+      fileSizeBytes: 5 * 1024 * 1024,
+    );
+
+Catalog _arabicCatalog() => Catalog(
+      version: 1,
+      book: const Book(
+        id: 'arabic-book',
+        title: {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+        speaker: {'en': 'Shaikh', 'ar': 'الشيخ'},
+        totalDurationSeconds: 0,
+        lectureCount: 2,
+        coverImageUrl: '',
+        language: 'Arabic',
+      ),
+      chapters: const [],
+      lectures: [_arabicLec('ar-1', 1), _arabicLec('ar-2', 2)],
+      dailyBenefits: const [],
+    );
+
 // ── Widget helpers ────────────────────────────────────────────────────────────
 
-Widget _wrap(DownloadsProvider downloads) {
+Widget _wrap(DownloadsProvider downloads,
+    {Catalog? catalog, SeriesProvider? series}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(
-          create: (_) => CatalogProvider()..setCatalogForTest(_catalog())),
+          create: (_) =>
+              CatalogProvider()..setCatalogForTest(catalog ?? _catalog())),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(
           create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider.value(
+          value: series ?? (SeriesProvider()..load(false))),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -226,6 +270,75 @@ void main() {
       expect(downloads.isDownloaded('l1'), isTrue);
       expect(downloads.isDownloaded('l2'), isTrue);
       expect(downloads.isDownloaded('l3'), isTrue);
+    });
+  });
+
+  // ── Arabic series (flat list, no chapters) ──────────────────────────────
+
+  group('OfflineLibraryScreen — Arabic series (flat list)', () {
+    testWidgets(
+        'shows the downloaded Arabic lecture without chapter grouping',
+        (tester) async {
+      final downloads = DownloadsProvider()..seedDownloadedForTest('ar-1');
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(
+          _wrap(downloads, catalog: _arabicCatalog(), series: series));
+      await tester.pumpAndSettle();
+
+      // Downloaded lecture shows its Arabic title, not the English one.
+      expect(find.text('الدرس 1'), findsOneWidget);
+      expect(find.text('Dars 01'), findsNothing);
+
+      // Only the downloaded lecture is listed.
+      expect(find.text('الدرس 2'), findsNothing);
+
+      // No chapter section/header for the flat series.
+      expect(find.byType(ListView), findsOneWidget);
+    });
+
+    testWidgets(
+        'shows empty state when nothing is downloaded for the Arabic series',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(DownloadsProvider(),
+          catalog: _arabicCatalog(), series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No downloads yet'), findsOneWidget);
+      expect(find.byType(ListView), findsNothing);
+    });
+
+    testWidgets(
+        'delete icon shows Arabic confirm dialog with the Arabic lecture title',
+        (tester) async {
+      final downloads = DownloadsProvider()..seedDownloadedForTest('ar-1');
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(
+          _wrap(downloads, catalog: _arabicCatalog(), series: series));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+
+      // Dialog title + confirm button both read "إزالة التحميل".
+      expect(find.text('إزالة التحميل'), findsNWidgets(2));
+      expect(find.text('Remove download'), findsNothing);
+
+      // Dialog message shows the Arabic lecture title (list tile + dialog).
+      expect(find.text('الدرس 1'), findsNWidgets(2));
+
+      // Cancel button reads "إلغاء", not "Cancel".
+      expect(find.text('إلغاء'), findsOneWidget);
+      expect(find.text('Cancel'), findsNothing);
     });
   });
 }
