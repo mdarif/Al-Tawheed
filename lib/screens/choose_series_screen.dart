@@ -7,6 +7,10 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
+// Arabic subtitle shown beneath the title, mirroring WelcomeScreen's
+// bilingual title — independent of the app's UI language.
+const _arChooseSeriesTitle = 'ابدأ رحلتك في التوحيد';
+
 /// Shown once to a genuinely fresh install when multi-series is enabled and
 /// more than one series is on offer. Selecting a card switches to that
 /// series and proceeds straight to the lectures list.
@@ -35,67 +39,88 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: context.brandColor.withValues(alpha: 0.12),
-                  ),
-                  child: Icon(
-                    Icons.auto_stories_rounded,
-                    color: context.brandColor,
-                    size: 32,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color:
+                                  context.brandColor.withValues(alpha: 0.12),
+                            ),
+                            child: Icon(
+                              Icons.auto_stories_rounded,
+                              color: context.brandColor,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.chooseSeriesTitle,
+                          textAlign: TextAlign.center,
+                          style: context.textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _arChooseSeriesTitle,
+                          textAlign: TextAlign.center,
+                          style: context.textTheme.titleMedium?.copyWith(
+                            color: context.brandColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: context.brandColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        AbsorbPointer(
+                          absorbing: _switching,
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < available.length; i++) ...[
+                                if (i > 0) const SizedBox(height: 16),
+                                _SeriesCard(
+                                  series: available[i],
+                                  onTap: () => _select(available[i]),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (_switching) ...[
+                          const SizedBox(height: 16),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.chooseSeriesTitle,
-                textAlign: TextAlign.center,
-                style: context.textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: context.brandColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: AbsorbPointer(
-                  absorbing: _switching,
-                  child: ListView.separated(
-                    itemCount: available.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final series = available[index];
-                      return _SeriesCard(
-                        series: series,
-                        onTap: () => _select(series),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              if (_switching) ...[
-                const SizedBox(height: 16),
-                const Center(child: CircularProgressIndicator()),
-              ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -150,7 +175,9 @@ class _SeriesCard extends StatelessWidget {
                     style: context.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  if (suffix != null || series.hasStudyMode) ...[
+                  if (suffix != null ||
+                      series.hasStudyMode ||
+                      series.hasBook) ...[
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -161,6 +188,11 @@ class _SeriesCard extends StatelessWidget {
                           _MetricChip(
                             icon: Icons.menu_book_rounded,
                             label: l10n.studyMode,
+                          ),
+                        if (series.hasBook)
+                          _MetricChip(
+                            icon: Icons.menu_book_rounded,
+                            label: l10n.tabBook,
                           ),
                       ],
                     ),

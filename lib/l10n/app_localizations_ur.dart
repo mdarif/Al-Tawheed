@@ -325,7 +325,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get startListening => 'سننا شروع کریں';
 
   @override
-  String get chooseSeriesTitle => 'اپنا سفر شروع کریں';
+  String get chooseSeriesTitle => 'اپنا سفرِ توحید شروع کریں';
 
   @override
   String get languageEnglish => 'English';
@@ -795,7 +795,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get startListening => 'Sunna shuru karein';
 
   @override
-  String get chooseSeriesTitle => 'Apna Safar Shuru Karein';
+  String get chooseSeriesTitle => 'Apna Safar-e-Tawheed Shuru Karein';
 
   @override
   String get languageEnglish => 'English';

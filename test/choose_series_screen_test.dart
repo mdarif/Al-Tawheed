@@ -26,7 +26,7 @@ const _arabicSeries = SeriesConfig(
   catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
   storagePrefix: 'ar_',
   hasStudyMode: false,
-  hasBook: false,
+  hasBook: true,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
@@ -126,6 +126,8 @@ void main() {
     expect(find.text('Kitab at-Tawheed'), findsNWidgets(2));
     expect(find.text('Urdu'), findsOneWidget);
     expect(find.text('Arabic'), findsOneWidget);
+    expect(find.text('Study Mode'), findsOneWidget);
+    expect(find.text('Book'), findsOneWidget);
     expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
         findsOneWidget);
     expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsOneWidget);

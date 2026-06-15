@@ -337,7 +337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startListening => 'Start Listening';
 
   @override
-  String get chooseSeriesTitle => 'Begin Your Journey';
+  String get chooseSeriesTitle => 'Begin Your Tawheed Journey';
 
   @override
   String get languageEnglish => 'English';

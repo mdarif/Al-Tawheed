@@ -648,7 +648,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseSeriesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Begin Your Journey'**
+  /// **'Begin Your Tawheed Journey'**
   String get chooseSeriesTitle;
 
   /// No description provided for @languageEnglish.
