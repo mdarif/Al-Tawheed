@@ -3,6 +3,8 @@
 // individual screens wrapped in a minimal MaterialApp.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -10,9 +12,28 @@ import 'package:myapp/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _wrap(Widget child, {ThemeMode themeMode = ThemeMode.dark}) {
-  return ChangeNotifierProvider(
-    create: (_) => ThemeProvider()..load(),
+const _arabicSeries = SeriesConfig(
+  id: 'tawheed-ar',
+  catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+  storagePrefix: 'ar_',
+  hasStudyMode: false,
+  hasBook: true,
+  language: 'ar',
+  displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+);
+
+Widget _wrap(Widget child,
+    {ThemeMode themeMode = ThemeMode.dark, SeriesConfig? series}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
+      ChangeNotifierProvider(create: (_) {
+        final provider = SeriesProvider()..load(false);
+        if (series != null) provider.setCurrentSeriesForTest(series);
+        return provider;
+      }),
+    ],
     child: Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) => MaterialApp(
         theme: AppTheme.light,
@@ -49,6 +70,14 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(WelcomeScreen()));
       expect(find.text('START LISTENING'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Welcome screen shows the Arabic call-to-action for the Arabic series',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(WelcomeScreen(), series: _arabicSeries));
+      expect(find.text('ابدأ الاستماع'), findsOneWidget);
+      expect(find.text('START LISTENING'), findsNothing);
     });
   });
 }

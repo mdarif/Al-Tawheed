@@ -10,6 +10,14 @@ import 'package:myapp/widgets/offline_status_banner.dart';
 
 enum _Tab { lectures, book, home, study, settings }
 
+// Arabic bottom-nav labels shown for the Arabic series, independent of the
+// app's UI-chrome language — mirrors the _arXxx pattern used elsewhere
+// (home_screen.dart, player_screen.dart, choose_series_screen.dart).
+const _arTabLectures = 'الدروس';
+const _arTabBook = 'الكتاب';
+const _arTabHome = 'الرئيسية';
+const _arTabSettings = 'الإعدادات';
+
 extension on _Tab {
   String get path => switch (this) {
         _Tab.lectures => '/lectures',
@@ -19,21 +27,22 @@ extension on _Tab {
         _Tab.settings => '/settings',
       };
 
-  NavigationDestination destination(AppLocalizations l10n) => switch (this) {
+  NavigationDestination destination(AppLocalizations l10n, bool isRtl) =>
+      switch (this) {
         _Tab.lectures => NavigationDestination(
             icon: const Icon(Icons.headphones_outlined),
             selectedIcon: const Icon(Icons.headphones_rounded),
-            label: l10n.tabLectures,
+            label: isRtl ? _arTabLectures : l10n.tabLectures,
           ),
         _Tab.book => NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
-            label: l10n.tabBook,
+            label: isRtl ? _arTabBook : l10n.tabBook,
           ),
         _Tab.home => NavigationDestination(
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home_rounded),
-            label: l10n.tabHome,
+            label: isRtl ? _arTabHome : l10n.tabHome,
           ),
         _Tab.study => NavigationDestination(
             icon: const Icon(Icons.school_outlined),
@@ -43,7 +52,7 @@ extension on _Tab {
         _Tab.settings => NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings_rounded),
-            label: l10n.tabSettings,
+            label: isRtl ? _arTabSettings : l10n.tabSettings,
           ),
       };
 }
@@ -80,7 +89,9 @@ class ShellScreen extends StatelessWidget {
           NavigationBar(
             selectedIndex: _selectedIndex(context, tabs),
             onDestinationSelected: (i) => context.go(tabs[i].path),
-            destinations: [for (final tab in tabs) tab.destination(l10n)],
+            destinations: [
+              for (final tab in tabs) tab.destination(l10n, series.isRtl),
+            ],
           ),
         ],
       ),

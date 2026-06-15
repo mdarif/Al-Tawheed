@@ -4,6 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
+// Arabic label for the call-to-action button, shown for the Arabic series —
+// mirrors the _arXxx pattern used elsewhere (home_screen.dart,
+// player_screen.dart, choose_series_screen.dart).
+const _arStartListening = 'ابدأ الاستماع';
+
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
@@ -27,6 +32,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantic = context.semantic;
+    final isRtl = context.watch<SeriesProvider>().currentSeries.isRtl;
 
     return Scaffold(
       body: Stack(
@@ -89,8 +95,15 @@ class WelcomeScreen extends StatelessWidget {
                         color: semantic.onBrand,
                       ),
                       label: Text(
-                        'START LISTENING',
-                        style: TextStyle(color: semantic.onBrand),
+                        isRtl ? _arStartListening : 'START LISTENING',
+                        style: TextStyle(
+                          color: semantic.onBrand,
+                          // Arabic script renders visually smaller at the same
+                          // point size, and positive letter-spacing breaks its
+                          // cursive letter connections.
+                          fontSize: isRtl ? 20 : null,
+                          letterSpacing: isRtl ? 0 : null,
+                        ),
                       ),
                       onPressed: () => _startListening(context),
                     ),

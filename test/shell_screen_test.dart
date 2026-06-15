@@ -177,12 +177,23 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    expect(find.text('Lectures'), findsNWidgets(2));
-    expect(find.text('Book'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Lectures'), findsOneWidget); // page body only
     expect(find.text('Study'), findsNothing);
-    expect(find.text('Settings'), findsOneWidget);
     expect(find.byType(NavigationDestination), findsNWidgets(4));
+  });
+
+  testWidgets('shows Arabic nav labels for the Arabic series', (tester) async {
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('الدروس'), findsOneWidget);
+    expect(find.text('الكتاب'), findsOneWidget);
+    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsOneWidget);
   });
 
   testWidgets('tapping Settings navigates correctly in the 4-tab layout',
@@ -194,10 +205,12 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Settings'));
+    await tester
+        .tap(find.widgetWithText(NavigationDestination, 'الإعدادات'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Settings'), findsNWidgets(2)); // tab label + page body
+    expect(find.text('Settings'), findsOneWidget); // page body
+    expect(find.text('الإعدادات'), findsOneWidget); // nav label
   });
 
   group('ShellScreen — mini player', () {
@@ -235,10 +248,11 @@ void main() {
       expect(find.text('الدرس 2'), findsOneWidget);
       expect(find.text('Dars 02'), findsNothing);
 
-      // Bottom nav stays in English — navigation Arabic-ization is deferred.
-      expect(find.text('Lectures'), findsNWidgets(2));
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      // Bottom nav is Arabic for the Arabic series.
+      expect(find.text('Lectures'), findsOneWidget); // page body only
+      expect(find.text('الدروس'), findsOneWidget);
+      expect(find.text('الرئيسية'), findsOneWidget);
+      expect(find.text('الإعدادات'), findsOneWidget);
     });
   });
 }

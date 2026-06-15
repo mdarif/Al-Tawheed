@@ -335,6 +335,12 @@ class _DownloadsSection extends StatelessWidget {
   }
 }
 
+/// The series' canonical English name (e.g. "Kitab at-Tawheed (Arabic)") —
+/// shown in the series section/picker regardless of UI language, since these
+/// are product/edition names rather than translatable content.
+String _seriesName(SeriesConfig series) =>
+    series.displayName['en'] as String? ?? series.id;
+
 class _SeriesSection extends StatelessWidget {
   const _SeriesSection();
 
@@ -356,7 +362,7 @@ class _SeriesSection extends StatelessWidget {
           ),
           child: ListTile(
             leading: const Icon(Icons.library_books_rounded),
-            title: Text(lang.resolve(current.displayName)),
+            title: Text(_seriesName(current)),
             subtitle: Text(lang.resolve(current.speakerName)),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => _openPicker(context),
@@ -380,8 +386,7 @@ class _SeriesSection extends StatelessWidget {
     if (chosen.id == current.id) return;
 
     final l10n = context.l10n;
-    final seriesName =
-        context.read<LanguageProvider>().resolve(chosen.displayName);
+    final seriesName = _seriesName(chosen);
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.changeSeriesConfirmTitle,
@@ -431,7 +436,7 @@ class _SeriesPickerSheet extends StatelessWidget {
                     : Icons.radio_button_unchecked_rounded,
                 color: selected ? context.brandColor : context.mutedIconColor,
               ),
-              title: Text(lang.resolve(s.displayName)),
+              title: Text(_seriesName(s)),
               subtitle: Text(lang.resolve(s.speakerName)),
               onTap: () => Navigator.pop(context, s),
             );
