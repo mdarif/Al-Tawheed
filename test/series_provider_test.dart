@@ -18,6 +18,8 @@ const _arabicSeries = SeriesConfig(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
@@ -171,6 +173,124 @@ void main() {
       await provider.loadManifest();
 
       expect(provider.availableSeries, [SeriesConfig.legacyUrduFallback]);
+    });
+  });
+
+  group('loadManifest — Arabic locale auto-default', () {
+    Future<void> seedManifest() => PreferencesService.instance.saveRemoteJson(
+          'series_manifest',
+          jsonEncode({
+            'version': 1,
+            'series': [
+              {
+                'id': 'tawheed-ur',
+                'catalogUrl': 'https://example.com/tawheed/catalog.json',
+                'storagePrefix': '',
+                'hasStudyMode': true,
+                'language': 'ur',
+                'displayName': {'en': 'Kitab at-Tawheed (Urdu)'},
+                'speakerName': {'en': 'Shaikh Abdullah Nasir Rahmani'},
+              },
+              {
+                'id': 'tawheed-ar',
+                'catalogUrl': 'https://example.com/tawheed-ar/catalog.json',
+                'storagePrefix': 'ar_',
+                'hasStudyMode': false,
+                'hasBook': true,
+                'language': 'ar',
+                'displayName': {'en': 'Kitab at-Tawheed (Arabic)'},
+                'speakerName': {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+              },
+            ],
+          }),
+        );
+
+    test(
+        'fresh install on an Arabic device silently selects the Arabic series',
+        () async {
+      await seedManifest();
+
+      final provider = SeriesProvider()
+        ..load(true)
+        ..setDeviceLanguageCodeForTest('ar');
+      await provider.loadManifest();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.hasSelectedSeries, isTrue);
+      expect(provider.currentSeries.id, 'tawheed-ar');
+      expect(PreferencesService.instance.selectedSeriesId, 'tawheed-ar');
+    });
+
+    test('fresh install on a non-Arabic device is unaffected', () async {
+      await seedManifest();
+
+      final provider = SeriesProvider()
+        ..load(true)
+        ..setDeviceLanguageCodeForTest('en');
+      await provider.loadManifest();
+
+      expect(provider.hasSelectedSeries, isFalse);
+      expect(PreferencesService.instance.selectedSeriesId, isNull);
+    });
+
+    test('does not override an already-selected series on an Arabic device',
+        () async {
+      await seedManifest();
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ur');
+
+      final provider = SeriesProvider()
+        ..load(true)
+        ..setDeviceLanguageCodeForTest('ar');
+      await provider.loadManifest();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.currentSeries.id, 'tawheed-ur');
+      expect(PreferencesService.instance.selectedSeriesId, 'tawheed-ur');
+    });
+
+    test('does not override a legacy-pinned install on an Arabic device',
+        () async {
+      await seedManifest();
+      await PreferencesService.instance.saveProgress('lec-001', 30);
+
+      final provider = SeriesProvider()
+        ..load(true)
+        ..setDeviceLanguageCodeForTest('ar');
+      await provider.loadManifest();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(provider.currentSeries.id, SeriesConfig.legacyId);
+      expect(
+          PreferencesService.instance.selectedSeriesId, SeriesConfig.legacyId);
+    });
+
+    test('is a no-op on an Arabic device when the manifest has no Arabic series',
+        () async {
+      await PreferencesService.instance.saveRemoteJson(
+        'series_manifest',
+        jsonEncode({
+          'version': 1,
+          'series': [
+            {
+              'id': 'tawheed-ur',
+              'catalogUrl': 'https://example.com/tawheed/catalog.json',
+              'storagePrefix': '',
+              'hasStudyMode': true,
+              'language': 'ur',
+              'displayName': {'en': 'Kitab at-Tawheed (Urdu)'},
+              'speakerName': {'en': 'Shaikh Abdullah Nasir Rahmani'},
+            },
+          ],
+        }),
+      );
+
+      final provider = SeriesProvider()
+        ..load(true)
+        ..setDeviceLanguageCodeForTest('ar');
+      await provider.loadManifest();
+
+      expect(provider.hasSelectedSeries, isFalse);
+      expect(PreferencesService.instance.selectedSeriesId, isNull);
     });
   });
 }

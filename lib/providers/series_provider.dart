@@ -20,6 +20,12 @@ class SeriesProvider extends ChangeNotifier {
   List<SeriesConfig> _available = const [SeriesConfig.legacyUrduFallback];
   String? _currentId;
 
+  /// Device system language at startup — used by [loadManifest] to silently
+  /// default a fresh install to the Arabic series when the device itself is
+  /// set to Arabic. Overridable in tests via [setDeviceLanguageCodeForTest].
+  String _deviceLanguageCode =
+      WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+
   List<SeriesConfig> get availableSeries => _available;
 
   /// `false` only when multi-series is enabled and this is a genuinely fresh
@@ -70,7 +76,24 @@ class SeriesProvider extends ChangeNotifier {
   /// onboarding on the network.
   Future<void> loadManifest() async {
     _available = await SeriesManifestService.instance.fetchManifest();
+    _maybeDefaultToArabic();
     notifyListeners();
+  }
+
+  /// On a genuinely fresh install (no selection yet), silently default to
+  /// the Arabic series when the device's system language is Arabic — its
+  /// screens are already fully localized to Arabic regardless of the app's
+  /// UI-chrome language, so an Arabic-speaking user lands directly in a
+  /// native experience without seeing the series picker.
+  void _maybeDefaultToArabic() {
+    if (_currentId != null || _deviceLanguageCode != 'ar') return;
+    for (final series in _available) {
+      if (series.isRtl) {
+        _currentId = series.id;
+        unawaited(_prefs.saveSelectedSeriesId(series.id));
+        return;
+      }
+    }
   }
 
   /// Persists [series] as the active series and notifies listeners.
@@ -86,6 +109,12 @@ class SeriesProvider extends ChangeNotifier {
   void setAvailableSeriesForTest(List<SeriesConfig> series) {
     _available = series;
     notifyListeners();
+  }
+
+  /// Overrides the detected device system language — for tests only.
+  @visibleForTesting
+  void setDeviceLanguageCodeForTest(String code) {
+    _deviceLanguageCode = code;
   }
 
   /// Sets the current series (adding it to [availableSeries] if needed) — for
