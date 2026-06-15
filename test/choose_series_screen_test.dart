@@ -123,7 +123,8 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    expect(find.text('Kitab at-Tawheed'), findsNWidgets(2));
+    expect(find.text('Kitab at-Tawheed'), findsOneWidget);
+    expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('Urdu'), findsOneWidget);
     expect(find.text('Arabic'), findsOneWidget);
     expect(find.text('Study Mode'), findsOneWidget);

@@ -11,6 +11,10 @@ import 'package:myapp/utils/l10n_extensions.dart';
 // bilingual title — independent of the app's UI language.
 const _arChooseSeriesTitle = 'ابدأ رحلتك في التوحيد';
 
+// Arabic title shown on the Arabic series' card, independent of the app's
+// UI language — mirrors the lecture-title pattern in HomeScreen.
+const _arBookTitle = 'كتاب التوحيد';
+
 /// Shown once to a genuinely fresh install when multi-series is enabled and
 /// more than one series is on offer. Selecting a card switches to that
 /// series and proceeds straight to the lectures list.
@@ -150,6 +154,19 @@ class _SeriesCard extends StatelessWidget {
     final speakerName = lang.resolve(series.speakerName);
     final (baseTitle, suffix) = _splitTitle(displayName);
 
+    final titleWidget = SizedBox(
+      width: double.infinity,
+      child: Text(
+        series.isRtl ? _arBookTitle : baseTitle,
+        textAlign: series.isRtl ? TextAlign.right : null,
+        style: context.textTheme.titleMedium
+            ?.copyWith(fontWeight: FontWeight.w700),
+      ),
+    );
+    final titleCell = series.isRtl
+        ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
+        : titleWidget;
+
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
@@ -161,68 +178,74 @@ class _SeriesCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: context.groupedBorder, width: 1),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _LanguageThumbnail(series: series),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _LanguageThumbnail(series: series),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      titleCell,
+                      if (suffix != null ||
+                          series.hasStudyMode ||
+                          series.hasBook) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (suffix != null) _MetricChip(label: suffix),
+                            if (series.hasStudyMode)
+                              _MetricChip(
+                                icon: Icons.menu_book_rounded,
+                                label: l10n.studyMode,
+                              ),
+                            if (series.hasBook)
+                              _MetricChip(
+                                icon: Icons.menu_book_rounded,
+                                label: l10n.tabBook,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (speakerName.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Divider(height: 1, color: context.groupedBorder),
+              const SizedBox(height: 10),
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    baseTitle,
-                    style: context.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                  Icon(
+                    Icons.person_outline_rounded,
+                    size: 14,
+                    color: context.brandColor,
                   ),
-                  if (suffix != null ||
-                      series.hasStudyMode ||
-                      series.hasBook) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (suffix != null) _MetricChip(label: suffix),
-                        if (series.hasStudyMode)
-                          _MetricChip(
-                            icon: Icons.menu_book_rounded,
-                            label: l10n.studyMode,
-                          ),
-                        if (series.hasBook)
-                          _MetricChip(
-                            icon: Icons.menu_book_rounded,
-                            label: l10n.tabBook,
-                          ),
-                      ],
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      speakerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        color: context.primaryTextColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ],
-                  if (speakerName.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Divider(height: 1, color: context.groupedBorder),
-                    const SizedBox(height: 10),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 14,
-                          color: context.secondaryTextColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            speakerName,
-                            style: context.textTheme.bodySmall
-                                ?.copyWith(color: context.secondaryTextColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ],
               ),
-            ),
+            ],
           ],
         ),
       ),
