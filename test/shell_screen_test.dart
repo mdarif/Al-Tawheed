@@ -25,6 +25,7 @@ const _arabicSeries = SeriesConfig(
   catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
   storagePrefix: 'ar_',
   hasStudyMode: false,
+  hasBook: true,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
@@ -116,6 +117,11 @@ Widget _wrap({
                     const Scaffold(body: Center(child: Text('Lectures'))),
               ),
               GoRoute(
+                path: '/book',
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Book'))),
+              ),
+              GoRoute(
                 path: '/home',
                 builder: (_, __) =>
                     const Scaffold(body: Center(child: Text('Home'))),
@@ -162,7 +168,7 @@ void main() {
     expect(find.byType(NavigationDestination), findsNWidgets(4));
   });
 
-  testWidgets('shows 3 tabs without Study for a series with no study mode',
+  testWidgets('shows 4 tabs with Book instead of Study for the Arabic series',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
@@ -172,13 +178,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lectures'), findsNWidgets(2));
+    expect(find.text('Book'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Study'), findsNothing);
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
   });
 
-  testWidgets('tapping Settings navigates correctly in the 3-tab layout',
+  testWidgets('tapping Settings navigates correctly in the 4-tab layout',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)

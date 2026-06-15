@@ -2,6 +2,7 @@
   "@@locale": "en",
 
   "tabLectures": "Lectures",
+  "tabBook": "Book",
   "tabHome": "Home",
   "tabStudyMode": "Study",
   "tabSettings": "Settings",
@@ -88,6 +89,7 @@
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 
   "couldNotLoadLectures": "Could not load lectures",
+  "bookCouldNotLoad": "Could not load the book",
   "retry": "Retry",
   "catalogConnectToLoadTitle": "Connect to load lectures",
   "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",

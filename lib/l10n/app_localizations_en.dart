@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabLectures => 'Lectures';
 
   @override
+  String get tabBook => 'Book';
+
+  @override
   String get tabHome => 'Home';
 
   @override
@@ -161,6 +164,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get couldNotLoadLectures => 'Could not load lectures';
+
+  @override
+  String get bookCouldNotLoad => 'Could not load the book';
 
   @override
   String get retry => 'Retry';

@@ -61,3 +61,8 @@ flutter:
   assets:
     - assets/
     - assets/images/
+    - assets/content/
+  fonts:
+    - family: NotoNaskhArabic
+      fonts:
+        - asset: assets/fonts/NotoNaskhArabic-Regular.ttf

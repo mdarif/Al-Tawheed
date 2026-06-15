@@ -105,6 +105,12 @@ abstract class AppLocalizations {
   /// **'Lectures'**
   String get tabLectures;
 
+  /// No description provided for @tabBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get tabBook;
+
   /// No description provided for @tabHome.
   ///
   /// In en, this message translates to:
@@ -362,6 +368,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load lectures'**
   String get couldNotLoadLectures;
+
+  /// No description provided for @bookCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the book'**
+  String get bookCouldNotLoad;
 
   /// No description provided for @retry.
   ///

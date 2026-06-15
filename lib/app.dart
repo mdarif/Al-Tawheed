@@ -8,6 +8,7 @@ import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -17,6 +18,8 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
+import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
@@ -53,6 +56,14 @@ final _router = GoRouter(
         GoRoute(
           path: '/lectures',
           builder: (context, state) => const LectureListScreen(),
+        ),
+        GoRoute(
+          path: '/book',
+          redirect: (context, state) =>
+              context.read<SeriesProvider>().currentSeries.hasBook
+                  ? null
+                  : '/home',
+          builder: (context, state) => const BookChapterListScreen(),
         ),
         GoRoute(
           path: '/home',
@@ -96,6 +107,16 @@ final _router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/offline-library',
       builder: (context, state) => const OfflineLibraryScreen(),
+    ),
+
+    // Book reader — root navigator (same as /player) so the bottom nav bar
+    // is hidden while reading a chapter.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/book/:chapterId',
+      builder: (context, state) => BookReaderScreen(
+        chapterId: state.pathParameters['chapterId']!,
+      ),
     ),
 
     // Full-screen player — parentNavigatorKey forces it onto the root
@@ -153,6 +174,7 @@ class MyApp extends StatelessWidget {
           lazy: false,
         ),
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
+        ChangeNotifierProvider(create: (_) => BookProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
         ChangeNotifierProvider(
           create: (ctx) =>

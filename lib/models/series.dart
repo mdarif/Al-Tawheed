@@ -9,6 +9,7 @@ class SeriesConfig {
   final String catalogUrl;
   final String storagePrefix;
   final bool hasStudyMode;
+  final bool hasBook;
   final String language;
   final Map<String, dynamic> displayName;
   final Map<String, dynamic> speakerName;
@@ -18,6 +19,7 @@ class SeriesConfig {
     required this.catalogUrl,
     required this.storagePrefix,
     required this.hasStudyMode,
+    required this.hasBook,
     required this.language,
     required this.displayName,
     required this.speakerName,
@@ -34,6 +36,7 @@ class SeriesConfig {
         catalogUrl: json['catalogUrl'] as String,
         storagePrefix: json['storagePrefix'] as String? ?? '',
         hasStudyMode: json['hasStudyMode'] as bool? ?? false,
+        hasBook: json['hasBook'] as bool? ?? false,
         language: json['language'] as String? ?? 'en',
         displayName: toI18nMap(json['displayName']),
         speakerName: toI18nMap(json['speakerName']),
@@ -51,6 +54,7 @@ class SeriesConfig {
     catalogUrl: AppConfig.catalogUrl,
     storagePrefix: '',
     hasStudyMode: true,
+    hasBook: false,
     language: 'ur',
     displayName: {'en': 'Kitab at-Tawheed (Urdu)'},
     speakerName: {'en': 'Shaikh Abdullah Nasir Rahmani Hafizahullah'},

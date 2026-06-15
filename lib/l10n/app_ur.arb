@@ -2,6 +2,7 @@
   "@@locale": "ur",
 
   "tabLectures": "دروس",
+  "tabBook": "کتاب",
   "tabHome": "ہوم",
   "tabStudyMode": "تعلیم",
   "tabSettings": "ترتیبات",
@@ -50,6 +51,7 @@
   "noSavedHint": "کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں",
 
   "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
+  "bookCouldNotLoad": "کتاب لوڈ نہیں ہو سکی",
   "retry": "دوبارہ کوشش کریں",
   "catalogConnectToLoadTitle": "دروس لوڈ کرنے کے لیے انٹرنیٹ سے جڑیں",
   "catalogConnectToLoadMessage": "ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔",

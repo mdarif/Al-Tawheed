@@ -12,6 +12,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get tabLectures => 'دروس';
 
   @override
+  String get tabBook => 'کتاب';
+
+  @override
   String get tabHome => 'ہوم';
 
   @override
@@ -162,6 +165,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get couldNotLoadLectures => 'دروس لوڈ نہیں ہو سکے';
+
+  @override
+  String get bookCouldNotLoad => 'کتاب لوڈ نہیں ہو سکی';
 
   @override
   String get retry => 'دوبارہ کوشش کریں';
@@ -469,6 +475,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get tabLectures => 'Duroos';
 
   @override
+  String get tabBook => 'Kitab';
+
+  @override
   String get tabHome => 'Home';
 
   @override
@@ -621,6 +630,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get couldNotLoadLectures => 'Dars load nahin ho sake';
+
+  @override
+  String get bookCouldNotLoad => 'Kitab load nahin ho saki';
 
   @override
   String get retry => 'Dobara koshish karein';

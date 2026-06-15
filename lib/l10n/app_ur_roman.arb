@@ -1,5 +1,6 @@
 {
   "tabLectures": "Duroos",
+  "tabBook": "Kitab",
   "tabHome": "Home",
   "tabStudyMode": "Taleem",
   "tabSettings": "Tarteebat",
@@ -48,6 +49,7 @@
   "noSavedHint": "Koi dars mehfooz karne ke liye player mein bookmark icon par tap karein",
 
   "couldNotLoadLectures": "Dars load nahin ho sake",
+  "bookCouldNotLoad": "Kitab load nahin ho saki",
   "retry": "Dobara koshish karein",
   "catalogConnectToLoadTitle": "Dars load karne ke liye internet se judein",
   "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",

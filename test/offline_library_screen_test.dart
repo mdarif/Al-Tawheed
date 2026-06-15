@@ -65,6 +65,7 @@ const _arabicSeries = SeriesConfig(
   catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
   storagePrefix: 'ar_',
   hasStudyMode: false,
+  hasBook: false,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
