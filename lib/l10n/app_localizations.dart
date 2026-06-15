@@ -375,6 +375,12 @@ abstract class AppLocalizations {
   /// **'Could not load the book'**
   String get bookCouldNotLoad;
 
+  /// No description provided for @bookShareChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Share chapter'**
+  String get bookShareChapter;
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:

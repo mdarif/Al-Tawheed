@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
@@ -26,6 +29,8 @@ Widget _wrap(BookProvider book, String chapterId) {
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
         initialLocation: '/book/$chapterId',
         routes: [
@@ -99,4 +104,28 @@ void main() {
     expect(find.text('الباب الثاني'), findsOneWidget);
     expect(find.text('نص الباب الثاني'), findsOneWidget);
   });
+
+  testWidgets('share action shares the chapter title and text', (tester) async {
+    final sharePlatform = _FakeSharePlatform();
+    SharePlatform.instance = sharePlatform;
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.share_rounded));
+    await tester.pumpAndSettle();
+
+    expect(sharePlatform.lastParams?.text, 'الباب الأول\n\nنص الباب الأول');
+  });
+}
+
+class _FakeSharePlatform extends SharePlatform with MockPlatformInterfaceMixin {
+  ShareParams? lastParams;
+
+  @override
+  Future<ShareResult> share(ShareParams params) async {
+    lastParams = params;
+    return ShareResult('', ShareResultStatus.success);
+  }
 }

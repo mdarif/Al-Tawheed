@@ -169,6 +169,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookCouldNotLoad => 'Could not load the book';
 
   @override
+  String get bookShareChapter => 'Share chapter';
+
+  @override
   String get retry => 'Retry';
 
   @override

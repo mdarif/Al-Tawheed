@@ -170,6 +170,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get bookCouldNotLoad => 'کتاب لوڈ نہیں ہو سکی';
 
   @override
+  String get bookShareChapter => 'باب شیئر کریں';
+
+  @override
   String get retry => 'دوبارہ کوشش کریں';
 
   @override
@@ -633,6 +636,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get bookCouldNotLoad => 'Kitab load nahin ho saki';
+
+  @override
+  String get bookShareChapter => 'Baab share karein';
 
   @override
   String get retry => 'Dobara koshish karein';

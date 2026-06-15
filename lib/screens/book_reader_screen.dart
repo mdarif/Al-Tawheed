@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 class BookReaderScreen extends StatelessWidget {
   final String chapterId;
@@ -37,6 +39,15 @@ class BookReaderScreen extends StatelessWidget {
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded),
+            tooltip: context.l10n.bookShareChapter,
+            onPressed: () => SharePlus.instance.share(
+              ShareParams(text: '${chapter.title}\n\n${chapter.text}'),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

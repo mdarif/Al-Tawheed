@@ -50,6 +50,7 @@
 
   "couldNotLoadLectures": "Dars load nahin ho sake",
   "bookCouldNotLoad": "Kitab load nahin ho saki",
+  "bookShareChapter": "Baab share karein",
   "retry": "Dobara koshish karein",
   "catalogConnectToLoadTitle": "Dars load karne ke liye internet se judein",
   "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",
