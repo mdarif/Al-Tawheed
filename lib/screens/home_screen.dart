@@ -18,11 +18,30 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
+// Home-screen chrome strings shown in Arabic for the Arabic series,
+// independent of the app's UI language (which still governs other
+// screens' navigation/chrome).
+const _arSaved = 'المحفوظات';
+const _arContinueListening = 'متابعة الاستماع';
+const _arContinueListeningEmpty = 'ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا';
+String _arListenedDuration(String listened, String remaining) =>
+    'تم الاستماع: $listened · المتبقي: $remaining';
+String _arPercentComplete(int percent) => '$percent% مكتمل';
+const _arDailyBenefit = 'فائدة اليوم';
+const _arOfflineLibrary = 'التنزيلات';
+String _arOfflinePrepTitle(int count) => count == 1
+    ? 'تحميل الجزء التالي دون اتصال'
+    : 'تحميل $count أجزاء قادمة دون اتصال';
+String _arOfflinePrepSize(String sizeMb) => '~$sizeMb ميجابايت';
+const _arOfflinePrepSave = 'تحميل';
+const _arConnectWifiToDownload = 'اتصل بشبكة Wi-Fi للتحميل';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -40,7 +59,7 @@ class HomeScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.bookmark_outline_rounded),
-                tooltip: context.l10n.saved,
+                tooltip: isArabic ? _arSaved : context.l10n.saved,
                 onPressed: () => context.push('/bookmarks'),
               ),
             ],
@@ -91,6 +110,7 @@ class _ContinueListeningCard extends StatelessWidget {
     final remaining = lecture.durationSeconds - savedSeconds;
     final l10n = context.l10n;
     final series = context.read<SeriesProvider>().currentSeries;
+    final isArabic = series.isRtl;
     final lectureTitle =
         context.read<LanguageProvider>().resolveForSeries(lecture.title, series);
     final titleWidget = SizedBox(
@@ -153,10 +173,15 @@ class _ContinueListeningCard extends StatelessWidget {
                           titleCell,
                           const SizedBox(height: 3),
                           Text(
-                            l10n.listenedDuration(
-                              DurationFormatter.fromSeconds(savedSeconds),
-                              DurationFormatter.fromSeconds(remaining),
-                            ),
+                            isArabic
+                                ? _arListenedDuration(
+                                    DurationFormatter.fromSeconds(savedSeconds),
+                                    DurationFormatter.fromSeconds(remaining),
+                                  )
+                                : l10n.listenedDuration(
+                                    DurationFormatter.fromSeconds(savedSeconds),
+                                    DurationFormatter.fromSeconds(remaining),
+                                  ),
                             style: context.textTheme.bodySmall,
                           ),
                         ],
@@ -189,7 +214,9 @@ class _ContinueListeningCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  l10n.percentComplete((fraction * 100).round()),
+                  isArabic
+                      ? _arPercentComplete((fraction * 100).round())
+                      : l10n.percentComplete((fraction * 100).round()),
                   style: context.textTheme.bodySmall,
                 ),
               ],
@@ -203,13 +230,13 @@ class _ContinueListeningCard extends StatelessWidget {
   Widget _header(BuildContext context, StudyProgressProvider study) {
     final l10n = context.l10n;
     final stats = study.stats;
-    final hasStudyMode =
-        context.watch<SeriesProvider>().currentSeries.hasStudyMode;
+    final series = context.watch<SeriesProvider>().currentSeries;
+    final hasStudyMode = series.hasStudyMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          l10n.continueListening,
+          series.isRtl ? _arContinueListening : l10n.continueListening,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -228,6 +255,14 @@ class _ContinueListeningCard extends StatelessWidget {
 
   Widget _emptyState(BuildContext context, StudyProgressProvider study) {
     final l10n = context.l10n;
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final messageWidget = Text(
+      isArabic ? _arContinueListeningEmpty : l10n.continueListeningEmpty,
+      textAlign: isArabic ? TextAlign.right : null,
+      style: context.textTheme.bodyMedium?.copyWith(
+        color: context.secondaryTextColor,
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -246,12 +281,12 @@ class _ContinueListeningCard extends StatelessWidget {
               Icon(Icons.headphones_rounded,
                   size: 36, color: context.mutedIconColor),
               const SizedBox(height: 10),
-              Text(
-                l10n.continueListeningEmpty,
-                style: context.textTheme.bodyMedium?.copyWith(
-                  color: context.secondaryTextColor,
-                ),
-              ),
+              isArabic
+                  ? Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: messageWidget,
+                    )
+                  : messageWidget,
             ],
           ),
         ),
@@ -317,12 +352,13 @@ class _DailyBenefitCard extends StatelessWidget {
     final semantic = context.semantic;
     final lang = context.read<LanguageProvider>();
     final l10n = context.l10n;
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          l10n.dailyBenefit,
+          isArabic ? _arDailyBenefit : l10n.dailyBenefit,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -459,6 +495,7 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
         : 0.0;
 
     final l10n = context.l10n;
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return Padding(
       padding: const EdgeInsets.only(top: 24),
@@ -466,7 +503,7 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.offlineLibrary,
+            isArabic ? _arOfflineLibrary : l10n.offlineLibrary,
             style: context.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -504,8 +541,11 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              l10n.offlinePrepTitle(
-                                  downloading.length + toDownload.length),
+                              isArabic
+                                  ? _arOfflinePrepTitle(
+                                      downloading.length + toDownload.length)
+                                  : l10n.offlinePrepTitle(
+                                      downloading.length + toDownload.length),
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: context.secondaryTextColor,
                               ),
@@ -527,7 +567,9 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              l10n.offlinePrepTitle(toDownload.length),
+                              isArabic
+                                  ? _arOfflinePrepTitle(toDownload.length)
+                                  : l10n.offlinePrepTitle(toDownload.length),
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: context.secondaryTextColor,
                               ),
@@ -535,7 +577,9 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                             if (totalBytes > 0) ...[
                               const SizedBox(height: 3),
                               Text(
-                                l10n.offlinePrepSize(sizeMb),
+                                isArabic
+                                    ? _arOfflinePrepSize(sizeMb)
+                                    : l10n.offlinePrepSize(sizeMb),
                                 style: context.textTheme.bodySmall?.copyWith(
                                     color: context.secondaryTextColor),
                               ),
@@ -553,7 +597,8 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _startDownloads(context, toDownload),
-                    child: Text(l10n.offlinePrepSave),
+                    child: Text(
+                        isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave),
                   ),
                   GestureDetector(
                     onTap: () => setState(() => _dismissed = true),
@@ -575,9 +620,11 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
   void _startDownloads(BuildContext context, List<Lecture> lectures) {
     final connectivity = context.read<ConnectivityProvider>();
     final downloads = context.read<DownloadsProvider>();
+    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.l10n.wifiOnlyBlocked),
+        content: Text(
+            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked),
         behavior: SnackBarBehavior.floating,
       ));
       return;

@@ -83,7 +83,8 @@ Catalog _catalog({List<DailyBenefit> dailyBenefits = const []}) => Catalog(
       dailyBenefits: dailyBenefits,
     );
 
-Catalog _arabicCatalog() => Catalog(
+Catalog _arabicCatalog({List<DailyBenefit> dailyBenefits = const []}) =>
+    Catalog(
       version: 1,
       book: const Book(
         id: 'arabic-book',
@@ -99,7 +100,7 @@ Catalog _arabicCatalog() => Catalog(
       ),
       chapters: const [],
       lectures: _arabicLectures,
-      dailyBenefits: const [],
+      dailyBenefits: dailyBenefits,
     );
 
 Widget _wrap({
@@ -178,6 +179,22 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Start a lecture to resume here'), findsOneWidget);
+      expect(find.byTooltip('Saved'), findsOneWidget);
+    });
+
+    testWidgets('shows Arabic empty state and tooltip for the Arabic series',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(series: series, catalog: _arabicCatalog()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا'),
+          findsOneWidget);
+      expect(find.text('Start a lecture to resume here'), findsNothing);
+      expect(find.byTooltip('المحفوظات'), findsOneWidget);
     });
 
     testWidgets('shows lecture title and progress when resuming',
@@ -211,7 +228,7 @@ void main() {
     });
 
     testWidgets(
-        'shows the Arabic lecture title for the Arabic series, with l10n chrome unchanged',
+        'shows the Arabic lecture title and Arabic chrome for the Arabic series',
         (tester) async {
       final progress = ProgressProvider()..load();
       await progress.saveProgress('l1', 60);
@@ -229,8 +246,12 @@ void main() {
 
       expect(find.text('الدرس 1'), findsOneWidget);
       expect(find.text('Lecture 1'), findsNothing);
-      expect(find.text('1:00 listened · 9:00 left'), findsOneWidget);
-      expect(find.text('10% complete'), findsOneWidget);
+      expect(find.text('متابعة الاستماع'), findsOneWidget);
+      expect(find.text('Continue Listening'), findsNothing);
+      expect(find.text('تم الاستماع: 1:00 · المتبقي: 9:00'), findsOneWidget);
+      expect(find.text('1:00 listened · 9:00 left'), findsNothing);
+      expect(find.text('10% مكتمل'), findsOneWidget);
+      expect(find.text('10% complete'), findsNothing);
     });
   });
 
@@ -308,6 +329,31 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download next'), findsNothing);
+    });
+
+    testWidgets('shows Arabic chrome for the Arabic series', (tester) async {
+      final progress = ProgressProvider()..load();
+      await progress.saveProgress('l1', 60);
+
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+
+      await tester.pumpWidget(_wrap(
+        progress: progress,
+        series: series,
+        catalog: _arabicCatalog(),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('التنزيلات'), findsOneWidget);
+      expect(find.text('Downloads'), findsNothing);
+      expect(find.text('تحميل 3 أجزاء قادمة دون اتصال'), findsOneWidget);
+      expect(find.text('Download next 3 parts offline'), findsNothing);
+      expect(find.text('~3.0 ميجابايت'), findsOneWidget);
+      expect(find.text('~3.0 MB'), findsNothing);
+      expect(find.text('تحميل'), findsOneWidget);
+      expect(find.text('Download'), findsNothing);
     });
   });
 
@@ -392,6 +438,25 @@ void main() {
       expect(find.text('Daily Benefit'), findsOneWidget);
       expect(find.text('Test benefit text'), findsOneWidget);
       expect(find.text('— Test Source'), findsOneWidget);
+    });
+
+    testWidgets('shows Arabic header for the Arabic series', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setCurrentSeriesForTest(_arabicSeries);
+      final catalog = _arabicCatalog(dailyBenefits: const [
+        DailyBenefit(
+          id: 'b1',
+          text: {'en': 'Test benefit text'},
+          source: {'en': 'Test Source'},
+        ),
+      ]);
+
+      await tester.pumpWidget(_wrap(series: series, catalog: catalog));
+      await tester.pumpAndSettle();
+
+      expect(find.text('فائدة اليوم'), findsOneWidget);
+      expect(find.text('Daily Benefit'), findsNothing);
     });
   });
 
