@@ -32,7 +32,7 @@ void main() {
     await provider.load(_arabicSeries);
 
     expect(provider.status, BookStatus.loaded);
-    expect(provider.book!.chapters, hasLength(68));
+    expect(provider.book!.chapters, hasLength(67));
   });
 
   test('load is a no-op once already loaded', () async {

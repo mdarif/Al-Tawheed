@@ -119,10 +119,10 @@ class _BookBodyState extends State<_BookBody> {
       } else {
         widgets.add(Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: RichText(
+          child: Text.rich(
+            TextSpan(children: _buildSpans(line, base)),
             textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
-            text: TextSpan(children: _buildSpans(line, base)),
           ),
         ));
       }
