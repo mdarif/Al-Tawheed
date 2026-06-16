@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -115,7 +116,8 @@ class SettingsScreen extends StatelessWidget {
           if (config.links.website != null)
             ListTile(
               leading: const Icon(Icons.language_rounded),
-              title: Text(config.links.website!
+              title: Text(l10n.settingsVisitWebsite),
+              subtitle: Text(config.links.website!
                   .replaceFirst('https://', '')
                   .replaceFirst('http://', '')),
               onTap: () => launchUrl(
@@ -191,10 +193,21 @@ class _BrandingFooterState extends State<_BrandingFooter> {
           ),
           if (_version != null) ...[
             const SizedBox(height: 4),
-            Text(
-              context.l10n.settingsAboutVersion(_version!),
-              style: context.textTheme.labelSmall?.copyWith(
-                color: context.mutedIconColor,
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: _version!));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.l10n.settingsVersionCopied),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: Text(
+                context.l10n.settingsAboutVersion(_version!),
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: context.mutedIconColor,
+                ),
               ),
             ),
           ],
@@ -353,7 +366,6 @@ class _SeriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
     final current = context.watch<SeriesProvider>().currentSeries;
 
     return Padding(
@@ -370,7 +382,6 @@ class _SeriesSection extends StatelessWidget {
           child: ListTile(
             leading: const Icon(Icons.library_books_rounded),
             title: Text(_seriesName(current)),
-            subtitle: Text(lang.resolve(current.speakerName)),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => _openPicker(context),
           ),
@@ -414,7 +425,6 @@ class _SeriesPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
     final series = context.watch<SeriesProvider>();
     final current = series.currentSeries;
     final l10n = context.l10n;
@@ -444,7 +454,6 @@ class _SeriesPickerSheet extends StatelessWidget {
                 color: selected ? context.brandColor : context.mutedIconColor,
               ),
               title: Text(_seriesName(s)),
-              subtitle: Text(lang.resolve(s.speakerName)),
               onTap: () => Navigator.pop(context, s),
             );
           }),

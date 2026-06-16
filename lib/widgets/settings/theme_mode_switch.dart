@@ -5,7 +5,6 @@ import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
-/// Single-tap dark mode control — CupertinoSwitch on iOS, Material Switch on Android.
 class ThemeModeSwitch extends StatelessWidget {
   const ThemeModeSwitch({super.key});
 

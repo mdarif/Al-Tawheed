@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
@@ -49,23 +50,61 @@ class BookReaderScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _BookBody(text: chapter.text),
+      bottomNavigationBar: _ChapterNavBar(prev: prev, next: next),
+    );
+  }
+}
+
+class _BookBody extends StatefulWidget {
+  final String text;
+  const _BookBody({required this.text});
+
+  @override
+  State<_BookBody> createState() => _BookBodyState();
+}
+
+class _BookBodyState extends State<_BookBody> {
+  double _fontSize = 20;
+  double _baseFontSize = 20;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _fontSize = context.read<ReadingProvider>().bookFontSize;
+      _baseFontSize = _fontSize;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onScaleStart: (_) => _baseFontSize = _fontSize,
+      onScaleUpdate: (details) {
+        setState(() {
+          _fontSize = (_baseFontSize * details.scale).clamp(14.0, 32.0);
+        });
+      },
+      onScaleEnd: (_) => context.read<ReadingProvider>().setBookFontSize(_fontSize),
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Text(
-            chapter.text,
+            widget.text,
             textAlign: TextAlign.right,
             style: context.textTheme.bodyLarge?.copyWith(
               fontFamily: 'NotoNaskhArabic',
-              fontSize: 20,
+              fontSize: _fontSize,
               height: 1.8,
               letterSpacing: 0.3,
             ),
           ),
         ),
       ),
-      bottomNavigationBar: _ChapterNavBar(prev: prev, next: next),
     );
   }
 }

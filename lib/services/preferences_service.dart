@@ -83,11 +83,11 @@ class PreferencesService {
     switch (_p.getString('theme_mode')) {
       case 'light':
         return ThemeMode.light;
-      case 'system':
-        return ThemeMode.system;
       case 'dark':
-      default:
         return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
     }
   }
 
@@ -99,6 +99,13 @@ class PreferencesService {
     };
     return _p.setString('theme_mode', value);
   }
+
+  // ── Reading ─────────────────────────────────────────────────────────────
+
+  double get bookFontSize => _p.getDouble('book_font_size') ?? 20;
+
+  Future<void> saveBookFontSize(double size) =>
+      _p.setDouble('book_font_size', size);
 
   // ── Downloads ───────────────────────────────────────────────────────────
 

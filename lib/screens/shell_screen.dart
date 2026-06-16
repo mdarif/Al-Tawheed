@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
-import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
@@ -27,32 +25,31 @@ extension on _Tab {
         _Tab.settings => '/settings',
       };
 
-  NavigationDestination destination(AppLocalizations l10n, bool isRtl) =>
-      switch (this) {
+  NavigationDestination destination(bool isRtl) => switch (this) {
         _Tab.lectures => NavigationDestination(
             icon: const Icon(Icons.headphones_outlined),
             selectedIcon: const Icon(Icons.headphones_rounded),
-            label: isRtl ? _arTabLectures : l10n.tabLectures,
+            label: isRtl ? _arTabLectures : 'Lectures',
           ),
         _Tab.book => NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
-            label: isRtl ? _arTabBook : l10n.tabBook,
+            label: isRtl ? _arTabBook : 'Book',
           ),
         _Tab.home => NavigationDestination(
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home_rounded),
-            label: isRtl ? _arTabHome : l10n.tabHome,
+            label: isRtl ? _arTabHome : 'Home',
           ),
         _Tab.study => NavigationDestination(
             icon: const Icon(Icons.school_outlined),
             selectedIcon: const Icon(Icons.school_rounded),
-            label: l10n.tabStudyMode,
+            label: 'Study',
           ),
         _Tab.settings => NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings_rounded),
-            label: isRtl ? _arTabSettings : l10n.tabSettings,
+            label: isRtl ? _arTabSettings : 'Settings',
           ),
       };
 }
@@ -71,7 +68,6 @@ class ShellScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final series = context.watch<SeriesProvider>().currentSeries;
     final tabs = _tabsFor(series);
 
@@ -90,7 +86,7 @@ class ShellScreen extends StatelessWidget {
             selectedIndex: _selectedIndex(context, tabs),
             onDestinationSelected: (i) => context.go(tabs[i].path),
             destinations: [
-              for (final tab in tabs) tab.destination(l10n, series.isRtl),
+              for (final tab in tabs) tab.destination(series.isRtl),
             ],
           ),
         ],

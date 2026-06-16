@@ -17,6 +17,7 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
@@ -203,6 +204,8 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
             create: (_) => ThemeProvider()..load(), lazy: false),
+        ChangeNotifierProvider(
+            create: (_) => ReadingProvider()..load(), lazy: false),
         ChangeNotifierProxyProvider<FeatureFlagsProvider, LanguageProvider>(
           create: (_) => LanguageProvider()..load(),
           update: (_, flags, lang) {

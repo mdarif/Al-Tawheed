@@ -7,6 +7,7 @@ import 'package:share_plus_platform_interface/share_plus_platform_interface.dart
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/theme/app_theme.dart';
 
@@ -26,6 +27,7 @@ Widget _wrap(BookProvider book, String chapterId) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: book),
+      ChangeNotifierProvider(create: (_) => ReadingProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,

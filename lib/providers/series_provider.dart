@@ -6,6 +6,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -139,6 +140,7 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   final progress = context.read<ProgressProvider>();
   final study = context.read<StudyProgressProvider>();
   final downloads = context.read<DownloadsProvider>();
+  final lang = context.read<LanguageProvider>();
 
   await player.stop();
   await series.selectSeries(newSeries);
@@ -146,4 +148,5 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   progress.reload();
   study.reload();
   await downloads.reload();
+  await lang.applySeriesLanguage(newSeries.language);
 }

@@ -197,6 +197,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLightMode => 'Light mode';
 
   @override
+  String get settingsThemeSystem => 'Follow System';
+
+  @override
+  String get settingsVisitWebsite => 'Official website';
+
+  @override
+  String get settingsBookFontSize => 'Text size';
+
+  @override
+  String get settingsVersionCopied => 'Version copied';
+
+  @override
   String get settingsPlayback => 'Playback';
 
   @override

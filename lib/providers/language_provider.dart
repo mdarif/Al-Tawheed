@@ -75,6 +75,18 @@ class LanguageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Auto-sync the UI language when the active series changes.
+  /// Bypasses the manual feature flag — this is a system-triggered change,
+  /// not a user-initiated one from the Settings picker.
+  Future<void> applySeriesLanguage(String languageCode) async {
+    final lang =
+        languageCode == 'ar' ? AppLanguage.arabic : AppLanguage.english;
+    if (_language == lang) return;
+    _language = lang;
+    await PreferencesService.instance.saveAppLanguage(lang.code);
+    notifyListeners();
+  }
+
   // ── Content resolution ────────────────────────────────────────────────────
 
   /// Resolve a multilingual field map to the best string for the current

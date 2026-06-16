@@ -431,6 +431,30 @@ abstract class AppLocalizations {
   /// **'Light mode'**
   String get settingsLightMode;
 
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow System'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsVisitWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Official website'**
+  String get settingsVisitWebsite;
+
+  /// No description provided for @settingsBookFontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get settingsBookFontSize;
+
+  /// No description provided for @settingsVersionCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Version copied'**
+  String get settingsVersionCopied;
+
   /// No description provided for @settingsPlayback.
   ///
   /// In en, this message translates to:

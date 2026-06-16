@@ -191,58 +191,76 @@ class _LectureListScreenState extends State<LectureListScreen> {
             : '${catalog.book.lectureCount} lectures · '
                 '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}';
 
-    final titleColumn = SizedBox(
-      width: double.infinity,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            textAlign: isArabicContent ? TextAlign.right : null,
-            style: context.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (speaker.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              speaker,
-              textAlign: isArabicContent ? TextAlign.right : null,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-            ),
-          ],
-          if (countLine.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              countLine,
-              textAlign: isArabicContent ? TextAlign.right : null,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-            ),
-          ],
-        ],
+    final titleWidget = Text(
+      title,
+      style: context.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
       ),
     );
+
+    final subInfo = (speaker.isNotEmpty || countLine.isNotEmpty)
+        ? SafeArea(
+            child: Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(
+                  16, 0, 16, isArabicContent ? 50 : 48),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: isArabicContent
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  if (speaker.isNotEmpty)
+                    Text(
+                      speaker,
+                      textAlign: isArabicContent ? TextAlign.right : null,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                    ),
+                  if (countLine.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      countLine,
+                      textAlign: isArabicContent ? TextAlign.right : null,
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          )
+        : null;
 
     return SliverAppBar(
       pinned: true,
       centerTitle: false,
-      expandedHeight: catalog != null ? 158 : 80,
+      expandedHeight: catalog != null ? 130 : 80,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        centerTitle: false,
+        titlePadding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
         title: isArabicContent
             ? Directionality(
                 textDirection: TextDirection.rtl,
-                child: titleColumn,
+                child: titleWidget,
               )
-            : titleColumn,
+            : titleWidget,
+        background: subInfo != null
+            ? isArabicContent
+                ? Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: subInfo,
+                  )
+                : subInfo
+            : null,
       ),
     );
   }

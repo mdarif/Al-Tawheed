@@ -141,8 +141,7 @@ class AppConfigModel {
         share: const AppConfigShare(
           message: 'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
               'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
-              'Download from Google Play Store:\n'
-              'https://play.google.com/store/apps/details?id=com.almarfa.tawheed',
+              'https://kitabattawheed.com/download/',
         ),
         about: const AppConfigAbout(
           appName: 'Sharah Kitab al-Tawheed',

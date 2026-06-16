@@ -194,6 +194,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsLightMode => 'الوضع الفاتح';
 
   @override
+  String get settingsThemeSystem => 'اتبع النظام';
+
+  @override
+  String get settingsVisitWebsite => 'الموقع الرسمي';
+
+  @override
+  String get settingsBookFontSize => 'حجم الخط';
+
+  @override
+  String get settingsVersionCopied => 'تم نسخ الإصدار';
+
+  @override
   String get settingsPlayback => 'التشغيل';
 
   @override

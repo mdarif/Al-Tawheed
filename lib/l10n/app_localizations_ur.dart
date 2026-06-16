@@ -199,6 +199,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsLightMode => 'لائٹ موڈ';
 
   @override
+  String get settingsThemeSystem => 'سسٹم کے مطابق';
+
+  @override
+  String get settingsVisitWebsite => 'سرکاری ویب سائٹ';
+
+  @override
+  String get settingsBookFontSize => 'متن کا سائز';
+
+  @override
+  String get settingsVersionCopied => 'ورژن کاپی ہو گیا';
+
+  @override
   String get settingsPlayback => 'پلے بیک';
 
   @override
@@ -665,6 +677,18 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsLightMode => 'Light mode';
+
+  @override
+  String get settingsThemeSystem => 'System ke mutabiq';
+
+  @override
+  String get settingsVisitWebsite => 'Official website';
+
+  @override
+  String get settingsBookFontSize => 'Text size';
+
+  @override
+  String get settingsVersionCopied => 'Version copy ho gaya';
 
   @override
   String get settingsPlayback => 'Playback';
