@@ -80,14 +80,21 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.mail_outline_rounded),
             title: Text(l10n.settingsContactUs),
-            onTap: () => launchUrl(
-              Uri(
-                scheme: 'mailto',
-                path: config.contact.email,
-                queryParameters: {'subject': config.contact.subject},
-              ),
-              mode: LaunchMode.externalApplication,
-            ),
+            onTap: () async {
+              final launched = await launchUrl(
+                Uri(
+                  scheme: 'mailto',
+                  path: config.contact.email,
+                  queryParameters: {'subject': config.contact.subject},
+                ),
+                mode: LaunchMode.externalApplication,
+              );
+              if (!launched && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(config.contact.email)),
+                );
+              }
+            },
           ),
           ListTile(
             leading: const Icon(Icons.share_rounded),
@@ -460,6 +467,7 @@ class _LanguageSelector extends StatelessWidget {
           AppLanguage.english => l10n.languageEnglish,
           AppLanguage.urdu => l10n.languageUrdu,
           AppLanguage.romanUrdu => l10n.languageRomanUrdu,
+          AppLanguage.arabic => l10n.languageArabic,
         };
 
     return RadioGroup<AppLanguage>(

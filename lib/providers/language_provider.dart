@@ -7,7 +7,8 @@ import 'package:myapp/services/preferences_service.dart';
 enum AppLanguage {
   english('en', 'English', 'English'),
   urdu('ur', 'اردو', 'Urdu'),
-  romanUrdu('roman', 'Roman Urdu', 'Roman Urdu'); // Phase 2
+  romanUrdu('roman', 'Roman Urdu', 'Roman Urdu'),
+  arabic('ar', 'العربية', 'Arabic');
 
   const AppLanguage(this.code, this.nativeName, this.englishName);
   final String code;
@@ -39,11 +40,13 @@ class LanguageProvider extends ChangeNotifier {
       AppLanguage.urdu      => const Locale('ur'),
       AppLanguage.romanUrdu =>
         const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman'),
+      AppLanguage.arabic    => const Locale('ar'),
     };
   }
 
   /// Whether the current language is right-to-left.
-  bool get isRtl => _language == AppLanguage.urdu;
+  bool get isRtl =>
+      _language == AppLanguage.urdu || _language == AppLanguage.arabic;
 
   /// Load saved language synchronously — requires [PreferencesService.init]
   /// to have been called before this provider is created.
@@ -118,6 +121,7 @@ class LanguageProvider extends ChangeNotifier {
   static AppLanguage _detectFromSystem() {
     final locale = WidgetsBinding.instance.platformDispatcher.locale;
     if (locale.languageCode == 'ur') return AppLanguage.urdu;
+    if (locale.languageCode == 'ar') return AppLanguage.arabic;
     // roman is never auto-detected
     return AppLanguage.english;
   }

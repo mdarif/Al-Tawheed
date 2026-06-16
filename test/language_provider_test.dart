@@ -78,5 +78,6 @@ class _LocaleProbe {
         AppLanguage.urdu => const Locale('ur'),
         AppLanguage.romanUrdu =>
           const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman'),
+        AppLanguage.arabic => const Locale('ar'),
       };
 }
