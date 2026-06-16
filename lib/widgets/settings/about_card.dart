@@ -44,6 +44,7 @@ class AboutCard extends StatelessWidget {
             // ── Identity zone ──────────────────────────────────────────────
             Container(
               color: context.groupedSurface,
+              width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
                 children: [
@@ -91,6 +92,7 @@ class AboutCard extends StatelessWidget {
             // ── Stats strip ────────────────────────────────────────────────
             Container(
               color: context.brandColor.withValues(alpha: 0.06),
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: IntrinsicHeight(
                 child: Row(
