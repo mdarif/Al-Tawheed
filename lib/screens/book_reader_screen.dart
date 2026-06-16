@@ -68,6 +68,67 @@ class _BookBodyState extends State<_BookBody> {
   double _fontSize = 20;
   double _baseFontSize = 20;
   bool _initialized = false;
+  int _activePointers = 0;
+
+  static final _verseRe    = RegExp(r'\{[^}]+\}');
+  static final _citationRe = RegExp(r'\[[^\[\]]+\]');
+  static final _hadithRe   = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
+  static const _verseColor    = Color(0xFF2E7D32); // deep green — Quran verses
+  static const _citationColor = Color(0xFF00897B); // teal — surah:ayah refs (distinct on both light & dark)
+  static const _hadithColor   = Color(0xFFE65100); // deep amber — Prophetic narrations
+
+  // 1 = verse, 2 = citation, 3 = hadith
+  List<TextSpan> _buildSpans(String text, TextStyle base) {
+    final intervals = <(int, int, int)>[];
+    for (final m in _verseRe.allMatches(text)) {
+      intervals.add((m.start, m.end, 1));
+    }
+    for (final m in _citationRe.allMatches(text)) {
+      intervals.add((m.start, m.end, 2));
+    }
+    for (final m in _hadithRe.allMatches(text)) {
+      intervals.add((m.start, m.end, 3));
+    }
+    intervals.sort((a, b) => a.$1.compareTo(b.$1));
+
+    final spans = <TextSpan>[];
+    int last = 0;
+    for (final (start, end, type) in intervals) {
+      if (start > last) {
+        spans.add(TextSpan(text: text.substring(last, start), style: base));
+      }
+      final color = type == 1 ? _verseColor : type == 2 ? _citationColor : _hadithColor;
+      spans.add(TextSpan(
+        text: text.substring(start, end),
+        style: base.copyWith(color: color),
+      ));
+      last = end;
+    }
+    if (last < text.length) {
+      spans.add(TextSpan(text: text.substring(last), style: base));
+    }
+    return spans;
+  }
+
+  List<Widget> _buildLines(TextStyle base) {
+    final lines = widget.text.split('\n');
+    final widgets = <Widget>[];
+    for (final line in lines) {
+      if (line.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 8));
+      } else {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: RichText(
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
+            text: TextSpan(children: _buildSpans(line, base)),
+          ),
+        ));
+      }
+    }
+    return widgets;
+  }
 
   @override
   void didChangeDependencies() {
@@ -81,26 +142,46 @@ class _BookBodyState extends State<_BookBody> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onScaleStart: (_) => _baseFontSize = _fontSize,
-      onScaleUpdate: (details) {
-        setState(() {
-          _fontSize = (_baseFontSize * details.scale).clamp(14.0, 32.0);
-        });
-      },
-      onScaleEnd: (_) => context.read<ReadingProvider>().setBookFontSize(_fontSize),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(
-            widget.text,
-            textAlign: TextAlign.right,
-            style: context.textTheme.bodyLarge?.copyWith(
-              fontFamily: 'NotoNaskhArabic',
-              fontSize: _fontSize,
-              height: 1.8,
-              letterSpacing: 0.3,
+    final baseStyle = context.textTheme.bodyLarge?.copyWith(
+      fontFamily: 'NotoNaskhArabic',
+      fontSize: _fontSize,
+      height: 1.8,
+      // letterSpacing must be 0/absent for Arabic — any positive value
+      // inserts gaps between glyphs and breaks cursive joins and
+      // ligatures (including the mandatory الله ligature).
+    ) ?? const TextStyle();
+
+    // Listener fires before gesture arena — use it to count active pointers
+    // so we can disable scroll the instant a second finger touches, preventing
+    // SingleChildScrollView from claiming the 2-finger gesture on Android.
+    return Listener(
+      onPointerDown: (_) => setState(() => _activePointers++),
+      onPointerUp: (_) => setState(() => _activePointers--),
+      onPointerCancel: (_) => setState(() => _activePointers--),
+      child: GestureDetector(
+        onScaleStart: (_) => _baseFontSize = _fontSize,
+        onScaleUpdate: (details) {
+          if (_activePointers < 2) return;
+          setState(() {
+            _fontSize = (_baseFontSize * details.scale).clamp(14.0, 32.0);
+          });
+        },
+        onScaleEnd: (_) {
+          if (_activePointers < 2) {
+            context.read<ReadingProvider>().setBookFontSize(_fontSize);
+          }
+        },
+        child: SingleChildScrollView(
+          // Disable scroll while 2+ fingers are down so the scale gesture wins.
+          physics: _activePointers >= 2
+              ? const NeverScrollableScrollPhysics()
+              : null,
+          padding: const EdgeInsets.all(20),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _buildLines(baseStyle),
             ),
           ),
         ),
