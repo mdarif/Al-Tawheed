@@ -11,12 +11,15 @@ class AppFlow {
 
   static Future<void> launchApp(WidgetTester tester) async {
     app.main();
-    await waitFor(
-      tester,
-      find.text('START LISTENING'),
-      timeout: const Duration(seconds: 30),
-      reason: 'welcome screen after cold start',
-    );
+    // First install: WelcomeScreen shows. Returning user (onboarding persisted):
+    // app routes straight to /lectures — either is a valid cold-start state.
+    final end = DateTime.now().add(const Duration(seconds: 30));
+    while (DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 500));
+      if (tester.any(find.text('START LISTENING'))) return;
+      if (tester.any(find.byType(LectureTile))) return;
+    }
+    fail('Timed out after 30s waiting for welcome screen or lecture list after cold start');
   }
 
   /// Cold start through welcome (if shown) to a loaded lecture list.

@@ -33,7 +33,9 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
     setState(() => _switching = true);
     await switchSeries(context, series);
     if (!mounted) return;
-    context.go('/lectures');
+    // Go to WelcomeScreen (not straight to /lectures) so first-time users
+    // see the series-specific splash before entering the app.
+    context.go('/');
   }
 
   @override

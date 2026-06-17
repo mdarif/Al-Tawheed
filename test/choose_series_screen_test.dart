@@ -91,6 +91,11 @@ Widget _wrap({required SeriesProvider series}) {
         initialLocation: '/choose-series',
         routes: [
           GoRoute(
+            path: '/',
+            builder: (_, __) =>
+                const Scaffold(body: Center(child: Text('Welcome'))),
+          ),
+          GoRoute(
             path: '/choose-series',
             builder: (_, __) => const ChooseSeriesScreen(),
           ),
@@ -134,7 +139,7 @@ void main() {
     expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsOneWidget);
   });
 
-  testWidgets('selecting a series switches to it and continues to /lectures',
+  testWidgets('selecting a series switches to it and shows the WelcomeScreen',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
         'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
@@ -164,6 +169,6 @@ void main() {
 
     expect(series.currentSeries.id, 'tawheed-ar');
     expect(PreferencesService.instance.selectedSeriesId, 'tawheed-ar');
-    expect(find.text('Lectures'), findsOneWidget);
+    expect(find.text('Welcome'), findsOneWidget);
   });
 }

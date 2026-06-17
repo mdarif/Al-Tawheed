@@ -8,6 +8,15 @@ class FeatureFlagsProvider extends ChangeNotifier {
   Map<String, dynamic> _featuresJson = const {};
   Map<String, dynamic> _experimentalJson = const {};
 
+  // True once the async fetch has settled (success, failure, or unknown
+  // schema). The ProxyProvider uses this to distinguish the initial
+  // synchronous update() call — where fields still hold defaults — from a
+  // real, post-fetch update. Without this guard the ProxyProvider fires
+  // immediately with multiSeriesEnabled=false and SeriesProvider marks itself
+  // ready with the Urdu fallback before any flags have been read.
+  bool _hasLoaded = false;
+  bool get hasLoaded => _hasLoaded;
+
   /// Parsed on each read so new flags keys stay safe across hot reload and
   /// partial CDN JSON (missing keys fall back via [FeatureFlags.fromJson]).
   FeatureFlags get features => FeatureFlags.fromJson(_featuresJson);
@@ -27,19 +36,20 @@ class FeatureFlagsProvider extends ChangeNotifier {
       final raw = jsonDecode(body) as Map<String, dynamic>;
       final version = raw['version'] as int? ?? 1;
 
-      if (version > AppConfig.maxSupportedFeatureFlagsVersion) {
-        return; // Keep defaults — unknown schema
+      if (version <= AppConfig.maxSupportedFeatureFlagsVersion) {
+        _featuresJson = Map<String, dynamic>.from(
+          raw['features'] as Map<String, dynamic>? ?? {},
+        );
+        _experimentalJson = Map<String, dynamic>.from(
+          raw['experimental'] as Map<String, dynamic>? ?? {},
+        );
       }
-
-      _featuresJson = Map<String, dynamic>.from(
-        raw['features'] as Map<String, dynamic>? ?? {},
-      );
-      _experimentalJson = Map<String, dynamic>.from(
-        raw['experimental'] as Map<String, dynamic>? ?? {},
-      );
-      notifyListeners();
+      // Unknown schema: keep defaults but still mark as loaded.
     } catch (_) {
-      // Fetch failed — defaults remain active; no UI impact
+      // Fetch failed — defaults remain active.
+    } finally {
+      _hasLoaded = true;
+      notifyListeners();
     }
   }
 

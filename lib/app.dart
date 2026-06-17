@@ -44,10 +44,20 @@ final _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   routes: [
-    // Splash / onboarding — shown on cold start
+    // Splash / onboarding — shown on cold start.
+    // Redirect fires before the widget builds, so returning users never see
+    // even a single frame of WelcomeScreen.
     GoRoute(
       path: '/',
-      builder: (context, state) => WelcomeScreen(),
+      redirect: (context, state) {
+        final s = context.read<SeriesProvider>();
+        if (s.hasCompletedOnboarding) { return '/lectures'; }
+        if (!s.hasSelectedSeries &&
+            !s.isArabicDevice &&
+            s.availableSeries.length > 1) { return '/choose-series'; }
+        return null;
+      },
+      builder: (context, state) => const WelcomeScreen(),
     ),
 
     // Shell: bottom navigation wraps these four tabs
@@ -166,7 +176,10 @@ class MyApp extends StatelessWidget {
           create: (_) => SeriesProvider()..load(false),
           update: (_, flags, series) {
             series ??= SeriesProvider();
-            series.load(flags.multiSeriesEnabled);
+            // definitive only after the async fetch has settled — the
+            // initial synchronous update() fires with default values
+            // (multiSeriesEnabled=false) before any network data is read.
+            series.load(flags.multiSeriesEnabled, definitive: flags.hasLoaded);
             if (flags.multiSeriesEnabled) {
               unawaited(series.loadManifest());
             }

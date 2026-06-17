@@ -21,8 +21,12 @@ void main() {
     (tester) async {
       // ── Cold start & welcome ────────────────────────────────────────────
       await AppFlow.launchApp(tester);
-      expect(find.text('START LISTENING'), findsOneWidget);
-      expect(find.textContaining('Kitab al-Tawheed'), findsWidgets);
+      // WelcomeScreen is only shown on first install; returning users land
+      // directly on /lectures (onboarding flag persisted in prefs).
+      if (tester.any(find.text('START LISTENING'))) {
+        expect(find.text('START LISTENING'), findsOneWidget);
+        expect(find.textContaining('Kitab at-Tawheed'), findsWidgets);
+      }
 
       // ── Catalog load & lecture list ─────────────────────────────────────
       await AppFlow.goToLectureList(tester);

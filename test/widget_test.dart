@@ -29,7 +29,7 @@ Widget _wrap(Widget child,
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
       ChangeNotifierProvider(create: (_) {
-        final provider = SeriesProvider()..load(false);
+        final provider = SeriesProvider()..load(false, definitive: true);
         if (series != null) provider.setCurrentSeriesForTest(series);
         return provider;
       }),
@@ -63,7 +63,8 @@ void main() {
     testWidgets('Welcome screen has correct title',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(WelcomeScreen()));
-      expect(find.textContaining('Kitab al-Tawheed'), findsOneWidget);
+      // Latin hero text for the Urdu series (isRtl=false).
+      expect(find.textContaining('Kitab at-Tawheed'), findsOneWidget);
     });
 
     testWidgets('Welcome screen has START LISTENING button',

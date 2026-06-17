@@ -27,12 +27,33 @@ class SeriesProvider extends ChangeNotifier {
   String _deviceLanguageCode =
       WidgetsBinding.instance.platformDispatcher.locale.languageCode;
 
+  bool _hasCompletedOnboarding = false;
+
+  // True while the definitive series is still being determined (flags loading
+  // or manifest in flight). WelcomeScreen hides its content until this is false
+  // to avoid flashing the Urdu fallback on Arabic-device cold starts.
+  bool _isLoading = true;
+
   List<SeriesConfig> get availableSeries => _available;
 
   /// `false` only when multi-series is enabled and this is a genuinely fresh
   /// install that hasn't picked a series yet — the only case where
   /// `/choose-series` should be shown.
   bool get hasSelectedSeries => _currentId != null;
+
+  /// `true` once the user has tapped "Start Listening" on the WelcomeScreen.
+  /// Returning users (prefs restored at load) bypass the WelcomeScreen
+  /// entirely and go straight to /lectures.
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+
+  /// `true` when the device system language is Arabic.
+  bool get isArabicDevice => _deviceLanguageCode == 'ar';
+
+  /// `true` once the series is definitively known — either the manifest has
+  /// loaded, a saved selection was found in prefs, or the flags confirmed that
+  /// multi-series is disabled. WelcomeScreen waits for this before showing
+  /// content to avoid flashing the Urdu fallback on Arabic devices.
+  bool get isSeriesReady => !_isLoading;
 
   SeriesConfig get currentSeries => _available.firstWhere(
         (s) => s.id == _currentId,
@@ -46,9 +67,15 @@ class SeriesProvider extends ChangeNotifier {
   /// byte-identical to the pre-v3 app. When it's on, an existing user
   /// (detected via [_hasLegacyData]) is silently pinned to Urdu; only a
   /// genuinely empty install reaches `/choose-series`.
-  void load(bool multiSeriesEnabled) {
+  /// [definitive] must be `true` when called from the ProxyProvider `update`
+  /// callback — i.e., after [FeatureFlagsProvider] has resolved. The initial
+  /// `create` call passes the default `false` so [_isLoading] stays `true`
+  /// until the flags are confirmed and, if needed, the manifest has loaded.
+  void load(bool multiSeriesEnabled, {bool definitive = false}) {
+    _hasCompletedOnboarding = _prefs.hasCompletedOnboarding;
     if (!multiSeriesEnabled) {
       _currentId = SeriesConfig.legacyId;
+      if (definitive) _isLoading = false; // Urdu-only mode confirmed
       notifyListeners();
       return;
     }
@@ -56,11 +83,14 @@ class SeriesProvider extends ChangeNotifier {
     final saved = _prefs.selectedSeriesId;
     if (saved != null) {
       _currentId = saved;
+      _isLoading = false; // Saved selection is authoritative
     } else if (_hasLegacyData()) {
       _currentId = SeriesConfig.legacyId;
+      _isLoading = false; // Legacy data → Urdu is authoritative
       unawaited(_prefs.saveSelectedSeriesId(SeriesConfig.legacyId));
     } else {
       _currentId = null;
+      _isLoading = true; // Wait for loadManifest() to pick the right series
     }
     notifyListeners();
   }
@@ -78,6 +108,7 @@ class SeriesProvider extends ChangeNotifier {
   Future<void> loadManifest() async {
     _available = await SeriesManifestService.instance.fetchManifest();
     _maybeDefaultToArabic();
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -95,6 +126,15 @@ class SeriesProvider extends ChangeNotifier {
         return;
       }
     }
+  }
+
+  /// Marks the WelcomeScreen as seen. Returning users (flag restored from prefs
+  /// in [load]) are routed directly to /lectures, bypassing the welcome flow.
+  void completeOnboarding() {
+    if (_hasCompletedOnboarding) return;
+    _hasCompletedOnboarding = true;
+    unawaited(_prefs.saveHasCompletedOnboarding());
+    notifyListeners();
   }
 
   /// Persists [series] as the active series and notifies listeners.
@@ -126,6 +166,7 @@ class SeriesProvider extends ChangeNotifier {
       _available = [..._available, series];
     }
     _currentId = series.id;
+    _isLoading = false;
     notifyListeners();
   }
 }

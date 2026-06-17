@@ -136,6 +136,14 @@ class PreferencesService {
   Future<void> saveSelectedSeriesId(String id) =>
       _p.setString('selected_series_id', id);
 
+  // ── Onboarding ───────────────────────────────────────────────────────────
+
+  bool get hasCompletedOnboarding =>
+      _p.getBool('has_completed_onboarding') ?? false;
+
+  Future<void> saveHasCompletedOnboarding() =>
+      _p.setBool('has_completed_onboarding', true);
+
   // ── Dismissed announcements ─────────────────────────────────────────────
 
   Set<String> loadDismissedAnnouncements() =>
