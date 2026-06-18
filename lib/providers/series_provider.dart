@@ -149,6 +149,7 @@ class SeriesProvider extends ChangeNotifier {
   @visibleForTesting
   void setAvailableSeriesForTest(List<SeriesConfig> series) {
     _available = series;
+    _isLoading = false;
     notifyListeners();
   }
 

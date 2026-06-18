@@ -21,6 +21,8 @@ import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 
+const _urduSeries = SeriesConfig.legacyUrduFallback;
+
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
   catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
@@ -29,7 +31,35 @@ const _arabicSeries = SeriesConfig(
   hasBook: true,
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
-  speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+  speakerName: {
+    'en': 'Shaikh Salih al-Fawzan Hafizhahullah',
+    'ar': 'الشيخ صالح الفوزان حفظه الله',
+  },
+);
+
+// A series with no study mode and no book — tests that only the "Audio" chip
+// appears when neither optional feature is present.
+const _minimalSeries = SeriesConfig(
+  id: 'tawheed-minimal',
+  catalogUrl: 'https://example.com/tawheed-minimal/catalog.json',
+  storagePrefix: 'min_',
+  hasStudyMode: false,
+  hasBook: false,
+  language: 'en',
+  displayName: {'en': 'Some Other Series'},
+  speakerName: {'en': 'Speaker Name'},
+);
+
+// A series with a "Fazilat Shaikh" prefix to test the longest honorific strip.
+const _fazSeriesName = SeriesConfig(
+  id: 'tawheed-faz',
+  catalogUrl: 'https://example.com/catalog.json',
+  storagePrefix: 'faz_',
+  hasStudyMode: false,
+  hasBook: false,
+  language: 'ur',
+  displayName: {'en': 'Test Series (Urdu)'},
+  speakerName: {'en': 'Fazilat Shaikh Abdullah Nasir Rahmani'},
 );
 
 Map<String, dynamic> _catalogJson(String bookId) => {
@@ -110,6 +140,27 @@ Widget _wrap({required SeriesProvider series}) {
   );
 }
 
+/// Taps a card identified by [tapTarget], waits for the series switch to
+/// complete, then pumps until settled. Returns after navigation is done.
+Future<void> _tapCardAndSettle(
+  WidgetTester tester,
+  SeriesProvider series,
+  Finder tapTarget,
+  String expectedSeriesId,
+) async {
+  await tester.tap(tapTarget);
+  await tester.pump();
+
+  await tester.runAsync(() async {
+    while (series.currentSeries.id != expectedSeriesId) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  });
+
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -119,59 +170,331 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('renders a card for each available series', (tester) async {
-    final series = SeriesProvider()
-      ..load(false)
-      ..setAvailableSeriesForTest(
-          const [SeriesConfig.legacyUrduFallback, _arabicSeries]);
+  group('ChooseSeriesScreen — card rendering', () {
+    testWidgets('renders a card for each available series', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
 
-    await tester.pumpWidget(_wrap(series: series));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Kitab at-Tawheed'), findsOneWidget);
-    expect(find.text('كتاب التوحيد'), findsOneWidget);
-    // Both cards carry an "Audio" chip; the language qualifier chip is gone.
-    expect(find.text('Audio'), findsNWidgets(2));
-    expect(find.text('Urdu'), findsNothing);
-    expect(find.text('Arabic'), findsNothing);
-    expect(find.text('Study Mode'), findsOneWidget);
-    expect(find.text('Book'), findsOneWidget);
-    // Speaker names are shown without the leading "Shaikh" honorific.
-    expect(find.text('Abdullah Nasir Rahmani Hafizahullah'), findsOneWidget);
-    expect(find.text('Salih al-Fawzan Hafizhahullah'), findsOneWidget);
-  });
-
-  testWidgets('selecting a series switches to it and goes to lectures',
-      (tester) async {
-    await PreferencesService.instance.saveRemoteJson(
-        'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
-
-    final series = SeriesProvider()
-      ..load(false)
-      ..setAvailableSeriesForTest(
-          const [SeriesConfig.legacyUrduFallback, _arabicSeries]);
-
-    await tester.pumpWidget(_wrap(series: series));
-    await tester.pumpAndSettle();
-
-    // Tapping shows a CircularProgressIndicator while switching, which
-    // animates forever — so settle via runAsync (switchSeries does real
-    // async work, e.g. TawheedAudioHandler.stop()) instead of pumpAndSettle().
-    await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
-    await tester.pump();
-
-    await tester.runAsync(() async {
-      while (series.currentSeries.id != 'tawheed-ar') {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      }
+      expect(find.text('Kitab at-Tawheed'), findsOneWidget);
+      expect(find.text('كتاب التوحيد'), findsOneWidget);
     });
 
-    await tester.pump();
-    await tester.pumpAndSettle();
+    testWidgets('both cards carry an Audio chip, no language qualifier chips',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
 
-    expect(series.currentSeries.id, 'tawheed-ar');
-    expect(PreferencesService.instance.selectedSeriesId, 'tawheed-ar');
-    expect(series.hasCompletedOnboarding, isTrue);
-    expect(find.text('Lectures'), findsOneWidget);
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Audio'), findsNWidgets(2));
+      expect(find.text('Urdu'), findsNothing);
+      expect(find.text('Arabic'), findsNothing);
+    });
+
+    testWidgets('Study Mode chip shown only for series with hasStudyMode',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // Urdu has studyMode, Arabic does not
+      expect(find.text('Study Mode'), findsOneWidget);
+    });
+
+    testWidgets('Book chip shown only for series with hasBook', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // Arabic has book, Urdu does not
+      expect(find.text('Book'), findsOneWidget);
+    });
+
+    testWidgets(
+        'minimal series (no studyMode, no book) shows only Audio chip',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_minimalSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Audio'), findsOneWidget);
+      expect(find.text('Study Mode'), findsNothing);
+      expect(find.text('Book'), findsNothing);
+    });
+
+    testWidgets('language thumbnail shows native script labels',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('اردو'), findsOneWidget);
+      expect(find.text('العربية'), findsOneWidget);
+    });
+
+    testWidgets('Urdu card shows Urdu native subtitle', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('شرح کتاب التوحید'), findsOneWidget);
+    });
+
+    testWidgets('Arabic card shows Arabic native subtitle', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('شرح كتاب التوحيد'), findsOneWidget);
+    });
+
+    testWidgets('cards have Material elevation for tappable affordance',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // The Material widget is the parent of the InkWell in each card.
+      final material = tester.widget<Material>(
+        find
+            .ancestor(
+              of: find.byType(InkWell),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(material.elevation, greaterThan(0));
+    });
+  });
+
+  group('ChooseSeriesScreen — speaker name shortening', () {
+    testWidgets('"Shaikh" prefix is stripped from English speaker names',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // "Shaikh Abdullah Nasir Rahmani Hafizahullah" → "Abdullah ..."
+      expect(find.text('Abdullah Nasir Rahmani Hafizahullah'), findsOneWidget);
+      expect(find.text('Salih al-Fawzan Hafizhahullah'), findsOneWidget);
+
+      // Full names with "Shaikh" prefix should NOT appear
+      expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
+          findsNothing);
+      expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsNothing);
+    });
+
+    testWidgets('"Fazilat Shaikh" prefix is stripped', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_fazSeriesName]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Abdullah Nasir Rahmani'), findsOneWidget);
+      expect(
+          find.text('Fazilat Shaikh Abdullah Nasir Rahmani'), findsNothing);
+    });
+
+    testWidgets('speaker name without known prefix is shown as-is',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_minimalSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Speaker Name'), findsOneWidget);
+    });
+  });
+
+  group('ChooseSeriesScreen — selecting Urdu series', () {
+    testWidgets('tapping Urdu card completes onboarding and goes to lectures',
+        (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')));
+
+      // Use load(true) so _currentId starts null (simulating the fresh-install
+      // path where the user reaches ChooseSeriesScreen).
+      final series = SeriesProvider()
+        ..load(true, definitive: true)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      await _tapCardAndSettle(
+        tester,
+        series,
+        find.text('Abdullah Nasir Rahmani Hafizahullah'),
+        _urduSeries.id,
+      );
+
+      expect(series.currentSeries.id, _urduSeries.id);
+      expect(series.hasCompletedOnboarding, isTrue);
+      expect(
+          PreferencesService.instance.selectedSeriesId, _urduSeries.id);
+      expect(find.text('Lectures'), findsOneWidget);
+    });
+  });
+
+  group('ChooseSeriesScreen — selecting Arabic series', () {
+    testWidgets(
+        'tapping Arabic card completes onboarding and goes to lectures',
+        (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      await _tapCardAndSettle(
+        tester,
+        series,
+        find.text('Salih al-Fawzan Hafizhahullah'),
+        _arabicSeries.id,
+      );
+
+      expect(series.currentSeries.id, _arabicSeries.id);
+      expect(series.hasCompletedOnboarding, isTrue);
+      expect(
+          PreferencesService.instance.selectedSeriesId, _arabicSeries.id);
+      expect(find.text('Lectures'), findsOneWidget);
+      // Should NOT show Welcome screen
+      expect(find.text('Welcome'), findsNothing);
+    });
+  });
+
+  group('ChooseSeriesScreen — loading state', () {
+    testWidgets('tapping a card shows a spinner on the tapped card',
+        (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // Before tap — no spinner
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      // Tap the Arabic card
+      await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
+      await tester.pump();
+
+      // After tap — spinner should be visible (in-card overlay)
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Let async work complete
+      await tester.runAsync(() async {
+        while (series.currentSeries.id != _arabicSeries.id) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+      });
+      await tester.pump();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('cards are AbsorbPointer-blocked while switching',
+        (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      // Before tapping, AbsorbPointer should not be absorbing
+      final absorbBefore = tester.widgetList<AbsorbPointer>(
+        find.byType(AbsorbPointer),
+      );
+      expect(absorbBefore.any((a) => a.absorbing), isFalse);
+
+      // Tap the Arabic card to start switching
+      await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
+      await tester.pump();
+
+      // Now at least one AbsorbPointer should be absorbing
+      final absorbAfter = tester.widgetList<AbsorbPointer>(
+        find.byType(AbsorbPointer),
+      );
+      expect(absorbAfter.any((a) => a.absorbing), isTrue);
+
+      // Clean up
+      await tester.runAsync(() async {
+        while (series.currentSeries.id != _arabicSeries.id) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+      });
+      await tester.pump();
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('ChooseSeriesScreen — header UI', () {
+    testWidgets('shows title and subtitle', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose Your Series'), findsOneWidget);
+      expect(find.text('Select a series to begin learning'), findsOneWidget);
+    });
+
+    testWidgets('header icon is auto_stories_rounded', (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.auto_stories_rounded), findsOneWidget);
+    });
   });
 }
