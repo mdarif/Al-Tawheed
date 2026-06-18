@@ -130,16 +130,18 @@ void main() {
 
     expect(find.text('Kitab at-Tawheed'), findsOneWidget);
     expect(find.text('كتاب التوحيد'), findsOneWidget);
-    expect(find.text('Urdu'), findsOneWidget);
-    expect(find.text('Arabic'), findsOneWidget);
+    // Both cards carry an "Audio" chip; the language qualifier chip is gone.
+    expect(find.text('Audio'), findsNWidgets(2));
+    expect(find.text('Urdu'), findsNothing);
+    expect(find.text('Arabic'), findsNothing);
     expect(find.text('Study Mode'), findsOneWidget);
     expect(find.text('Book'), findsOneWidget);
-    expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
-        findsOneWidget);
-    expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsOneWidget);
+    // Speaker names are shown without the leading "Shaikh" honorific.
+    expect(find.text('Abdullah Nasir Rahmani Hafizahullah'), findsOneWidget);
+    expect(find.text('Salih al-Fawzan Hafizhahullah'), findsOneWidget);
   });
 
-  testWidgets('selecting a series switches to it and shows the WelcomeScreen',
+  testWidgets('selecting a series switches to it and goes to lectures',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
         'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
@@ -155,7 +157,7 @@ void main() {
     // Tapping shows a CircularProgressIndicator while switching, which
     // animates forever — so settle via runAsync (switchSeries does real
     // async work, e.g. TawheedAudioHandler.stop()) instead of pumpAndSettle().
-    await tester.tap(find.text('Arabic'));
+    await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
     await tester.pump();
 
     await tester.runAsync(() async {
@@ -169,6 +171,7 @@ void main() {
 
     expect(series.currentSeries.id, 'tawheed-ar');
     expect(PreferencesService.instance.selectedSeriesId, 'tawheed-ar');
-    expect(find.text('Welcome'), findsOneWidget);
+    expect(series.hasCompletedOnboarding, isTrue);
+    expect(find.text('Lectures'), findsOneWidget);
   });
 }

@@ -707,6 +707,12 @@ abstract class AppLocalizations {
   /// **'العربية'**
   String get languageArabic;
 
+  /// No description provided for @audioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get audioLabel;
+
   /// No description provided for @partsCount.
   ///
   /// In en, this message translates to:

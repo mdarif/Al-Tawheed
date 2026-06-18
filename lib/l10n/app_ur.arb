@@ -114,6 +114,8 @@
   "languageHindi": "हिंदी",
   "languageArabic": "العربية",
 
+  "audioLabel": "آڈیو",
+
   "partsCount": "{count} حصے",
   "lecturesCount": "{count} دروس · {duration}",
 

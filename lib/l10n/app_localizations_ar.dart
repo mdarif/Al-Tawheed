@@ -363,6 +363,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get languageArabic => 'العربية';
 
   @override
+  String get audioLabel => 'صوتي';
+
+  @override
   String partsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

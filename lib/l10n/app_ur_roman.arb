@@ -112,6 +112,8 @@
   "languageHindi": "हिंदी",
   "languageArabic": "العربية",
 
+  "audioLabel": "Audio",
+
   "partsCount": "{count} hisse",
   "lecturesCount": "{count} dars · {duration}",
 

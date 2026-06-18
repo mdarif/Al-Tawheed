@@ -177,9 +177,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                           width: 2,
                                         ),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.auto_stories_rounded,
-                                        color: Colors.amber,
+                                        // Brand gold to match the language
+                                        // selector's icon treatment.
+                                        color: context.brandColor,
                                         size: 48,
                                       ),
                                     ),

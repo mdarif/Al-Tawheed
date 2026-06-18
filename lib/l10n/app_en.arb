@@ -191,6 +191,8 @@
   "languageHindi": "हिंदी",
   "languageArabic": "العربية",
 
+  "audioLabel": "Audio",
+
   "partsCount": "{count, plural, one{{count} part} other{{count} parts}}",
   "@partsCount": {
     "placeholders": { "count": { "type": "int" } }

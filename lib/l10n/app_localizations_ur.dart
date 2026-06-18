@@ -355,6 +355,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get languageArabic => 'العربية';
 
   @override
+  String get audioLabel => 'آڈیو';
+
+  @override
   String partsCount(int count) {
     return '$count حصے';
   }
@@ -835,6 +838,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get languageArabic => 'العربية';
+
+  @override
+  String get audioLabel => 'Audio';
 
   @override
   String partsCount(int count) {

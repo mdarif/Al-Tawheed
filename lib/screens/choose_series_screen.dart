@@ -28,16 +28,21 @@ class ChooseSeriesScreen extends StatefulWidget {
 }
 
 class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
-  bool _switching = false;
+  // The id of the series currently being switched to, or null when idle. Used
+  // to show an in-card spinner on the tapped card rather than a loose loader.
+  String? _selectingId;
 
   Future<void> _select(SeriesConfig series) async {
-    if (_switching) return;
-    setState(() => _switching = true);
+    if (_selectingId != null) return;
+    setState(() => _selectingId = series.id);
+    final seriesProvider = context.read<SeriesProvider>();
     await switchSeries(context, series);
     if (!mounted) return;
-    // Go to WelcomeScreen (not straight to /lectures) so first-time users
-    // see the series-specific splash before entering the app.
-    context.go('/');
+    // Selecting a card is a deliberate choice, so finish onboarding here and go
+    // straight to the lectures list — both series land directly on their own
+    // lectures, skipping the welcome splash (which would otherwise reappear).
+    seriesProvider.completeOnboarding();
+    context.go('/lectures');
   }
 
   @override
@@ -66,8 +71,7 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                             height: 64,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color:
-                                  context.brandColor.withValues(alpha: 0.12),
+                              color: context.brandColor.withValues(alpha: 0.12),
                             ),
                             child: Icon(
                               Icons.auto_stories_rounded,
@@ -104,23 +108,20 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                         ),
                         const SizedBox(height: 32),
                         AbsorbPointer(
-                          absorbing: _switching,
+                          absorbing: _selectingId != null,
                           child: Column(
                             children: [
                               for (var i = 0; i < available.length; i++) ...[
                                 if (i > 0) const SizedBox(height: 16),
                                 _SeriesCard(
                                   series: available[i],
+                                  loading: _selectingId == available[i].id,
                                   onTap: () => _select(available[i]),
                                 ),
                               ],
                             ],
                           ),
                         ),
-                        if (_switching) ...[
-                          const SizedBox(height: 16),
-                          const Center(child: CircularProgressIndicator()),
-                        ],
                       ],
                     ),
                   ),
@@ -135,18 +136,35 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
 }
 
 class _SeriesCard extends StatelessWidget {
-  const _SeriesCard({required this.series, required this.onTap});
+  const _SeriesCard({
+    required this.series,
+    required this.onTap,
+    this.loading = false,
+  });
 
   final SeriesConfig series;
   final VoidCallback onTap;
+  final bool loading;
 
-  /// Splits "Kitab at-Tawheed (Urdu)" into ("Kitab at-Tawheed", "Urdu") so
-  /// the language qualifier can be shown as its own metric chip.
-  static (String, String?) _splitTitle(String name) {
+  /// Strips a leading honorific ("Shaikh", "Fazilat Shaikh", "الشيخ") from a
+  /// speaker name so the card shows the shorter, more glanceable form — e.g.
+  /// "Shaikh Abdullah Nasir Rahmani Hafizahullah" → "Abdullah Nasir Rahmani
+  /// Hafizahullah".
+  static String _shortenSpeaker(String name) {
+    const prefixes = ['Fazilat Shaikh ', 'Shaikh ', 'Sheikh ', 'الشيخ '];
+    for (final p in prefixes) {
+      if (name.startsWith(p)) return name.substring(p.length).trim();
+    }
+    return name;
+  }
+
+  /// Drops the trailing language qualifier from "Kitab at-Tawheed (Urdu)" so
+  /// the card title reads cleanly — the language is conveyed by the thumbnail
+  /// and the audio chip instead.
+  static String _baseTitle(String name) {
     final i = name.lastIndexOf(' (');
-    if (i == -1 || !name.endsWith(')')) return (name, null);
-    final suffix = name.substring(i + 2, name.length - 1);
-    return (name.substring(0, i), suffix.isEmpty ? null : suffix);
+    if (i == -1 || !name.endsWith(')')) return name;
+    return name.substring(0, i);
   }
 
   @override
@@ -154,8 +172,8 @@ class _SeriesCard extends StatelessWidget {
     final lang = context.read<LanguageProvider>();
     final l10n = context.l10n;
     final displayName = lang.resolve(series.displayName);
-    final speakerName = lang.resolve(series.speakerName);
-    final (baseTitle, suffix) = _splitTitle(displayName);
+    final speakerName = _shortenSpeaker(lang.resolve(series.speakerName));
+    final baseTitle = _baseTitle(displayName);
 
     final titleWidget = SizedBox(
       width: double.infinity,
@@ -173,133 +191,168 @@ class _SeriesCard extends StatelessWidget {
         ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
         : titleWidget;
 
-    return InkWell(
+    return Material(
+      // A subtle raised surface so the card reads as tappable at rest, with the
+      // InkWell ripple confirming the tap — no drastic restyle.
+      color: context.groupedSurface,
       borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: context.groupedSurface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: context.groupedBorder, width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _LanguageThumbnail(series: series),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      titleCell,
-                      if (series.language == 'ur' ||
-                          series.language == 'ar') ...[
-                        const SizedBox(height: 4),
-                        Directionality(
-                          textDirection: TextDirection.rtl,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Text(
-                              series.language == 'ar'
-                                  ? _arNativeTitle
-                                  : _urNativeTitle,
-                              textAlign: TextAlign.right,
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: context.brandColor,
-                                fontFamily: 'NotoNaskhArabic',
-                                letterSpacing: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (suffix != null ||
-                          series.hasStudyMode ||
-                          series.hasBook) ...[
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (suffix != null) _MetricChip(label: suffix),
-                            if (series.hasStudyMode)
-                              _MetricChip(
-                                icon: Icons.menu_book_rounded,
-                                label: l10n.studyMode,
-                              ),
-                            if (series.hasBook)
-                              _MetricChip(
-                                icon: Icons.menu_book_rounded,
-                                label: l10n.tabBook,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (speakerName.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Divider(height: 1, color: context.groupedBorder),
-              const SizedBox(height: 12),
-              Row(
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: context.groupedBorder, width: 1),
+          ),
+          child: Stack(
+            children: [
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 16,
-                    color: context.brandColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          speakerName,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            color: context.primaryTextColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (series.isRtl) ...[
-                          const SizedBox(height: 4),
-                          Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Text(
-                                (series.speakerName['ar'] as String?) ??
-                                    _arSpeakerFallback,
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.bodySmall?.copyWith(
-                                  color: context.secondaryTextColor,
-                                  fontFamily: 'NotoNaskhArabic',
-                                  fontSize: 13,
-                                  letterSpacing: 0,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _LanguageThumbnail(series: series),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            titleCell,
+                            if (series.language == 'ur' ||
+                                series.language == 'ar') ...[
+                              const SizedBox(height: 4),
+                              Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    series.language == 'ar'
+                                        ? _arNativeTitle
+                                        : _urNativeTitle,
+                                    textAlign: TextAlign.right,
+                                    style:
+                                        context.textTheme.bodyMedium?.copyWith(
+                                      color: context.brandColor,
+                                      fontFamily: 'NotoNaskhArabic',
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
                                 ),
                               ),
+                            ],
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _MetricChip(
+                                  icon: Icons.headphones_rounded,
+                                  label: l10n.audioLabel,
+                                ),
+                                if (series.hasStudyMode)
+                                  _MetricChip(
+                                    icon: Icons.menu_book_rounded,
+                                    label: l10n.studyMode,
+                                  ),
+                                if (series.hasBook)
+                                  _MetricChip(
+                                    icon: Icons.menu_book_rounded,
+                                    label: l10n.tabBook,
+                                  ),
+                              ],
                             ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (speakerName.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: context.groupedBorder),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 16,
+                          color: context.brandColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                speakerName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.textTheme.bodyMedium?.copyWith(
+                                  color: context.primaryTextColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (series.isRtl) ...[
+                                const SizedBox(height: 4),
+                                Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: Text(
+                                      _shortenSpeaker((series.speakerName['ar']
+                                              as String?) ??
+                                          _arSpeakerFallback),
+                                      textAlign: TextAlign.right,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          context.textTheme.bodySmall?.copyWith(
+                                        color: context.secondaryTextColor,
+                                        fontFamily: 'NotoNaskhArabic',
+                                        fontSize: 13,
+                                        letterSpacing: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                  ),
+                  ],
                 ],
               ),
+              // While this card's series is being switched to, dim the content
+              // and centre a spinner over the card itself — keeps the feedback
+              // anchored to what the user tapped instead of a loose loader.
+              if (loading)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: context.groupedSurface.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: context.brandColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
-          ],
+          ),
         ),
       ),
     );
