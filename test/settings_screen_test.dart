@@ -49,14 +49,19 @@ const _seriesArabic = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
-Widget _wrap({required SeriesProvider series, LanguageProvider? language}) {
+Widget _wrap({
+  required SeriesProvider series,
+  LanguageProvider? language,
+  bool seriesSwitcher = true,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => AppConfigProvider()),
       ChangeNotifierProvider(create: (_) => CatalogProvider()),
       ChangeNotifierProvider(
         create: (_) => FeatureFlagsProvider()
-          ..setExperimentalJsonForTest({'multiSeries': true}),
+          ..setExperimentalJsonForTest({'multiSeries': true})
+          ..setFeaturesJsonForTest({'seriesSwitcher': seriesSwitcher}),
       ),
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider.value(
@@ -152,6 +157,36 @@ void main() {
 
       expect(find.textContaining('"Kitab at-Tawheed (Arabic)"'),
           findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — series switcher feature flag', () {
+    testWidgets('series section is hidden when seriesSwitcher flag is off',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(
+          _wrap(series: series, seriesSwitcher: false));
+      await tester.pumpAndSettle();
+
+      // The SERIES section header and the current series tile are both gone.
+      expect(find.text('SERIES'), findsNothing);
+      expect(find.text('Kitab at-Tawheed (Urdu)'), findsNothing);
+    });
+
+    testWidgets('series section is shown when seriesSwitcher flag is on',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(
+          _wrap(series: series, seriesSwitcher: true));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kitab at-Tawheed (Urdu)'), findsOneWidget);
     });
   });
 }

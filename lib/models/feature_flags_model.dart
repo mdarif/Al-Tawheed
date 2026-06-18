@@ -9,6 +9,12 @@ class FeatureFlags {
   final bool continueListening;
   final bool language;
 
+  /// Whether the Settings "Series" switcher is offered. Gates only the UI
+  /// affordance for changing series — multi-series resolution itself is still
+  /// governed by the experimental `multiSeries` flag. Defaults to `false` so
+  /// the switcher stays hidden until explicitly enabled in the remote config.
+  final bool seriesSwitcher;
+
   const FeatureFlags({
     required this.bookmarks,
     required this.downloads,
@@ -19,6 +25,7 @@ class FeatureFlags {
     required this.playbackSpeed,
     required this.continueListening,
     required this.language,
+    required this.seriesSwitcher,
   });
 
   factory FeatureFlags.fromJson(Map<String, dynamic> j) {
@@ -33,6 +40,7 @@ class FeatureFlags {
       playbackSpeed: _bool(j, 'playbackSpeed') ?? d.playbackSpeed,
       continueListening: _bool(j, 'continueListening') ?? d.continueListening,
       language: _bool(j, 'language') ?? d.language,
+      seriesSwitcher: _bool(j, 'seriesSwitcher') ?? d.seriesSwitcher,
     );
   }
 
@@ -51,6 +59,7 @@ class FeatureFlags {
     playbackSpeed: true,
     continueListening: true,
     language: false,
+    seriesSwitcher: false,
   );
 }
 

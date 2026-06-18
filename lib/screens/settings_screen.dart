@@ -50,7 +50,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          if (context.watch<FeatureFlagsProvider>().multiSeriesEnabled &&
+          // The series switcher is gated behind its own feature flag (default
+          // off) so it can be hidden remotely, on top of requiring multi-series
+          // to be active and more than one series to actually be available.
+          if (context.watch<FeatureFlagsProvider>().features.seriesSwitcher &&
+              context.watch<FeatureFlagsProvider>().multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
             _SectionHeader(l10n.settingsSeries),
             const _SeriesSection(),

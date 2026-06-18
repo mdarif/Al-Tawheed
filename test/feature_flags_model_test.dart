@@ -11,4 +11,14 @@ void main() {
     final flags = FeatureFlags.fromJson({'language': true});
     expect(flags.language, isTrue);
   });
+
+  test('seriesSwitcher flag defaults to false when omitted', () {
+    final flags = FeatureFlags.fromJson({'bookmarks': true});
+    expect(flags.seriesSwitcher, isFalse);
+  });
+
+  test('seriesSwitcher flag parses from JSON', () {
+    final flags = FeatureFlags.fromJson({'seriesSwitcher': true});
+    expect(flags.seriesSwitcher, isTrue);
+  });
 }
