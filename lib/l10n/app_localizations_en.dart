@@ -349,7 +349,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startListening => 'Start Listening';
 
   @override
-  String get chooseSeriesTitle => 'Begin Your Tawheed Journey';
+  String get chooseSeriesTitle => 'Choose Your Series';
 
   @override
   String get languageEnglish => 'English';

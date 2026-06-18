@@ -52,9 +52,6 @@ final _router = GoRouter(
       redirect: (context, state) {
         final s = context.read<SeriesProvider>();
         if (s.hasCompletedOnboarding) { return '/lectures'; }
-        if (!s.hasSelectedSeries &&
-            !s.isArabicDevice &&
-            s.availableSeries.length > 1) { return '/choose-series'; }
         return null;
       },
       builder: (context, state) => const WelcomeScreen(),

@@ -67,8 +67,8 @@ void main() {
   });
 
   group('theme mode', () {
-    test('defaults to system and round-trips light/system/dark', () async {
-      expect(prefs.themeMode, ThemeMode.system);
+    test('defaults to dark and round-trips light/system/dark', () async {
+      expect(prefs.themeMode, ThemeMode.dark);
 
       await prefs.saveThemeMode(ThemeMode.light);
       expect(prefs.themeMode, ThemeMode.light);

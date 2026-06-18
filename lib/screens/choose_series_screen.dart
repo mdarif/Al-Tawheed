@@ -7,13 +7,15 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
-// Arabic subtitle shown beneath the title, mirroring WelcomeScreen's
-// bilingual title — independent of the app's UI language.
-const _arChooseSeriesTitle = 'ابدأ رحلتك في التوحيد';
-
 // Arabic title shown on the Arabic series' card, independent of the app's
 // UI language — mirrors the lecture-title pattern in HomeScreen.
 const _arBookTitle = 'كتاب التوحيد';
+
+// Native script subtitles — gives each card its cultural identity.
+const _urNativeTitle = 'شرح کتاب التوحید'; // Urdu ک (U+06A9) ی (U+06CC)
+const _arNativeTitle = 'شرح كتاب التوحيد'; // Arabic ك (U+0643) ي (U+064A)
+
+const _arSpeakerFallback = 'الشيخ صالح الفوزان حفظه الله';
 
 /// Shown once to a genuinely fresh install when multi-series is enabled and
 /// more than one series is on offer. Selecting a card switches to that
@@ -83,11 +85,10 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _arChooseSeriesTitle,
+                          'Select a series to begin learning',
                           textAlign: TextAlign.center,
-                          style: context.textTheme.titleMedium?.copyWith(
-                            color: context.brandColor,
-                            fontWeight: FontWeight.w600,
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.secondaryTextColor,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -161,8 +162,11 @@ class _SeriesCard extends StatelessWidget {
       child: Text(
         series.isRtl ? _arBookTitle : baseTitle,
         textAlign: series.isRtl ? TextAlign.right : null,
-        style: context.textTheme.titleMedium
-            ?.copyWith(fontWeight: FontWeight.w700),
+        style: context.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          fontFamily: series.isRtl ? 'NotoNaskhArabic' : null,
+          letterSpacing: series.isRtl ? 0 : null,
+        ),
       ),
     );
     final titleCell = series.isRtl
@@ -193,6 +197,27 @@ class _SeriesCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       titleCell,
+                      if (series.language == 'ur' ||
+                          series.language == 'ar') ...[
+                        const SizedBox(height: 4),
+                        Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              series.language == 'ar'
+                                  ? _arNativeTitle
+                                  : _urNativeTitle,
+                              textAlign: TextAlign.right,
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: context.brandColor,
+                                fontFamily: 'NotoNaskhArabic',
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (suffix != null ||
                           series.hasStudyMode ||
                           series.hasBook) ...[
@@ -223,26 +248,52 @@ class _SeriesCard extends StatelessWidget {
             if (speakerName.isNotEmpty) ...[
               const SizedBox(height: 12),
               Divider(height: 1, color: context.groupedBorder),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
                     Icons.person_outline_rounded,
-                    size: 14,
+                    size: 16,
                     color: context.brandColor,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      speakerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.textTheme.bodySmall?.copyWith(
-                        fontSize: 11,
-                        color: context.primaryTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          speakerName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.primaryTextColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (series.isRtl) ...[
+                          const SizedBox(height: 4),
+                          Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                (series.speakerName['ar'] as String?) ??
+                                    _arSpeakerFallback,
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.secondaryTextColor,
+                                  fontFamily: 'NotoNaskhArabic',
+                                  fontSize: 13,
+                                  letterSpacing: 0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -272,13 +323,13 @@ class _LanguageThumbnail extends StatelessWidget {
     };
 
     return Container(
-      width: 56,
-      height: 56,
-      padding: const EdgeInsets.all(8),
+      width: 48,
+      height: 48,
+      padding: const EdgeInsets.all(6),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: context.brandColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Directionality(
         textDirection: TextDirection.rtl,
@@ -289,7 +340,7 @@ class _LanguageThumbnail extends StatelessWidget {
             style: TextStyle(
               color: context.onBrandColor,
               fontWeight: FontWeight.w800,
-              fontSize: 22,
+              fontSize: 18,
             ),
           ),
         ),

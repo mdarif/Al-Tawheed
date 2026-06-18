@@ -86,8 +86,9 @@ class PreferencesService {
       case 'dark':
         return ThemeMode.dark;
       case 'system':
-      default:
         return ThemeMode.system;
+      default:
+        return ThemeMode.dark;
     }
   }
 
