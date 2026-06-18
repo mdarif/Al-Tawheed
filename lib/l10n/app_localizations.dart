@@ -143,6 +143,18 @@ abstract class AppLocalizations {
   /// **'Now Playing'**
   String get nowPlaying;
 
+  /// No description provided for @allLecturesComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'All Lectures Complete'**
+  String get allLecturesComplete;
+
+  /// No description provided for @allLecturesCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have listened to every lecture. May Allah bless you with beneficial knowledge.'**
+  String get allLecturesCompleteMessage;
+
   /// No description provided for @continueListening.
   ///
   /// In en, this message translates to:
@@ -286,6 +298,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue to {title}'**
   String studyContinueToNext(String title);
+
+  /// No description provided for @studySeriesComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Series Complete'**
+  String get studySeriesComplete;
+
+  /// No description provided for @studySeriesCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Series Completed!'**
+  String get studySeriesCompleteTitle;
+
+  /// No description provided for @studySeriesCompleteCelebration.
+  ///
+  /// In en, this message translates to:
+  /// **'You have studied every class in the series. May Allah make it a source of lasting benefit for you.'**
+  String get studySeriesCompleteCelebration;
 
   /// No description provided for @studyNextUp.
   ///
@@ -566,7 +596,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAboutBy.
   ///
   /// In en, this message translates to:
-  /// **'By {lecturer}'**
+  /// **'{lecturer}'**
   String settingsAboutBy(String lecturer);
 
   /// No description provided for @settingsDownloads.

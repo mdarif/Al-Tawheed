@@ -30,6 +30,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get nowPlaying => 'ابھی چل رہا ہے';
 
   @override
+  String get allLecturesComplete => 'تمام دروس مکمل';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'آپ نے تمام دروس سن لیے ہیں۔ اللہ تعالیٰ آپ کو علمِ نافع سے نوازے۔';
+
+  @override
   String get continueListening => 'سننا جاری رکھیں';
 
   @override
@@ -118,6 +125,16 @@ class AppLocalizationsUr extends AppLocalizations {
   String studyContinueToNext(String title) {
     return '$title پر جاری رکھیں';
   }
+
+  @override
+  String get studySeriesComplete => 'سلسلہ مکمل';
+
+  @override
+  String get studySeriesCompleteTitle => '!سلسلہ مکمل';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'آپ نے سلسلے کے تمام دروس مکمل کر لیے ہیں۔ اللہ تعالیٰ اسے آپ کے لیے نافع علم بنائے۔';
 
   @override
   String get studyNextUp => 'اگلا درس';
@@ -272,7 +289,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return '$lecturer کی طرف سے';
+    return '$lecturer';
   }
 
   @override
@@ -511,6 +528,13 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get nowPlaying => 'Abhi chal raha hai';
 
   @override
+  String get allLecturesComplete => 'Tamam Daras Mukammal';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'Aap ne tamam daras sun liye hain. Allah Ta\'ala aap ko ilm-e-nafe se nawaze.';
+
+  @override
   String get continueListening => 'Sunna Jari Rakhein';
 
   @override
@@ -601,6 +625,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String studyContinueToNext(String title) {
     return '$title par jari rakhein';
   }
+
+  @override
+  String get studySeriesComplete => 'Silsila Mukammal';
+
+  @override
+  String get studySeriesCompleteTitle => 'Silsila Mukammal!';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'Aap ne silsile ke tamam daras mukammal kar liye hain. Allah Ta\'ala ise aap ke liye nafe ka ilm banaye.';
 
   @override
   String get studyNextUp => 'Agla Dars';
@@ -757,7 +791,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return '$lecturer ki taraf se';
+    return '$lecturer';
   }
 
   @override

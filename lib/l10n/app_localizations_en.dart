@@ -30,6 +30,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nowPlaying => 'Now Playing';
 
   @override
+  String get allLecturesComplete => 'All Lectures Complete';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'You have listened to every lecture. May Allah bless you with beneficial knowledge.';
+
+  @override
   String get continueListening => 'Continue Listening';
 
   @override
@@ -117,6 +124,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String studyContinueToNext(String title) {
     return 'Continue to $title';
   }
+
+  @override
+  String get studySeriesComplete => 'Series Complete';
+
+  @override
+  String get studySeriesCompleteTitle => 'Series Completed!';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'You have studied every class in the series. May Allah make it a source of lasting benefit for you.';
 
   @override
   String get studyNextUp => 'Next Up';
@@ -272,7 +289,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return 'By $lecturer';
+    return '$lecturer';
   }
 
   @override

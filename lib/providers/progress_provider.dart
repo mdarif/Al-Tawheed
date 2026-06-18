@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -10,8 +11,7 @@ class ProgressProvider extends ChangeNotifier {
   final SeriesProvider? _series;
 
   String get _prefix =>
-      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback)
-          .storagePrefix;
+      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback).storagePrefix;
 
   Map<String, int> _progress = {};
   String? _lastLectureId;
@@ -46,8 +46,17 @@ class ProgressProvider extends ChangeNotifier {
     return ((_progress[lectureId] ?? 0) / totalSeconds).clamp(0.0, 1.0);
   }
 
-  bool hasProgress(String lectureId) =>
-      (_progress[lectureId] ?? 0) > 0;
+  bool hasProgress(String lectureId) => (_progress[lectureId] ?? 0) > 0;
+
+  /// True when every lecture in [lectures] has been listened to ≥ 99%.
+  bool allComplete(List<Lecture> lectures) {
+    if (lectures.isEmpty) return false;
+    for (final lecture in lectures) {
+      if (lecture.durationSeconds <= 0) continue;
+      if (getFraction(lecture.id, lecture.durationSeconds) < 0.99) return false;
+    }
+    return true;
+  }
 
   // ── Bookmarks ─────────────────────────────────────────────────────────────
 

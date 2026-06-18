@@ -30,6 +30,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nowPlaying => 'يُشغَّل الآن';
 
   @override
+  String get allLecturesComplete => 'اكتملت جميع الدروس';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.';
+
+  @override
   String get continueListening => 'متابعة الاستماع';
 
   @override
@@ -115,6 +122,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String studyContinueToNext(String title) {
     return 'الانتقال إلى $title';
   }
+
+  @override
+  String get studySeriesComplete => 'اكتملت السلسلة';
+
+  @override
+  String get studySeriesCompleteTitle => '!اكتملت السلسلة';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'لقد أتممتَ دراسة جميع الدروس في السلسلة. جعله الله علمًا نافعًا لك.';
 
   @override
   String get studyNextUp => 'التالي';
@@ -268,7 +285,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return 'بقلم $lecturer';
+    return '$lecturer';
   }
 
   @override

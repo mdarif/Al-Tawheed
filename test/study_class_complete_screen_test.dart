@@ -171,7 +171,12 @@ void main() {
       await tester.pumpWidget(wrap('class-05'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Class 05 Completed'), findsOneWidget);
+      // Series-complete variant: richer headline and message, no "Next Up".
+      expect(find.text('Series Completed!'), findsOneWidget);
+      expect(
+          find.text('You have studied every class in the series.'
+              ' May Allah make it a source of lasting benefit for you.'),
+          findsOneWidget);
       expect(find.text('5 of 5 classes studied'), findsOneWidget);
       expect(find.text('100%'), findsNWidgets(2));
       expect(find.text('You have completed the full series.'), findsOneWidget);

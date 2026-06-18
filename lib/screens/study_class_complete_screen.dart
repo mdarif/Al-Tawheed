@@ -37,6 +37,9 @@ class StudyClassCompleteScreen extends StatelessWidget {
     final title = chapter != null ? lang.resolve(chapter.title) : null;
 
     final nextChapter = study.recommendedChapter;
+    final isSeriesComplete = nextChapter == null &&
+        study.totalChapterCount > 0 &&
+        study.studiedCount == study.totalChapterCount;
     ChapterStudyInfo? nextInfo;
     if (nextChapter != null) {
       for (final info in study.chapterInfos()) {
@@ -50,12 +53,17 @@ class StudyClassCompleteScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(l10n.studyClassComplete),
+        title: Text(isSeriesComplete
+            ? l10n.studySeriesComplete
+            : l10n.studyClassComplete),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _CelebrationCard(title: title),
+          _CelebrationCard(
+            title: title,
+            isSeriesComplete: isSeriesComplete,
+          ),
           const SizedBox(height: 24),
           OverallProgressSummary(
             studiedCount: study.studiedCount,
@@ -105,10 +113,16 @@ class StudyClassCompleteScreen extends StatelessWidget {
 }
 
 /// Celebratory header — completion ring, two-tone title, and a short dua.
+/// When [isSeriesComplete] is true the card switches to a richer "all done"
+/// variant with a different headline and a longer celebratory message.
 class _CelebrationCard extends StatelessWidget {
   final String? title;
+  final bool isSeriesComplete;
 
-  const _CelebrationCard({required this.title});
+  const _CelebrationCard({
+    required this.title,
+    this.isSeriesComplete = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,32 +152,53 @@ class _CelebrationCard extends StatelessWidget {
         children: [
           const _CompletionBadge(),
           const SizedBox(height: 18),
-          Text.rich(
-            TextSpan(
+          if (isSeriesComplete) ...[
+            Text(
+              l10n.studySeriesCompleteTitle,
+              textAlign: TextAlign.center,
               style: context.textTheme.headlineSmall?.copyWith(
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
+                color: context.brandColor,
               ),
-              children: title != null
-                  ? [
-                      TextSpan(text: '$title '),
-                      TextSpan(
-                        text: l10n.studyCompletedLabel,
-                        style: TextStyle(color: context.brandColor),
-                      ),
-                    ]
-                  : [TextSpan(text: l10n.studyClassCompleteFallback)],
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.studyCelebrationMessage,
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: context.secondaryTextColor,
+            const SizedBox(height: 10),
+            Text(
+              l10n.studySeriesCompleteCelebration,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.secondaryTextColor,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
+          ] else ...[
+            Text.rich(
+              TextSpan(
+                style: context.textTheme.headlineSmall?.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+                children: title != null
+                    ? [
+                        TextSpan(text: '$title '),
+                        TextSpan(
+                          text: l10n.studyCompletedLabel,
+                          style: TextStyle(color: context.brandColor),
+                        ),
+                      ]
+                    : [TextSpan(text: l10n.studyClassCompleteFallback)],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.studyCelebrationMessage,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.secondaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
           const SizedBox(height: 18),
           const _StepIndicator(),
         ],

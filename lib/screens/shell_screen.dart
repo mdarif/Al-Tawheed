@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
@@ -71,13 +72,14 @@ class ShellScreen extends StatelessWidget {
     final series = context.watch<SeriesProvider>().currentSeries;
     final tabs = _tabsFor(series);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const OfflineStatusBanner(),
-          Expanded(child: child),
-        ],
-      ),
+    return AllLecturesCompleteListener(
+      child: Scaffold(
+        body: Column(
+          children: [
+            const OfflineStatusBanner(),
+            Expanded(child: child),
+          ],
+        ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -91,6 +93,7 @@ class ShellScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

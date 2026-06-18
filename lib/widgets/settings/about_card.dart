@@ -69,10 +69,12 @@ class AboutCard extends StatelessWidget {
                   Text(
                     arabicTitle,
                     textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
                     style: context.textTheme.titleMedium?.copyWith(
                       fontSize: 20,
                       color: context.brandColor,
-                      letterSpacing: 0.5,
+                      fontFamily: 'NotoNaskhArabic',
+                      letterSpacing: 0,
                       height: 1.4,
                     ),
                   ),

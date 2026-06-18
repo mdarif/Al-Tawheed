@@ -5,6 +5,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
@@ -130,6 +131,14 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return CustomScrollView(
       slivers: [
         _buildAppBar(catalog),
+        SliverToBoxAdapter(
+          child: Selector<ProgressProvider, bool>(
+            selector: (_, p) => p.allComplete(lectures),
+            builder: (_, allComplete, child) =>
+                allComplete ? child! : const SizedBox.shrink(),
+            child: _AllLecturesCompleteBanner(),
+          ),
+        ),
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -282,4 +291,64 @@ class _ListItem {
   const _ListItem.lecture(Lecture l)
       : lecture = l,
         chapter = null;
+}
+
+class _AllLecturesCompleteBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.brandColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: context.brandColor.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.brandColor.withValues(alpha: 0.15),
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                color: context.brandColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.allLecturesComplete,
+                    style: context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.brandColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.allLecturesCompleteMessage,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.secondaryTextColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

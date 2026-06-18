@@ -38,6 +38,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool _pendingNextBlocked = false;
   String? _pendingNextBlockedTitle;
   Lecture? _pendingNextBlockedLecture;
+  bool _pendingAllLecturesComplete = false;
 
   PlayerNotifier(this._handler, this._progress, this._downloads,
       this._connectivity, [this._catalog]) {
@@ -109,6 +110,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool get pendingNextBlocked => _pendingNextBlocked;
   String? get pendingNextBlockedTitle => _pendingNextBlockedTitle;
   Lecture? get pendingNextBlockedLecture => _pendingNextBlockedLecture;
+  bool get pendingAllLecturesComplete => _pendingAllLecturesComplete;
 
   String? get studyContextLabel => formatStudyContextLabel(
         mode: _playbackMode,
@@ -154,6 +156,7 @@ class PlayerNotifier extends ChangeNotifier {
       _studyChapter = null;
     }
     _pendingStudyChapterCompleteId = null;
+    _pendingAllLecturesComplete = false;
     _saveCurrentPosition();
     _cancelSaveTimer();
     _cancelStuckBufferingTimer();
@@ -278,6 +281,10 @@ class PlayerNotifier extends ChangeNotifier {
     _pendingNextBlockedTitle = null;
     _pendingNextBlockedLecture = null;
     notifyListeners();
+  }
+
+  void clearPendingAllLecturesComplete() {
+    _pendingAllLecturesComplete = false;
   }
 
   /// Injects playback state for the offline status strip without touching
@@ -415,6 +422,12 @@ class PlayerNotifier extends ChangeNotifier {
         mode: _playbackMode,
         studyChapter: _studyChapter,
       );
+    } else if (idx == _queue.length - 1) {
+      final allLectures = _catalog?.catalog?.lectures;
+      if (allLectures != null && _progress.allComplete(allLectures)) {
+        _pendingAllLecturesComplete = true;
+        notifyListeners();
+      }
     }
   }
 

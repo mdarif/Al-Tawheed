@@ -10,6 +10,8 @@
   "appTitle": "Sharah Kitab al-Tawheed",
   "nowPlaying": "Now Playing",
 
+  "allLecturesComplete": "All Lectures Complete",
+  "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",
   "continueListening": "Continue Listening",
   "continueListeningEmpty": "Start a lecture to resume here",
   "listenedDuration": "{listened} listened · {remaining} left",
@@ -64,6 +66,9 @@
   "@studyContinueToNext": {
     "placeholders": { "title": { "type": "String" } }
   },
+  "studySeriesComplete": "Series Complete",
+  "studySeriesCompleteTitle": "Series Completed!",
+  "studySeriesCompleteCelebration": "You have studied every class in the series. May Allah make it a source of lasting benefit for you.",
   "studyNextUp": "Next Up",
   "studyBackToOverview": "Back to Study Mode",
   "studyStatusStudied": "Studied",
@@ -140,7 +145,7 @@
       "appName": { "type": "String" }
     }
   },
-  "settingsAboutBy": "By {lecturer}",
+  "settingsAboutBy": "{lecturer}",
   "@settingsAboutBy": {
     "placeholders": { "lecturer": { "type": "String" } }
   },

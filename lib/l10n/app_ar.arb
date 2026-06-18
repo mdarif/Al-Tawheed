@@ -10,6 +10,8 @@
   "appTitle": "شرح كتاب التوحيد",
   "nowPlaying": "يُشغَّل الآن",
 
+  "allLecturesComplete": "اكتملت جميع الدروس",
+  "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",
   "continueListening": "متابعة الاستماع",
   "continueListeningEmpty": "ابدأ درسًا للمتابعة من هنا",
   "listenedDuration": "{listened} مستمَع · {remaining} متبقٍّ",
@@ -62,6 +64,9 @@
   "@studyContinueToNext": {
     "placeholders": { "title": { "type": "String" } }
   },
+  "studySeriesComplete": "اكتملت السلسلة",
+  "studySeriesCompleteTitle": "!اكتملت السلسلة",
+  "studySeriesCompleteCelebration": "لقد أتممتَ دراسة جميع الدروس في السلسلة. جعله الله علمًا نافعًا لك.",
   "studyNextUp": "التالي",
   "studyBackToOverview": "العودة إلى وضع الدراسة",
   "studyStatusStudied": "مدروس",
@@ -136,7 +141,7 @@
       "appName": { "type": "String" }
     }
   },
-  "settingsAboutBy": "بقلم {lecturer}",
+  "settingsAboutBy": "{lecturer}",
   "@settingsAboutBy": {
     "placeholders": { "lecturer": { "type": "String" } }
   },
