@@ -44,7 +44,18 @@ jobs:
         uses: actions/checkout@v6
 
       # ------------------------------------------------------------------ #
-      # 2. Flutter (pinned)
+      # 2. Java 21 (required by android/app/build.gradle compileOptions)
+      #    Must come before Flutter setup. Without it the emulator build
+      #    fails with "invalid source release: 21" on the runner's default JDK.
+      # ------------------------------------------------------------------ #
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ------------------------------------------------------------------ #
+      # 3. Flutter (pinned)
       # ------------------------------------------------------------------ #
       - name: Set up Flutter (pinned)
         uses: subosito/flutter-action@v2
@@ -53,7 +64,7 @@ jobs:
           cache: true
 
       # ------------------------------------------------------------------ #
-      # 3. Cache pub packages
+      # 4. Cache pub packages
       # ------------------------------------------------------------------ #
       - name: Cache pub packages
         uses: actions/cache@v5
@@ -64,19 +75,19 @@ jobs:
             pub-cache-${{ runner.os }}-
 
       # ------------------------------------------------------------------ #
-      # 4. Install dependencies
+      # 5. Install dependencies
       # ------------------------------------------------------------------ #
       - name: Install Flutter dependencies
         run: flutter pub get
 
       # ------------------------------------------------------------------ #
-      # 5. Analyze (fast sanity check before booting an emulator)
+      # 6. Analyze (fast sanity check before booting an emulator)
       # ------------------------------------------------------------------ #
       - name: Analyze code
         run: flutter analyze --fatal-warnings
 
       # ------------------------------------------------------------------ #
-      # 6. Enable KVM so the emulator can use hardware acceleration
+      # 7. Enable KVM so the emulator can use hardware acceleration
       # ------------------------------------------------------------------ #
       - name: Enable KVM group perms
         run: |
@@ -85,7 +96,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # ------------------------------------------------------------------ #
-      # 7. Boot Android emulator and run integration tests
+      # 8. Boot Android emulator and run integration tests
       #    Timeout is generous (15 min) — first run fetches the catalog
       #    from the CDN and may download audio metadata.
       # ------------------------------------------------------------------ #
@@ -108,7 +119,7 @@ jobs:
             exit $(cat /tmp/flutter_test_status)
 
       # ------------------------------------------------------------------ #
-      # 8. Upload logcat on failure (attached to the workflow run)
+      # 9. Upload logcat on failure (attached to the workflow run)
       # ------------------------------------------------------------------ #
       - name: Upload logcat on failure
         if: failure()
