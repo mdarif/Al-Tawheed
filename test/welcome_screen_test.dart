@@ -103,7 +103,7 @@ Widget _wrapWithRouter({
             path: '/',
             redirect: (context, state) {
               final s = context.read<SeriesProvider>();
-              if (s.hasCompletedOnboarding) return '/lectures';
+              if (!s.shouldShowWelcomeForCurrentSeries) return '/lectures';
               return null;
             },
             builder: (_, __) => const WelcomeScreen(),
@@ -141,8 +141,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Sharah Kitab at-Tawheed'), findsOneWidget);
+      // Urdu native-script title shown below the English title.
+      expect(find.text('شرح کتاب التوحید'), findsOneWidget);
       expect(find.text('START LISTENING'), findsOneWidget);
-      expect(find.byIcon(Icons.auto_stories_rounded), findsOneWidget);
     });
 
     testWidgets('Arabic series shows Arabic title and Arabic CTA',
@@ -194,19 +195,24 @@ void main() {
       expect(opacity.opacity, 0.0);
     });
 
-    testWidgets('book icon uses brand color, not hardcoded amber',
+    testWidgets('Urdu welcome shows the Kitab at-Tawheed cover image',
         (tester) async {
       final series = SeriesProvider()..load(false, definitive: true);
 
       await tester.pumpWidget(_wrapWithRouter(series: series));
       await tester.pumpAndSettle();
 
-      final iconWidget = tester.widget<Icon>(
-        find.byIcon(Icons.auto_stories_rounded),
+      // The Urdu welcome shows the book cover (not a generic coloured icon).
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              w.image is AssetImage &&
+              (w.image as AssetImage).assetName ==
+                  'assets/images/kitab_at_tawheed.png',
+        ),
+        findsOneWidget,
       );
-      // Brand color should NOT be amber (0xFFFFC107)
-      expect(iconWidget.color, isNot(Colors.amber));
-      expect(iconWidget.color, isNotNull);
     });
   });
 
@@ -233,8 +239,9 @@ void main() {
       await tester.tap(find.text('START LISTENING'));
       await tester.pumpAndSettle();
 
-      // Should go to lectures, onboarding completed
-      expect(series.hasCompletedOnboarding, isTrue);
+      // Should go to lectures; the Urdu welcome is now marked seen so it won't
+      // reappear for this series.
+      expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
       expect(find.text('Lectures'), findsOneWidget);
     });
 
@@ -286,7 +293,7 @@ void main() {
       await tester.tap(find.text('START LISTENING'));
       await tester.pumpAndSettle();
 
-      expect(series.hasCompletedOnboarding, isTrue);
+      expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
       expect(find.text('Lectures'), findsOneWidget);
     });
   });
@@ -348,7 +355,7 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(series.hasCompletedOnboarding, isTrue);
+      expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
       expect(find.text('Lectures'), findsOneWidget);
     });
   });

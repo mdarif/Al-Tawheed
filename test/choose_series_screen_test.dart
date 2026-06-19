@@ -122,6 +122,14 @@ Widget _wrap({required SeriesProvider series}) {
         routes: [
           GoRoute(
             path: '/',
+            // Mirror the real router: after a series switch the picker routes
+            // to '/', which shows the chosen series' welcome if not yet seen,
+            // or redirects to lectures otherwise.
+            redirect: (context, state) {
+              final s = context.read<SeriesProvider>();
+              if (!s.shouldShowWelcomeForCurrentSeries) return '/lectures';
+              return null;
+            },
             builder: (_, __) =>
                 const Scaffold(body: Center(child: Text('Welcome'))),
           ),
@@ -341,13 +349,15 @@ void main() {
   });
 
   group('ChooseSeriesScreen — selecting Urdu series', () {
-    testWidgets('tapping Urdu card completes onboarding and goes to lectures',
+    testWidgets('tapping the already-current Urdu card goes to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
           'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')),);
 
       // Use load(true) so _currentId starts null (simulating the fresh-install
-      // path where the user reaches ChooseSeriesScreen).
+      // path where the user reaches ChooseSeriesScreen). currentSeries falls
+      // back to the Urdu legacy series, so picking Urdu confirms the current
+      // series — its welcome is marked seen and we land on lectures.
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
@@ -363,7 +373,7 @@ void main() {
       );
 
       expect(series.currentSeries.id, _urduSeries.id);
-      expect(series.hasCompletedOnboarding, isTrue);
+      expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
       expect(
           PreferencesService.instance.selectedSeriesId, _urduSeries.id,);
       expect(find.text('Lectures'), findsOneWidget);
@@ -372,7 +382,7 @@ void main() {
 
   group('ChooseSeriesScreen — selecting Arabic series', () {
     testWidgets(
-        'tapping Arabic card completes onboarding and goes to lectures',
+        'tapping a different (Arabic) card routes to its welcome screen',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
           'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
@@ -392,12 +402,13 @@ void main() {
       );
 
       expect(series.currentSeries.id, _arabicSeries.id);
-      expect(series.hasCompletedOnboarding, isTrue);
       expect(
           PreferencesService.instance.selectedSeriesId, _arabicSeries.id,);
-      expect(find.text('Lectures'), findsOneWidget);
-      // Should NOT show Welcome screen
-      expect(find.text('Welcome'), findsNothing);
+      // Switching to a not-yet-seen series shows that series' welcome (the
+      // router stays on '/'), rather than skipping straight to lectures.
+      expect(series.shouldShowWelcomeForCurrentSeries, isTrue);
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('Lectures'), findsNothing);
     });
   });
 
