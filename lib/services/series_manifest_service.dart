@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/services/remote_content_service.dart';
@@ -26,7 +27,8 @@ class SeriesManifestService {
           .toList();
       if (list.isEmpty) return const [SeriesConfig.legacyUrduFallback];
       return list;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('SeriesManifestService: fetch failed, using fallback: $e');
       return const [SeriesConfig.legacyUrduFallback];
     }
   }

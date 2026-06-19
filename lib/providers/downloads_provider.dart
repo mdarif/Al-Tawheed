@@ -196,7 +196,8 @@ class DownloadsProvider extends ChangeNotifier {
       );
     } on DownloadCancelled {
       _resetAfterCancel(lecture.id);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('DownloadsProvider: download error for ${lecture.id}: $e');
       if (_statuses[lecture.id] == DownloadStatus.downloading) {
         _statuses[lecture.id] = DownloadStatus.failed;
         _progress.remove(lecture.id);

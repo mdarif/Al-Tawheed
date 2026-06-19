@@ -102,7 +102,8 @@ class _ContinueListeningCard extends StatelessWidget {
     Lecture? lecture;
     try {
       lecture = catalog.catalog!.lectures.firstWhere((l) => l.id == lastId);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('HomeScreen: last-played lecture not found in catalog: $e');
       return _emptyState(context, study);
     }
 

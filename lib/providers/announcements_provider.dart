@@ -24,8 +24,8 @@ class AnnouncementsProvider extends ChangeNotifier {
         forceRefresh: forceRefresh,
       );
       _applyBody(body);
-    } catch (_) {
-      // Fetch failed — empty list; no banner shown
+    } catch (e) {
+      debugPrint('AnnouncementsProvider: fetch failed: $e');
     }
   }
 

@@ -45,8 +45,8 @@ class FeatureFlagsProvider extends ChangeNotifier {
         );
       }
       // Unknown schema: keep defaults but still mark as loaded.
-    } catch (_) {
-      // Fetch failed — defaults remain active.
+    } catch (e) {
+      debugPrint('FeatureFlagsProvider: fetch failed: $e');
     } finally {
       _hasLoaded = true;
       notifyListeners();

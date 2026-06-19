@@ -99,8 +99,8 @@ class RemoteContentService {
   }) async {
     try {
       await _fetchAndCache(url: url, cacheKey: cacheKey);
-    } catch (_) {
-      // Background refresh failures are silent — stale cache continues serving
+    } catch (e) {
+      debugPrint('RemoteContentService: background refresh failed for $cacheKey: $e');
     }
   }
 

@@ -36,8 +36,8 @@ class AppConfigProvider extends ChangeNotifier {
 
       _config = model;
       _status = RemoteStatus.loaded;
-    } catch (_) {
-      // Fetch failed — keep defaults (hardcoded fallback is always safe)
+    } catch (e) {
+      debugPrint('AppConfigProvider: fetch failed: $e');
       _status = RemoteStatus.error;
     }
     notifyListeners();
