@@ -13,12 +13,13 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/offline_player_strip.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/download_button.dart';
 import 'package:myapp/widgets/offline_sheet.dart';
+import 'package:myapp/widgets/player/seek_bar.dart';
+import 'package:myapp/widgets/player/transport_controls.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 
 // Player-screen chrome strings shown in Arabic for the Arabic series,
@@ -73,9 +74,9 @@ class PlayerScreen extends StatelessWidget {
                   const _TrackInfo(),
                   const _OfflineStatusStrip(),
                   const SizedBox(height: 32),
-                  const _SeekBar(),
+                  const PlayerSeekBar(),
                   const SizedBox(height: 28),
-                  const _TransportControls(),
+                  const PlayerTransportControls(),
                   const SizedBox(height: 24),
                   const PlaybackSpeedSelectorCompact(),
                   const SizedBox(height: 16),
@@ -538,213 +539,6 @@ class _TrackInfoSnapshot {
 
   @override
   int get hashCode => Object.hash(lectureId, studyLabel);
-}
-
-// ── Seek bar ─────────────────────────────────────────────────────────────────
-
-class _SeekBar extends StatefulWidget {
-  const _SeekBar();
-
-  @override
-  State<_SeekBar> createState() => _SeekBarState();
-}
-
-class _SeekBarState extends State<_SeekBar> {
-  double? _draggingValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, _SeekSnapshot>(
-      selector: (_, player) => _SeekSnapshot(
-        progress: player.progress,
-        positionSeconds: player.position.inSeconds,
-        durationSeconds: player.duration.inSeconds,
-      ),
-      builder: (_, snapshot, __) {
-        final sliderValue = _draggingValue ?? snapshot.progress;
-
-        return Column(
-          children: [
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-              ),
-              child: Slider(
-                value: sliderValue.clamp(0.0, 1.0),
-                onChangeStart: (v) => setState(() => _draggingValue = v),
-                onChanged: (v) => setState(() => _draggingValue = v),
-                onChangeEnd: (v) {
-                  setState(() => _draggingValue = null);
-                  context.read<PlayerNotifier>().seek(
-                        Duration(
-                          milliseconds:
-                              (v * snapshot.durationSeconds * 1000).round(),
-                        ),
-                      );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DurationFormatter.fromSeconds(snapshot.positionSeconds),
-                    style: context.textTheme.bodySmall,
-                  ),
-                  Text(
-                    DurationFormatter.fromSeconds(snapshot.durationSeconds),
-                    style: context.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SeekSnapshot {
-  final double progress;
-  final int positionSeconds;
-  final int durationSeconds;
-
-  const _SeekSnapshot({
-    required this.progress,
-    required this.positionSeconds,
-    required this.durationSeconds,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _SeekSnapshot &&
-      other.progress == progress &&
-      other.positionSeconds == positionSeconds &&
-      other.durationSeconds == durationSeconds;
-
-  @override
-  int get hashCode => Object.hash(progress, positionSeconds, durationSeconds);
-}
-
-// ── Transport controls ───────────────────────────────────────────────────────
-
-class _TransportControls extends StatelessWidget {
-  const _TransportControls();
-
-  @override
-  Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, _TransportSnapshot>(
-      selector: (_, player) => _TransportSnapshot(
-        isPlaying: player.isPlaying,
-        isLoading: player.isLoading,
-        hasPrevious: player.hasPrevious,
-        hasNext: player.hasNext,
-      ),
-      builder: (_, snapshot, __) {
-        final enabledColor = context.primaryTextColor;
-        final disabledColor = context.mutedIconColor;
-        final player = context.read<PlayerNotifier>();
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              iconSize: 32,
-              icon: Icon(
-                Icons.skip_previous_rounded,
-                color: snapshot.hasPrevious ? enabledColor : disabledColor,
-              ),
-              onPressed: snapshot.hasPrevious ? player.playPrevious : null,
-            ),
-            IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.replay_10_rounded, color: enabledColor),
-              onPressed: player.skipBackward,
-            ),
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                color: context.brandColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: context.brandColor.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: snapshot.isLoading
-                  ? Center(
-                      child: SizedBox(
-                        width: 26,
-                        height: 26,
-                        child: CircularProgressIndicator(
-                          color: context.onBrandColor,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                    )
-                  : IconButton(
-                      iconSize: 36,
-                      icon: Icon(
-                        snapshot.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: context.onBrandColor,
-                      ),
-                      onPressed: player.playPause,
-                    ),
-            ),
-            IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.forward_10_rounded, color: enabledColor),
-              onPressed: player.skipForward,
-            ),
-            IconButton(
-              iconSize: 32,
-              icon: Icon(
-                Icons.skip_next_rounded,
-                color: snapshot.hasNext ? enabledColor : disabledColor,
-              ),
-              onPressed: snapshot.hasNext ? player.playNext : null,
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _TransportSnapshot {
-  final bool isPlaying;
-  final bool isLoading;
-  final bool hasPrevious;
-  final bool hasNext;
-
-  const _TransportSnapshot({
-    required this.isPlaying,
-    required this.isLoading,
-    required this.hasPrevious,
-    required this.hasNext,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _TransportSnapshot &&
-      other.isPlaying == isPlaying &&
-      other.isLoading == isLoading &&
-      other.hasPrevious == hasPrevious &&
-      other.hasNext == hasNext;
-
-  @override
-  int get hashCode => Object.hash(isPlaying, isLoading, hasPrevious, hasNext);
 }
 
 // ── App bar buttons ──────────────────────────────────────────────────────────

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:myapp/audio/player_notifier.dart';
-import 'package:myapp/models/announcement_model.dart';
 import 'package:myapp/models/catalog.dart';
-import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
-import 'package:myapp/providers/connectivity_provider.dart';
-import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -17,6 +13,8 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/announcements_banner.dart';
+import 'package:myapp/widgets/offline_prep_strip.dart';
 
 // Home-screen chrome strings shown in Arabic for the Arabic series,
 // independent of the app's UI language (which still governs other
@@ -29,13 +27,6 @@ String _arListenedDuration(String listened, String remaining) =>
     'تم الاستماع: $listened · المتبقي: $remaining';
 String _arPercentComplete(int percent) => '$percent% مكتمل';
 const _arDailyBenefit = 'فائدة اليوم';
-const _arOfflineLibrary = 'التنزيلات';
-String _arOfflinePrepTitle(int count) => count == 1
-    ? 'تحميل الجزء التالي دون اتصال'
-    : 'تحميل $count أجزاء قادمة دون اتصال';
-String _arOfflinePrepSize(String sizeMb) => '~$sizeMb ميجابايت';
-const _arOfflinePrepSave = 'تحميل';
-const _arConnectWifiToDownload = 'اتصل بشبكة Wi-Fi للتحميل';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -69,10 +60,10 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _AnnouncementsBanner(),
+                  AnnouncementsBanner(),
                   _ContinueListeningCard(),
                   if (context.watch<FeatureFlagsProvider>().features.downloads)
-                    _OfflinePrepStrip(),
+                    OfflinePrepStrip(),
                   const SizedBox(height: 24),
                   _DailyBenefitCard(),
                   const SizedBox(height: 24),
@@ -436,358 +427,6 @@ class _DailyBenefitCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ── Offline preparation strip ─────────────────────────────────────────────────
-
-/// Returns the next ≤3 lectures after [lastId] split into two lists:
-/// [toDownload] (not yet started) and [downloading] (in progress).
-/// Exported for testing; should not be called outside this file or tests.
-@visibleForTesting
-({List<Lecture> toDownload, List<Lecture> downloading}) computeOfflinePrepBatch(
-  List<Lecture> allLectures,
-  String lastId,
-  DownloadsProvider downloads,
-) {
-  final currentIdx = allLectures.indexWhere((l) => l.id == lastId);
-  if (currentIdx < 0 || currentIdx >= allLectures.length - 1) {
-    return (toDownload: [], downloading: []);
-  }
-  final end = (currentIdx + 4).clamp(0, allLectures.length);
-  final batch = allLectures.sublist(currentIdx + 1, end);
-  final toDownload = batch
-      .where(
-        (l) =>
-            downloads.statusFor(l.id) == DownloadStatus.notDownloaded ||
-            downloads.statusFor(l.id) == DownloadStatus.failed,
-      )
-      .toList();
-  final downloading = batch
-      .where((l) => downloads.statusFor(l.id) == DownloadStatus.downloading)
-      .toList();
-  return (toDownload: toDownload, downloading: downloading);
-}
-
-class _OfflinePrepStrip extends StatefulWidget {
-  @override
-  State<_OfflinePrepStrip> createState() => _OfflinePrepStripState();
-}
-
-class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
-  bool _dismissed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_dismissed) return const SizedBox.shrink();
-
-    final connectivity = context.watch<ConnectivityProvider>();
-    if (connectivity.isOffline) return const SizedBox.shrink();
-
-    final progress = context.watch<ProgressProvider>();
-    final catalog = context.watch<CatalogProvider>();
-    final downloads = context.watch<DownloadsProvider>();
-
-    final lastId = progress.lastLectureId;
-    if (lastId == null || catalog.status != CatalogStatus.loaded) {
-      return const SizedBox.shrink();
-    }
-
-    final allLectures = catalog.catalog!.lectures;
-    final (:toDownload, :downloading) =
-        computeOfflinePrepBatch(allLectures, lastId, downloads);
-
-    if (toDownload.isEmpty && downloading.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final anyDownloading = downloading.isNotEmpty;
-    final totalBytes = toDownload.fold(0, (sum, l) => sum + l.fileSizeBytes);
-    final sizeMb = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
-    final avgProgress = anyDownloading
-        ? downloading.fold(0.0, (s, l) => s + downloads.progressFor(l.id)) /
-            downloading.length
-        : 0.0;
-
-    final l10n = context.l10n;
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isArabic ? _arOfflineLibrary : l10n.offlineLibrary,
-            style: context.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: context.groupedSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.groupedBorder, width: 1),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: context.semantic.brandSubtle,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    anyDownloading
-                        ? Icons.downloading_rounded
-                        : Icons.download_outlined,
-                    color: context.brandColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: anyDownloading
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isArabic
-                                  ? _arOfflinePrepTitle(
-                                      downloading.length + toDownload.length,
-                                    )
-                                  : l10n.offlinePrepTitle(
-                                      downloading.length + toDownload.length,
-                                    ),
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: context.secondaryTextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                value: avgProgress,
-                                backgroundColor: context.progressTrackColor,
-                                color: context.brandColor,
-                                minHeight: 4,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isArabic
-                                  ? _arOfflinePrepTitle(toDownload.length)
-                                  : l10n.offlinePrepTitle(toDownload.length),
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: context.secondaryTextColor,
-                              ),
-                            ),
-                            if (totalBytes > 0) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                isArabic
-                                    ? _arOfflinePrepSize(sizeMb)
-                                    : l10n.offlinePrepSize(sizeMb),
-                                style: context.textTheme.bodySmall?.copyWith(
-                                  color: context.secondaryTextColor,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                ),
-                if (!anyDownloading) ...[
-                  const SizedBox(width: 8),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () => _startDownloads(context, toDownload),
-                    child: Text(
-                      isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() => _dismissed = true),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: context.mutedIconColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _startDownloads(BuildContext context, List<Lecture> lectures) {
-    final connectivity = context.read<ConnectivityProvider>();
-    final downloads = context.read<DownloadsProvider>();
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
-    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked,
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    for (final l in lectures) {
-      downloads.download(l);
-    }
-  }
-}
-
-// ── Announcements Banner ──────────────────────────────────────────────────────
-
-class _AnnouncementsBanner extends StatelessWidget {
-  static const _iconForType = {
-    'info': Icons.info_outline_rounded,
-    'warning': Icons.warning_amber_rounded,
-    'success': Icons.check_circle_outline_rounded,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    if (!context.watch<FeatureFlagsProvider>().features.announcements) {
-      return const SizedBox.shrink();
-    }
-
-    final announcements = context.watch<AnnouncementsProvider>().visible;
-    if (announcements.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: [
-        for (final a in announcements) ...[
-          _AnnouncementCard(announcement: a),
-          const SizedBox(height: 12),
-        ],
-      ],
-    );
-  }
-}
-
-class _AnnouncementCard extends StatelessWidget {
-  final Announcement announcement;
-  const _AnnouncementCard({required this.announcement});
-
-  @override
-  Widget build(BuildContext context) {
-    final lang = context.read<LanguageProvider>();
-    final icon = _AnnouncementsBanner._iconForType[announcement.type] ??
-        Icons.info_outline_rounded;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.groupedBorder, width: 1),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Gold left accent bar — matches the chapter header style
-            Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: context.brandColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(icon, size: 18, color: context.brandColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            lang.resolve(announcement.title),
-                            style: context.textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => context
-                              .read<AnnouncementsProvider>()
-                              .dismiss(announcement.id),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: context.mutedIconColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      lang.resolve(announcement.body),
-                      style: context.textTheme.bodySmall?.copyWith(
-                        height: 1.5,
-                        color: context.secondaryTextColor,
-                      ),
-                    ),
-                    if (announcement.ctaUrl != null &&
-                        announcement.ctaLabel != null) ...[
-                      const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () => launchUrl(
-                          Uri.parse(announcement.ctaUrl!),
-                          mode: LaunchMode.externalApplication,
-                        ),
-                        child: Text(
-                          lang.resolve(announcement.ctaLabel!),
-                          style: context.textTheme.labelMedium?.copyWith(
-                            color: context.brandColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

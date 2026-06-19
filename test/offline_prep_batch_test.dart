@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/downloads_provider.dart';
-import 'package:myapp/screens/home_screen.dart';
+import 'package:myapp/widgets/offline_prep_strip.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
