@@ -196,6 +196,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get bookIncreaseText => 'متن بڑا کریں';
 
   @override
+  String get bookColorKey => 'رنگوں کی کنجی';
+
+  @override
+  String get bookLegendVerse => 'قرآنی آیت';
+
+  @override
+  String get bookLegendCitation => 'حوالہ (سورت:آیت)';
+
+  @override
+  String get bookLegendHadith => 'حدیث';
+
+  @override
   String get retry => 'دوبارہ کوشش کریں';
 
   @override
@@ -700,6 +712,18 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get bookIncreaseText => 'Text bada karein';
+
+  @override
+  String get bookColorKey => 'Rangon ki kunji';
+
+  @override
+  String get bookLegendVerse => 'Qurani ayat';
+
+  @override
+  String get bookLegendCitation => 'Hawala (surat:ayat)';
+
+  @override
+  String get bookLegendHadith => 'Hadith';
 
   @override
   String get retry => 'Dobara koshish karein';

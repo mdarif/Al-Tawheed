@@ -195,6 +195,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookIncreaseText => 'Increase text size';
 
   @override
+  String get bookColorKey => 'Color key';
+
+  @override
+  String get bookLegendVerse => 'Qur\'an verse';
+
+  @override
+  String get bookLegendCitation => 'Reference (surah:ayah)';
+
+  @override
+  String get bookLegendHadith => 'Hadith';
+
+  @override
   String get retry => 'Retry';
 
   @override

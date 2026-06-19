@@ -69,6 +69,16 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     reading.setBookFontSize(next);
   }
 
+  void _showColorKey(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _ColorKeySheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _pageController;
@@ -108,6 +118,11 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                     _maxFontSize
                 ? () => _adjustFont(_fontStep)
                 : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: context.l10n.bookColorKey,
+            onPressed: () => _showColorKey(context),
           ),
           IconButton(
             icon: const Icon(Icons.share_rounded),
@@ -336,6 +351,92 @@ class _BookBodyState extends State<_BookBody> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Bottom sheet explaining the reader's colour coding. Swatches are sample
+/// tokens rendered in the live theme colours, so the key always matches what
+/// the reader currently shows in light or dark mode.
+class _ColorKeySheet extends StatelessWidget {
+  const _ColorKeySheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.bookColorKey,
+              style: context.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _ColorKeyRow(
+              sample: '\u{FD3F}\u{2026}\u{FD3E}',
+              color: context.bookVerseColor,
+              label: l10n.bookLegendVerse,
+            ),
+            const SizedBox(height: 16),
+            _ColorKeyRow(
+              sample: '[\u{2026}]',
+              color: context.bookCitationColor,
+              label: l10n.bookLegendCitation,
+            ),
+            const SizedBox(height: 16),
+            _ColorKeyRow(
+              sample: '\u{00AB}\u{2026}\u{00BB}',
+              color: context.bookHadithColor,
+              label: l10n.bookLegendHadith,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorKeyRow extends StatelessWidget {
+  final String sample;
+  final Color color;
+  final String label;
+
+  const _ColorKeyRow({
+    required this.sample,
+    required this.color,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(
+            sample,
+            textAlign: TextAlign.center,
+            style: context.textTheme.titleMedium?.copyWith(
+              color: color,
+              fontFamily: 'NotoNaskhArabic',
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            label,
+            style: context.textTheme.bodyLarge,
+          ),
+        ),
+      ],
     );
   }
 }

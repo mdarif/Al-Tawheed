@@ -192,6 +192,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookIncreaseText => 'تكبير حجم الخط';
 
   @override
+  String get bookColorKey => 'مفتاح الألوان';
+
+  @override
+  String get bookLegendVerse => 'آية قرآنية';
+
+  @override
+  String get bookLegendCitation => 'مرجع (سورة:آية)';
+
+  @override
+  String get bookLegendHadith => 'حديث';
+
+  @override
   String get retry => 'إعادة المحاولة';
 
   @override

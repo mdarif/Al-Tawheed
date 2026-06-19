@@ -124,6 +124,22 @@ void main() {
     expect(find.text('نص الباب الثاني'), findsOneWidget);
   });
 
+  testWidgets('color key button opens the legend sheet', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.palette_outlined));
+    await tester.pumpAndSettle();
+
+    // English chrome (test wrap uses default/en locale) — legend labels show.
+    expect(find.text('Color key'), findsOneWidget);
+    expect(find.text("Qur'an verse"), findsOneWidget);
+    expect(find.text('Reference (surah:ayah)'), findsOneWidget);
+    expect(find.text('Hadith'), findsOneWidget);
+  });
+
   testWidgets('share action shares the chapter title and text', (tester) async {
     final sharePlatform = _FakeSharePlatform();
     SharePlatform.instance = sharePlatform;

@@ -425,6 +425,30 @@ abstract class AppLocalizations {
   /// **'Increase text size'**
   String get bookIncreaseText;
 
+  /// No description provided for @bookColorKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Color key'**
+  String get bookColorKey;
+
+  /// No description provided for @bookLegendVerse.
+  ///
+  /// In en, this message translates to:
+  /// **'Qur\'an verse'**
+  String get bookLegendVerse;
+
+  /// No description provided for @bookLegendCitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference (surah:ayah)'**
+  String get bookLegendCitation;
+
+  /// No description provided for @bookLegendHadith.
+  ///
+  /// In en, this message translates to:
+  /// **'Hadith'**
+  String get bookLegendHadith;
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:
