@@ -102,116 +102,122 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: context.groupedSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.groupedBorder, width: 1),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: context.semantic.brandSubtle,
-                    borderRadius: BorderRadius.circular(10),
+          InkWell(
+            onTap: anyDownloading
+                ? null
+                : () => _startDownloads(context, toDownload),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.groupedSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.groupedBorder, width: 1),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: context.semantic.brandSubtle,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      anyDownloading
+                          ? Icons.downloading_rounded
+                          : Icons.download_outlined,
+                      color: context.brandColor,
+                      size: 22,
+                    ),
                   ),
-                  child: Icon(
-                    anyDownloading
-                        ? Icons.downloading_rounded
-                        : Icons.download_outlined,
-                    color: context.brandColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: anyDownloading
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isArabic
-                                  ? _arOfflinePrepTitle(
-                                      downloading.length + toDownload.length,
-                                    )
-                                  : l10n.offlinePrepTitle(
-                                      downloading.length + toDownload.length,
-                                    ),
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: context.secondaryTextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                value: avgProgress,
-                                backgroundColor: context.progressTrackColor,
-                                color: context.brandColor,
-                                minHeight: 4,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isArabic
-                                  ? _arOfflinePrepTitle(toDownload.length)
-                                  : l10n.offlinePrepTitle(toDownload.length),
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: context.secondaryTextColor,
-                              ),
-                            ),
-                            if (totalBytes > 0) ...[
-                              const SizedBox(height: 3),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: anyDownloading
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Text(
                                 isArabic
-                                    ? _arOfflinePrepSize(sizeMb)
-                                    : l10n.offlinePrepSize(sizeMb),
+                                    ? _arOfflinePrepTitle(
+                                        downloading.length + toDownload.length,
+                                      )
+                                    : l10n.offlinePrepTitle(
+                                        downloading.length + toDownload.length,
+                                      ),
                                 style: context.textTheme.bodySmall?.copyWith(
                                   color: context.secondaryTextColor,
                                 ),
                               ),
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(
+                                  value: avgProgress,
+                                  backgroundColor: context.progressTrackColor,
+                                  color: context.brandColor,
+                                  minHeight: 4,
+                                ),
+                              ),
                             ],
-                          ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isArabic
+                                    ? _arOfflinePrepTitle(toDownload.length)
+                                    : l10n.offlinePrepTitle(toDownload.length),
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.secondaryTextColor,
+                                ),
+                              ),
+                              if (totalBytes > 0) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  isArabic
+                                      ? _arOfflinePrepSize(sizeMb)
+                                      : l10n.offlinePrepSize(sizeMb),
+                                  style: context.textTheme.bodySmall?.copyWith(
+                                    color: context.secondaryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                  ),
+                  if (!anyDownloading) ...[
+                    const SizedBox(width: 8),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                ),
-                if (!anyDownloading) ...[
-                  const SizedBox(width: 8),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () => _startDownloads(context, toDownload),
-                    child: Text(
-                      isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() => _dismissed = true),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: context.mutedIconColor,
+                      onPressed: () => _startDownloads(context, toDownload),
+                      child: Text(
+                        isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave,
                       ),
                     ),
-                  ),
+                    GestureDetector(
+                      onTap: () => setState(() => _dismissed = true),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: context.mutedIconColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],

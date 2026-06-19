@@ -21,5 +21,12 @@ Map<String, dynamic> mergeI18nOverlay(
 extension I18nField on Map<String, dynamic> {
   String get en => (this['en'] as String?) ?? '';
   String get ur => (this['ur'] as String?) ?? en;
+  String get ar => (this['ar'] as String?) ?? en;
   String get roman => (this['roman'] as String?) ?? en;
+
+  /// Returns the value for [languageCode] if present, falling back to [en].
+  String forLanguage(String languageCode) =>
+      (this[languageCode] as String?)?.isNotEmpty == true
+          ? this[languageCode] as String
+          : en;
 }

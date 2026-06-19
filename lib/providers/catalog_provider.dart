@@ -45,6 +45,11 @@ class CatalogProvider extends ChangeNotifier {
   /// successful load.
   String? get loadedSeriesId => _loadedSeriesId;
 
+  /// Language code of the active series (e.g. `'ar'`, `'ur'`).
+  String get currentSeriesLanguage =>
+      _series?.currentSeries.language ??
+      SeriesConfig.legacyUrduFallback.language;
+
   Future<void> load([SeriesConfig? series]) async {
     final target =
         series ?? _series?.currentSeries ?? SeriesConfig.legacyUrduFallback;

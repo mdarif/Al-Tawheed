@@ -191,13 +191,16 @@ class PlayerNotifier extends ChangeNotifier {
         ? Duration(seconds: saved)
         : Duration.zero;
 
-    final speaker = _catalog?.catalog?.book.speaker['en'] as String?;
+    final lang = _catalog?.currentSeriesLanguage ?? 'ur';
+    final displayTitle = lecture.title.forLanguage(lang);
+    final speaker = _catalog?.catalog?.book.speaker.forLanguage(lang);
 
     await _handler.loadLecture(
       lecture,
       startFrom: resumeAt,
       localFilePath: localPath,
-      artist: speaker ?? 'Sharah Kitab al-Tawheed',
+      artist: speaker?.isNotEmpty == true ? speaker! : 'Sharah Kitab al-Tawheed',
+      displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
     );
     _startSaveTimer();
   }

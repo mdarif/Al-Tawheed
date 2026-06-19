@@ -81,11 +81,12 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     Duration startFrom = Duration.zero,
     String? localFilePath,
     String artist = 'Sharah Kitab al-Tawheed',
+    String? displayTitle,
   }) async {
     mediaItem.add(
       MediaItem(
         id: lecture.id,
-        title: lecture.title.en,
+        title: displayTitle ?? lecture.title.en,
         artist: artist,
         duration: Duration(seconds: lecture.durationSeconds),
       ),
