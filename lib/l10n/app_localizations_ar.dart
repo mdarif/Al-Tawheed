@@ -352,7 +352,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'التبديل إلى \"$seriesName\" سيُغيّر دروسك النشطة. يتم حفظ تقدّمك والتنزيلات والعلامات المرجعية بشكل منفصل ويمكنك العودة في أيّ وقت.';
+    return 'ستنتقل إلى \"$seriesName\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل سلسلة بشكل منفصل — ويمكنك العودة في أيّ وقت.';
   }
 
   @override

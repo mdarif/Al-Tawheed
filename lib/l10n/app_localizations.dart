@@ -686,7 +686,7 @@ abstract class AppLocalizations {
   /// No description provided for @changeSeriesConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Switching to \"{seriesName}\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.'**
+  /// **'You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.'**
   String changeSeriesConfirmMessage(String seriesName);
 
   /// No description provided for @changeSeriesConfirm.

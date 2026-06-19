@@ -180,7 +180,7 @@
   "deleteAll": "Delete all",
 
   "changeSeriesConfirmTitle": "Change Series?",
-  "changeSeriesConfirmMessage": "Switching to \"{seriesName}\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.",
+  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },

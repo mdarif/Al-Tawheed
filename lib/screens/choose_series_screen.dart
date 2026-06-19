@@ -35,14 +35,18 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
   Future<void> _select(SeriesConfig series) async {
     if (_selectingId != null) return;
     setState(() => _selectingId = series.id);
-    final seriesProvider = context.read<SeriesProvider>();
+    final sp = context.read<SeriesProvider>();
+    final previousId = sp.currentSeries.id;
     await switchSeries(context, series);
     if (!mounted) return;
-    // Selecting a card is a deliberate choice, so finish onboarding here and go
-    // straight to the lectures list — both series land directly on their own
-    // lectures, skipping the welcome splash (which would otherwise reappear).
-    seriesProvider.markWelcomeSeenForCurrentSeries();
-    context.go('/lectures');
+    if (series.id == previousId) {
+      // User confirmed the series that was already showing on the welcome
+      // screen — mark it seen so the router sends them straight to lectures.
+      sp.markWelcomeSeenForCurrentSeries();
+    }
+    // Navigate to / — router shows the new series' welcome if not yet seen,
+    // or redirects to /lectures if already seen.
+    context.go('/');
   }
 
   @override

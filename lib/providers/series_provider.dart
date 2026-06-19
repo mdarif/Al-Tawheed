@@ -84,12 +84,11 @@ class SeriesProvider extends ChangeNotifier {
   bool get shouldShowWelcomeForCurrentSeries {
     final current = currentSeries;
     if (_seenWelcomeSeriesIds.contains(current.id)) return false;
-    if (!current.isRtl) {
-      final hasSeenArabicSeries = _available.any(
-        (s) => s.isRtl && _seenWelcomeSeriesIds.contains(s.id),
-      );
-      if (hasSeenArabicSeries) return false;
-    }
+    // Native Arabic-device users switching to a non-RTL (Urdu) series skip
+    // the Urdu welcome — Arabic is their primary language. Urdu-first users
+    // who explored Arabic still see the Urdu welcome because their device
+    // language is not Arabic.
+    if (!current.isRtl && isArabicDevice) return false;
     return true;
   }
 

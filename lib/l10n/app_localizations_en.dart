@@ -356,7 +356,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'Switching to \"$seriesName\" changes your active lectures. Your progress, downloads, and bookmarks are saved separately and you can switch back anytime.';
+    return 'You are switching to \"$seriesName\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.';
   }
 
   @override

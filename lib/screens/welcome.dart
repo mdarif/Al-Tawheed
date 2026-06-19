@@ -54,10 +54,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       return;
     }
     if (series.availableSeries.length > 1) {
-      // markWelcomeSeenForCurrentSeries() is deferred to
-      // ChooseSeriesScreen._select() so that pressing system back from the
-      // series picker restores WelcomeScreen on the next launch instead of
-      // skipping ahead to lectures.
+      // Do NOT mark welcome as seen here — ChooseSeriesScreen handles it.
+      // If the user picks the same series (Urdu), ChooseSeriesScreen marks it
+      // seen and goes to /lectures. If they pick a different series (Arabic),
+      // ChooseSeriesScreen navigates to / and the router shows that series'
+      // welcome. Leaving Urdu unseen means backing out of the picker restores
+      // this welcome screen correctly on the next launch.
       unawaited(context.push('/choose-series'));
       return;
     }

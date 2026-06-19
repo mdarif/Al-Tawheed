@@ -176,7 +176,7 @@
   "deleteAll": "حذف الكل",
 
   "changeSeriesConfirmTitle": "تغيير السلسلة؟",
-  "changeSeriesConfirmMessage": "التبديل إلى \"{seriesName}\" سيُغيّر دروسك النشطة. يتم حفظ تقدّمك والتنزيلات والعلامات المرجعية بشكل منفصل ويمكنك العودة في أيّ وقت.",
+  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل سلسلة بشكل منفصل — ويمكنك العودة في أيّ وقت.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },
