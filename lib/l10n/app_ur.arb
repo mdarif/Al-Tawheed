@@ -58,6 +58,8 @@
   "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
   "bookCouldNotLoad": "کتاب لوڈ نہیں ہو سکی",
   "bookShareChapter": "باب شیئر کریں",
+  "bookDecreaseText": "متن چھوٹا کریں",
+  "bookIncreaseText": "متن بڑا کریں",
   "retry": "دوبارہ کوشش کریں",
   "catalogConnectToLoadTitle": "دروس لوڈ کرنے کے لیے انٹرنیٹ سے جڑیں",
   "catalogConnectToLoadMessage": "ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔",

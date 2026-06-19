@@ -107,6 +107,23 @@ void main() {
     expect(find.text('نص الباب الثاني'), findsOneWidget);
   });
 
+  testWidgets('swiping the page advances to the next chapter', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('نص الباب الأول'), findsOneWidget);
+
+    // reverse:true pager — a left-to-right (positive dx) fling turns to the
+    // next chapter, matching RTL page-turn direction.
+    await tester.fling(find.byType(PageView), const Offset(500, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.text('الباب الثاني'), findsOneWidget); // app bar title updated
+    expect(find.text('نص الباب الثاني'), findsOneWidget);
+  });
+
   testWidgets('share action shares the chapter title and text', (tester) async {
     final sharePlatform = _FakeSharePlatform();
     SharePlatform.instance = sharePlatform;

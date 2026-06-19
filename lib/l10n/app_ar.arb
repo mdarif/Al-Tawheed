@@ -94,6 +94,8 @@
   "couldNotLoadLectures": "تعذّر تحميل الدروس",
   "bookCouldNotLoad": "تعذّر تحميل الكتاب",
   "bookShareChapter": "مشاركة الباب",
+  "bookDecreaseText": "تصغير حجم الخط",
+  "bookIncreaseText": "تكبير حجم الخط",
   "retry": "إعادة المحاولة",
   "catalogConnectToLoadTitle": "اتصل بالإنترنت لتحميل الدروس",
   "catalogConnectToLoadMessage": "افتح التطبيق مرة واحدة مع الإنترنت لتنزيل عناوين الدروس وروابط الصوت. ستعمل الدروس التي حفظتها على جهازك دون اتصال.",

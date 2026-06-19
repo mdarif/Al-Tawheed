@@ -96,6 +96,8 @@
   "couldNotLoadLectures": "Could not load lectures",
   "bookCouldNotLoad": "Could not load the book",
   "bookShareChapter": "Share chapter",
+  "bookDecreaseText": "Decrease text size",
+  "bookIncreaseText": "Increase text size",
   "retry": "Retry",
   "catalogConnectToLoadTitle": "Connect to load lectures",
   "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",

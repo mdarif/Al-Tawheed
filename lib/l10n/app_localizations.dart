@@ -413,6 +413,18 @@ abstract class AppLocalizations {
   /// **'Share chapter'**
   String get bookShareChapter;
 
+  /// No description provided for @bookDecreaseText.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease text size'**
+  String get bookDecreaseText;
+
+  /// No description provided for @bookIncreaseText.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase text size'**
+  String get bookIncreaseText;
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:

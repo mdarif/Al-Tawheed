@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/book_content.dart';
@@ -13,23 +12,71 @@ import 'package:myapp/utils/l10n_extensions.dart';
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
 typedef _HighlightColors = ({Color verse, Color citation, Color hadith});
 
-class BookReaderScreen extends StatelessWidget {
+class BookReaderScreen extends StatefulWidget {
   final String chapterId;
 
   const BookReaderScreen({super.key, required this.chapterId});
 
   @override
+  State<BookReaderScreen> createState() => _BookReaderScreenState();
+}
+
+class _BookReaderScreenState extends State<BookReaderScreen> {
+  PageController? _pageController;
+  List<BookChapter> _chapters = const [];
+  int _currentIndex = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // One-time init: build the pager over all chapters starting at the one the
+    // user opened. The book is already loaded by the time the reader is reached.
+    if (_pageController == null) {
+      final book = context.read<BookProvider>().book;
+      if (book == null) return;
+      _chapters = book.chapters;
+      _currentIndex =
+          _chapters.indexWhere((c) => c.id == widget.chapterId).clamp(
+                0,
+                _chapters.length - 1,
+              );
+      _pageController = PageController(initialPage: _currentIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int index) {
+    _pageController?.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  static const _minFontSize = 14.0;
+  static const _maxFontSize = 32.0;
+  static const _fontStep = 2.0;
+
+  void _adjustFont(double delta) {
+    final reading = context.read<ReadingProvider>();
+    final next =
+        (reading.bookFontSize + delta).clamp(_minFontSize, _maxFontSize);
+    reading.setBookFontSize(next);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final book = context.watch<BookProvider>().book;
-    if (book == null) {
+    final controller = _pageController;
+    if (controller == null || _chapters.isEmpty) {
       return Scaffold(appBar: AppBar());
     }
 
-    final chapters = book.chapters;
-    final index = chapters.indexWhere((c) => c.id == chapterId);
-    final chapter = chapters[index];
-    final prev = index > 0 ? chapters[index - 1] : null;
-    final next = index < chapters.length - 1 ? chapters[index + 1] : null;
+    final chapter = _chapters[_currentIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -47,6 +94,22 @@ class BookReaderScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.text_decrease_rounded),
+            tooltip: context.l10n.bookDecreaseText,
+            onPressed: context.watch<ReadingProvider>().bookFontSize >
+                    _minFontSize
+                ? () => _adjustFont(-_fontStep)
+                : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.text_increase_rounded),
+            tooltip: context.l10n.bookIncreaseText,
+            onPressed: context.watch<ReadingProvider>().bookFontSize <
+                    _maxFontSize
+                ? () => _adjustFont(_fontStep)
+                : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.share_rounded),
             tooltip: context.l10n.bookShareChapter,
             onPressed: () => SharePlus.instance.share(
@@ -55,8 +118,32 @@ class BookReaderScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: _BookBody(text: chapter.text, chapterId: chapter.id),
-      bottomNavigationBar: _ChapterNavBar(prev: prev, next: next),
+      // SelectionArea wraps the pager (ancestor) so passages stay
+      // selectable/copyable via long-press, while the PageView — being the
+      // deeper widget — wins horizontal swipes in the gesture arena. That lets
+      // both coexist: long-press selects, a horizontal drag turns the page.
+      //
+      // Horizontal pager — swipe to turn the page like a printed book.
+      // reverse:true matches RTL reading order: a left-to-right swipe advances
+      // to the next chapter (which sits to the left), right-to-left goes back.
+      body: SelectionArea(
+        child: PageView.builder(
+          controller: controller,
+          reverse: true,
+          itemCount: _chapters.length,
+          onPageChanged: (i) => setState(() => _currentIndex = i),
+          itemBuilder: (context, i) => _BookBody(
+            text: _chapters[i].text,
+            chapterId: _chapters[i].id,
+          ),
+        ),
+      ),
+      bottomNavigationBar: _ChapterNavBar(
+        onPrev: _currentIndex > 0 ? () => _goToPage(_currentIndex - 1) : null,
+        onNext: _currentIndex < _chapters.length - 1
+            ? () => _goToPage(_currentIndex + 1)
+            : null,
+      ),
     );
   }
 }
@@ -71,13 +158,10 @@ class _BookBody extends StatefulWidget {
 }
 
 class _BookBodyState extends State<_BookBody> {
-  double _fontSize = 20;
-  double _baseFontSize = 20;
   bool _initialized = false;
   final _scrollController = ScrollController();
   double _lastOffset = 0;
   late ReadingProvider _reading;
-  int _activePointers = 0;
 
   static final _verseRe = RegExp(r'\{[^}]+\}');
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
@@ -193,8 +277,6 @@ class _BookBodyState extends State<_BookBody> {
     if (!_initialized) {
       _initialized = true;
       _reading = context.read<ReadingProvider>();
-      _fontSize = _reading.bookFontSize;
-      _baseFontSize = _fontSize;
       // Restore the saved reading position once the content has been laid out
       // (maxScrollExtent is only known after the first frame).
       final saved = _reading.bookScrollOffsetFor(widget.chapterId);
@@ -221,9 +303,12 @@ class _BookBodyState extends State<_BookBody> {
 
   @override
   Widget build(BuildContext context) {
+    // Font size is driven by the A−/A+ controls in the app bar (see
+    // ReadingProvider). Watching here rebuilds the body when it changes.
+    final fontSize = context.watch<ReadingProvider>().bookFontSize;
     final baseStyle = context.textTheme.bodyLarge?.copyWith(
           fontFamily: 'NotoNaskhArabic',
-          fontSize: _fontSize,
+          fontSize: fontSize,
           height: 1.8,
           // letterSpacing must be 0/absent for Arabic — any positive value
           // inserts gaps between glyphs and breaks cursive joins and
@@ -231,50 +316,22 @@ class _BookBodyState extends State<_BookBody> {
         ) ??
         const TextStyle();
 
-    // Listener fires before gesture arena — use it to count active pointers
-    // so we can disable scroll the instant a second finger touches, preventing
-    // SingleChildScrollView from claiming the 2-finger gesture on Android.
-    return Listener(
-      onPointerDown: (_) => setState(() => _activePointers++),
-      onPointerUp: (_) => setState(() => _activePointers--),
-      onPointerCancel: (_) => setState(() => _activePointers--),
-      child: GestureDetector(
-        onScaleStart: (_) => _baseFontSize = _fontSize,
-        onScaleUpdate: (details) {
-          if (_activePointers < 2) return;
-          setState(() {
-            _fontSize = (_baseFontSize * details.scale).clamp(14.0, 32.0);
-          });
-        },
-        onScaleEnd: (_) {
-          if (_activePointers < 2) {
-            context.read<ReadingProvider>().setBookFontSize(_fontSize);
-          }
-        },
-        // SelectionArea makes the passages selectable/copyable — essential for
-        // a study text. Selection (long-press/drag) and the 2-finger zoom
-        // gesture don't conflict.
-        child: SelectionArea(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            // Disable scroll while 2+ fingers are down so the scale gesture wins.
-            physics: _activePointers >= 2
-                ? const NeverScrollableScrollPhysics()
-                : null,
-            padding: const EdgeInsets.all(20),
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _buildLines(
-                  baseStyle,
-                  (
-                    verse: context.bookVerseColor,
-                    citation: context.bookCitationColor,
-                    hadith: context.bookHadithColor,
-                  ),
-                ),
-              ),
+    // SelectionArea makes the passages selectable/copyable — essential for a
+    // study text. No pinch-zoom gesture here, so it never competes with the
+    // PageView's horizontal swipe.
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(20),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _buildLines(
+            baseStyle,
+            (
+              verse: context.bookVerseColor,
+              citation: context.bookCitationColor,
+              hadith: context.bookHadithColor,
             ),
           ),
         ),
@@ -285,12 +342,14 @@ class _BookBodyState extends State<_BookBody> {
 
 /// Prev/next navigation bar. Reading order is right-to-left, so the chapter
 /// that comes next sits to the left and the previous chapter to the right —
-/// kept in LTR order regardless of the app's UI language.
+/// kept in LTR order regardless of the app's UI language. The callbacks drive
+/// the [PageView]; a null callback disables (greys out) that direction at the
+/// first/last chapter.
 class _ChapterNavBar extends StatelessWidget {
-  final BookChapter? prev;
-  final BookChapter? next;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
 
-  const _ChapterNavBar({this.prev, this.next});
+  const _ChapterNavBar({this.onPrev, this.onNext});
 
   @override
   Widget build(BuildContext context) {
@@ -305,15 +364,11 @@ class _ChapterNavBar extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: next == null
-                    ? null
-                    : () => context.pushReplacement('/book/${next!.id}'),
+                onPressed: onNext,
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: prev == null
-                    ? null
-                    : () => context.pushReplacement('/book/${prev!.id}'),
+                onPressed: onPrev,
               ),
             ],
           ),
