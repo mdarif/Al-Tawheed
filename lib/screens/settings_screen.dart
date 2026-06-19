@@ -20,12 +20,62 @@ import 'package:myapp/widgets/settings/about_card.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
+/// Opens [url] in an external app, showing [fallbackMessage] in a snackbar if
+/// the launch fails (no handler, malformed URL). Mirrors the Contact Us
+/// fallback so every outbound link degrades gracefully instead of silently.
+Future<void> _launchOrNotify(
+  BuildContext context,
+  String url, {
+  required String fallbackMessage,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  var launched = false;
+  try {
+    launched = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (_) {
+    launched = false;
+  }
+  if (!launched) {
+    messenger.showSnackBar(SnackBar(content: Text(fallbackMessage)));
+  }
+}
+
+/// Rounded, bordered container used to group a settings section's rows — the
+/// shared "card" chrome so every section reads consistently.
+class _SettingsCard extends StatelessWidget {
+  final Widget child;
+  const _SettingsCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Material(
+        color: context.groupedSurface,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.groupedBorder, width: 1),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>().config;
+    final flags = context.watch<FeatureFlagsProvider>();
     final l10n = context.l10n;
 
     return Scaffold(
@@ -33,121 +83,118 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: [
           _SectionHeader(l10n.settingsAppearance),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Material(
-              color: context.groupedSurface,
-              borderRadius: BorderRadius.circular(16),
-              clipBehavior: Clip.antiAlias,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.groupedBorder, width: 1),
-                ),
-                child: const ThemeModeSwitch(),
-              ),
-            ),
-          ),
+          const _SettingsCard(child: ThemeModeSwitch()),
           const Divider(height: 32),
 
           // The series switcher is gated behind its own feature flag (default
           // off) so it can be hidden remotely, on top of requiring multi-series
           // to be active and more than one series to actually be available.
-          if (context.watch<FeatureFlagsProvider>().features.seriesSwitcher &&
-              context.watch<FeatureFlagsProvider>().multiSeriesEnabled &&
+          if (flags.features.seriesSwitcher &&
+              flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
             _SectionHeader(l10n.settingsSeries),
             const _SeriesSection(),
             const Divider(height: 32),
           ],
 
-          if (context.watch<FeatureFlagsProvider>().features.language) ...[
+          if (flags.features.language) ...[
             _SectionHeader(l10n.settingsLanguage),
-            const _LanguageSelector(),
+            const _SettingsCard(child: _LanguageSelector()),
             const Divider(height: 32),
           ],
 
           _SectionHeader(l10n.settingsPlayback),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.settingsPlaybackSpeed,
-                  style: context.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                const PlaybackSpeedSelector(),
-              ],
+          _SettingsCard(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.settingsPlaybackSpeed,
+                    style: context.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  const PlaybackSpeedSelector(),
+                ],
+              ),
             ),
           ),
           const Divider(height: 32),
 
           _SectionHeader(l10n.settingsApp),
-          ListTile(
-            leading: const Icon(Icons.mail_outline_rounded),
-            title: Text(l10n.settingsContactUs),
-            onTap: () async {
-              final launched = await launchUrl(
-                Uri(
-                  scheme: 'mailto',
-                  path: config.contact.email,
-                  queryParameters: {'subject': config.contact.subject},
+          _SettingsCard(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.mail_outline_rounded),
+                  title: Text(l10n.settingsContactUs),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final launched = await launchUrl(
+                      Uri(
+                        scheme: 'mailto',
+                        path: config.contact.email,
+                        queryParameters: {'subject': config.contact.subject},
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!launched) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(config.contact.email)),
+                      );
+                    }
+                  },
                 ),
-                mode: LaunchMode.externalApplication,
-              );
-              if (!launched && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(config.contact.email)),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.share_rounded),
-            title: Text(l10n.settingsShareApp),
-            onTap: () => SharePlus.instance.share(
-              ShareParams(text: config.share.message),
+                ListTile(
+                  leading: const Icon(Icons.share_rounded),
+                  title: Text(l10n.settingsShareApp),
+                  onTap: () => SharePlus.instance.share(
+                    ShareParams(text: config.share.message),
+                  ),
+                ),
+                if (config.links.playStore != null)
+                  ListTile(
+                    leading: const Icon(Icons.star_outline_rounded),
+                    title: Text(l10n.settingsRateApp),
+                    onTap: () => _launchOrNotify(
+                      context,
+                      config.links.playStore!,
+                      fallbackMessage: config.links.playStore!,
+                    ),
+                  ),
+                if (config.links.website != null)
+                  ListTile(
+                    leading: const Icon(Icons.language_rounded),
+                    title: Text(l10n.settingsVisitWebsite),
+                    subtitle: Text(
+                      config.links.website!
+                          .replaceFirst('https://', '')
+                          .replaceFirst('http://', ''),
+                    ),
+                    onTap: () => _launchOrNotify(
+                      context,
+                      config.links.website!,
+                      fallbackMessage: config.links.website!,
+                    ),
+                  ),
+                if (config.links.youtube != null)
+                  ListTile(
+                    leading: const Icon(Icons.play_circle_outline_rounded),
+                    title: Text(config.branding.appBrand),
+                    subtitle: Text(l10n.settingsYouTubeChannel),
+                    onTap: () => _launchOrNotify(
+                      context,
+                      config.links.youtube!,
+                      fallbackMessage: config.links.youtube!,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (config.links.playStore != null)
-            ListTile(
-              leading: const Icon(Icons.star_outline_rounded),
-              title: Text(l10n.settingsRateApp),
-              onTap: () => launchUrl(
-                Uri.parse(config.links.playStore!),
-                mode: LaunchMode.externalApplication,
-              ),
-            ),
-          if (config.links.website != null)
-            ListTile(
-              leading: const Icon(Icons.language_rounded),
-              title: Text(l10n.settingsVisitWebsite),
-              subtitle: Text(
-                config.links.website!
-                    .replaceFirst('https://', '')
-                    .replaceFirst('http://', ''),
-              ),
-              onTap: () => launchUrl(
-                Uri.parse(config.links.website!),
-                mode: LaunchMode.externalApplication,
-              ),
-            ),
-          if (config.links.youtube != null)
-            ListTile(
-              leading: const Icon(Icons.play_circle_outline_rounded),
-              title: Text(config.branding.appBrand),
-              subtitle: Text(l10n.settingsYouTubeChannel),
-              onTap: () => launchUrl(
-                Uri.parse(config.links.youtube!),
-                mode: LaunchMode.externalApplication,
-              ),
-            ),
           const Divider(height: 32),
 
-          if (context.watch<FeatureFlagsProvider>().features.downloads)
-            const _DownloadsSection(),
+          if (flags.features.downloads) const _DownloadsSection(),
 
           _SectionHeader(l10n.settingsAbout),
           Padding(
@@ -202,20 +249,24 @@ class _BrandingFooterState extends State<_BrandingFooter> {
           ),
           if (_version != null) ...[
             const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: _version!));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.l10n.settingsVersionCopied),
-                    duration: const Duration(seconds: 2),
+            Semantics(
+              button: true,
+              label: context.l10n.settingsAboutVersion(_version!),
+              child: GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: _version!));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.l10n.settingsVersionCopied),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Text(
+                  context.l10n.settingsAboutVersion(_version!),
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: context.mutedIconColor,
                   ),
-                );
-              },
-              child: Text(
-                context.l10n.settingsAboutVersion(_version!),
-                style: context.textTheme.labelSmall?.copyWith(
-                  color: context.mutedIconColor,
                 ),
               ),
             ),
@@ -242,10 +293,7 @@ class _BrandLink extends StatelessWidget {
     final color = muted ? context.mutedIconColor : context.brandColor;
     return InkWell(
       borderRadius: BorderRadius.circular(4),
-      onTap: () => launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      ),
+      onTap: () => _launchOrNotify(context, url, fallbackMessage: url),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Row(
@@ -302,62 +350,68 @@ class _DownloadsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(l10n.settingsDownloads),
-
-        // Wi-Fi only toggle
-        SwitchListTile(
-          secondary: const Icon(Icons.wifi_rounded),
-          title: Text(l10n.downloadOnWifiOnly),
-          subtitle: Text(
-            l10n.downloadOnWifiOnlyHint,
-            style: context.textTheme.bodySmall,
-          ),
-          value: downloads.downloadOnWifiOnly,
-          activeThumbColor: context.brandColor,
-          onChanged: (v) =>
-              context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
-        ),
-
-        // Storage summary + library link
-        ListTile(
-          leading: const Icon(Icons.storage_rounded),
-          title: Text(
-            count == 0
-                ? l10n.settingsNoDownloads
-                : l10n.settingsDownloadsCount(count),
-          ),
-          subtitle: count > 0
-              ? Text(l10n.settingsStorageUsed(_formatBytes(size)))
-              : null,
-          trailing: count > 0 ? const Icon(Icons.chevron_right_rounded) : null,
-          onTap: count > 0 ? () => context.push('/offline-library') : null,
-        ),
-
-        if (count > 0)
-          ListTile(
-            leading: Icon(
-              Icons.delete_outline_rounded,
-              color: context.colorScheme.error,
-            ),
-            title: Text(
-              l10n.settingsClearDownloads,
-              style: TextStyle(color: context.colorScheme.error),
-            ),
-            onTap: () async {
-              final confirmed = await showConfirmDialog(
-                context,
-                title: l10n.clearAllDownloads,
-                message: l10n.clearAllDownloadsMessage(
-                  count,
-                  _formatBytes(size),
+        _SettingsCard(
+          child: Column(
+            children: [
+              // Wi-Fi only toggle
+              SwitchListTile(
+                secondary: const Icon(Icons.wifi_rounded),
+                title: Text(l10n.downloadOnWifiOnly),
+                subtitle: Text(
+                  l10n.downloadOnWifiOnlyHint,
+                  style: context.textTheme.bodySmall,
                 ),
-                confirmLabel: l10n.deleteAll,
-                destructive: true,
-              );
-              if (confirmed && context.mounted) {
-                await context.read<DownloadsProvider>().deleteAll();
-              }
-            },
+                value: downloads.downloadOnWifiOnly,
+                activeThumbColor: context.brandColor,
+                onChanged: (v) =>
+                    context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
+              ),
+
+              // Storage summary + library link
+              ListTile(
+                leading: const Icon(Icons.storage_rounded),
+                title: Text(
+                  count == 0
+                      ? l10n.settingsNoDownloads
+                      : l10n.settingsDownloadsCount(count),
+                ),
+                subtitle: count > 0
+                    ? Text(l10n.settingsStorageUsed(_formatBytes(size)))
+                    : null,
+                trailing:
+                    count > 0 ? const Icon(Icons.chevron_right_rounded) : null,
+                onTap: count > 0 ? () => context.push('/offline-library') : null,
+              ),
+
+              if (count > 0)
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_outline_rounded,
+                    color: context.colorScheme.error,
+                  ),
+                  title: Text(
+                    l10n.settingsClearDownloads,
+                    style: TextStyle(color: context.colorScheme.error),
+                  ),
+                  onTap: () async {
+                    final confirmed = await showConfirmDialog(
+                      context,
+                      title: l10n.clearAllDownloads,
+                      message: l10n.clearAllDownloadsMessage(
+                        count,
+                        _formatBytes(size),
+                      ),
+                      confirmLabel: l10n.deleteAll,
+                      destructive: true,
+                    );
+                    if (confirmed && context.mounted) {
+                      await context.read<DownloadsProvider>().deleteAll();
+                    }
+                  },
+                ),
+            ],
           ),
+        ),
         const Divider(height: 32),
       ],
     );
@@ -377,24 +431,12 @@ class _SeriesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = context.watch<SeriesProvider>().currentSeries;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Material(
-        color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.groupedBorder, width: 1),
-          ),
-          child: ListTile(
-            leading: const Icon(Icons.library_books_rounded),
-            title: Text(_seriesName(current)),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => _openPicker(context),
-          ),
-        ),
+    return _SettingsCard(
+      child: ListTile(
+        leading: const Icon(Icons.library_books_rounded),
+        title: Text(_seriesName(current)),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: () => _openPicker(context),
       ),
     );
   }
@@ -447,7 +489,7 @@ class _SeriesPickerSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Text(
                 l10n.settingsSeries,
                 style: context.textTheme.titleMedium
