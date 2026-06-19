@@ -65,7 +65,7 @@ Widget _wrap({
       ),
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider.value(
-          value: language ?? (LanguageProvider()..load())),
+          value: language ?? (LanguageProvider()..load()),),
       ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
@@ -156,7 +156,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('"Kitab at-Tawheed (Arabic)"'),
-          findsOneWidget);
+          findsOneWidget,);
     });
   });
 
@@ -168,7 +168,7 @@ void main() {
         ..setCurrentSeriesForTest(_seriesUrdu);
 
       await tester.pumpWidget(
-          _wrap(series: series, seriesSwitcher: false));
+          _wrap(series: series, seriesSwitcher: false),);
       await tester.pumpAndSettle();
 
       // The SERIES section header and the current series tile are both gone.
@@ -183,7 +183,7 @@ void main() {
         ..setCurrentSeriesForTest(_seriesUrdu);
 
       await tester.pumpWidget(
-          _wrap(series: series, seriesSwitcher: true));
+          _wrap(series: series, seriesSwitcher: true),);
       await tester.pumpAndSettle();
 
       expect(find.text('Kitab at-Tawheed (Urdu)'), findsOneWidget);

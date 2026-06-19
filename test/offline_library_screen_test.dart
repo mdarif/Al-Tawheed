@@ -100,18 +100,18 @@ Catalog _arabicCatalog() => Catalog(
 // ── Widget helpers ────────────────────────────────────────────────────────────
 
 Widget _wrap(DownloadsProvider downloads,
-    {Catalog? catalog, SeriesProvider? series}) {
+    {Catalog? catalog, SeriesProvider? series,}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(
           create: (_) =>
-              CatalogProvider()..setCatalogForTest(catalog ?? _catalog())),
+              CatalogProvider()..setCatalogForTest(catalog ?? _catalog()),),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(
-          create: (_) => ConnectivityProvider.testOnline()),
+          create: (_) => ConnectivityProvider.testOnline(),),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false))),
+          value: series ?? (SeriesProvider()..load(false)),),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -286,7 +286,7 @@ void main() {
         ..setCurrentSeriesForTest(_arabicSeries);
 
       await tester.pumpWidget(
-          _wrap(downloads, catalog: _arabicCatalog(), series: series));
+          _wrap(downloads, catalog: _arabicCatalog(), series: series),);
       await tester.pumpAndSettle();
 
       // Downloaded lecture shows its Arabic title, not the English one.
@@ -308,7 +308,7 @@ void main() {
         ..setCurrentSeriesForTest(_arabicSeries);
 
       await tester.pumpWidget(_wrap(DownloadsProvider(),
-          catalog: _arabicCatalog(), series: series));
+          catalog: _arabicCatalog(), series: series,),);
       await tester.pumpAndSettle();
 
       expect(find.text('No downloads yet'), findsOneWidget);
@@ -324,7 +324,7 @@ void main() {
         ..setCurrentSeriesForTest(_arabicSeries);
 
       await tester.pumpWidget(
-          _wrap(downloads, catalog: _arabicCatalog(), series: series));
+          _wrap(downloads, catalog: _arabicCatalog(), series: series),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline_rounded));

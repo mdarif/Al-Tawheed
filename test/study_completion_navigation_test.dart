@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -131,10 +132,10 @@ void main() {
           ],
         ),
       ),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
-    GoRouter.of(tester.element(find.text('Home'))).push('/player');
+    unawaited(GoRouter.of(tester.element(find.text('Home'))).push('/player'));
     await tester.pumpAndSettle();
     expect(find.byType(PlayerScreen), findsOneWidget);
 

@@ -29,7 +29,7 @@ const _testBook = BookContent(
   chapters: [
     BookChapter(id: 'intro', number: 0, title: 'مقدمة', text: 'نص المقدمة'),
     BookChapter(
-        id: 'ch-01', number: 1, title: 'باب فضل التوحيد', text: 'نص الباب'),
+        id: 'ch-01', number: 1, title: 'باب فضل التوحيد', text: 'نص الباب',),
   ],
 );
 

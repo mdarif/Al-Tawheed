@@ -126,20 +126,20 @@ void main() {
     test('batch spans chapter boundaries when lectures are ordered globally', () {
       final multiChapter = [
         Lecture(id: 'ch1-lec1', number: 1, chapterId: 'ch-01',
-            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1),
+            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1,),
         Lecture(id: 'ch1-lec2', number: 2, chapterId: 'ch-01',
-            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1),
+            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1,),
         Lecture(id: 'ch2-lec1', number: 1, chapterId: 'ch-02',
-            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1),
+            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1,),
         Lecture(id: 'ch2-lec2', number: 2, chapterId: 'ch-02',
-            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1),
+            title: const {'en': 'L'}, audioUrl: '', durationSeconds: 60, fileSizeBytes: 1,),
       ];
 
       final result = computeOfflinePrepBatch(
-          multiChapter, 'ch1-lec1', DownloadsProvider());
+          multiChapter, 'ch1-lec1', DownloadsProvider(),);
       // Should include ch1-lec2, ch2-lec1, ch2-lec2 (across chapter boundary)
       expect(result.toDownload.map((l) => l.id),
-          ['ch1-lec2', 'ch2-lec1', 'ch2-lec2']);
+          ['ch1-lec2', 'ch2-lec1', 'ch2-lec2'],);
     });
   });
 }

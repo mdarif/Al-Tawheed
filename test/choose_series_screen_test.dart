@@ -310,7 +310,7 @@ void main() {
 
       // Full names with "Shaikh" prefix should NOT appear
       expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
-          findsNothing);
+          findsNothing,);
       expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsNothing);
     });
 
@@ -324,7 +324,7 @@ void main() {
 
       expect(find.text('Abdullah Nasir Rahmani'), findsOneWidget);
       expect(
-          find.text('Fazilat Shaikh Abdullah Nasir Rahmani'), findsNothing);
+          find.text('Fazilat Shaikh Abdullah Nasir Rahmani'), findsNothing,);
     });
 
     testWidgets('speaker name without known prefix is shown as-is',
@@ -344,7 +344,7 @@ void main() {
     testWidgets('tapping Urdu card completes onboarding and goes to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')));
+          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')),);
 
       // Use load(true) so _currentId starts null (simulating the fresh-install
       // path where the user reaches ChooseSeriesScreen).
@@ -365,7 +365,7 @@ void main() {
       expect(series.currentSeries.id, _urduSeries.id);
       expect(series.hasCompletedOnboarding, isTrue);
       expect(
-          PreferencesService.instance.selectedSeriesId, _urduSeries.id);
+          PreferencesService.instance.selectedSeriesId, _urduSeries.id,);
       expect(find.text('Lectures'), findsOneWidget);
     });
   });
@@ -375,7 +375,7 @@ void main() {
         'tapping Arabic card completes onboarding and goes to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final series = SeriesProvider()
         ..load(false)
@@ -394,7 +394,7 @@ void main() {
       expect(series.currentSeries.id, _arabicSeries.id);
       expect(series.hasCompletedOnboarding, isTrue);
       expect(
-          PreferencesService.instance.selectedSeriesId, _arabicSeries.id);
+          PreferencesService.instance.selectedSeriesId, _arabicSeries.id,);
       expect(find.text('Lectures'), findsOneWidget);
       // Should NOT show Welcome screen
       expect(find.text('Welcome'), findsNothing);
@@ -405,7 +405,7 @@ void main() {
     testWidgets('tapping a card shows a spinner on the tapped card',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final series = SeriesProvider()
         ..load(false)
@@ -437,7 +437,7 @@ void main() {
     testWidgets('cards are AbsorbPointer-blocked while switching',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final series = SeriesProvider()
         ..load(false)

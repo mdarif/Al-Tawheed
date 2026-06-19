@@ -297,7 +297,7 @@ void main() {
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(
-            const [SeriesConfig.legacyUrduFallback, _arabicSeries]);
+            const [SeriesConfig.legacyUrduFallback, _arabicSeries],);
 
       // Fresh install, multiSeries ON, no saved id → hasSelectedSeries = false
       expect(series.hasSelectedSeries, isFalse);
@@ -323,12 +323,12 @@ void main() {
     testWidgets('tapping CTA with single series goes straight to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')));
+          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')),);
 
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(
-            const [SeriesConfig.legacyUrduFallback]);
+            const [SeriesConfig.legacyUrduFallback],);
       // Only one series available (the fallback)
       expect(series.availableSeries.length, 1);
       expect(series.hasSelectedSeries, isFalse);

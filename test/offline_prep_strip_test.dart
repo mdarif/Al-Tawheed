@@ -133,7 +133,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsOneWidget);
@@ -148,7 +148,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOffline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -163,7 +163,7 @@ void main() {
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
       downloadsFeatureEnabled: false,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -178,7 +178,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -198,7 +198,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: downloads,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -212,7 +212,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsOneWidget);

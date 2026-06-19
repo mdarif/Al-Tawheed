@@ -45,7 +45,7 @@ Map<String, dynamic> _catalogJson({
         'audioUrl': 'https://example.com/lec-${i + 1}.mp3',
         'durationSeconds': 60,
         'fileSizeBytes': 1000,
-      }
+      },
   ];
   return {
     'version': 1,
@@ -60,7 +60,7 @@ Map<String, dynamic> _catalogJson({
     },
     'chapters': chapters,
     'lectures': lectures,
-    'dailyBenefits': [],
+    'dailyBenefits': <Map<String, dynamic>>[],
   };
 }
 
@@ -120,16 +120,16 @@ void main() {
             'id': 'ch-01',
             'number': 1,
             'title': {'en': 'Introduction to Tawheed'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
           {
             'id': 'ch-02',
             'number': 2,
             'title': {'en': 'Tawheed al-Rububiyyah'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
         ],
-      )),
+      ),),
     );
 
     final series = SeriesProvider()..load(false);
@@ -170,16 +170,16 @@ void main() {
             'id': 'ch-01',
             'number': 1,
             'title': {'en': 'Urdu Class One'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
           {
             'id': 'ch-02',
             'number': 2,
             'title': {'en': 'Urdu Class Two'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
         ],
-      )),
+      ),),
     );
     // Arabic catalog under the namespaced cache key.
     await PreferencesService.instance.saveRemoteJson(
@@ -191,16 +191,16 @@ void main() {
             'id': 'ch-01',
             'number': 1,
             'title': {'en': 'Arabic Class One'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
           {
             'id': 'ch-02',
             'number': 2,
             'title': {'en': 'Arabic Class Two'},
-            'lectureCount': 1
+            'lectureCount': 1,
           },
         ],
-      )),
+      ),),
     );
 
     // Mount on the Urdu (legacy) series.

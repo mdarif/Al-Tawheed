@@ -119,17 +119,17 @@ Widget _wrap({
     providers: [
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider.value(
-          value: progress ?? (ProgressProvider()..load())),
+          value: progress ?? (ProgressProvider()..load()),),
       ChangeNotifierProvider.value(value: downloads ?? DownloadsProvider()),
       ChangeNotifierProvider.value(
-          value: connectivity ?? ConnectivityProvider.testOnline()),
+          value: connectivity ?? ConnectivityProvider.testOnline(),),
       ChangeNotifierProvider.value(
-          value: featureFlags ?? FeatureFlagsProvider()),
+          value: featureFlags ?? FeatureFlagsProvider(),),
       ChangeNotifierProvider.value(
-          value: announcements ?? AnnouncementsProvider()),
+          value: announcements ?? AnnouncementsProvider(),),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false))),
+          value: series ?? (SeriesProvider()..load(false)),),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),
@@ -192,7 +192,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا'),
-          findsOneWidget);
+          findsOneWidget,);
       expect(find.text('Start a lecture to resume here'), findsNothing);
       expect(find.byTooltip('المحفوظات'), findsOneWidget);
     });
@@ -218,7 +218,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         progress: progress,
         connectivity: ConnectivityProvider.testOffline(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Lecture 1'));
@@ -241,7 +241,7 @@ void main() {
         progress: progress,
         series: series,
         catalog: _arabicCatalog(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('الدرس 1'), findsOneWidget);
@@ -298,7 +298,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         progress: progress,
         connectivity: ConnectivityProvider.testOffline(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download next'), findsNothing);
@@ -312,7 +312,7 @@ void main() {
         progress: progress,
         featureFlags: FeatureFlagsProvider()
           ..setFeaturesJsonForTest({'downloads': false}),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download next'), findsNothing);
@@ -343,7 +343,7 @@ void main() {
         progress: progress,
         series: series,
         catalog: _arabicCatalog(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('التنزيلات'), findsOneWidget);
@@ -408,7 +408,7 @@ void main() {
         announcements: announcements,
         featureFlags: FeatureFlagsProvider()
           ..setFeaturesJsonForTest({'announcements': false}),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('Test Announcement'), findsNothing);
@@ -430,7 +430,7 @@ void main() {
           text: {'en': 'Test benefit text'},
           source: {'en': 'Test Source'},
         ),
-      ]);
+      ],);
 
       await tester.pumpWidget(_wrap(catalog: catalog));
       await tester.pumpAndSettle();
@@ -450,7 +450,7 @@ void main() {
           text: {'en': 'Test benefit text'},
           source: {'en': 'Test Source'},
         ),
-      ]);
+      ],);
 
       await tester.pumpWidget(_wrap(series: series, catalog: catalog));
       await tester.pumpAndSettle();

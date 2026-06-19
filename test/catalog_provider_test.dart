@@ -112,7 +112,7 @@ void main() {
     test('load(series) reads a "catalog_<id>" cache key for other series',
         () async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final provider = CatalogProvider();
       await provider.load(_arabicSeries);
@@ -135,7 +135,7 @@ void main() {
 
     test('load(series) records that series id as loadedSeriesId', () async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final provider = CatalogProvider();
       await provider.load(_arabicSeries);
@@ -146,7 +146,7 @@ void main() {
       await PreferencesService.instance
           .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final provider = CatalogProvider();
       await provider.load();
@@ -163,7 +163,7 @@ void main() {
       await PreferencesService.instance
           .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
 
       final provider = CatalogProvider();
       // Start the legacy load, then immediately request Arabic before the first

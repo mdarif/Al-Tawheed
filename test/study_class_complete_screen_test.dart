@@ -176,7 +176,7 @@ void main() {
       expect(
           find.text('You have studied every class in the series.'
               ' May Allah make it a source of lasting benefit for you.'),
-          findsOneWidget);
+          findsOneWidget,);
       expect(find.text('5 of 5 classes studied'), findsOneWidget);
       expect(find.text('100%'), findsNWidgets(2));
       expect(find.text('You have completed the full series.'), findsOneWidget);

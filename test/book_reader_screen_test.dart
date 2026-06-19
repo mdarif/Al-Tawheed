@@ -17,9 +17,9 @@ const _testBook = BookContent(
   chapters: [
     BookChapter(id: 'intro', number: 0, title: 'مقدمة', text: 'نص المقدمة'),
     BookChapter(
-        id: 'ch-01', number: 1, title: 'الباب الأول', text: 'نص الباب الأول'),
+        id: 'ch-01', number: 1, title: 'الباب الأول', text: 'نص الباب الأول',),
     BookChapter(
-        id: 'ch-02', number: 2, title: 'الباب الثاني', text: 'نص الباب الثاني'),
+        id: 'ch-02', number: 2, title: 'الباب الثاني', text: 'نص الباب الثاني',),
   ],
 );
 

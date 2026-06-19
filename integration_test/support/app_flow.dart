@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart' as app;
@@ -10,7 +12,7 @@ class AppFlow {
   AppFlow._();
 
   static Future<void> launchApp(WidgetTester tester) async {
-    app.main();
+    unawaited(app.main());
     // First install: WelcomeScreen shows. Returning user (onboarding persisted):
     // app routes straight to /lectures — either is a valid cold-start state.
     final end = DateTime.now().add(const Duration(seconds: 30));

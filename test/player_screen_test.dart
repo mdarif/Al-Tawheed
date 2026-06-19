@@ -140,7 +140,7 @@ Future<PlayerNotifier> _pumpPlayer(
         ],
       ),
     ),
-  ));
+  ),);
   await tester.pumpAndSettle();
 
   // Configured after the initial pump — the audio handler's playbackState

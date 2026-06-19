@@ -24,7 +24,7 @@ const _arabicSeries = SeriesConfig(
 );
 
 Widget _wrap(Widget child,
-    {ThemeMode themeMode = ThemeMode.dark, SeriesConfig? series}) {
+    {ThemeMode themeMode = ThemeMode.dark, SeriesConfig? series,}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
@@ -32,7 +32,7 @@ Widget _wrap(Widget child,
         final provider = SeriesProvider()..load(false, definitive: true);
         if (series != null) provider.setCurrentSeriesForTest(series);
         return provider;
-      }),
+      },),
     ],
     child: Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) => MaterialApp(

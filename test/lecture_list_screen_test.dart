@@ -63,7 +63,7 @@ Map<String, dynamic> _catalogJson({
         'titleArabic': '',
         'speaker': bookSpeaker ?? {'en': 'Speaker'},
         'totalDurationSeconds': lectures.fold<int>(
-            0, (sum, l) => sum + (l['durationSeconds'] as int)),
+            0, (sum, l) => sum + (l['durationSeconds'] as int),),
         'lectureCount': lectures.length,
         'coverImageUrl': '',
         'language': 'English',
@@ -133,11 +133,11 @@ void main() {
             'id': 'ch-01',
             'number': 1,
             'title': {'en': 'Chapter One'},
-            'lectureCount': 2
+            'lectureCount': 2,
           },
         ],
         lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
-      )),
+      ),),
     );
 
     final series = SeriesProvider()..load(false);
@@ -160,9 +160,9 @@ void main() {
         lectures: [
           _lectureJson('lec-001', 1),
           _lectureJson('lec-002', 2),
-          _lectureJson('lec-003', 3)
+          _lectureJson('lec-003', 3),
         ],
-      )),
+      ),),
     );
 
     final series = SeriesProvider()
@@ -196,7 +196,7 @@ void main() {
           _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
           _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
         ],
-      )),
+      ),),
     );
 
     final series = SeriesProvider()
@@ -227,7 +227,7 @@ void main() {
         chapters: const [],
         bookTitle: const {'en': 'Sharah Kitab al-Tawheed'},
         lectures: [_lectureJson('lec-001', 1)],
-      )),
+      ),),
     );
     // Arabic catalog under the namespaced "catalog_tawheed-ar" key.
     await PreferencesService.instance.saveRemoteJson(
@@ -241,7 +241,7 @@ void main() {
           'ar': 'الشيخ صالح الفوزان حفظه الله',
         },
         lectures: [_lectureJson('lec-001', 1, titleAr: 'الدرس الأول')],
-      )),
+      ),),
     );
 
     // Mount on the Urdu (legacy) series — mirrors the brief boot window before

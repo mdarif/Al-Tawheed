@@ -124,7 +124,7 @@ Widget _wrap({
                 number: 1,
                 title: const {'en': 'Chapter'},
                 lectureCount: allLectures.where((l) => l.chapterId == id).length,
-              ))
+              ),)
           .toList();
 
   final catalog = Catalog(
@@ -150,9 +150,9 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider.value(
-          value: connectivity ?? ConnectivityProvider.testOnline()),
+          value: connectivity ?? ConnectivityProvider.testOnline(),),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false))),
+          value: series ?? (SeriesProvider()..load(false)),),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     child: MaterialApp.router(
@@ -196,7 +196,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         lecture: lec,
         downloads: DownloadsProvider(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download lecture'), findsOneWidget);
@@ -240,7 +240,7 @@ void main() {
         lecture: lec,
         downloads: DownloadsProvider(),
         allLectures: [lec], // single-lecture chapter
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       // No chapter-level download/cancel chips
@@ -256,7 +256,7 @@ void main() {
         lecture: lecs.first,
         downloads: DownloadsProvider(),
         allLectures: lecs,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download chapter'), findsOneWidget);
@@ -273,7 +273,7 @@ void main() {
         lecture: lecs.first,
         downloads: downloads,
         allLectures: lecs,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Cancel chapter download'), findsOneWidget);
@@ -293,7 +293,7 @@ void main() {
         lecture: lecs.first,
         downloads: downloads,
         allLectures: lecs,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download chapter'), findsNothing);
@@ -308,7 +308,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         lecture: _singleLec(),
         downloads: DownloadsProvider(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('Manage downloads'), findsOneWidget);
@@ -320,7 +320,7 @@ void main() {
       await tester.pumpWidget(_wrap(
         lecture: _singleLec(),
         downloads: DownloadsProvider(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Manage downloads'));
@@ -345,7 +345,7 @@ void main() {
         lecture: lec,
         downloads: downloads,
         connectivity: ConnectivityProvider.testOnlineMobile(),
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.textContaining('Download lecture'));
@@ -370,7 +370,7 @@ void main() {
         lecture: lec,
         downloads: DownloadsProvider(),
         series: series,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       // Header shows the Arabic lecture title, not the English one.
@@ -397,7 +397,7 @@ void main() {
         lecture: lec,
         downloads: downloads,
         series: series,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('إزالة التحميل'), findsOneWidget);
@@ -426,7 +426,7 @@ void main() {
         lecture: lec,
         downloads: downloads,
         series: series,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('جارٍ التحميل... 50%'), findsOneWidget);
@@ -448,7 +448,7 @@ void main() {
         downloads: downloads,
         connectivity: ConnectivityProvider.testOnlineMobile(),
         series: series,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.textContaining('تحميل الدرس'));

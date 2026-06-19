@@ -81,7 +81,7 @@ Widget _wrap({
       connectivity != null
           ? ChangeNotifierProvider.value(value: connectivity)
           : ChangeNotifierProvider(
-              create: (_) => ConnectivityProvider.testOnline()),
+              create: (_) => ConnectivityProvider.testOnline(),),
       progress != null
           ? ChangeNotifierProvider.value(value: progress)
           : ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
@@ -242,7 +242,7 @@ void main() {
         progress: progress,
         downloads: downloads,
         connectivity: connectivity,
-      ));
+      ),);
       await tester.pumpAndSettle();
 
       expect(find.text('الدرس 2'), findsOneWidget);
