@@ -8,6 +8,10 @@ import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
+/// The three theme-resolved highlight colours passed down to span building,
+/// so the reader doesn't read [BuildContext] inside its text-layout helpers.
+typedef _HighlightColors = ({Color verse, Color citation, Color hadith});
+
 class BookReaderScreen extends StatelessWidget {
   final String chapterId;
 
@@ -73,15 +77,15 @@ class _BookBodyState extends State<_BookBody> {
   static final _verseRe = RegExp(r'\{[^}]+\}');
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
   static final _hadithRe = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
-  static const _verseColor = Color(0xFF2E7D32); // deep green — Quran verses
-  static const _citationColor = Color(
-    0xFF00897B,
-  ); // teal — surah:ayah refs (distinct on both light & dark)
-  static const _hadithColor =
-      Color(0xFFE65100); // deep amber — Prophetic narrations
 
-  // 1 = verse, 2 = citation, 3 = hadith
-  List<TextSpan> _buildSpans(String text, TextStyle base) {
+  // 1 = verse, 2 = citation, 3 = hadith. Colours are resolved from the active
+  // theme (see [_HighlightColors]) so each mode gets a shade tuned for contrast
+  // against its reading background.
+  List<TextSpan> _buildSpans(
+    String text,
+    TextStyle base,
+    _HighlightColors colors,
+  ) {
     final intervals = <(int, int, int)>[];
     for (final m in _verseRe.allMatches(text)) {
       intervals.add((m.start, m.end, 1));
@@ -101,10 +105,10 @@ class _BookBodyState extends State<_BookBody> {
         spans.add(TextSpan(text: text.substring(last, start), style: base));
       }
       final color = type == 1
-          ? _verseColor
+          ? colors.verse
           : type == 2
-              ? _citationColor
-              : _hadithColor;
+              ? colors.citation
+              : colors.hadith;
       spans.add(
         TextSpan(
           text: text.substring(start, end),
@@ -119,7 +123,7 @@ class _BookBodyState extends State<_BookBody> {
     return spans;
   }
 
-  List<Widget> _buildLines(TextStyle base) {
+  List<Widget> _buildLines(TextStyle base, _HighlightColors colors) {
     final lines = widget.text.split('\n');
     final widgets = <Widget>[];
     for (final line in lines) {
@@ -130,7 +134,7 @@ class _BookBodyState extends State<_BookBody> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text.rich(
-              TextSpan(children: _buildSpans(line, base)),
+              TextSpan(children: _buildSpans(line, base, colors)),
               textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
             ),
@@ -193,7 +197,14 @@ class _BookBodyState extends State<_BookBody> {
             textDirection: TextDirection.rtl,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _buildLines(baseStyle),
+              children: _buildLines(
+                baseStyle,
+                (
+                  verse: context.bookVerseColor,
+                  citation: context.bookCitationColor,
+                  hadith: context.bookHadithColor,
+                ),
+              ),
             ),
           ),
         ),

@@ -39,4 +39,10 @@ extension AppThemeContext on BuildContext {
   Color get brandColor => semantic.brand;
 
   Color get onBrandColor => semantic.onBrand;
+
+  Color get bookVerseColor => semantic.bookVerse;
+
+  Color get bookCitationColor => semantic.bookCitation;
+
+  Color get bookHadithColor => semantic.bookHadith;
 }

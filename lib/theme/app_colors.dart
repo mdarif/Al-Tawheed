@@ -39,4 +39,18 @@ class AppColors {
   // ── Semantic ────────────────────────────────────────────────────────────
   static const Color error = Color(0xFFFF453A); // iOS red
   static const Color success = Color(0xFF30D158); // iOS green
+
+  // ── Book reading highlights ───────────────────────────────────────────────
+  // Quran verses, citations (surah:ayah refs), and Prophetic narrations are
+  // colour-coded in the reader. Each mode uses a distinct shade tuned for
+  // contrast against its reading background (near-black vs cream). Citation is
+  // a clear cyan — deliberately pulled away from the verse green so the two
+  // adjacent passages never read as the same colour.
+  static const Color bookVerseDark = Color(0xFF66BB6A); // green 400
+  static const Color bookCitationDark = Color(0xFF4DD0E1); // cyan 300
+  static const Color bookHadithDark = Color(0xFFFFB74D); // orange 300
+
+  static const Color bookVerseLight = Color(0xFF1B5E20); // green 900
+  static const Color bookCitationLight = Color(0xFF006064); // cyan 900
+  static const Color bookHadithLight = Color(0xFFBF360C); // deep orange 900
 }
