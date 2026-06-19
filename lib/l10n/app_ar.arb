@@ -9,6 +9,8 @@
 
   "appTitle": "شرح كتاب التوحيد",
   "nowPlaying": "يُشغَّل الآن",
+  "bookmark": "إضافة إشارة مرجعية",
+  "removeBookmark": "إزالة الإشارة المرجعية",
 
   "allLecturesComplete": "اكتملت جميع الدروس",
   "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",

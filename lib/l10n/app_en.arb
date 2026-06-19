@@ -9,6 +9,8 @@
 
   "appTitle": "Sharah Kitab al-Tawheed",
   "nowPlaying": "Now Playing",
+  "bookmark": "Bookmark",
+  "removeBookmark": "Remove bookmark",
 
   "allLecturesComplete": "All Lectures Complete",
   "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",

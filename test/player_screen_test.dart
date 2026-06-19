@@ -194,6 +194,18 @@ void main() {
       expect(find.text('ابھی چل رہا ہے'), findsOneWidget);
       expect(find.text('Now Playing'), findsNothing);
     });
+
+    testWidgets('bookmark tooltip is localized for a non-Arabic UI (Urdu)',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        lecture: _lectures[0],
+        locale: const Locale('ur'),
+      );
+
+      expect(find.byTooltip('بک مارک کریں'), findsOneWidget);
+      expect(find.byTooltip('Bookmark'), findsNothing);
+    });
   });
 
   group('PlayerScreen — offline status strip', () {

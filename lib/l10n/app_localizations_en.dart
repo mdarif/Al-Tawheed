@@ -30,6 +30,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nowPlaying => 'Now Playing';
 
   @override
+  String get bookmark => 'Bookmark';
+
+  @override
+  String get removeBookmark => 'Remove bookmark';
+
+  @override
   String get allLecturesComplete => 'All Lectures Complete';
 
   @override

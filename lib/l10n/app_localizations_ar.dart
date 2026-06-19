@@ -30,6 +30,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nowPlaying => 'يُشغَّل الآن';
 
   @override
+  String get bookmark => 'إضافة إشارة مرجعية';
+
+  @override
+  String get removeBookmark => 'إزالة الإشارة المرجعية';
+
+  @override
   String get allLecturesComplete => 'اكتملت جميع الدروس';
 
   @override

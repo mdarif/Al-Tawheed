@@ -562,10 +562,11 @@ class _BookmarkButton extends StatelessWidget {
     );
     final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
+    final l10n = context.l10n;
     return IconButton(
       tooltip: isArabic
           ? (isBookmarked ? _arRemoveBookmark : _arBookmark)
-          : (isBookmarked ? 'Remove bookmark' : 'Bookmark'),
+          : (isBookmarked ? l10n.removeBookmark : l10n.bookmark),
       icon: Icon(
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
         color: isBookmarked ? context.brandColor : context.primaryTextColor,

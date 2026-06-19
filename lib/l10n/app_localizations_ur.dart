@@ -30,6 +30,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get nowPlaying => 'ابھی چل رہا ہے';
 
   @override
+  String get bookmark => 'بک مارک کریں';
+
+  @override
+  String get removeBookmark => 'بک مارک ہٹائیں';
+
+  @override
   String get allLecturesComplete => 'تمام دروس مکمل';
 
   @override
@@ -547,6 +553,12 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get nowPlaying => 'Abhi chal raha hai';
+
+  @override
+  String get bookmark => 'Bookmark karein';
+
+  @override
+  String get removeBookmark => 'Bookmark hataayein';
 
   @override
   String get allLecturesComplete => 'Tamam Daras Mukammal';

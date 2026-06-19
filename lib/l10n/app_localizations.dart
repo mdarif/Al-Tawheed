@@ -143,6 +143,18 @@ abstract class AppLocalizations {
   /// **'Now Playing'**
   String get nowPlaying;
 
+  /// No description provided for @bookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark'**
+  String get bookmark;
+
+  /// No description provided for @removeBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove bookmark'**
+  String get removeBookmark;
+
   /// No description provided for @allLecturesComplete.
   ///
   /// In en, this message translates to:
