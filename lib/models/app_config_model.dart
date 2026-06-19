@@ -51,14 +51,15 @@ class AppConfigBranding {
     required this.poweredByLabel,
   });
 
-  factory AppConfigBranding.fromJson(Map<String, dynamic> j) => AppConfigBranding(
+  factory AppConfigBranding.fromJson(Map<String, dynamic> j) =>
+      AppConfigBranding(
         appBrand: j['appBrand'] as String? ?? 'Al Marfa Duroos',
-        appBrandUrl:
-            j['appBrandUrl'] as String? ?? 'https://www.youtube.com/@almarfaduroos',
+        appBrandUrl: j['appBrandUrl'] as String? ??
+            'https://www.youtube.com/@almarfaduroos',
         publisher: j['publisher'] as String? ?? 'Al Marfa Technologies',
-        publisherUrl: j['publisherUrl'] as String? ?? 'http://almarfa.co',
-        poweredByLabel:
-            j['poweredByLabel'] as String? ?? 'Powered by Al Marfa Technologies',
+        publisherUrl: j['publisherUrl'] as String? ?? 'https://almarfa.co',
+        poweredByLabel: j['poweredByLabel'] as String? ??
+            'Powered by Al Marfa Technologies',
       );
 
   static const AppConfigBranding defaults = AppConfigBranding(

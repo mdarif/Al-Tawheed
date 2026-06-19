@@ -11,6 +11,48 @@ import 'package:myapp/models/i18n_field.dart';
 
 export 'i18n_field.dart';
 
+// ── Defensive parsing helpers ───────────────────────────────────────────────
+//
+// The catalog is remote, CDN-hosted content. A single malformed row must not
+// blank the entire app, so non-critical fields default and bad list entries
+// are skipped rather than throwing. Critical fields (ids, a lecture's audio
+// URL) still throw [FormatException] — [_parseList] catches that and drops
+// just that one entry.
+
+int _asInt(dynamic v, [int fallback = 0]) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? fallback;
+  return fallback;
+}
+
+/// Optional string — returns null when [v] is missing or not a String.
+String? _optStr(dynamic v) => v is String ? v : null;
+
+/// Required, non-empty string for [field]; throws [FormatException] otherwise
+/// so [_parseList] drops the offending entry.
+String _reqStr(dynamic v, String field) {
+  if (v is String && v.isNotEmpty) return v;
+  throw FormatException('catalog: missing/invalid "$field"');
+}
+
+/// Maps [raw] (expected to be a JSON list) with [parse], skipping any entry
+/// that is not an object or that [parse] rejects — so one bad row can't fail
+/// the whole catalog.
+List<T> _parseList<T>(dynamic raw, T Function(Map<String, dynamic>) parse) {
+  if (raw is! List) return const [];
+  final out = <T>[];
+  for (final e in raw) {
+    if (e is! Map<String, dynamic>) continue;
+    try {
+      out.add(parse(e));
+    } catch (_) {
+      // Skip a single malformed entry rather than failing the whole catalog.
+    }
+  }
+  return out;
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 class Book {
@@ -34,15 +76,17 @@ class Book {
     this.titleArabic,
   });
 
+  // The book is the catalog's identity (app bar, About card) — parse it
+  // leniently so a missing optional field never blanks the whole catalog.
   factory Book.fromJson(Map<String, dynamic> json) => Book(
-        id: json['id'] as String,
+        id: _optStr(json['id']) ?? '',
         title: toI18nMap(json['title']),
         speaker: toI18nMap(json['speaker']),
-        totalDurationSeconds: json['totalDurationSeconds'] as int,
-        lectureCount: json['lectureCount'] as int,
-        coverImageUrl: json['coverImageUrl'] as String,
-        language: json['language'] as String? ?? 'ur',
-        titleArabic: json['titleArabic'] as String?,
+        totalDurationSeconds: _asInt(json['totalDurationSeconds']),
+        lectureCount: _asInt(json['lectureCount']),
+        coverImageUrl: _optStr(json['coverImageUrl']) ?? '',
+        language: _optStr(json['language']) ?? 'ur',
+        titleArabic: _optStr(json['titleArabic']),
       );
 }
 
@@ -59,11 +103,13 @@ class Chapter {
     required this.lectureCount,
   });
 
+  // `id` is required (it keys lecture grouping); a chapter without one is
+  // dropped by [_parseList]. Everything else defaults.
   factory Chapter.fromJson(Map<String, dynamic> json) => Chapter(
-        id: json['id'] as String,
-        number: json['number'] as int,
+        id: _reqStr(json['id'], 'chapter.id'),
+        number: _asInt(json['number']),
         title: toI18nMap(json['title']),
-        lectureCount: json['lectureCount'] as int,
+        lectureCount: _asInt(json['lectureCount']),
       );
 }
 
@@ -90,16 +136,21 @@ class Lecture {
     this.titleArabic,
   });
 
+  // `id` is the only hard requirement (it keys progress/downloads/grouping);
+  // a lecture without one is dropped by [_parseList]. Everything else defaults
+  // — a missing duration shows 0:00, and a missing/empty audioUrl matches the
+  // original contract (the player already guards against empty sources) rather
+  // than failing the whole catalog.
   factory Lecture.fromJson(Map<String, dynamic> json) => Lecture(
-        id: json['id'] as String,
-        number: json['number'] as int,
-        chapterId: json['chapterId'] as String,
+        id: _reqStr(json['id'], 'lecture.id'),
+        number: _asInt(json['number']),
+        chapterId: _optStr(json['chapterId']) ?? '',
         title: toI18nMap(json['title']),
-        audioUrl: json['audioUrl'] as String,
-        durationSeconds: json['durationSeconds'] as int,
-        fileSizeBytes: json['fileSizeBytes'] as int,
-        description: json['description'] as String?,
-        titleArabic: json['titleArabic'] as String?,
+        audioUrl: _optStr(json['audioUrl']) ?? '',
+        durationSeconds: _asInt(json['durationSeconds']),
+        fileSizeBytes: _asInt(json['fileSizeBytes']),
+        description: _optStr(json['description']),
+        titleArabic: _optStr(json['titleArabic']),
       );
 }
 
@@ -116,8 +167,9 @@ class DailyBenefit {
     this.textArabic,
   });
 
+  // `id` keys the i18n overlay lookup; a benefit without one is dropped.
   factory DailyBenefit.fromJson(Map<String, dynamic> json) {
-    final id = json['id'] as String;
+    final id = _reqStr(json['id'], 'dailyBenefit.id');
     return DailyBenefit(
       id: id,
       text: mergeI18nOverlay(
@@ -125,7 +177,7 @@ class DailyBenefit {
         benefitTextOverlays[id],
       ),
       source: toI18nMap(json['source']),
-      textArabic: json['textArabic'] as String?,
+      textArabic: _optStr(json['textArabic']),
     );
   }
 }
@@ -145,21 +197,21 @@ class Catalog {
     required this.dailyBenefits,
   });
 
-  factory Catalog.fromJson(Map<String, dynamic> json) => Catalog(
-        version: json['version'] as int,
-        book: Book.fromJson(json['book'] as Map<String, dynamic>),
-        chapters: (json['chapters'] as List<dynamic>)
-            .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        lectures: (json['lectures'] as List<dynamic>)
-            .map((e) => Lecture.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        dailyBenefits: json['dailyBenefits'] != null
-            ? (json['dailyBenefits'] as List<dynamic>)
-                .map((e) => DailyBenefit.fromJson(e as Map<String, dynamic>))
-                .toList()
-            : const [],
-      );
+  factory Catalog.fromJson(Map<String, dynamic> json) {
+    // The book is mandatory — without it there's nothing to show. A missing or
+    // malformed book throws, surfacing as the catalog "couldn't load" state.
+    final bookJson = json['book'];
+    if (bookJson is! Map<String, dynamic>) {
+      throw const FormatException('catalog: missing "book"');
+    }
+    return Catalog(
+      version: _asInt(json['version'], 1),
+      book: Book.fromJson(bookJson),
+      chapters: _parseList(json['chapters'], Chapter.fromJson),
+      lectures: _parseList(json['lectures'], Lecture.fromJson),
+      dailyBenefits: _parseList(json['dailyBenefits'], DailyBenefit.fromJson),
+    );
+  }
 
   Chapter chapterById(String id) =>
       chapters.firstWhere((c) => c.id == id);
