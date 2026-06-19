@@ -13,6 +13,9 @@ const _arStartListening = 'ابدأ الاستماع';
 // Arabic tagline shown when the series includes a companion book.
 const _arTagline = 'شرح صوتي مع متن الكتاب';
 
+// Urdu tagline — "Audio explanation in Urdu"
+const _urTagline = 'شیخ الاسلام محمد بن عبدالوہاب رحمہ اللہ';
+
 // Shown on the Urdu welcome screen before the user has selected a language —
 // neutral English title that applies regardless of which series they choose.
 const _enWelcomeTitle = 'Sharah Kitab at-Tawheed';
@@ -70,8 +73,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     // By the time the content AnimatedOpacity starts its fade-in, the image is
     // already in the cache — frameBuilder sees wasSynchronouslyLoaded=true and
     // the photo appears in one pass with the rest of the content, no pop-in.
+    precacheImage(const AssetImage('assets/images/sheikh_fawzan.png'), context);
     precacheImage(
-      const AssetImage('assets/images/sheikh_fawzan.png'),
+      const AssetImage('assets/images/kitab_at_tawheed.png'),
       context,
     );
   }
@@ -84,6 +88,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final isRtl = series.isRtl;
     final native = _nativeTitleFor(series);
     final speaker = _speakerNameFor(series);
+    final tagline = switch (series.language) {
+      'ar' when series.hasBook => _arTagline,
+      'ur' => _urTagline,
+      _ => null,
+    };
 
     return Theme(
       data: AppTheme.dark,
@@ -168,9 +177,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         ),
                                       ),
                                     ] else ...[
-                                      // Decorative icon circle — mirrors the sheikh photo
-                                      // slot on the Arabic screen but stays content-neutral
-                                      // because the Urdu user hasn't chosen a language yet.
                                       Container(
                                         width: 108,
                                         height: 108,
@@ -181,12 +187,32 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                             width: 2,
                                           ),
                                         ),
-                                        child: Icon(
-                                          Icons.auto_stories_rounded,
-                                          // Brand gold to match the language
-                                          // selector's icon treatment.
-                                          color: context.brandColor,
-                                          size: 48,
+                                        child: ClipOval(
+                                          child: Image.asset(
+                                            'assets/images/kitab_at_tawheed.png',
+                                            width: 104,
+                                            height: 104,
+                                            fit: BoxFit.cover,
+                                            frameBuilder:
+                                                (ctx, child, frame, sync) {
+                                              if (sync) return child;
+                                              return AnimatedOpacity(
+                                                opacity:
+                                                    frame == null ? 0.0 : 1.0,
+                                                duration: const Duration(
+                                                  milliseconds: 400,
+                                                ),
+                                                curve: Curves.easeIn,
+                                                child: child,
+                                              );
+                                            },
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(
+                                              Icons.auto_stories_rounded,
+                                              color: Colors.white38,
+                                              size: 52,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -223,11 +249,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                             isRtl ? 'NotoNaskhArabic' : null,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    // Arabic tagline (audio + book) when the series has a book.
-                                    if (isRtl && series.hasBook)
+                                    if (!isRtl && native.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
                                       Text(
-                                        _arTagline,
+                                        native,
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                        style: context.textTheme.titleLarge
+                                            ?.copyWith(
+                                          color: Colors.white70,
+                                          letterSpacing: 0,
+                                          fontFamily: 'NotoNaskhArabic',
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    if (tagline != null)
+                                      Text(
+                                        tagline,
                                         textAlign: TextAlign.center,
                                         textDirection: TextDirection.rtl,
                                         style: context.textTheme.titleMedium
