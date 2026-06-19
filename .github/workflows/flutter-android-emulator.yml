@@ -41,7 +41,7 @@ jobs:
       # 1. Checkout
       # ------------------------------------------------------------------ #
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # ------------------------------------------------------------------ #
       # 2. Java 21 (required by android/app/build.gradle compileOptions)
@@ -123,7 +123,7 @@ jobs:
       # ------------------------------------------------------------------ #
       - name: Upload logcat on failure
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: logcat
           path: /tmp/emulator.log
