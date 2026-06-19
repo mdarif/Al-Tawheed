@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -113,6 +115,22 @@ class PreferencesService {
 
   Future<void> saveBookFontSize(double size) =>
       _p.setDouble('book_font_size', size);
+
+  // Per-chapter scroll offset (pixels), so a reader returns to where they left
+  // off. Stored as a single JSON map keyed by chapter id.
+  Map<String, double> get bookScrollOffsets {
+    final raw = _p.getString('book_scroll_offsets');
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveBookScrollOffsets(Map<String, double> offsets) =>
+      _p.setString('book_scroll_offsets', jsonEncode(offsets));
 
   // ── Downloads ───────────────────────────────────────────────────────────
 

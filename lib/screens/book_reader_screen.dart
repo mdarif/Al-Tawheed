@@ -55,7 +55,7 @@ class BookReaderScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: _BookBody(text: chapter.text),
+      body: _BookBody(text: chapter.text, chapterId: chapter.id),
       bottomNavigationBar: _ChapterNavBar(prev: prev, next: next),
     );
   }
@@ -63,7 +63,8 @@ class BookReaderScreen extends StatelessWidget {
 
 class _BookBody extends StatefulWidget {
   final String text;
-  const _BookBody({required this.text});
+  final String chapterId;
+  const _BookBody({required this.text, required this.chapterId});
 
   @override
   State<_BookBody> createState() => _BookBodyState();
@@ -73,6 +74,9 @@ class _BookBodyState extends State<_BookBody> {
   double _fontSize = 20;
   double _baseFontSize = 20;
   bool _initialized = false;
+  final _scrollController = ScrollController();
+  double _lastOffset = 0;
+  late ReadingProvider _reading;
   int _activePointers = 0;
 
   static final _verseRe = RegExp(r'\{[^}]+\}');
@@ -178,13 +182,41 @@ class _BookBodyState extends State<_BookBody> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() => _lastOffset = _scrollController.offset);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      _fontSize = context.read<ReadingProvider>().bookFontSize;
+      _reading = context.read<ReadingProvider>();
+      _fontSize = _reading.bookFontSize;
       _baseFontSize = _fontSize;
+      // Restore the saved reading position once the content has been laid out
+      // (maxScrollExtent is only known after the first frame).
+      final saved = _reading.bookScrollOffsetFor(widget.chapterId);
+      if (saved > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scrollController.hasClients) return;
+          final max = _scrollController.position.maxScrollExtent;
+          _scrollController.jumpTo(saved.clamp(0.0, max));
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    // Persist the final position when leaving the chapter (navigation or pop).
+    // Skip a chapter still at the top — no need to store a zero offset.
+    if (_lastOffset > 0) {
+      _reading.setBookScrollOffset(widget.chapterId, _lastOffset);
+    }
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -219,22 +251,28 @@ class _BookBodyState extends State<_BookBody> {
             context.read<ReadingProvider>().setBookFontSize(_fontSize);
           }
         },
-        child: SingleChildScrollView(
-          // Disable scroll while 2+ fingers are down so the scale gesture wins.
-          physics: _activePointers >= 2
-              ? const NeverScrollableScrollPhysics()
-              : null,
-          padding: const EdgeInsets.all(20),
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _buildLines(
-                baseStyle,
-                (
-                  verse: context.bookVerseColor,
-                  citation: context.bookCitationColor,
-                  hadith: context.bookHadithColor,
+        // SelectionArea makes the passages selectable/copyable — essential for
+        // a study text. Selection (long-press/drag) and the 2-finger zoom
+        // gesture don't conflict.
+        child: SelectionArea(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            // Disable scroll while 2+ fingers are down so the scale gesture wins.
+            physics: _activePointers >= 2
+                ? const NeverScrollableScrollPhysics()
+                : null,
+            padding: const EdgeInsets.all(20),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _buildLines(
+                  baseStyle,
+                  (
+                    verse: context.bookVerseColor,
+                    citation: context.bookCitationColor,
+                    hadith: context.bookHadithColor,
+                  ),
                 ),
               ),
             ),

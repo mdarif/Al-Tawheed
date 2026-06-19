@@ -49,4 +49,37 @@ void main() {
       expect(p.bookFontSize, 20.0);
     });
   });
+
+  group('ReadingProvider — book scroll offset', () {
+    test('defaults to 0 for an unseen chapter', () {
+      expect(ReadingProvider().bookScrollOffsetFor('ch-01'), 0.0);
+    });
+
+    test('stores and reads back an offset per chapter', () async {
+      final p = ReadingProvider()..load();
+      await p.setBookScrollOffset('ch-01', 420.0);
+      await p.setBookScrollOffset('ch-02', 88.0);
+
+      expect(p.bookScrollOffsetFor('ch-01'), 420.0);
+      expect(p.bookScrollOffsetFor('ch-02'), 88.0);
+      expect(p.bookScrollOffsetFor('ch-03'), 0.0);
+    });
+
+    test('offsets persist across a new provider instance', () async {
+      final p1 = ReadingProvider()..load();
+      await p1.setBookScrollOffset('ch-01', 256.0);
+
+      final p2 = ReadingProvider()..load();
+      expect(p2.bookScrollOffsetFor('ch-01'), 256.0);
+    });
+
+    test('does not notify listeners when saving an offset', () async {
+      final p = ReadingProvider()..load();
+      int notifications = 0;
+      p.addListener(() => notifications++);
+
+      await p.setBookScrollOffset('ch-01', 100.0);
+      expect(notifications, 0);
+    });
+  });
 }
