@@ -22,8 +22,7 @@ class ChapterStudyInfo {
     required this.isRecommended,
   });
 
-  double get fraction =>
-      totalParts == 0 ? 0.0 : completedParts / totalParts;
+  double get fraction => totalParts == 0 ? 0.0 : completedParts / totalParts;
 }
 
 /// Aggregate study progress across the whole catalog — for the dashboard.
@@ -55,8 +54,7 @@ class StudyProgress {
     String chapterId,
   ) {
     final parts = catalog.lecturesForChapter(chapterId);
-    return parts.isNotEmpty &&
-        parts.every((l) => isPartComplete(progress, l));
+    return parts.isNotEmpty && parts.every((l) => isPartComplete(progress, l));
   }
 
   static ChapterStudyStatus statusFor(

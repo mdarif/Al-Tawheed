@@ -169,8 +169,11 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.menu_book_outlined,
-                size: 52, color: context.mutedIconColor),
+            Icon(
+              Icons.menu_book_outlined,
+              size: 52,
+              color: context.mutedIconColor,
+            ),
             const SizedBox(height: 20),
             Text(
               l10n.bookCouldNotLoad,

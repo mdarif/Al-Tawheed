@@ -40,8 +40,13 @@ class PlayerNotifier extends ChangeNotifier {
   Lecture? _pendingNextBlockedLecture;
   bool _pendingAllLecturesComplete = false;
 
-  PlayerNotifier(this._handler, this._progress, this._downloads,
-      this._connectivity, [this._catalog]) {
+  PlayerNotifier(
+    this._handler,
+    this._progress,
+    this._downloads,
+    this._connectivity, [
+    this._catalog,
+  ]) {
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
       _speed = savedSpeed;
@@ -322,7 +327,9 @@ class PlayerNotifier extends ChangeNotifier {
         mode: _playbackMode,
         studyChapter: _studyChapter,
       );
-    } else if (_connectivity.isOnline && _playbackSource == PlaybackSource.blocked && _current != null) {
+    } else if (_connectivity.isOnline &&
+        _playbackSource == PlaybackSource.blocked &&
+        _current != null) {
       // Was blocked because offline; now online so the UI can unlock.
       // Don't auto-play — user may have put phone down. Just clear blocked state.
       _playbackSource = PlaybackSource.stream;
@@ -333,7 +340,9 @@ class PlayerNotifier extends ChangeNotifier {
     }
 
     if (_connectivity.isOnline) {
-      unawaited(_downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi));
+      unawaited(
+        _downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi),
+      );
     }
   }
 
@@ -343,8 +352,9 @@ class PlayerNotifier extends ChangeNotifier {
 
     if (_playbackSource != PlaybackSource.local) return;
 
-    _playbackSource =
-        _connectivity.isOffline ? PlaybackSource.blocked : PlaybackSource.stream;
+    _playbackSource = _connectivity.isOffline
+        ? PlaybackSource.blocked
+        : PlaybackSource.stream;
     unawaited(_handler.pause());
     notifyListeners();
   }

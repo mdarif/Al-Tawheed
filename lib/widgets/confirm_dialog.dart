@@ -43,9 +43,8 @@ Future<bool> showConfirmDialog(
     context: context,
     builder: (dialogContext) {
       final theme = Theme.of(dialogContext);
-      final confirmStyle = destructive
-          ? TextStyle(color: theme.colorScheme.error)
-          : null;
+      final confirmStyle =
+          destructive ? TextStyle(color: theme.colorScheme.error) : null;
 
       Widget confirmButton;
       if (filledConfirm) {

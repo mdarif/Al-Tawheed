@@ -148,8 +148,11 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wifi_off_rounded,
-                size: 52, color: context.mutedIconColor),
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 52,
+              color: context.mutedIconColor,
+            ),
             const SizedBox(height: 20),
             Text(
               l10n.studyCouldNotLoadClasses,

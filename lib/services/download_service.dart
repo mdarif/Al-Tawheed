@@ -63,19 +63,29 @@ class DownloadService {
 
   /// Predictable local path for a lecture. `tawheed-ur` (the default) keeps
   /// `{docs}/audio/{id}.mp3`; other series use `{docs}/audio/{seriesId}/{id}.mp3`.
-  static String localPath(String lectureId,
-      {String seriesId = SeriesConfig.legacyId}) {
-    assert(_documentsPath != null, 'DownloadService.init() must be called first');
+  static String localPath(
+    String lectureId, {
+    String seriesId = SeriesConfig.legacyId,
+  }) {
+    assert(
+      _documentsPath != null,
+      'DownloadService.init() must be called first',
+    );
     return _localPathFor(_documentsPath!, seriesId, lectureId);
   }
 
   static String get documentsPath {
-    assert(_documentsPath != null, 'DownloadService.init() must be called first');
+    assert(
+      _documentsPath != null,
+      'DownloadService.init() must be called first',
+    );
     return _documentsPath!;
   }
 
-  static bool existsSync(String lectureId,
-      {String seriesId = SeriesConfig.legacyId}) {
+  static bool existsSync(
+    String lectureId, {
+    String seriesId = SeriesConfig.legacyId,
+  }) {
     if (_documentsPath == null) return false;
     return File(localPath(lectureId, seriesId: seriesId)).existsSync();
   }
@@ -136,8 +146,10 @@ class DownloadService {
     }
   }
 
-  static Future<void> delete(String lectureId,
-      {String seriesId = SeriesConfig.legacyId}) async {
+  static Future<void> delete(
+    String lectureId, {
+    String seriesId = SeriesConfig.legacyId,
+  }) async {
     cancel(lectureId);
     // The cancel above is synchronous but its file-cleanup runs asynchronously.
     // If the download's catch block deletes the partial file between our
@@ -152,8 +164,10 @@ class DownloadService {
   }
 
   /// Total bytes used by all downloaded lectures.
-  static int totalBytesSync(Iterable<String> lectureIds,
-      {String seriesId = SeriesConfig.legacyId}) {
+  static int totalBytesSync(
+    Iterable<String> lectureIds, {
+    String seriesId = SeriesConfig.legacyId,
+  }) {
     if (_documentsPath == null) return 0;
     int total = 0;
     for (final id in lectureIds) {

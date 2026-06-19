@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -52,7 +54,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       // completeOnboarding() is deferred to ChooseSeriesScreen._select() so
       // that pressing system back from the language selector restores
       // WelcomeScreen on the next launch instead of skipping ahead to lectures.
-      context.push('/choose-series');
+      unawaited(context.push('/choose-series'));
       return;
     }
     await switchSeries(context, series.availableSeries.first);
@@ -87,199 +89,202 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       data: AppTheme.dark,
       // Builder ensures context.semantic / context.brandColor are read from
       // the dark theme scope, not from the parent (potentially light) theme.
-      child: Builder(builder: (context) {
-        final semantic = context.semantic;
-        return Scaffold(
-          body: Stack(
-            children: [
-              // Solid black base guarantees contrast for white text on any theme.
-              Container(color: Colors.black),
-              // Background image at 20% opacity — subtle texture, not a distraction.
-              Opacity(
-                opacity: 0.20,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/tawheed.png'),
-                      fit: BoxFit.cover,
+      child: Builder(
+        builder: (context) {
+          final semantic = context.semantic;
+          return Scaffold(
+            body: Stack(
+              children: [
+                // Solid black base guarantees contrast for white text on any theme.
+                Container(color: Colors.black),
+                // Background image at 20% opacity — subtle texture, not a distraction.
+                Opacity(
+                  opacity: 0.20,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/tawheed.png'),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              IgnorePointer(
-                ignoring: !isReady,
-                child: AnimatedOpacity(
-                  opacity: isReady ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: SafeArea(
-                    child: Column(
-                      children: [
-                        // All content centred as one group — photo, name, title,
-                        // tagline all move together when the screen height changes.
-                        Expanded(
-                          child: Center(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 32),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isRtl) ...[
-                                    // Circular sheikh photo with graceful fade-in.
-                                    Container(
-                                      width: 108,
-                                      height: 108,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white24,
-                                          width: 2,
+                IgnorePointer(
+                  ignoring: !isReady,
+                  child: AnimatedOpacity(
+                    opacity: isReady ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: SafeArea(
+                      child: Column(
+                        children: [
+                          // All content centred as one group — photo, name, title,
+                          // tagline all move together when the screen height changes.
+                          Expanded(
+                            child: Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 32),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isRtl) ...[
+                                      // Circular sheikh photo with graceful fade-in.
+                                      Container(
+                                        width: 108,
+                                        height: 108,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                            width: 2,
+                                          ),
                                         ),
-                                      ),
-                                      child: ClipOval(
-                                        child: Image.asset(
-                                          'assets/images/sheikh_fawzan.png',
-                                          width: 104,
-                                          height: 104,
-                                          fit: BoxFit.cover,
-                                          frameBuilder:
-                                              (ctx, child, frame, sync) {
-                                            if (sync) return child;
-                                            return AnimatedOpacity(
-                                              opacity:
-                                                  frame == null ? 0.0 : 1.0,
-                                              duration: const Duration(
-                                                  milliseconds: 400),
-                                              curve: Curves.easeIn,
-                                              child: child,
-                                            );
-                                          },
-                                          errorBuilder: (_, __, ___) =>
-                                              const Icon(
-                                            Icons.person_rounded,
-                                            color: Colors.white38,
-                                            size: 52,
+                                        child: ClipOval(
+                                          child: Image.asset(
+                                            'assets/images/sheikh_fawzan.png',
+                                            width: 104,
+                                            height: 104,
+                                            fit: BoxFit.cover,
+                                            frameBuilder:
+                                                (ctx, child, frame, sync) {
+                                              if (sync) return child;
+                                              return AnimatedOpacity(
+                                                opacity:
+                                                    frame == null ? 0.0 : 1.0,
+                                                duration: const Duration(
+                                                  milliseconds: 400,
+                                                ),
+                                                curve: Curves.easeIn,
+                                                child: child,
+                                              );
+                                            },
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(
+                                              Icons.person_rounded,
+                                              color: Colors.white38,
+                                              size: 52,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ] else ...[
-                                    // Decorative icon circle — mirrors the sheikh photo
-                                    // slot on the Arabic screen but stays content-neutral
-                                    // because the Urdu user hasn't chosen a language yet.
-                                    Container(
-                                      width: 108,
-                                      height: 108,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white24,
-                                          width: 2,
+                                    ] else ...[
+                                      // Decorative icon circle — mirrors the sheikh photo
+                                      // slot on the Arabic screen but stays content-neutral
+                                      // because the Urdu user hasn't chosen a language yet.
+                                      Container(
+                                        width: 108,
+                                        height: 108,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.auto_stories_rounded,
+                                          // Brand gold to match the language
+                                          // selector's icon treatment.
+                                          color: context.brandColor,
+                                          size: 48,
                                         ),
                                       ),
-                                      child: Icon(
-                                        Icons.auto_stories_rounded,
-                                        // Brand gold to match the language
-                                        // selector's icon treatment.
-                                        color: context.brandColor,
-                                        size: 48,
+                                    ],
+                                    const SizedBox(height: 12),
+                                    // Speaker name only for the Arabic series — the Urdu
+                                    // screen is shown before a language is selected.
+                                    if (isRtl && speaker.isNotEmpty) ...[
+                                      Text(
+                                        speaker,
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                        style: context.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: Colors.white70,
+                                          letterSpacing: 0,
+                                          fontFamily: 'NotoNaskhArabic',
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  // Speaker name only for the Arabic series — the Urdu
-                                  // screen is shown before a language is selected.
-                                  if (isRtl && speaker.isNotEmpty) ...[
+                                      const SizedBox(height: 28),
+                                    ],
+                                    // Hero title.
                                     Text(
-                                      speaker,
+                                      isRtl ? native : _enWelcomeTitle,
                                       textAlign: TextAlign.center,
-                                      textDirection: TextDirection.rtl,
-                                      style:
-                                          context.textTheme.bodyLarge?.copyWith(
-                                        color: Colors.white70,
-                                        letterSpacing: 0,
-                                        fontFamily: 'NotoNaskhArabic',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 28),
-                                  ],
-                                  // Hero title.
-                                  Text(
-                                    isRtl ? native : _enWelcomeTitle,
-                                    textAlign: TextAlign.center,
-                                    textDirection: isRtl
-                                        ? TextDirection.rtl
-                                        : TextDirection.ltr,
-                                    style: context.textTheme.displayLarge
-                                        ?.copyWith(
-                                      color: semantic.onScrim,
-                                      fontSize: 38,
-                                      letterSpacing: isRtl ? 0 : null,
-                                      fontFamily:
-                                          isRtl ? 'NotoNaskhArabic' : null,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // Arabic tagline (audio + book) when the series has a book.
-                                  if (isRtl && series.hasBook)
-                                    Text(
-                                      _arTagline,
-                                      textAlign: TextAlign.center,
-                                      textDirection: TextDirection.rtl,
-                                      style: context.textTheme.titleMedium
+                                      textDirection: isRtl
+                                          ? TextDirection.rtl
+                                          : TextDirection.ltr,
+                                      style: context.textTheme.displayLarge
                                           ?.copyWith(
-                                        fontSize: 17,
-                                        color: context.brandColor,
-                                        letterSpacing: 0,
-                                        fontFamily: 'NotoNaskhArabic',
+                                        color: semantic.onScrim,
+                                        fontSize: 38,
+                                        letterSpacing: isRtl ? 0 : null,
+                                        fontFamily:
+                                            isRtl ? 'NotoNaskhArabic' : null,
                                       ),
                                     ),
-                                ],
+                                    const SizedBox(height: 8),
+                                    // Arabic tagline (audio + book) when the series has a book.
+                                    if (isRtl && series.hasBook)
+                                      Text(
+                                        _arTagline,
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                        style: context.textTheme.titleMedium
+                                            ?.copyWith(
+                                          fontSize: 17,
+                                          color: context.brandColor,
+                                          letterSpacing: 0,
+                                          fontFamily: 'NotoNaskhArabic',
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
 
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                textStyle: context.textTheme.labelLarge
-                                    ?.copyWith(color: semantic.onBrand),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 18),
+                                  textStyle: context.textTheme.labelLarge
+                                      ?.copyWith(color: semantic.onBrand),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
-                              ),
-                              icon: Icon(
-                                Icons.headphones_rounded,
-                                size: 22,
-                                color: semantic.onBrand,
-                              ),
-                              label: Text(
-                                isRtl ? _arStartListening : 'START LISTENING',
-                                style: TextStyle(
+                                icon: Icon(
+                                  Icons.headphones_rounded,
+                                  size: 22,
                                   color: semantic.onBrand,
-                                  fontSize: isRtl ? 20 : null,
-                                  letterSpacing: isRtl ? 0 : null,
                                 ),
+                                label: Text(
+                                  isRtl ? _arStartListening : 'START LISTENING',
+                                  style: TextStyle(
+                                    color: semantic.onBrand,
+                                    fontSize: isRtl ? 20 : null,
+                                    letterSpacing: isRtl ? 0 : null,
+                                  ),
+                                ),
+                                onPressed: () => _startListening(context),
                               ),
-                              onPressed: () => _startListening(context),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

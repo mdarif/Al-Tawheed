@@ -36,11 +36,11 @@ class LanguageProvider extends ChangeNotifier {
   /// Urdu strings from app_ur_roman.arb.
   Locale get locale {
     return switch (_language) {
-      AppLanguage.english   => const Locale('en'),
-      AppLanguage.urdu      => const Locale('ur'),
+      AppLanguage.english => const Locale('en'),
+      AppLanguage.urdu => const Locale('ur'),
       AppLanguage.romanUrdu =>
         const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman'),
-      AppLanguage.arabic    => const Locale('ar'),
+      AppLanguage.arabic => const Locale('ar'),
     };
   }
 

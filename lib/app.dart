@@ -51,7 +51,9 @@ final _router = GoRouter(
       path: '/',
       redirect: (context, state) {
         final s = context.read<SeriesProvider>();
-        if (s.hasCompletedOnboarding) { return '/lectures'; }
+        if (s.hasCompletedOnboarding) {
+          return '/lectures';
+        }
         return null;
       },
       builder: (context, state) => const WelcomeScreen(),
@@ -161,11 +163,17 @@ class MyApp extends StatelessWidget {
       providers: [
         // Remote content — load eagerly (lazy: false) so fetches start at startup
         ChangeNotifierProvider(
-            create: (_) => AppConfigProvider()..load(), lazy: false),
+          create: (_) => AppConfigProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
-            create: (_) => FeatureFlagsProvider()..load(), lazy: false),
+          create: (_) => FeatureFlagsProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
-            create: (_) => AnnouncementsProvider()..load(), lazy: false),
+          create: (_) => AnnouncementsProvider()..load(),
+          lazy: false,
+        ),
         // SeriesProvider re-resolves whenever the multiSeries flag updates —
         // lazy: false so its currentSeries is ready before the providers
         // below read it.
@@ -185,12 +193,12 @@ class MyApp extends StatelessWidget {
           lazy: false,
         ),
         ChangeNotifierProvider(
-            create: (ctx) => CatalogProvider(ctx.read<SeriesProvider>())),
+          create: (ctx) => CatalogProvider(ctx.read<SeriesProvider>()),
+        ),
         ChangeNotifierProvider(create: (_) => BookProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
         ChangeNotifierProvider(
-          create: (ctx) =>
-              ProgressProvider(ctx.read<SeriesProvider>())..load(),
+          create: (ctx) => ProgressProvider(ctx.read<SeriesProvider>())..load(),
         ),
         ChangeNotifierProvider(
           create: (ctx) => StudyProgressProvider(
@@ -214,9 +222,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-            create: (_) => ThemeProvider()..load(), lazy: false),
+          create: (_) => ThemeProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
-            create: (_) => ReadingProvider()..load(), lazy: false),
+          create: (_) => ReadingProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProxyProvider<FeatureFlagsProvider, LanguageProvider>(
           create: (_) => LanguageProvider()..load(),
           update: (_, flags, lang) {

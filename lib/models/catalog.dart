@@ -213,8 +213,7 @@ class Catalog {
     );
   }
 
-  Chapter chapterById(String id) =>
-      chapters.firstWhere((c) => c.id == id);
+  Chapter chapterById(String id) => chapters.firstWhere((c) => c.id == id);
 
   List<Lecture> lecturesForChapter(String chapterId) =>
       lectures.where((l) => l.chapterId == chapterId).toList();

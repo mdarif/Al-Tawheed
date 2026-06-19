@@ -23,7 +23,8 @@ import 'package:myapp/utils/l10n_extensions.dart';
 // screens' navigation/chrome).
 const _arSaved = 'المحفوظات';
 const _arContinueListening = 'متابعة الاستماع';
-const _arContinueListeningEmpty = 'ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا';
+const _arContinueListeningEmpty =
+    'ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا';
 String _arListenedDuration(String listened, String remaining) =>
     'تم الاستماع: $listened · المتبقي: $remaining';
 String _arPercentComplete(int percent) => '$percent% مكتمل';
@@ -53,31 +54,31 @@ class HomeScreen extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-          SliverAppBar(
-            pinned: true,
-            title: Text(context.l10n.tabHome),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.bookmark_outline_rounded),
-                tooltip: isArabic ? _arSaved : context.l10n.saved,
-                onPressed: () => context.push('/bookmarks'),
-              ),
-            ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _AnnouncementsBanner(),
-                _ContinueListeningCard(),
-                if (context.watch<FeatureFlagsProvider>().features.downloads)
-                  _OfflinePrepStrip(),
-                const SizedBox(height: 24),
-                _DailyBenefitCard(),
-                const SizedBox(height: 24),
-              ]),
+            SliverAppBar(
+              pinned: true,
+              title: Text(context.l10n.tabHome),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.bookmark_outline_rounded),
+                  tooltip: isArabic ? _arSaved : context.l10n.saved,
+                  onPressed: () => context.push('/bookmarks'),
+                ),
+              ],
             ),
-          ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _AnnouncementsBanner(),
+                  _ContinueListeningCard(),
+                  if (context.watch<FeatureFlagsProvider>().features.downloads)
+                    _OfflinePrepStrip(),
+                  const SizedBox(height: 24),
+                  _DailyBenefitCard(),
+                  const SizedBox(height: 24),
+                ]),
+              ),
+            ),
           ],
         ),
       ),
@@ -111,8 +112,9 @@ class _ContinueListeningCard extends StatelessWidget {
     final l10n = context.l10n;
     final series = context.read<SeriesProvider>().currentSeries;
     final isArabic = series.isRtl;
-    final lectureTitle =
-        context.read<LanguageProvider>().resolveForSeries(lecture.title, series);
+    final lectureTitle = context
+        .read<LanguageProvider>()
+        .resolveForSeries(lecture.title, series);
     final titleWidget = SizedBox(
       width: double.infinity,
       child: Text(
@@ -278,8 +280,11 @@ class _ContinueListeningCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(Icons.headphones_rounded,
-                  size: 36, color: context.mutedIconColor),
+              Icon(
+                Icons.headphones_rounded,
+                size: 36,
+                color: context.mutedIconColor,
+              ),
               const SizedBox(height: 10),
               isArabic
                   ? Directionality(
@@ -326,8 +331,11 @@ class _OverallProgressStats extends StatelessWidget {
         Text('$completedLectures/$totalLectures', style: style),
         if (showClasses) ...[
           const SizedBox(width: 10),
-          Icon(Icons.menu_book_rounded,
-              size: 13, color: context.mutedIconColor),
+          Icon(
+            Icons.menu_book_rounded,
+            size: 13,
+            color: context.mutedIconColor,
+          ),
           const SizedBox(width: 3),
           Text('$studiedClasses/$totalClasses', style: style),
         ],
@@ -385,8 +393,11 @@ class _DailyBenefitCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.format_quote_rounded,
-                  color: context.brandColor, size: 24),
+              Icon(
+                Icons.format_quote_rounded,
+                color: context.brandColor,
+                size: 24,
+              ),
               const SizedBox(height: 10),
               // Arabic text — right-aligned with proper RTL directionality
               if (benefit.textArabic != null) ...[
@@ -446,9 +457,11 @@ class _DailyBenefitCard extends StatelessWidget {
   final end = (currentIdx + 4).clamp(0, allLectures.length);
   final batch = allLectures.sublist(currentIdx + 1, end);
   final toDownload = batch
-      .where((l) =>
-          downloads.statusFor(l.id) == DownloadStatus.notDownloaded ||
-          downloads.statusFor(l.id) == DownloadStatus.failed)
+      .where(
+        (l) =>
+            downloads.statusFor(l.id) == DownloadStatus.notDownloaded ||
+            downloads.statusFor(l.id) == DownloadStatus.failed,
+      )
       .toList();
   final downloading = batch
       .where((l) => downloads.statusFor(l.id) == DownloadStatus.downloading)
@@ -484,7 +497,9 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
     final (:toDownload, :downloading) =
         computeOfflinePrepBatch(allLectures, lastId, downloads);
 
-    if (toDownload.isEmpty && downloading.isEmpty) return const SizedBox.shrink();
+    if (toDownload.isEmpty && downloading.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     final anyDownloading = downloading.isNotEmpty;
     final totalBytes = toDownload.fold(0, (sum, l) => sum + l.fileSizeBytes);
@@ -543,9 +558,11 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                             Text(
                               isArabic
                                   ? _arOfflinePrepTitle(
-                                      downloading.length + toDownload.length)
+                                      downloading.length + toDownload.length,
+                                    )
                                   : l10n.offlinePrepTitle(
-                                      downloading.length + toDownload.length),
+                                      downloading.length + toDownload.length,
+                                    ),
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: context.secondaryTextColor,
                               ),
@@ -581,7 +598,8 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                                     ? _arOfflinePrepSize(sizeMb)
                                     : l10n.offlinePrepSize(sizeMb),
                                 style: context.textTheme.bodySmall?.copyWith(
-                                    color: context.secondaryTextColor),
+                                  color: context.secondaryTextColor,
+                                ),
                               ),
                             ],
                           ],
@@ -592,20 +610,26 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
                   TextButton(
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _startDownloads(context, toDownload),
                     child: Text(
-                        isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave),
+                      isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => setState(() => _dismissed = true),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 4),
-                      child: Icon(Icons.close_rounded,
-                          size: 16, color: context.mutedIconColor),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: context.mutedIconColor,
+                      ),
                     ),
                   ),
                 ],
@@ -622,11 +646,14 @@ class _OfflinePrepStripState extends State<_OfflinePrepStrip> {
     final downloads = context.read<DownloadsProvider>();
     final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked,
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     for (final l in lectures) {

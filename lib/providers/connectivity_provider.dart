@@ -32,8 +32,7 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
         _results = const [ConnectivityResult.mobile];
 
   @visibleForTesting
-  factory ConnectivityProvider.testOnline() =>
-      ConnectivityProvider._test(true);
+  factory ConnectivityProvider.testOnline() => ConnectivityProvider._test(true);
 
   @visibleForTesting
   factory ConnectivityProvider.testOffline() =>
@@ -46,7 +45,8 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _init() async {
     await _refresh();
-    _sub = _connectivity.onConnectivityChanged.listen((_) => _scheduleRefresh());
+    _sub =
+        _connectivity.onConnectivityChanged.listen((_) => _scheduleRefresh());
   }
 
   @override

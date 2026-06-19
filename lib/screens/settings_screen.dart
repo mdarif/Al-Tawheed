@@ -73,7 +73,10 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.settingsPlaybackSpeed, style: context.textTheme.bodySmall),
+                Text(
+                  l10n.settingsPlaybackSpeed,
+                  style: context.textTheme.bodySmall,
+                ),
                 const SizedBox(height: 12),
                 const PlaybackSpeedSelector(),
               ],
@@ -121,9 +124,11 @@ class SettingsScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.language_rounded),
               title: Text(l10n.settingsVisitWebsite),
-              subtitle: Text(config.links.website!
-                  .replaceFirst('https://', '')
-                  .replaceFirst('http://', '')),
+              subtitle: Text(
+                config.links.website!
+                    .replaceFirst('https://', '')
+                    .replaceFirst('http://', ''),
+              ),
               onTap: () => launchUrl(
                 Uri.parse(config.links.website!),
                 mode: LaunchMode.externalApplication,
@@ -308,23 +313,23 @@ class _DownloadsSection extends StatelessWidget {
           ),
           value: downloads.downloadOnWifiOnly,
           activeThumbColor: context.brandColor,
-          onChanged: (v) => context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
+          onChanged: (v) =>
+              context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
         ),
 
         // Storage summary + library link
         ListTile(
           leading: const Icon(Icons.storage_rounded),
-          title: Text(count == 0
-              ? l10n.settingsNoDownloads
-              : l10n.settingsDownloadsCount(count)),
-          subtitle:
-              count > 0 ? Text(l10n.settingsStorageUsed(_formatBytes(size))) : null,
-          trailing: count > 0
-              ? const Icon(Icons.chevron_right_rounded)
+          title: Text(
+            count == 0
+                ? l10n.settingsNoDownloads
+                : l10n.settingsDownloadsCount(count),
+          ),
+          subtitle: count > 0
+              ? Text(l10n.settingsStorageUsed(_formatBytes(size)))
               : null,
-          onTap: count > 0
-              ? () => context.push('/offline-library')
-              : null,
+          trailing: count > 0 ? const Icon(Icons.chevron_right_rounded) : null,
+          onTap: count > 0 ? () => context.push('/offline-library') : null,
         ),
 
         if (count > 0)
@@ -349,7 +354,7 @@ class _DownloadsSection extends StatelessWidget {
                 destructive: true,
               );
               if (confirmed && context.mounted) {
-                context.read<DownloadsProvider>().deleteAll();
+                await context.read<DownloadsProvider>().deleteAll();
               }
             },
           ),

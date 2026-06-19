@@ -53,9 +53,9 @@ class StudyClassCompleteScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(isSeriesComplete
-            ? l10n.studySeriesComplete
-            : l10n.studyClassComplete),
+        title: Text(
+          isSeriesComplete ? l10n.studySeriesComplete : l10n.studyClassComplete,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -220,11 +220,31 @@ class _CompletionBadge extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        Positioned(top: -10, left: -8, child: _Sparkle(color: sparkle, size: 11, opacity: 0.65)),
-        Positioned(top: -14, right: 6, child: _Sparkle(color: sparkle, size: 7, opacity: 0.4)),
-        Positioned(bottom: 4, left: -16, child: _Sparkle(color: sparkle, size: 6, opacity: 0.35)),
-        Positioned(bottom: -10, right: -10, child: _Sparkle(color: sparkle, size: 9, opacity: 0.55)),
-        Positioned(top: 30, right: -16, child: _Sparkle(color: sparkle, size: 5, opacity: 0.3)),
+        Positioned(
+          top: -10,
+          left: -8,
+          child: _Sparkle(color: sparkle, size: 11, opacity: 0.65),
+        ),
+        Positioned(
+          top: -14,
+          right: 6,
+          child: _Sparkle(color: sparkle, size: 7, opacity: 0.4),
+        ),
+        Positioned(
+          bottom: 4,
+          left: -16,
+          child: _Sparkle(color: sparkle, size: 6, opacity: 0.35),
+        ),
+        Positioned(
+          bottom: -10,
+          right: -10,
+          child: _Sparkle(color: sparkle, size: 9, opacity: 0.55),
+        ),
+        Positioned(
+          top: 30,
+          right: -16,
+          child: _Sparkle(color: sparkle, size: 5, opacity: 0.3),
+        ),
         Container(
           width: 96,
           height: 96,
@@ -233,7 +253,10 @@ class _CompletionBadge extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: brand, width: 3),
             gradient: RadialGradient(
-              colors: [brand.withValues(alpha: 0.15), brand.withValues(alpha: 0)],
+              colors: [
+                brand.withValues(alpha: 0.15),
+                brand.withValues(alpha: 0),
+              ],
               stops: const [0.0, 0.72],
             ),
           ),
@@ -249,7 +272,11 @@ class _Sparkle extends StatelessWidget {
   final double size;
   final double opacity;
 
-  const _Sparkle({required this.color, required this.size, required this.opacity});
+  const _Sparkle({
+    required this.color,
+    required this.size,
+    required this.opacity,
+  });
 
   @override
   Widget build(BuildContext context) {

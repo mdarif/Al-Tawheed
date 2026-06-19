@@ -80,20 +80,20 @@ class ShellScreen extends StatelessWidget {
             Expanded(child: child),
           ],
         ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const MiniPlayer(),
-          NavigationBar(
-            selectedIndex: _selectedIndex(context, tabs),
-            onDestinationSelected: (i) => context.go(tabs[i].path),
-            destinations: [
-              for (final tab in tabs) tab.destination(series.isRtl),
-            ],
-          ),
-        ],
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const MiniPlayer(),
+            NavigationBar(
+              selectedIndex: _selectedIndex(context, tabs),
+              onDestinationSelected: (i) => context.go(tabs[i].path),
+              destinations: [
+                for (final tab in tabs) tab.destination(series.isRtl),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 

@@ -20,7 +20,10 @@ class PreferencesService {
   }
 
   SharedPreferences get _p {
-    assert(_prefs != null, 'PreferencesService.init() must be called before use');
+    assert(
+      _prefs != null,
+      'PreferencesService.init() must be called before use',
+    );
     return _prefs!;
   }
 
@@ -28,8 +31,11 @@ class PreferencesService {
 
   /// Persists [positionSeconds] for [lectureId] and records it as last played.
   /// [prefix] namespaces the keys for a non-default series (e.g. `'ar_'`).
-  Future<void> saveProgress(String lectureId, int positionSeconds,
-      {String prefix = ''}) async {
+  Future<void> saveProgress(
+    String lectureId,
+    int positionSeconds, {
+    String prefix = '',
+  }) async {
     await Future.wait([
       _p.setInt('${prefix}progress_$lectureId', positionSeconds),
       _p.setString('${prefix}last_lecture_id', lectureId),
@@ -111,7 +117,8 @@ class PreferencesService {
   // ── Downloads ───────────────────────────────────────────────────────────
 
   Set<String> loadDownloadedIds({String prefix = ''}) => Set<String>.from(
-      _p.getStringList('${prefix}downloaded_lecture_ids') ?? []);
+        _p.getStringList('${prefix}downloaded_lecture_ids') ?? [],
+      );
 
   Future<void> saveDownloadedIds(Set<String> ids, {String prefix = ''}) =>
       _p.setStringList('${prefix}downloaded_lecture_ids', ids.toList());
@@ -123,8 +130,8 @@ class PreferencesService {
 
   // ── Study mode ──────────────────────────────────────────────────────────
 
-  Set<String> loadStudiedChapterIds({String prefix = ''}) => Set<String>.from(
-      _p.getStringList('${prefix}studied_chapter_ids') ?? []);
+  Set<String> loadStudiedChapterIds({String prefix = ''}) =>
+      Set<String>.from(_p.getStringList('${prefix}studied_chapter_ids') ?? []);
 
   Future<void> saveStudiedChapterIds(Set<String> ids, {String prefix = ''}) =>
       _p.setStringList('${prefix}studied_chapter_ids', ids.toList());
@@ -160,7 +167,10 @@ class PreferencesService {
   Future<void> saveRemoteJson(String key, String body) async {
     await Future.wait([
       _p.setString('cache_${key}_json', body),
-      _p.setInt('cache_${key}_fetched_at', DateTime.now().millisecondsSinceEpoch),
+      _p.setInt(
+        'cache_${key}_fetched_at',
+        DateTime.now().millisecondsSinceEpoch,
+      ),
     ]);
   }
 

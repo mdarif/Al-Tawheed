@@ -30,10 +30,22 @@ class DurationFormatter {
 }
 
 const _easternArabicDigits = [
-  '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩',
+  '٠',
+  '١',
+  '٢',
+  '٣',
+  '٤',
+  '٥',
+  '٦',
+  '٧',
+  '٨',
+  '٩',
 ];
 
 /// Converts the Western digits of [n] to Eastern Arabic-Indic numerals.
 /// 91 → "٩١"
-String toArabicDigits(int n) =>
-    n.toString().split('').map((d) => _easternArabicDigits[int.parse(d)]).join();
+String toArabicDigits(int n) => n
+    .toString()
+    .split('')
+    .map((d) => _easternArabicDigits[int.parse(d)])
+    .join();

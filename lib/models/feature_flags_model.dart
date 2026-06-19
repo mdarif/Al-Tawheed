@@ -72,8 +72,8 @@ class FeatureFlagsModel {
   factory FeatureFlagsModel.fromJson(Map<String, dynamic> j) =>
       FeatureFlagsModel(
         version: j['version'] as int? ?? 1,
-        features: FeatureFlags.fromJson(
-            j['features'] as Map<String, dynamic>? ?? {}),
+        features:
+            FeatureFlags.fromJson(j['features'] as Map<String, dynamic>? ?? {}),
       );
 
   static FeatureFlagsModel get defaults =>

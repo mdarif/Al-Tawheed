@@ -72,8 +72,11 @@ class OverallProgressSummary extends StatelessWidget {
                     Row(
                       children: [
                         if (complete) ...[
-                          Icon(Icons.workspace_premium_rounded,
-                              size: 16, color: context.brandColor),
+                          Icon(
+                            Icons.workspace_premium_rounded,
+                            size: 16,
+                            color: context.brandColor,
+                          ),
                           const SizedBox(width: 6),
                         ],
                         Expanded(
@@ -102,8 +105,11 @@ class OverallProgressSummary extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.adjust_rounded,
-                      size: 17, color: context.brandColor),
+                  Icon(
+                    Icons.adjust_rounded,
+                    size: 17,
+                    color: context.brandColor,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     l10n.studyOverallProgress.toUpperCase(),

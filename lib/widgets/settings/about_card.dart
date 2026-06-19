@@ -110,7 +110,8 @@ class AboutCard extends StatelessWidget {
                     ),
                     if (hasClasses)
                       _StatColumn(
-                        value: '${catalog?.chapters.length ?? about.classCount}',
+                        value:
+                            '${catalog?.chapters.length ?? about.classCount}',
                         label: l10n.statClasses,
                       )
                     else

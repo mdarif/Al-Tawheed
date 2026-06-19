@@ -37,9 +37,7 @@ class LectureTile extends StatelessWidget {
       return Opacity(
         opacity: blocked ? 0.45 : 1.0,
         child: InkWell(
-          onTap: blocked
-              ? () => _showOfflineSnackBar(context)
-              : onTap,
+          onTap: blocked ? () => _showOfflineSnackBar(context) : onTap,
           child: _TileContent(lecture: lecture),
         ),
       );
@@ -223,8 +221,7 @@ class _TileTrailing extends StatelessWidget {
         isBookmarked
             ? Icons.bookmark_rounded
             : Icons.play_circle_outline_rounded,
-        color:
-            isBookmarked ? context.brandColor : context.mutedIconColor,
+        color: isBookmarked ? context.brandColor : context.mutedIconColor,
         size: 22,
       ),
     );

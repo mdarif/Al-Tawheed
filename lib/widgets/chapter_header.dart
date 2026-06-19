@@ -82,8 +82,11 @@ class _ChapterDownloadAction extends StatelessWidget {
     if (allSaved) {
       return Padding(
         padding: const EdgeInsets.only(left: 4),
-        child: Icon(Icons.check_circle_outline_rounded,
-            size: 18, color: context.brandColor),
+        child: Icon(
+          Icons.check_circle_outline_rounded,
+          size: 18,
+          color: context.brandColor,
+        ),
       );
     }
 
@@ -92,8 +95,11 @@ class _ChapterDownloadAction extends StatelessWidget {
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         tooltip: l10n.cancelChapterDownload,
-        icon: Icon(Icons.stop_circle_outlined,
-            size: 20, color: context.colorScheme.error),
+        icon: Icon(
+          Icons.stop_circle_outlined,
+          size: 20,
+          color: context.colorScheme.error,
+        ),
         onPressed: () => downloads.cancelChapterDownload(chapter.id),
       );
     }
@@ -104,8 +110,11 @@ class _ChapterDownloadAction extends StatelessWidget {
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       tooltip: l10n.downloadChapterAll(sizeMb),
-      icon: Icon(Icons.download_for_offline_outlined,
-          size: 20, color: context.mutedIconColor),
+      icon: Icon(
+        Icons.download_for_offline_outlined,
+        size: 20,
+        color: context.mutedIconColor,
+      ),
       onPressed: () => _startDownload(context),
     );
   }

@@ -130,7 +130,8 @@ class _NextBlockedListenerState extends State<_NextBlockedListener> {
     Lecture? next,
   ) async {
     final l10n = context.l10n;
-    final downloadsEnabled = context.read<FeatureFlagsProvider>().features.downloads;
+    final downloadsEnabled =
+        context.read<FeatureFlagsProvider>().features.downloads;
 
     if (!downloadsEnabled || next == null) {
       await showAlertDialog(
@@ -258,9 +259,8 @@ class _OfflineStatusStrip extends StatelessWidget {
       dlStatus: dlStatus,
       dlProgress: dlProgress,
     );
-    final strip = resolution == null
-        ? null
-        : _stripFromResolution(context, resolution);
+    final strip =
+        resolution == null ? null : _stripFromResolution(context, resolution);
     if (strip == null) return const SizedBox.shrink();
 
     return Padding(
@@ -302,9 +302,11 @@ class _OfflineStatusStrip extends StatelessWidget {
               ),
               if (strip.tappable) ...[
                 const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded,
-                    size: 14,
-                    color: strip.fgColor.withValues(alpha: 0.7)),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 14,
+                  color: strip.fgColor.withValues(alpha: 0.7),
+                ),
               ],
             ],
           ),
@@ -449,8 +451,7 @@ class _CoverArt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.headphones_rounded,
-              size: 72, color: context.brandColor),
+          Icon(Icons.headphones_rounded, size: 72, color: context.brandColor),
           const SizedBox(height: 12),
           Text(
             wordmark,
@@ -485,8 +486,8 @@ class _TrackInfo extends StatelessWidget {
         final speaker = catalog != null
             ? lang.resolveForSeries(catalog.book.speaker, series)
             : '';
-        final title =
-            snapshot.studyLabel ?? lang.resolveForSeries(snapshot.title, series);
+        final title = snapshot.studyLabel ??
+            lang.resolveForSeries(snapshot.title, series);
 
         final content = Column(
           children: [
@@ -567,10 +568,8 @@ class _SeekBarState extends State<_SeekBar> {
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape:
-                    const RoundSliderOverlayShape(overlayRadius: 14),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
                 value: sliderValue.clamp(0.0, 1.0),
@@ -578,10 +577,12 @@ class _SeekBarState extends State<_SeekBar> {
                 onChanged: (v) => setState(() => _draggingValue = v),
                 onChangeEnd: (v) {
                   setState(() => _draggingValue = null);
-                  context.read<PlayerNotifier>().seek(Duration(
-                        milliseconds:
-                            (v * snapshot.durationSeconds * 1000).round(),
-                      ));
+                  context.read<PlayerNotifier>().seek(
+                        Duration(
+                          milliseconds:
+                              (v * snapshot.durationSeconds * 1000).round(),
+                        ),
+                      );
                 },
               ),
             ),

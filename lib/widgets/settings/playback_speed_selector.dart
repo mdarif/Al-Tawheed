@@ -50,9 +50,9 @@ class PlaybackSpeedSelectorCompact extends StatelessWidget {
               ),
               child: _SpeedChip(
                 speed: PlaybackSpeedSelector._speeds[i],
-                selected: (player.speed - PlaybackSpeedSelector._speeds[i])
-                        .abs() <
-                    0.01,
+                selected:
+                    (player.speed - PlaybackSpeedSelector._speeds[i]).abs() <
+                        0.01,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 onSelect: () =>
                     player.setSpeed(PlaybackSpeedSelector._speeds[i]),

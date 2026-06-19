@@ -43,8 +43,7 @@ class _AllLecturesCompleteListenerState
 
   void _showCompletionSheet(BuildContext context) {
     final l10n = context.l10n;
-    final isRtl =
-        context.read<SeriesProvider>().currentSeries.isRtl;
+    final isRtl = context.read<SeriesProvider>().currentSeries.isRtl;
 
     showModalBottomSheet<void>(
       context: context,

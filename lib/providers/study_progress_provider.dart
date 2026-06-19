@@ -18,8 +18,7 @@ class StudyProgressProvider extends ChangeNotifier {
   final SeriesProvider? _series;
 
   String get _prefix =>
-      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback)
-          .storagePrefix;
+      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback).storagePrefix;
 
   Set<String> _studiedChapterIds = {};
 
@@ -89,7 +88,10 @@ class StudyProgressProvider extends ChangeNotifier {
   }
 
   /// First incomplete part, or first part when re-studying a completed class.
-  Lecture? sessionStartLecture(String chapterId, {bool restartStudied = false}) {
+  Lecture? sessionStartLecture(
+    String chapterId, {
+    bool restartStudied = false,
+  }) {
     final catalog = _catalog.catalog;
     if (catalog == null) return null;
     return StudyProgress.sessionStartLecture(

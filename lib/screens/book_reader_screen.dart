@@ -70,12 +70,15 @@ class _BookBodyState extends State<_BookBody> {
   bool _initialized = false;
   int _activePointers = 0;
 
-  static final _verseRe    = RegExp(r'\{[^}]+\}');
+  static final _verseRe = RegExp(r'\{[^}]+\}');
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
-  static final _hadithRe   = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
-  static const _verseColor    = Color(0xFF2E7D32); // deep green — Quran verses
-  static const _citationColor = Color(0xFF00897B); // teal — surah:ayah refs (distinct on both light & dark)
-  static const _hadithColor   = Color(0xFFE65100); // deep amber — Prophetic narrations
+  static final _hadithRe = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
+  static const _verseColor = Color(0xFF2E7D32); // deep green — Quran verses
+  static const _citationColor = Color(
+    0xFF00897B,
+  ); // teal — surah:ayah refs (distinct on both light & dark)
+  static const _hadithColor =
+      Color(0xFFE65100); // deep amber — Prophetic narrations
 
   // 1 = verse, 2 = citation, 3 = hadith
   List<TextSpan> _buildSpans(String text, TextStyle base) {
@@ -97,11 +100,17 @@ class _BookBodyState extends State<_BookBody> {
       if (start > last) {
         spans.add(TextSpan(text: text.substring(last, start), style: base));
       }
-      final color = type == 1 ? _verseColor : type == 2 ? _citationColor : _hadithColor;
-      spans.add(TextSpan(
-        text: text.substring(start, end),
-        style: base.copyWith(color: color),
-      ));
+      final color = type == 1
+          ? _verseColor
+          : type == 2
+              ? _citationColor
+              : _hadithColor;
+      spans.add(
+        TextSpan(
+          text: text.substring(start, end),
+          style: base.copyWith(color: color),
+        ),
+      );
       last = end;
     }
     if (last < text.length) {
@@ -117,14 +126,16 @@ class _BookBodyState extends State<_BookBody> {
       if (line.trim().isEmpty) {
         widgets.add(const SizedBox(height: 8));
       } else {
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text.rich(
-            TextSpan(children: _buildSpans(line, base)),
-            textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text.rich(
+              TextSpan(children: _buildSpans(line, base)),
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+            ),
           ),
-        ));
+        );
       }
     }
     return widgets;
@@ -143,13 +154,14 @@ class _BookBodyState extends State<_BookBody> {
   @override
   Widget build(BuildContext context) {
     final baseStyle = context.textTheme.bodyLarge?.copyWith(
-      fontFamily: 'NotoNaskhArabic',
-      fontSize: _fontSize,
-      height: 1.8,
-      // letterSpacing must be 0/absent for Arabic — any positive value
-      // inserts gaps between glyphs and breaks cursive joins and
-      // ligatures (including the mandatory الله ligature).
-    ) ?? const TextStyle();
+          fontFamily: 'NotoNaskhArabic',
+          fontSize: _fontSize,
+          height: 1.8,
+          // letterSpacing must be 0/absent for Arabic — any positive value
+          // inserts gaps between glyphs and breaks cursive joins and
+          // ligatures (including the mandatory الله ligature).
+        ) ??
+        const TextStyle();
 
     // Listener fires before gesture arena — use it to count active pointers
     // so we can disable scroll the instant a second finger touches, preventing

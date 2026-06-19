@@ -170,8 +170,10 @@ class DownloadsProvider extends ChangeNotifier {
           final stepped = (p * 100).floorToDouble() / 100;
           if (stepped != lastNotifiedProgress || p >= 1.0) {
             lastNotifiedProgress = stepped;
-            unawaited(DownloadNotificationService.instance
-                .showProgress(lecture.id, lecture.title.en, p));
+            unawaited(
+              DownloadNotificationService.instance
+                  .showProgress(lecture.id, lecture.title.en, p),
+            );
             notifyListeners();
           }
         },
@@ -188,8 +190,10 @@ class DownloadsProvider extends ChangeNotifier {
       await PreferencesService.instance
           .saveDownloadedIds(_downloadedIds, prefix: _prefix);
       _refreshTotalBytes();
-      unawaited(DownloadNotificationService.instance
-          .showComplete(lecture.id, lecture.title.en));
+      unawaited(
+        DownloadNotificationService.instance
+            .showComplete(lecture.id, lecture.title.en),
+      );
     } on DownloadCancelled {
       _resetAfterCancel(lecture.id);
     } catch (_) {
@@ -211,8 +215,7 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   /// Downloads all lectures in a chapter serially. Safe to call if already running.
-  Future<void> downloadChapter(
-      String chapterId, List<Lecture> lectures) async {
+  Future<void> downloadChapter(String chapterId, List<Lecture> lectures) async {
     if (_downloadingChapterIds.contains(chapterId)) return;
     _downloadingChapterIds.add(chapterId);
     _cancelledChapterIds.remove(chapterId);

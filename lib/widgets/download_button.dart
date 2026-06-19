@@ -113,8 +113,7 @@ class DownloadButton extends StatelessWidget {
 
   void _confirmDelete(BuildContext context) async {
     final l10n = context.l10n;
-    final title =
-        context.read<LanguageProvider>().resolve(lecture.title);
+    final title = context.read<LanguageProvider>().resolve(lecture.title);
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.deleteDownload,
@@ -123,7 +122,7 @@ class DownloadButton extends StatelessWidget {
       destructive: true,
     );
     if (confirmed && context.mounted) {
-      context.read<DownloadsProvider>().delete(lecture.id);
+      await context.read<DownloadsProvider>().delete(lecture.id);
     }
   }
 }

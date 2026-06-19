@@ -81,7 +81,10 @@ class AnnouncementsModel {
   final int version;
   final List<Announcement> announcements;
 
-  const AnnouncementsModel({required this.version, required this.announcements});
+  const AnnouncementsModel({
+    required this.version,
+    required this.announcements,
+  });
 
   factory AnnouncementsModel.fromJson(Map<String, dynamic> j) =>
       AnnouncementsModel(

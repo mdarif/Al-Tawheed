@@ -13,6 +13,7 @@ import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
+
 class LectureListScreen extends StatefulWidget {
   const LectureListScreen({super.key});
 
@@ -98,8 +99,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.wifi_off_rounded,
-                    size: 52, color: context.mutedIconColor),
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 52,
+                  color: context.mutedIconColor,
+                ),
                 const SizedBox(height: 20),
                 Text(
                   l10n.couldNotLoadLectures,
@@ -161,8 +165,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
               if (item.isChapter) {
                 return ChapterHeader(
                   chapter: item.chapter!,
-                  chapterLectures:
-                      catalog.lecturesForChapter(item.chapter!.id),
+                  chapterLectures: catalog.lecturesForChapter(item.chapter!.id),
                 );
               }
               return Column(
@@ -188,8 +191,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         SliverToBoxAdapter(
           child: Selector<PlayerNotifier, bool>(
             selector: (_, p) => p.hasAudio,
-            builder: (_, hasAudio, __) =>
-                SizedBox(height: hasAudio ? 80 : 24),
+            builder: (_, hasAudio, __) => SizedBox(height: hasAudio ? 80 : 24),
           ),
         ),
       ],
@@ -226,7 +228,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
         ? SafeArea(
             child: Padding(
               padding: EdgeInsetsDirectional.fromSTEB(
-                  16, 0, 16, isArabicContent ? 50 : 48),
+                16,
+                0,
+                16,
+                isArabicContent ? 50 : 48,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: isArabicContent
@@ -239,22 +245,20 @@ class _LectureListScreenState extends State<LectureListScreen> {
                       textAlign: isArabicContent ? TextAlign.right : null,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w400,
-                              ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                          ),
                     ),
                   if (countLine.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       countLine,
                       textAlign: isArabicContent ? TextAlign.right : null,
-                      style:
-                          Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w400,
-                              ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                          ),
                     ),
                   ],
                 ],

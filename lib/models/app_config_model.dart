@@ -4,8 +4,12 @@ class AppConfigLinks {
   final String? website;
   final String? youtube;
 
-  const AppConfigLinks(
-      {this.playStore, this.appStore, this.website, this.youtube});
+  const AppConfigLinks({
+    this.playStore,
+    this.appStore,
+    this.website,
+    this.youtube,
+  });
 
   factory AppConfigLinks.fromJson(Map<String, dynamic> j) => AppConfigLinks(
         playStore: j['playStore'] as String?,
@@ -117,13 +121,15 @@ class AppConfigModel {
         links:
             AppConfigLinks.fromJson(j['links'] as Map<String, dynamic>? ?? {}),
         contact: AppConfigContact.fromJson(
-            j['contact'] as Map<String, dynamic>? ?? {}),
+          j['contact'] as Map<String, dynamic>? ?? {},
+        ),
         share:
             AppConfigShare.fromJson(j['share'] as Map<String, dynamic>? ?? {}),
         about:
             AppConfigAbout.fromJson(j['about'] as Map<String, dynamic>? ?? {}),
         branding: AppConfigBranding.fromJson(
-            j['branding'] as Map<String, dynamic>? ?? {}),
+          j['branding'] as Map<String, dynamic>? ?? {},
+        ),
       );
 
   /// Safe fallback used when the remote fetch fails and no cache exists.

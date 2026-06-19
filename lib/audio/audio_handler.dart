@@ -82,15 +82,16 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     String? localFilePath,
     String artist = 'Sharah Kitab al-Tawheed',
   }) async {
-    mediaItem.add(MediaItem(
-      id: lecture.id,
-      title: lecture.title.en,
-      artist: artist,
-      duration: Duration(seconds: lecture.durationSeconds),
-    ));
+    mediaItem.add(
+      MediaItem(
+        id: lecture.id,
+        title: lecture.title.en,
+        artist: artist,
+        duration: Duration(seconds: lecture.durationSeconds),
+      ),
+    );
 
-    final useLocal =
-        localFilePath != null && File(localFilePath).existsSync();
+    final useLocal = localFilePath != null && File(localFilePath).existsSync();
     final source = useLocal
         ? AudioSource.uri(Uri.file(localFilePath))
         : AudioSource.uri(Uri.parse(lecture.audioUrl));

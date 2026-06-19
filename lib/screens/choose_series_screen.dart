@@ -60,7 +60,9 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 32),
+                      horizontal: 24,
+                      vertical: 32,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -304,9 +306,10 @@ class _SeriesCard extends StatelessWidget {
                                   child: SizedBox(
                                     width: double.infinity,
                                     child: Text(
-                                      _shortenSpeaker((series.speakerName['ar']
-                                              as String?) ??
-                                          _arSpeakerFallback),
+                                      _shortenSpeaker(
+                                        (series.speakerName['ar'] as String?) ??
+                                            _arSpeakerFallback,
+                                      ),
                                       textAlign: TextAlign.right,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,

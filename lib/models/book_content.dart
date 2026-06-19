@@ -45,6 +45,5 @@ class BookContent {
             .toList(),
       );
 
-  BookChapter chapterById(String id) =>
-      chapters.firstWhere((c) => c.id == id);
+  BookChapter chapterById(String id) => chapters.firstWhere((c) => c.id == id);
 }

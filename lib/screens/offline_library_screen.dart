@@ -35,9 +35,8 @@ class OfflineLibraryScreen extends StatelessWidget {
     if (catalog.chapters.isEmpty) {
       // Flat series (e.g. standalone duroos) — no chapter grouping, just
       // list the downloaded lectures directly.
-      final saved = catalog.lectures
-          .where((l) => downloads.isDownloaded(l.id))
-          .toList();
+      final saved =
+          catalog.lectures.where((l) => downloads.isDownloaded(l.id)).toList();
       return Scaffold(
         appBar: AppBar(title: Text(l10n.offlineLibrary)),
         body: saved.isEmpty
@@ -53,8 +52,13 @@ class OfflineLibraryScreen extends StatelessWidget {
     final chaptersWithDownloads = catalog.chapters
         .map((ch) {
           final lectures = catalog.lecturesForChapter(ch.id);
-          final saved = lectures.where((l) => downloads.isDownloaded(l.id)).toList();
-          return _ChapterGroup(chapter: ch, allLectures: lectures, savedLectures: saved);
+          final saved =
+              lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+          return _ChapterGroup(
+            chapter: ch,
+            allLectures: lectures,
+            savedLectures: saved,
+          );
         })
         .where((g) => g.savedLectures.isNotEmpty)
         .toList();
@@ -85,11 +89,16 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.download_outlined,
-                size: 56, color: context.mutedIconColor),
+            Icon(
+              Icons.download_outlined,
+              size: 56,
+              color: context.mutedIconColor,
+            ),
             const SizedBox(height: 16),
-            Text(l10n.offlineLibraryEmpty,
-                style: context.textTheme.titleMedium),
+            Text(
+              l10n.offlineLibraryEmpty,
+              style: context.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               l10n.offlineLibraryEmptyHint,
@@ -110,10 +119,11 @@ class _ChapterGroup {
   final Chapter chapter;
   final List<Lecture> allLectures;
   final List<Lecture> savedLectures;
-  const _ChapterGroup(
-      {required this.chapter,
-      required this.allLectures,
-      required this.savedLectures});
+  const _ChapterGroup({
+    required this.chapter,
+    required this.allLectures,
+    required this.savedLectures,
+  });
 }
 
 class _ChapterSection extends StatelessWidget {
@@ -127,10 +137,9 @@ class _ChapterSection extends StatelessWidget {
     final connectivity = context.read<ConnectivityProvider>();
     final isChapterDownloading =
         downloads.isChapterDownloading(group.chapter.id);
-    final allSaved =
-        downloads.isChapterFullyDownloaded(group.allLectures);
-    final savedBytes = group.savedLectures
-        .fold(0, (sum, l) => sum + l.fileSizeBytes);
+    final allSaved = downloads.isChapterFullyDownloaded(group.allLectures);
+    final savedBytes =
+        group.savedLectures.fold(0, (sum, l) => sum + l.fileSizeBytes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,16 +175,15 @@ class _ChapterSection extends StatelessWidget {
                   label: l10n.cancelChapterDownload,
                   icon: Icons.stop_rounded,
                   color: context.colorScheme.error,
-                  onTap: () => downloads
-                      .cancelChapterDownload(group.chapter.id),
+                  onTap: () =>
+                      downloads.cancelChapterDownload(group.chapter.id),
                 )
               else if (!allSaved)
                 _ActionChip(
                   label: l10n.downloadRemaining,
                   icon: Icons.download_rounded,
                   onTap: () {
-                    if (downloads.downloadOnWifiOnly &&
-                        !connectivity.isWifi) {
+                    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(l10n.wifiOnlyBlocked),
@@ -185,7 +193,9 @@ class _ChapterSection extends StatelessWidget {
                       return;
                     }
                     downloads.downloadChapter(
-                        group.chapter.id, group.allLectures);
+                      group.chapter.id,
+                      group.allLectures,
+                    );
                   },
                 )
               else
@@ -209,19 +219,19 @@ class _ChapterSection extends StatelessWidget {
   }
 
   void _confirmDeleteChapter(
-      BuildContext context, DownloadsProvider downloads) async {
+    BuildContext context,
+    DownloadsProvider downloads,
+  ) async {
     final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.deleteChapterConfirm,
-      message: context
-          .read<LanguageProvider>()
-          .resolve(group.chapter.title),
+      message: context.read<LanguageProvider>().resolve(group.chapter.title),
       confirmLabel: l10n.deleteChapter,
       destructive: true,
     );
     if (confirmed && context.mounted) {
-      downloads.deleteChapter(group.allLectures);
+      await downloads.deleteChapter(group.allLectures);
     }
   }
 
@@ -311,8 +321,8 @@ class _LectureTile extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           lecture.number.toString().padLeft(2, '0'),
-          style: context.textTheme.labelSmall
-              ?.copyWith(color: context.brandColor),
+          style:
+              context.textTheme.labelSmall?.copyWith(color: context.brandColor),
         ),
       ),
       title: series.isRtl
@@ -324,8 +334,11 @@ class _LectureTile extends StatelessWidget {
             ?.copyWith(color: context.secondaryTextColor),
       ),
       trailing: IconButton(
-        icon: Icon(Icons.delete_outline_rounded,
-            size: 20, color: context.mutedIconColor),
+        icon: Icon(
+          Icons.delete_outline_rounded,
+          size: 20,
+          color: context.mutedIconColor,
+        ),
         onPressed: () => _confirmDelete(context, title, removeLabel),
         tooltip: removeLabel,
       ),
@@ -333,7 +346,10 @@ class _LectureTile extends StatelessWidget {
   }
 
   void _confirmDelete(
-      BuildContext context, String title, String removeLabel) async {
+    BuildContext context,
+    String title,
+    String removeLabel,
+  ) async {
     final series = context.read<SeriesProvider>().currentSeries;
     final confirmed = await showConfirmDialog(
       context,
@@ -344,7 +360,7 @@ class _LectureTile extends StatelessWidget {
       destructive: true,
     );
     if (confirmed && context.mounted) {
-      context.read<DownloadsProvider>().delete(lecture.id);
+      await context.read<DownloadsProvider>().delete(lecture.id);
     }
   }
 }

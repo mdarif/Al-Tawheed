@@ -86,7 +86,8 @@ class _MiniPlayerBar extends StatelessWidget {
                           return series.isRtl
                               ? Directionality(
                                   textDirection: TextDirection.rtl,
-                                  child: titleWidget)
+                                  child: titleWidget,
+                                )
                               : titleWidget;
                         },
                       ),

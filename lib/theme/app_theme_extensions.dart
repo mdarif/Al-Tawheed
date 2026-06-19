@@ -10,8 +10,7 @@ extension AppThemeContext on BuildContext {
 
   TextTheme get textTheme => appTheme.textTheme;
 
-  AppSemanticColors get semantic =>
-      appTheme.extension<AppSemanticColors>()!;
+  AppSemanticColors get semantic => appTheme.extension<AppSemanticColors>()!;
 
   bool get isDarkTheme => appTheme.brightness == Brightness.dark;
 
