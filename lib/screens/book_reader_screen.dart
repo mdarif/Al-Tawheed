@@ -6,6 +6,7 @@ import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
@@ -78,14 +79,34 @@ class _BookBodyState extends State<_BookBody> {
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
   static final _hadithRe = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
 
+  // Quranic verse ornaments — replace the source's ASCII { } so verses render
+  // like a printed mushaf: ﴾ at the verse start (rightmost in RTL) and ﴿ at the
+  // end (leftmost). These ornate parens are bidi-mirrored inside the RTL run,
+  // so the codepoints are the reverse of what their names suggest: the logical
+  // opener '{' uses U+FD3F and the closer '}' uses U+FD3E. Escapes keep the
+  // source unambiguous under bidi rendering.
+  static const _ornateOpen = '\u{FD3F}'; // renders ﴾ at verse start
+  static const _ornateClose = '\u{FD3E}'; // renders ﴿ at verse end
+
+  // Hadith (Prophetic narrations) — the source wraps them in ASCII (( )). Arabic
+  // typography encloses hadith in angle quotation marks « », so swap the double
+  // parens for guillemets. Like the ornaments these are bidi-mirrored in the RTL
+  // run, rendering as »نص« with the chevrons embracing the text.
+  static const _hadithOpen = '\u{00AB}'; // «  at hadith start
+  static const _hadithClose = '\u{00BB}'; // »  at hadith end
+
   // 1 = verse, 2 = citation, 3 = hadith. Colours are resolved from the active
   // theme (see [_HighlightColors]) so each mode gets a shade tuned for contrast
   // against its reading background.
   List<TextSpan> _buildSpans(
-    String text,
+    String line,
     TextStyle base,
     _HighlightColors colors,
   ) {
+    // Eastern Arabic-Indic numerals for inline ayah numbers etc. Digit chars
+    // map 1:1 so the regex match positions below stay valid.
+    final text = arabicDigitsInString(line);
+
     final intervals = <(int, int, int)>[];
     for (final m in _verseRe.allMatches(text)) {
       intervals.add((m.start, m.end, 1));
@@ -109,9 +130,20 @@ class _BookBodyState extends State<_BookBody> {
           : type == 2
               ? colors.citation
               : colors.hadith;
+      var segment = text.substring(start, end);
+      if (type == 1) {
+        segment =
+            segment.replaceAll('{', _ornateOpen).replaceAll('}', _ornateClose);
+      } else if (type == 3) {
+        // Strip the outer (( )) and wrap in guillemets — inner single parens
+        // (e.g. ayah numbers) are left intact.
+        segment = _hadithOpen +
+            segment.substring(2, segment.length - 2) +
+            _hadithClose;
+      }
       spans.add(
         TextSpan(
-          text: text.substring(start, end),
+          text: segment,
           style: base.copyWith(color: color),
         ),
       );

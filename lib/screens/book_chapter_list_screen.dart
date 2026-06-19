@@ -5,6 +5,7 @@ import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 class BookChapterListScreen extends StatefulWidget {
@@ -143,7 +144,7 @@ class _NumberBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        number.toString().padLeft(2, '0'),
+        arabicDigitsInString(number.toString().padLeft(2, '0')),
         style: context.textTheme.labelMedium?.copyWith(
           color: context.brandColor,
           letterSpacing: 0.5,

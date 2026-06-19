@@ -49,3 +49,11 @@ String toArabicDigits(int n) => n
     .split('')
     .map((d) => _easternArabicDigits[int.parse(d)])
     .join();
+
+/// Converts every Western digit (0-9) inside [s] to Eastern Arabic-Indic,
+/// leaving all other characters untouched. Use for mixed Arabic text such as
+/// book passages with inline ayah numbers, e.g. "...تَعقِلُونَ (151)".
+String arabicDigitsInString(String s) => s.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (m) => _easternArabicDigits[int.parse(m[0]!)],
+    );

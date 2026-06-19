@@ -86,8 +86,9 @@ void main() {
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('مقدمة'), findsOneWidget);
     expect(find.text('باب فضل التوحيد'), findsOneWidget);
-    expect(find.text('00'), findsOneWidget);
-    expect(find.text('01'), findsOneWidget);
+    // Chapter badges render Eastern Arabic-Indic numerals (٠٠، ٠١).
+    expect(find.text('٠٠'), findsOneWidget);
+    expect(find.text('٠١'), findsOneWidget);
   });
 
   testWidgets('tapping a chapter navigates to the reader', (tester) async {
