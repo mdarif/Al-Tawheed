@@ -7,6 +7,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/catalog_error_body.dart';
 
 class BookChapterListScreen extends StatefulWidget {
   const BookChapterListScreen({super.key});
@@ -53,7 +54,9 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
         BookStatus.idle || BookStatus.loading => Center(
             child: CircularProgressIndicator(color: context.brandColor),
           ),
-        BookStatus.error => _ErrorBody(
+        BookStatus.error => CatalogErrorBody(
+            icon: Icons.menu_book_outlined,
+            title: l10n.bookCouldNotLoad,
             message: provider.error ?? l10n.bookCouldNotLoad,
             onRetry: () => provider.load(
               context.read<SeriesProvider>().currentSeries,
@@ -154,48 +157,3 @@ class _NumberBadge extends StatelessWidget {
   }
 }
 
-class _ErrorBody extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorBody({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.menu_book_outlined,
-              size: 52,
-              color: context.mutedIconColor,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.bookCouldNotLoad,
-              style: context.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: context.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(l10n.retry),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

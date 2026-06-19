@@ -9,6 +9,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
+import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
 import 'package:myapp/widgets/study/study_dashboard_card.dart';
@@ -56,9 +57,11 @@ class _StudyScreenState extends State<StudyScreen> {
           ),
         CatalogStatus.error => catalog.needsOnlineToLoad
             ? CatalogConnectRequiredBody(provider: catalog)
-            : _ErrorBody(
+            : CatalogErrorBody(
+                icon: Icons.wifi_off_rounded,
+                title: l10n.studyCouldNotLoadClasses,
                 message: catalog.error ?? l10n.studyCouldNotLoadClasses,
-                onRetry: catalog.load,
+                onRetry: () => catalog.load(),
               ),
         CatalogStatus.loaded => _StudyBody(
             onClassTap: (info) => _onClassTap(context, info),
@@ -132,48 +135,3 @@ class _StudyBody extends StatelessWidget {
   }
 }
 
-class _ErrorBody extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorBody({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off_rounded,
-              size: 52,
-              color: context.mutedIconColor,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.studyCouldNotLoadClasses,
-              style: context.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: context.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(l10n.retry),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

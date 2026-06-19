@@ -102,8 +102,10 @@ class ClassProgressCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
+                            // Watch so the title refreshes on a UI-language
+                            // change while Study Mode stays alive in the shell.
                             context
-                                .read<LanguageProvider>()
+                                .watch<LanguageProvider>()
                                 .resolve(chapter.title),
                             style: context.textTheme.titleSmall?.copyWith(
                               fontSize: 15,

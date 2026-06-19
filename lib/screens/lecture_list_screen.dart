@@ -11,6 +11,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
+import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
@@ -89,41 +90,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
   }
 
   Widget _buildError(String message, CatalogProvider provider) {
-    final l10n = context.l10n;
     return CustomScrollView(
       slivers: [
         _buildAppBar(null),
         SliverFillRemaining(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 52,
-                  color: context.mutedIconColor,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.couldNotLoadLectures,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 28),
-                FilledButton.icon(
-                  onPressed: () => provider.load(),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(l10n.retry),
-                ),
-              ],
-            ),
+          child: CatalogErrorBody(
+            icon: Icons.wifi_off_rounded,
+            title: context.l10n.couldNotLoadLectures,
+            message: message,
+            onRetry: () => provider.load(),
           ),
         ),
       ],
