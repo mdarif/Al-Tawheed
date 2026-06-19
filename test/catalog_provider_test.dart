@@ -121,6 +121,60 @@ void main() {
       expect(provider.catalog?.book.id, 'arabic-book');
       expect(provider.catalog?.chapters, isEmpty);
     });
+
+    test('load() records loadedSeriesId for the legacy series', () async {
+      await PreferencesService.instance
+          .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
+
+      final provider = CatalogProvider();
+      expect(provider.loadedSeriesId, isNull);
+
+      await provider.load();
+      expect(provider.loadedSeriesId, SeriesConfig.legacyId);
+    });
+
+    test('load(series) records that series id as loadedSeriesId', () async {
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final provider = CatalogProvider();
+      await provider.load(_arabicSeries);
+      expect(provider.loadedSeriesId, 'tawheed-ar');
+    });
+
+    test('switching series updates loadedSeriesId and the catalog', () async {
+      await PreferencesService.instance
+          .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final provider = CatalogProvider();
+      await provider.load();
+      expect(provider.loadedSeriesId, SeriesConfig.legacyId);
+
+      await provider.load(_arabicSeries);
+      expect(provider.loadedSeriesId, 'tawheed-ar');
+      expect(provider.catalog?.book.id, 'arabic-book');
+    });
+
+    test(
+        'a newer load for a different series supersedes an in-flight one '
+        '(latest series wins)', () async {
+      await PreferencesService.instance
+          .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
+      await PreferencesService.instance.saveRemoteJson(
+          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')));
+
+      final provider = CatalogProvider();
+      // Start the legacy load, then immediately request Arabic before the first
+      // resolves — whichever network call returns first, Arabic must win.
+      final first = provider.load();
+      final second = provider.load(_arabicSeries);
+      await Future.wait([first, second]);
+
+      expect(provider.loadedSeriesId, 'tawheed-ar');
+      expect(provider.catalog?.book.id, 'arabic-book');
+    });
   });
 
   group('DownloadsProvider — queue', () {

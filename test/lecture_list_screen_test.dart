@@ -215,4 +215,51 @@ void main() {
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
+
+  testWidgets(
+      'reloads the catalog when the active series changes — no series/catalog desync',
+      (tester) async {
+    // Urdu (legacy) catalog under the bare "catalog" cache key.
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        bookTitle: const {'en': 'Sharah Kitab al-Tawheed'},
+        lectures: [_lectureJson('lec-001', 1)],
+      )),
+    );
+    // Arabic catalog under the namespaced "catalog_tawheed-ar" key.
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+        bookSpeaker: const {
+          'en': 'Shaikh Salih al-Fawzan Hafizahullah',
+          'ar': 'الشيخ صالح الفوزان حفظه الله',
+        },
+        lectures: [_lectureJson('lec-001', 1, titleAr: 'الدرس الأول')],
+      )),
+    );
+
+    // Mount on the Urdu (legacy) series — mirrors the brief boot window before
+    // the saved Arabic series is restored.
+    final series = SeriesProvider()..load(false);
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sharah Kitab al-Tawheed'), findsOneWidget);
+    expect(find.text('كتاب التوحيد'), findsNothing);
+
+    // The active series flips to Arabic (restored from prefs / device default).
+    series.setCurrentSeriesForTest(_arabicSeries);
+    await tester.pumpAndSettle();
+
+    // The catalog must follow the series — Arabic content now, Urdu gone.
+    expect(find.text('كتاب التوحيد'), findsOneWidget);
+    expect(find.text('الدرس الأول'), findsOneWidget);
+    expect(find.text('Sharah Kitab al-Tawheed'), findsNothing);
+  });
 }

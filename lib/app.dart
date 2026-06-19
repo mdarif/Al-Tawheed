@@ -184,7 +184,8 @@ class MyApp extends StatelessWidget {
           },
           lazy: false,
         ),
-        ChangeNotifierProvider(create: (_) => CatalogProvider()),
+        ChangeNotifierProvider(
+            create: (ctx) => CatalogProvider(ctx.read<SeriesProvider>())),
         ChangeNotifierProvider(create: (_) => BookProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
         ChangeNotifierProvider(

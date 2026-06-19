@@ -21,18 +21,33 @@ class LectureListScreen extends StatefulWidget {
 }
 
 class _LectureListScreenState extends State<LectureListScreen> {
-  @override
-  void initState() {
-    super.initState();
+  // The series id we last kicked a catalog load for. Lets us reload exactly
+  // once when the active series changes (e.g. restored from prefs or switched
+  // after this screen mounted) instead of only loading at initState.
+  String? _requestedSeriesId;
+
+  /// Reloads the catalog whenever the active series changes so the displayed
+  /// lectures always match the series the rest of the app (nav, chrome) shows
+  /// — even when the series is restored from prefs or switched after this
+  /// screen first mounted. Fires once per distinct series id; on failure the
+  /// error UI's retry button drives re-attempts, so there is no retry loop.
+  void _syncCatalogToSeries(BuildContext context) {
+    final series = context.watch<SeriesProvider>().currentSeries;
+    if (series.id == _requestedSeriesId) return;
+    _requestedSeriesId = series.id;
+
+    final catalog = context.read<CatalogProvider>();
+    if (catalog.loadedSeriesId == series.id) return; // already in sync
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<CatalogProvider>()
-          .load(context.read<SeriesProvider>().currentSeries);
+      if (!mounted) return;
+      context.read<CatalogProvider>().load(series);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    _syncCatalogToSeries(context);
     return Scaffold(
       body: Consumer<CatalogProvider>(
         builder: (context, provider, _) {

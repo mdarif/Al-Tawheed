@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -20,19 +21,28 @@ class StudyScreen extends StatefulWidget {
 }
 
 class _StudyScreenState extends State<StudyScreen> {
-  @override
-  void initState() {
-    super.initState();
+  // See the matching helper in LectureListScreen — reloads the catalog once
+  // per distinct series id so Study Mode never shows a different series'
+  // classes than the one currently active.
+  String? _requestedSeriesId;
+
+  void _syncCatalogToSeries(BuildContext context) {
+    final series = context.watch<SeriesProvider>().currentSeries;
+    if (series.id == _requestedSeriesId) return;
+    _requestedSeriesId = series.id;
+
+    final catalog = context.read<CatalogProvider>();
+    if (catalog.loadedSeriesId == series.id) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final catalog = context.read<CatalogProvider>();
-      if (catalog.status == CatalogStatus.idle) {
-        catalog.load();
-      }
+      if (!mounted) return;
+      context.read<CatalogProvider>().load(series);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    _syncCatalogToSeries(context);
     final catalog = context.watch<CatalogProvider>();
     final l10n = context.l10n;
 
