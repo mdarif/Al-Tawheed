@@ -50,7 +50,9 @@ class PlayerScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              isArabic ? _arNowPlaying : 'Now Playing',
+              // Non-Arabic series use the localized chrome string so Urdu /
+              // Roman-Urdu users don't see a hardcoded English header.
+              isArabic ? _arNowPlaying : context.l10n.nowPlaying,
               style: context.textTheme.titleMedium?.copyWith(fontSize: 14),
             ),
             centerTitle: true,
@@ -426,9 +428,10 @@ class _CoverArt extends StatelessWidget {
   Widget build(BuildContext context) {
     final series = context.read<SeriesProvider>().currentSeries;
     final catalog = context.watch<CatalogProvider>().catalog;
+    // Watch the language so the wordmark refreshes on a UI-language change.
     final wordmark = series.isRtl && catalog != null
         ? context
-            .read<LanguageProvider>()
+            .watch<LanguageProvider>()
             .resolveForSeries(catalog.book.title, series)
         : 'شرح كتاب التوحيد';
 
@@ -475,7 +478,8 @@ class _TrackInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final series = context.read<SeriesProvider>().currentSeries;
-    final lang = context.read<LanguageProvider>();
+    // Watch so the resolved title/speaker refresh on a UI-language change.
+    final lang = context.watch<LanguageProvider>();
     return Selector<PlayerNotifier, _TrackInfoSnapshot>(
       selector: (_, player) => _TrackInfoSnapshot(
         lectureId: player.current?.id,

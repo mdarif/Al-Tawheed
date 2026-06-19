@@ -89,6 +89,7 @@ Future<PlayerNotifier> _pumpPlayer(
   FeatureFlagsProvider? featureFlags,
   SeriesConfig? series,
   Catalog? catalog,
+  Locale? locale,
   void Function(DownloadsProvider)? seedAfterLoad,
   void Function(PlayerNotifier)? configurePlayer,
 }) async {
@@ -132,6 +133,7 @@ Future<PlayerNotifier> _pumpPlayer(
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -181,6 +183,16 @@ void main() {
       );
       expect(skipPrev.onPressed, isNull);
       expect(skipNext.onPressed, isNull);
+    });
+
+    testWidgets('header is localized for a non-Arabic UI language (Urdu)',
+        (tester) async {
+      await _pumpPlayer(tester, locale: const Locale('ur'));
+
+      // Non-Arabic series uses the localized chrome string, not a hardcoded
+      // English "Now Playing".
+      expect(find.text('ابھی چل رہا ہے'), findsOneWidget);
+      expect(find.text('Now Playing'), findsNothing);
     });
   });
 
