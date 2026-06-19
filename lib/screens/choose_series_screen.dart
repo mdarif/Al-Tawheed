@@ -41,7 +41,7 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
     // Selecting a card is a deliberate choice, so finish onboarding here and go
     // straight to the lectures list — both series land directly on their own
     // lectures, skipping the welcome splash (which would otherwise reappear).
-    seriesProvider.completeOnboarding();
+    seriesProvider.markWelcomeSeenForCurrentSeries();
     context.go('/lectures');
   }
 

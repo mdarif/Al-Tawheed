@@ -425,7 +425,9 @@ class _SeriesSection extends StatelessWidget {
 
     await switchSeries(context, chosen);
     if (!context.mounted) return;
-    context.go('/lectures');
+    // Navigate to / and let the router decide: welcome screen if this is the
+    // first encounter with the new series, /lectures redirect otherwise.
+    context.go('/');
   }
 }
 

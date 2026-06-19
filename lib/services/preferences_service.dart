@@ -152,6 +152,17 @@ class PreferencesService {
   Future<void> saveHasCompletedOnboarding() =>
       _p.setBool('has_completed_onboarding', true);
 
+  // Per-series set of IDs whose welcome screen has been shown. Used to gate
+  // the welcome screen per-series instead of using the old single global flag.
+  Set<String> get seenWelcomeSeriesIds =>
+      Set<String>.from(_p.getStringList('seen_welcome_series_ids') ?? []);
+
+  Future<void> saveSeenWelcomeForSeries(String seriesId) async {
+    final ids = seenWelcomeSeriesIds;
+    ids.add(seriesId);
+    await _p.setStringList('seen_welcome_series_ids', ids.toList());
+  }
+
   // ── Dismissed announcements ─────────────────────────────────────────────
 
   Set<String> loadDismissedAnnouncements() =>

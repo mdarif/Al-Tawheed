@@ -49,20 +49,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final series = context.read<SeriesProvider>();
     if (!context.mounted) return;
     if (series.hasSelectedSeries) {
-      series.completeOnboarding();
+      series.markWelcomeSeenForCurrentSeries();
       context.go('/lectures');
       return;
     }
     if (series.availableSeries.length > 1) {
-      // completeOnboarding() is deferred to ChooseSeriesScreen._select() so
-      // that pressing system back from the language selector restores
-      // WelcomeScreen on the next launch instead of skipping ahead to lectures.
+      // markWelcomeSeenForCurrentSeries() is deferred to
+      // ChooseSeriesScreen._select() so that pressing system back from the
+      // series picker restores WelcomeScreen on the next launch instead of
+      // skipping ahead to lectures.
       unawaited(context.push('/choose-series'));
       return;
     }
     await switchSeries(context, series.availableSeries.first);
     if (!context.mounted) return;
-    series.completeOnboarding();
+    series.markWelcomeSeenForCurrentSeries();
     context.go('/lectures');
   }
 

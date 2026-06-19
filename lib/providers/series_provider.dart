@@ -29,6 +29,8 @@ class SeriesProvider extends ChangeNotifier {
 
   bool _hasCompletedOnboarding = false;
 
+  Set<String> _seenWelcomeSeriesIds = {};
+
   // True while the definitive series is still being determined (flags loading
   // or manifest in flight). WelcomeScreen hides its content until this is false
   // to avoid flashing the Urdu fallback on Arabic-device cold starts.
@@ -71,8 +73,44 @@ class SeriesProvider extends ChangeNotifier {
   /// callback — i.e., after [FeatureFlagsProvider] has resolved. The initial
   /// `create` call passes the default `false` so [_isLoading] stays `true`
   /// until the flags are confirmed and, if needed, the manifest has loaded.
+  /// Returns `true` if the welcome screen should be shown for [currentSeries].
+  ///
+  /// Rules:
+  /// - Arabic welcome: shown the first time the user encounters the Arabic
+  ///   series (whether on first launch or after switching from Urdu).
+  /// - Urdu welcome: shown only to Urdu-first users — skipped for anyone who
+  ///   has already encountered Arabic (i.e., Arabic-first users switching to
+  ///   Urdu should not see a second welcome).
+  bool get shouldShowWelcomeForCurrentSeries {
+    final current = currentSeries;
+    if (_seenWelcomeSeriesIds.contains(current.id)) return false;
+    if (!current.isRtl) {
+      final hasSeenArabicSeries = _available.any(
+        (s) => s.isRtl && _seenWelcomeSeriesIds.contains(s.id),
+      );
+      if (hasSeenArabicSeries) return false;
+    }
+    return true;
+  }
+
+  /// Records that the welcome screen for [currentSeries] has been seen.
+  void markWelcomeSeenForCurrentSeries() {
+    if (_seenWelcomeSeriesIds.contains(currentSeries.id)) return;
+    _seenWelcomeSeriesIds = {..._seenWelcomeSeriesIds, currentSeries.id};
+    unawaited(_prefs.saveSeenWelcomeForSeries(currentSeries.id));
+    notifyListeners();
+  }
+
   void load(bool multiSeriesEnabled, {bool definitive = false}) {
     _hasCompletedOnboarding = _prefs.hasCompletedOnboarding;
+    _seenWelcomeSeriesIds = _prefs.seenWelcomeSeriesIds;
+    // Migration: users who completed onboarding under the old single-flag
+    // system have seen the Urdu welcome — seed the new set so they don't
+    // see Urdu welcome again, but can still see Arabic welcome on first switch.
+    if (_seenWelcomeSeriesIds.isEmpty && _hasCompletedOnboarding) {
+      _seenWelcomeSeriesIds = {SeriesConfig.legacyId};
+      unawaited(_prefs.saveSeenWelcomeForSeries(SeriesConfig.legacyId));
+    }
     if (!multiSeriesEnabled) {
       _currentId = SeriesConfig.legacyId;
       if (definitive) _isLoading = false; // Urdu-only mode confirmed

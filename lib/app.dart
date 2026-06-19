@@ -51,7 +51,7 @@ final _router = GoRouter(
       path: '/',
       redirect: (context, state) {
         final s = context.read<SeriesProvider>();
-        if (s.hasCompletedOnboarding) {
+        if (!s.shouldShowWelcomeForCurrentSeries) {
           return '/lectures';
         }
         return null;
