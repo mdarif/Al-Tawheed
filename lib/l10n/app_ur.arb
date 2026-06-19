@@ -56,6 +56,7 @@
   "noSavedHint": "کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں",
 
   "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
+  "lecturesEmpty": "ابھی کوئی درس دستیاب نہیں",
   "bookCouldNotLoad": "کتاب لوڈ نہیں ہو سکی",
   "bookShareChapter": "باب شیئر کریں",
   "bookDecreaseText": "متن چھوٹا کریں",

@@ -184,6 +184,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get couldNotLoadLectures => 'دروس لوڈ نہیں ہو سکے';
 
   @override
+  String get lecturesEmpty => 'ابھی کوئی درس دستیاب نہیں';
+
+  @override
   String get bookCouldNotLoad => 'کتاب لوڈ نہیں ہو سکی';
 
   @override
@@ -700,6 +703,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get couldNotLoadLectures => 'Dars load nahin ho sake';
+
+  @override
+  String get lecturesEmpty => 'Abhi koi dars dastiyab nahin';
 
   @override
   String get bookCouldNotLoad => 'Kitab load nahin ho saki';

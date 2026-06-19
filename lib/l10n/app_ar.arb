@@ -92,6 +92,7 @@
   "noSavedHint": "اضغط أيقونة الإشارة المرجعية في المشغّل لحفظ درس",
 
   "couldNotLoadLectures": "تعذّر تحميل الدروس",
+  "lecturesEmpty": "لا توجد دروس متاحة بعد",
   "bookCouldNotLoad": "تعذّر تحميل الكتاب",
   "bookShareChapter": "مشاركة الباب",
   "bookDecreaseText": "تصغير حجم الخط",

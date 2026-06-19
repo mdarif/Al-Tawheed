@@ -216,6 +216,26 @@ void main() {
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
 
+  testWidgets('shows an empty-state message when the catalog has no lectures',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        lectures: const [],
+      ),),
+    );
+
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LectureTile), findsNothing);
+    expect(find.text('No lectures available yet'), findsOneWidget);
+  });
+
   testWidgets(
       'reloads the catalog when the active series changes — no series/catalog desync',
       (tester) async {

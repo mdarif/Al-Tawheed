@@ -118,7 +118,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
                 ),
                 const SizedBox(height: 28),
                 FilledButton.icon(
-                  onPressed: provider.load,
+                  onPressed: () => provider.load(),
                   icon: const Icon(Icons.refresh_rounded),
                   label: Text(l10n.retry),
                 ),
@@ -130,8 +130,41 @@ class _LectureListScreenState extends State<LectureListScreen> {
     );
   }
 
+  Widget _buildEmpty() {
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(null),
+        SliverFillRemaining(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.library_music_outlined,
+                    size: 52,
+                    color: context.mutedIconColor,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    context.l10n.lecturesEmpty,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildList(Catalog catalog) {
     final lectures = catalog.lectures;
+    if (lectures.isEmpty) return _buildEmpty();
+
     final items = <_ListItem>[];
     if (catalog.chapters.isEmpty) {
       // Flat series (e.g. standalone duroos) — no chapter headers.
@@ -155,7 +188,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
             selector: (_, p) => p.allComplete(lectures),
             builder: (_, allComplete, child) =>
                 allComplete ? child! : const SizedBox.shrink(),
-            child: _AllLecturesCompleteBanner(),
+            child: const _AllLecturesCompleteBanner(),
           ),
         ),
         SliverList(
@@ -168,18 +201,24 @@ class _LectureListScreenState extends State<LectureListScreen> {
                   chapterLectures: catalog.lecturesForChapter(item.chapter!.id),
                 );
               }
+              // Divider sits between consecutive lectures only — suppressed on
+              // the last lecture of a chapter (next item is a header) and at
+              // the very end of the list, so no hairline dangles.
+              final hasLectureBelow =
+                  index < items.length - 1 && !items[index + 1].isChapter;
               return Column(
                 children: [
                   LectureTile(
                     lecture: item.lecture!,
                     onTap: () => _onLectureTap(item.lecture!, lectures),
                   ),
-                  Divider(
-                    height: 1,
-                    indent: 70,
-                    endIndent: 16,
-                    color: context.dividerColor,
-                  ),
+                  if (hasLectureBelow)
+                    Divider(
+                      height: 1,
+                      indent: 70,
+                      endIndent: 16,
+                      color: context.dividerColor,
+                    ),
                 ],
               );
             },
@@ -199,7 +238,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
   }
 
   SliverAppBar _buildAppBar(Catalog? catalog) {
-    final lang = context.read<LanguageProvider>();
+    // Watch the language so the resolved title/speaker refresh when the user
+    // switches UI language while this screen is on-screen.
+    final lang = context.watch<LanguageProvider>();
     final series = context.read<SeriesProvider>().currentSeries;
     final isArabicContent = catalog != null && series.isRtl;
 
@@ -313,6 +354,8 @@ class _ListItem {
 }
 
 class _AllLecturesCompleteBanner extends StatelessWidget {
+  const _AllLecturesCompleteBanner();
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;

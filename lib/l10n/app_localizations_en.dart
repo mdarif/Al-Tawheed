@@ -183,6 +183,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotLoadLectures => 'Could not load lectures';
 
   @override
+  String get lecturesEmpty => 'No lectures available yet';
+
+  @override
   String get bookCouldNotLoad => 'Could not load the book';
 
   @override

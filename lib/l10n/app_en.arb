@@ -94,6 +94,7 @@
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 
   "couldNotLoadLectures": "Could not load lectures",
+  "lecturesEmpty": "No lectures available yet",
   "bookCouldNotLoad": "Could not load the book",
   "bookShareChapter": "Share chapter",
   "bookDecreaseText": "Decrease text size",

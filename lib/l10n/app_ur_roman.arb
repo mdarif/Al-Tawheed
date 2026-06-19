@@ -54,6 +54,7 @@
   "noSavedHint": "Koi dars mehfooz karne ke liye player mein bookmark icon par tap karein",
 
   "couldNotLoadLectures": "Dars load nahin ho sake",
+  "lecturesEmpty": "Abhi koi dars dastiyab nahin",
   "bookCouldNotLoad": "Kitab load nahin ho saki",
   "bookShareChapter": "Baab share karein",
   "bookDecreaseText": "Text chhota karein",

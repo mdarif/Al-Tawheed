@@ -401,6 +401,12 @@ abstract class AppLocalizations {
   /// **'Could not load lectures'**
   String get couldNotLoadLectures;
 
+  /// No description provided for @lecturesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No lectures available yet'**
+  String get lecturesEmpty;
+
   /// No description provided for @bookCouldNotLoad.
   ///
   /// In en, this message translates to:

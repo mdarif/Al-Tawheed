@@ -180,6 +180,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get couldNotLoadLectures => 'تعذّر تحميل الدروس';
 
   @override
+  String get lecturesEmpty => 'لا توجد دروس متاحة بعد';
+
+  @override
   String get bookCouldNotLoad => 'تعذّر تحميل الكتاب';
 
   @override
