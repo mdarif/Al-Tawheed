@@ -85,7 +85,10 @@ class AppFlow {
   }
 
   static Future<void> dismissPlayer(WidgetTester tester) async {
-    if (!tester.any(find.text('Now Playing'))) return;
+    // Arabic series shows 'يتم التشغيل الآن' instead of 'Now Playing'.
+    final isOpen = tester.any(find.text('Now Playing')) ||
+        tester.any(find.text('يتم التشغيل الآن'));
+    if (!isOpen) return;
     await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
     await pumpFrames(tester, count: 5);
     await waitFor(
@@ -126,9 +129,14 @@ class AppFlow {
   }
 
   static Future<void> waitForPlayerReady(WidgetTester tester) async {
+    // Arabic series shows 'يتم التشغيل الآن' instead of 'Now Playing'.
     await waitFor(
       tester,
-      find.text('Now Playing'),
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text &&
+            (w.data == 'Now Playing' || w.data == 'يتم التشغيل الآن'),
+      ),
       timeout: const Duration(seconds: 30),
       reason: 'player screen',
     );
@@ -352,6 +360,120 @@ class AppFlow {
       if (tester.any(finder)) return;
     }
     fail('Timed out after ${timeout.inSeconds}s waiting for $reason');
+  }
+
+  // ── Arabic / multi-series helpers ──────────────────────────────────────────
+
+  /// Navigates to the Settings tab using both English and Arabic label fallback
+  /// so it works regardless of which series is currently active.
+  static Future<void> navigateToSettingsTab(WidgetTester tester) async {
+    await dismissOverlays(tester);
+    for (final label in ['Settings', 'الإعدادات']) {
+      final tab = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(label),
+      );
+      if (tester.any(tab)) {
+        await tester.tap(tab);
+        await pumpFrames(tester, count: 5);
+        return;
+      }
+    }
+  }
+
+  /// Navigates to the Lectures tab regardless of current series language.
+  static Future<void> navigateToLecturesTab(WidgetTester tester) async {
+    await dismissOverlays(tester);
+    for (final label in ['Lectures', 'الدروس']) {
+      final tab = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(label),
+      );
+      if (tester.any(tab)) {
+        await tester.tap(tab);
+        await pumpFrames(tester, count: 5);
+        return;
+      }
+    }
+  }
+
+  /// Taps the Book tab. Returns false if the tab is absent (Urdu series has no
+  /// Book tab).
+  static Future<bool> navigateToBookTab(WidgetTester tester) async {
+    await dismissOverlays(tester);
+    for (final label in ['Book', 'الكتاب']) {
+      final tab = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(label),
+      );
+      if (tester.any(tab)) {
+        await tester.tap(tab);
+        await pumpFrames(tester, count: 5);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Switches to [displayName] (canonical English name, e.g.
+  /// `'Kitab at-Tawheed (Arabic)'`) via the Settings series picker.
+  ///
+  /// Returns false without switching if the seriesSwitcher flag is disabled
+  /// in this environment (the series row will simply not be present).
+  static Future<bool> switchToSeries(
+    WidgetTester tester,
+    String displayName,
+  ) async {
+    await navigateToSettingsTab(tester);
+
+    // Scroll until the series row (library_books icon) is visible.
+    final seriesRow = find.byIcon(Icons.library_books_rounded);
+    final scrollEnd = DateTime.now().add(const Duration(seconds: 10));
+    while (DateTime.now().isBefore(scrollEnd)) {
+      if (tester.any(seriesRow)) break;
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await pumpFrames(tester, count: 2);
+    }
+    if (!tester.any(seriesRow)) return false;
+
+    await tester.ensureVisible(seriesRow);
+    await pumpFrames(tester, count: 2);
+    await tester.tap(seriesRow);
+    await pumpFrames(tester, count: 3);
+
+    // Picker sheet — canonical English names are always shown regardless of
+    // the current UI language, so find.text works unconditionally.
+    final seriesOption = find.text(displayName);
+    await waitFor(
+      tester,
+      seriesOption,
+      timeout: const Duration(seconds: 5),
+      reason: 'series option "$displayName" in picker sheet',
+    );
+    await tester.tap(seriesOption);
+    await pumpFrames(tester, count: 3);
+
+    // Confirm dialog — target the FilledButton regardless of its label locale.
+    final confirmBtn = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(FilledButton),
+    );
+    await waitFor(
+      tester,
+      confirmBtn,
+      timeout: const Duration(seconds: 5),
+      reason: 'series change confirm dialog',
+    );
+    await tester.tap(confirmBtn);
+    await pumpFrames(tester, count: 5);
+
+    await waitFor(
+      tester,
+      find.byType(LectureTile),
+      timeout: const Duration(seconds: 30),
+      reason: 'lecture list after switching to "$displayName"',
+    );
+    return true;
   }
 }
 

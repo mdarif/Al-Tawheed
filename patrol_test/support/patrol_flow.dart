@@ -30,6 +30,23 @@ class PatrolFlow {
     await AppFlow.goToLectureList($.tester);
   }
 
+  /// Bootstraps the app and switches to the Arabic series via Settings.
+  ///
+  /// Returns false (without switching) when the seriesSwitcher feature flag is
+  /// disabled in the current environment — callers should skip their test with
+  /// an early return in that case.
+  static Future<bool> bootstrapToArabicLectures(
+    PatrolIntegrationTester $,
+  ) async {
+    await bootstrapToLectures($);
+    return AppFlow.switchToSeries($.tester, 'Kitab at-Tawheed (Arabic)');
+  }
+
+  /// Switches back to the Urdu series for test cleanup.
+  static Future<void> restoreToUrduSeries(PatrolIntegrationTester $) async {
+    await AppFlow.switchToSeries($.tester, 'Kitab at-Tawheed (Urdu)');
+  }
+
   static Future<void> withAirplaneMode(
     PatrolIntegrationTester $,
     Future<void> Function() body,
