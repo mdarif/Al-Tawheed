@@ -61,11 +61,11 @@ class HomeScreen extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   AnnouncementsBanner(),
-                  _ContinueListeningCard(),
+                  const _ContinueListeningCard(),
                   if (context.watch<FeatureFlagsProvider>().features.downloads)
                     OfflinePrepStrip(),
                   const SizedBox(height: 24),
-                  _DailyBenefitCard(),
+                  const _DailyBenefitCard(),
                   const SizedBox(height: 24),
                 ]),
               ),
@@ -78,6 +78,8 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _ContinueListeningCard extends StatelessWidget {
+  const _ContinueListeningCard();
+
   @override
   Widget build(BuildContext context) {
     final progress = context.watch<ProgressProvider>();
@@ -104,119 +106,123 @@ class _ContinueListeningCard extends StatelessWidget {
     final l10n = context.l10n;
     final series = context.read<SeriesProvider>().currentSeries;
     final isArabic = series.isRtl;
+    // Watch the language so the resolved title refreshes on a UI-language
+    // change while Home stays alive in the bottom-nav shell.
     final lectureTitle = context
-        .read<LanguageProvider>()
+        .watch<LanguageProvider>()
         .resolveForSeries(lecture.title, series);
-    final titleWidget = SizedBox(
-      width: double.infinity,
-      child: Text(
-        lectureTitle,
-        textAlign: series.isRtl ? TextAlign.right : null,
-        style: context.textTheme.titleMedium?.copyWith(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
+
+    final card = GestureDetector(
+      onTap: () {
+        final player = context.read<PlayerNotifier>();
+        final allLectures = catalog.catalog!.lectures;
+        player.loadAndPlay(lecture!, allLectures);
+        context.push('/player');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.groupedSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.groupedBorder, width: 1),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: context.semantic.brandSubtle,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.headphones_rounded,
+                    color: context.brandColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          lectureTitle,
+                          textAlign: isArabic ? TextAlign.right : null,
+                          style: context.textTheme.titleMedium?.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isArabic
+                            ? _arListenedDuration(
+                                DurationFormatter.fromSeconds(savedSeconds),
+                                DurationFormatter.fromSeconds(remaining),
+                              )
+                            : l10n.listenedDuration(
+                                DurationFormatter.fromSeconds(savedSeconds),
+                                DurationFormatter.fromSeconds(remaining),
+                              ),
+                        style: context.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: context.brandColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.play_arrow_rounded,
+                    color: context.onBrandColor,
+                    size: 22,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: fraction,
+                backgroundColor: context.progressTrackColor,
+                color: context.brandColor,
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isArabic
+                  ? _arPercentComplete((fraction * 100).round())
+                  : l10n.percentComplete((fraction * 100).round()),
+              style: context.textTheme.bodySmall,
+            ),
+          ],
         ),
       ),
     );
-    final titleCell = series.isRtl
-        ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
-        : titleWidget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _header(context, study),
         const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () {
-            final player = context.read<PlayerNotifier>();
-            final allLectures = catalog.catalog!.lectures;
-            player.loadAndPlay(lecture!, allLectures);
-            context.push('/player');
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: context.groupedSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.groupedBorder, width: 1),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: context.semantic.brandSubtle,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.headphones_rounded,
-                        color: context.brandColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          titleCell,
-                          const SizedBox(height: 3),
-                          Text(
-                            isArabic
-                                ? _arListenedDuration(
-                                    DurationFormatter.fromSeconds(savedSeconds),
-                                    DurationFormatter.fromSeconds(remaining),
-                                  )
-                                : l10n.listenedDuration(
-                                    DurationFormatter.fromSeconds(savedSeconds),
-                                    DurationFormatter.fromSeconds(remaining),
-                                  ),
-                            style: context.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: context.brandColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        color: context.onBrandColor,
-                        size: 22,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: fraction,
-                    backgroundColor: context.progressTrackColor,
-                    color: context.brandColor,
-                    minHeight: 4,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isArabic
-                      ? _arPercentComplete((fraction * 100).round())
-                      : l10n.percentComplete((fraction * 100).round()),
-                  style: context.textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
+        // Mirror the whole card for the Arabic series: the icon/play row flips
+        // and the progress bar fills right-to-left, matching the RTL content.
+        isArabic
+            ? Directionality(textDirection: TextDirection.rtl, child: card)
+            : card,
       ],
     );
   }
@@ -337,6 +343,8 @@ class _OverallProgressStats extends StatelessWidget {
 }
 
 class _DailyBenefitCard extends StatelessWidget {
+  const _DailyBenefitCard();
+
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
@@ -350,7 +358,9 @@ class _DailyBenefitCard extends StatelessWidget {
     final dayIndex = DateTime.now().difference(DateTime(2026)).inDays;
     final benefit = benefits[dayIndex % benefits.length];
     final semantic = context.semantic;
-    final lang = context.read<LanguageProvider>();
+    // Watch the language so the resolved benefit text/source refresh on a
+    // UI-language change while Home stays alive in the bottom-nav shell.
+    final lang = context.watch<LanguageProvider>();
     final l10n = context.l10n;
     final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
@@ -410,7 +420,9 @@ class _DailyBenefitCard extends StatelessWidget {
               Text(
                 lang.resolve(benefit.text),
                 style: context.textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
+                  // Italic only for Latin scripts — synthetic obliquing of
+                  // Arabic/Urdu script renders poorly.
+                  fontStyle: lang.isRtl ? FontStyle.normal : FontStyle.italic,
                   height: 1.6,
                   color: context.secondaryTextColor,
                 ),
