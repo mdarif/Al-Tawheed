@@ -22,6 +22,15 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **A flaky test is not always the test's fault — it can catch a real race.**
+  `download_service_test.dart › "delete cancels an active download"` failed only
+  on CI (passed locally) with a `PathNotFoundException`. Root cause was a genuine
+  production race: deleting an actively-downloading lecture makes both `delete()`
+  and `download()`'s cancel-cleanup race to remove the same partial file; the
+  loser threw `PathNotFoundException` and the download future rejected with that
+  instead of `DownloadCancelled`. Fix was in the app code (make both cleanup
+  paths tolerate a concurrent deletion), not the test. Before re-running a flaky
+  CI test, check whether it's pointing at a real concurrency bug.
 - **`AudioService` is a process singleton — it can only be `init()`ed once per
   test process.** Integration tests that call `app.main()` must live in a
   **single `testWidgets`** and run scenarios sequentially. A second `testWidgets`

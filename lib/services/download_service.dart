@@ -184,7 +184,15 @@ class DownloadService {
         await sink.close();
       }
     } catch (e) {
-      if (await file.exists()) await file.delete();
+      // Best-effort partial-file cleanup. A concurrent delete() (user deleting
+      // an actively-downloading lecture) races to remove the same file, so
+      // tolerate its absence — otherwise the loser throws PathNotFoundException
+      // and this future rejects with that instead of DownloadCancelled.
+      try {
+        if (await file.exists()) await file.delete();
+      } on PathNotFoundException {
+        // Already removed by a concurrent delete() — the desired outcome.
+      }
       if (active.cancelled || e is DownloadCancelled) {
         throw const DownloadCancelled();
       }
