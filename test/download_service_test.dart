@@ -160,4 +160,30 @@ void main() {
       expect(result, {'keep'});
     });
   });
+
+  group('byte accounting', () {
+    test('fileSizeSync returns on-disk size, 0 for missing/unsafe', () async {
+      final f = File('${tempDir.path}/audio/tawheed-ar/l1.mp3');
+      await f.parent.create(recursive: true);
+      await f.writeAsBytes(List<int>.filled(1234, 0));
+
+      expect(DownloadService.fileSizeSync('l1', seriesId: 'tawheed-ar'), 1234);
+      expect(DownloadService.fileSizeSync('missing', seriesId: 'tawheed-ar'), 0);
+      expect(DownloadService.fileSizeSync('../evil'), 0);
+    });
+
+    test('totalBytesForIds sums present files and skips unsafe ids', () async {
+      final a = File('${tempDir.path}/audio/tawheed-ar/a.mp3');
+      await a.parent.create(recursive: true);
+      await a.writeAsBytes(List<int>.filled(100, 0));
+      final b = File('${tempDir.path}/audio/tawheed-ar/b.mp3');
+      await b.writeAsBytes(List<int>.filled(50, 0));
+
+      final total = totalBytesForIds(
+        (['a', 'b', 'missing', '../evil'], tempDir.path, 'tawheed-ar'),
+      );
+
+      expect(total, 150);
+    });
+  });
 }

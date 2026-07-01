@@ -51,7 +51,13 @@ class DownloadsProvider extends ChangeNotifier {
           .saveDownloadedIds(_downloadedIds, prefix: _prefix);
     }
 
-    _refreshTotalBytes();
+    // Tally storage off the UI thread; kept in sync incrementally thereafter.
+    _totalDownloadedBytes = _downloadedIds.isEmpty
+        ? 0
+        : await compute(
+            totalBytesForIds,
+            (_downloadedIds.toList(), DownloadService.documentsPath, _seriesId),
+          );
     notifyListeners();
   }
 
@@ -184,12 +190,17 @@ class DownloadsProvider extends ChangeNotifier {
         return;
       }
 
+      final wasDownloaded = _downloadedIds.contains(lecture.id);
       _statuses[lecture.id] = DownloadStatus.downloaded;
       _downloadedIds.add(lecture.id);
       _progress.remove(lecture.id);
       await PreferencesService.instance
           .saveDownloadedIds(_downloadedIds, prefix: _prefix);
-      _refreshTotalBytes();
+      // Add just this file's size — no full re-stat of every download.
+      if (!wasDownloaded) {
+        _totalDownloadedBytes +=
+            DownloadService.fileSizeSync(lecture.id, seriesId: _seriesId);
+      }
       unawaited(
         DownloadNotificationService.instance
             .showComplete(lecture.id, lecture.title.en),
@@ -251,12 +262,14 @@ class DownloadsProvider extends ChangeNotifier {
       return;
     }
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
+    // Read the size before deleting the file, then subtract incrementally.
+    final freed = DownloadService.fileSizeSync(lectureId, seriesId: _seriesId);
     await DownloadService.delete(lectureId, seriesId: _seriesId);
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _downloadedIds.remove(lectureId);
     await PreferencesService.instance
         .saveDownloadedIds(_downloadedIds, prefix: _prefix);
-    _refreshTotalBytes();
+    _reduceTotalBytes(freed);
     notifyListeners();
   }
 
@@ -265,14 +278,16 @@ class DownloadsProvider extends ChangeNotifier {
       if (isDownloading(lecture.id)) {
         cancelDownload(lecture.id);
       } else if (isDownloaded(lecture.id)) {
+        final freed =
+            DownloadService.fileSizeSync(lecture.id, seriesId: _seriesId);
         await DownloadService.delete(lecture.id, seriesId: _seriesId);
         _statuses[lecture.id] = DownloadStatus.notDownloaded;
         _downloadedIds.remove(lecture.id);
+        _reduceTotalBytes(freed);
       }
     }
     await PreferencesService.instance
         .saveDownloadedIds(_downloadedIds, prefix: _prefix);
-    _refreshTotalBytes();
     notifyListeners();
   }
 
@@ -303,9 +318,9 @@ class DownloadsProvider extends ChangeNotifier {
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
   }
 
-  void _refreshTotalBytes() {
-    _totalDownloadedBytes =
-        DownloadService.totalBytesSync(_downloadedIds, seriesId: _seriesId);
+  void _reduceTotalBytes(int freed) {
+    _totalDownloadedBytes -= freed;
+    if (_totalDownloadedBytes < 0) _totalDownloadedBytes = 0;
   }
 
   // ── Test helpers ─────────────────────────────────────────────────────────

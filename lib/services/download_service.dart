@@ -59,6 +59,25 @@ Future<Set<String>> reconcileDownloadedIds(
   return valid;
 }
 
+/// Total on-disk bytes for [ids] — runs off the UI thread via `compute`, so the
+/// startup storage tally never stat()s files on the main isolate. Mirrors
+/// [reconcileDownloadedIds]; unsafe ids are skipped.
+int totalBytesForIds(
+  (List<String> ids, String documentsPath, String seriesId) args,
+) {
+  final (ids, documentsPath, seriesId) = args;
+  if (seriesId != SeriesConfig.legacyId && !isSafePathSegment(seriesId)) {
+    return 0;
+  }
+  int total = 0;
+  for (final id in ids) {
+    if (!isSafePathSegment(id)) continue;
+    final f = File(_localPathFor(documentsPath, seriesId, id));
+    if (f.existsSync()) total += f.lengthSync();
+  }
+  return total;
+}
+
 class _ActiveDownload {
   _ActiveDownload(this.client);
   final HttpClient client;
@@ -193,22 +212,20 @@ class DownloadService {
     }
   }
 
-  /// Total bytes used by all downloaded lectures.
-  static int totalBytesSync(
-    Iterable<String> lectureIds, {
+  /// On-disk byte size of one downloaded lecture, or 0 if missing/unsafe.
+  /// Enables O(1) incremental byte accounting (add on complete, subtract on
+  /// delete) instead of re-stat()ing every file after each change.
+  static int fileSizeSync(
+    String lectureId, {
     String seriesId = SeriesConfig.legacyId,
   }) {
     if (_documentsPath == null) return 0;
-    int total = 0;
-    for (final id in lectureIds) {
-      try {
-        final f = File(localPath(id, seriesId: seriesId));
-        if (f.existsSync()) total += f.lengthSync();
-      } on ArgumentError {
-        continue;
-      }
+    try {
+      final f = File(localPath(lectureId, seriesId: seriesId));
+      return f.existsSync() ? f.lengthSync() : 0;
+    } on ArgumentError {
+      return 0;
     }
-    return total;
   }
 
   @visibleForTesting
