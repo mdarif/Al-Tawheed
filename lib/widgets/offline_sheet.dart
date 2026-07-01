@@ -11,17 +11,6 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
-// Offline-sheet chrome strings shown in Arabic for the Arabic series,
-// independent of the app's UI language (which still governs other
-// screens' navigation/chrome).
-const _arCancelDownload = 'إلغاء التحميل';
-const _arRemoveDownload = 'إزالة التحميل';
-const _arManageDownloads = 'إدارة التنزيلات';
-const _arCancel = 'إلغاء';
-const _arConnectWifiToDownload = 'اتصل بشبكة Wi-Fi للتحميل';
-String _arDownloadLecture(String sizeMb) => 'تحميل الدرس · $sizeMb MB';
-String _arDownloading(int percent) => 'جارٍ التحميل... $percent%';
-
 void showOfflineSheet(BuildContext context, Lecture lecture) {
   final catalog = context.read<CatalogProvider>().catalog;
   // Flat-list series (no chapters) have no "whole chapter" concept — treat
@@ -64,10 +53,10 @@ class _OfflineSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final downloads = context.watch<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final status = downloads.statusFor(lecture.id);
     final isDownloaded = status == DownloadStatus.downloaded;
     final isDownloading = status == DownloadStatus.downloading;
@@ -95,8 +84,7 @@ class _OfflineSheetContent extends StatelessWidget {
               const SizedBox(height: 4),
               _SheetTile(
                 icon: Icons.cancel_outlined,
-                label:
-                    isArabic ? _arCancelDownload : l10n.offlineCancelDownload,
+                label: l10n.offlineCancelDownload,
                 color: context.colorScheme.error,
                 onTap: () {
                   Navigator.pop(context);
@@ -106,17 +94,14 @@ class _OfflineSheetContent extends StatelessWidget {
             ] else if (isDownloaded) ...[
               _SheetTile(
                 icon: Icons.delete_outline_rounded,
-                label:
-                    isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
+                label: l10n.offlineRemoveDownload,
                 color: context.colorScheme.error,
                 onTap: () => _confirmDeleteLecture(context, downloads),
               ),
             ] else ...[
               _SheetTile(
                 icon: Icons.download_rounded,
-                label: isArabic
-                    ? _arDownloadLecture(sizeMb)
-                    : l10n.offlineDownloadLecture(sizeMb),
+                label: l10n.offlineDownloadLecture(sizeMb),
                 onTap: () => _startDownload(context, downloads, connectivity),
               ),
             ],
@@ -146,8 +131,7 @@ class _OfflineSheetContent extends StatelessWidget {
             const SizedBox(height: 4),
             _SheetTile(
               icon: Icons.folder_open_rounded,
-              label:
-                  isArabic ? _arManageDownloads : l10n.offlineManageDownloads,
+              label: l10n.offlineManageDownloads,
               color: context.secondaryTextColor,
               onTap: () {
                 // Capture the router and delay the push to the next frame.
@@ -194,12 +178,11 @@ class _OfflineSheetContent extends StatelessWidget {
     ConnectivityProvider connectivity,
   ) {
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+      final l10n =
+          context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked,
-          ),
+          content: Text(l10n.wifiOnlyBlocked),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -257,18 +240,17 @@ class _OfflineSheetContent extends StatelessWidget {
     BuildContext context,
     DownloadsProvider downloads,
   ) {
-    final l10n = context.l10n;
     final series = context.read<SeriesProvider>().currentSeries;
-    final isArabic = series.isRtl;
+    final l10n = context.l10nForSeries(series);
     final title = context
         .read<LanguageProvider>()
         .resolveForSeries(lecture.title, series);
     showConfirmDialog(
       context,
-      title: isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
+      title: l10n.offlineRemoveDownload,
       message: title,
-      confirmLabel: isArabic ? _arRemoveDownload : l10n.offlineRemoveDownload,
-      cancelLabel: isArabic ? _arCancel : 'Cancel',
+      confirmLabel: l10n.offlineRemoveDownload,
+      cancelLabel: l10n.cancel,
       destructive: true,
     ).then((confirmed) {
       if (confirmed && context.mounted) {
@@ -294,9 +276,9 @@ class _ProgressRow extends StatelessWidget {
     final progress = context.select<DownloadsProvider, double>(
       (d) => d.progressFor(lectureId),
     );
-    final l10n = context.l10n;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final percent = (progress * 100).round();
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -304,9 +286,7 @@ class _ProgressRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isArabic
-                ? _arDownloading(percent)
-                : l10n.offlineDownloading(percent),
+            l10n.offlineDownloading(percent),
             style: context.textTheme.bodySmall
                 ?.copyWith(color: context.secondaryTextColor),
           ),

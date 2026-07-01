@@ -10,13 +10,6 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
-const _arOfflineLibrary = 'التنزيلات';
-String _arOfflinePrepTitle(int count) =>
-    count == 1 ? 'تحميل الجزء التالي دون اتصال' : 'تحميل $count أجزاء قادمة دون اتصال';
-String _arOfflinePrepSize(String sizeMb) => '~$sizeMb ميجابايت';
-const _arOfflinePrepSave = 'تحميل';
-const _arConnectWifiToDownload = 'اتصل بشبكة Wi-Fi للتحميل';
-
 /// Returns the next ≤3 lectures after [lastId] split into two lists:
 /// [toDownload] (not yet started) and [downloading] (in progress).
 /// Exported for testing; should not be called outside this file or tests.
@@ -87,8 +80,8 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
             downloading.length
         : 0.0;
 
-    final l10n = context.l10n;
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
 
     return Padding(
       padding: const EdgeInsets.only(top: 24),
@@ -96,7 +89,7 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isArabic ? _arOfflineLibrary : l10n.offlineLibrary,
+            l10n.offlineLibrary,
             style: context.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -139,13 +132,9 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                isArabic
-                                    ? _arOfflinePrepTitle(
-                                        downloading.length + toDownload.length,
-                                      )
-                                    : l10n.offlinePrepTitle(
-                                        downloading.length + toDownload.length,
-                                      ),
+                                l10n.offlinePrepTitle(
+                                  downloading.length + toDownload.length,
+                                ),
                                 style: context.textTheme.bodySmall?.copyWith(
                                   color: context.secondaryTextColor,
                                 ),
@@ -167,9 +156,7 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                isArabic
-                                    ? _arOfflinePrepTitle(toDownload.length)
-                                    : l10n.offlinePrepTitle(toDownload.length),
+                                l10n.offlinePrepTitle(toDownload.length),
                                 style: context.textTheme.bodySmall?.copyWith(
                                   color: context.secondaryTextColor,
                                 ),
@@ -177,9 +164,7 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
                               if (totalBytes > 0) ...[
                                 const SizedBox(height: 3),
                                 Text(
-                                  isArabic
-                                      ? _arOfflinePrepSize(sizeMb)
-                                      : l10n.offlinePrepSize(sizeMb),
+                                  l10n.offlinePrepSize(sizeMb),
                                   style: context.textTheme.bodySmall?.copyWith(
                                     color: context.secondaryTextColor,
                                   ),
@@ -200,9 +185,7 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () => _startDownloads(context, toDownload),
-                      child: Text(
-                        isArabic ? _arOfflinePrepSave : l10n.offlinePrepSave,
-                      ),
+                      child: Text(l10n.offlinePrepSave),
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _dismissed = true),
@@ -228,13 +211,12 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
   void _startDownloads(BuildContext context, List<Lecture> lectures) {
     final connectivity = context.read<ConnectivityProvider>();
     final downloads = context.read<DownloadsProvider>();
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
+      final l10n =
+          context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            isArabic ? _arConnectWifiToDownload : context.l10n.wifiOnlyBlocked,
-          ),
+          content: Text(l10n.wifiOnlyBlocked),
           behavior: SnackBarBehavior.floating,
         ),
       );

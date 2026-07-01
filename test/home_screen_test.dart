@@ -347,11 +347,11 @@ void main() {
 
       expect(find.text('التنزيلات'), findsOneWidget);
       expect(find.text('Downloads'), findsNothing);
-      expect(find.text('تحميل 3 أجزاء قادمة دون اتصال'), findsOneWidget);
+      expect(find.text('تنزيل 3 أجزاء التالية بلا إنترنت'), findsOneWidget);
       expect(find.text('Download next 3 parts offline'), findsNothing);
-      expect(find.text('~3.0 ميجابايت'), findsOneWidget);
+      expect(find.text('~3.0 ميغابايت'), findsOneWidget);
       expect(find.text('~3.0 MB'), findsNothing);
-      expect(find.text('تحميل'), findsOneWidget);
+      expect(find.text('تنزيل'), findsOneWidget);
       expect(find.text('Download'), findsNothing);
     });
   });

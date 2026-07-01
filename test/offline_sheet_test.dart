@@ -378,7 +378,7 @@ void main() {
       expect(find.text('Dars 02'), findsNothing);
 
       // "Download lecture" and "Manage downloads" chrome in Arabic.
-      expect(find.text('تحميل الدرس · 5.0 MB'), findsOneWidget);
+      expect(find.text('تنزيل الدرس · 5.0 ميغابايت'), findsOneWidget);
       expect(find.textContaining('Download lecture'), findsNothing);
       expect(find.text('إدارة التنزيلات'), findsOneWidget);
       expect(find.text('Manage downloads'), findsNothing);
@@ -400,15 +400,15 @@ void main() {
       ),);
       await tester.pumpAndSettle();
 
-      expect(find.text('إزالة التحميل'), findsOneWidget);
+      expect(find.text('إزالة التنزيل'), findsOneWidget);
       expect(find.text('Remove download'), findsNothing);
 
-      await tester.tap(find.text('إزالة التحميل'));
+      await tester.tap(find.text('إزالة التنزيل'));
       await tester.pumpAndSettle();
 
       // Confirm dialog title, message (lecture title), and confirm/cancel
       // buttons all render in Arabic.
-      expect(find.text('إزالة التحميل'), findsNWidgets(3));
+      expect(find.text('إزالة التنزيل'), findsNWidgets(3));
       expect(find.text('الدرس 2'), findsNWidgets(2));
       expect(find.text('إلغاء'), findsOneWidget);
       expect(find.text('Cancel'), findsNothing);
@@ -429,9 +429,9 @@ void main() {
       ),);
       await tester.pumpAndSettle();
 
-      expect(find.text('جارٍ التحميل... 50%'), findsOneWidget);
+      expect(find.text('جارٍ التنزيل… 50%'), findsOneWidget);
       expect(find.textContaining('Downloading'), findsNothing);
-      expect(find.text('إلغاء التحميل'), findsOneWidget);
+      expect(find.text('إلغاء التنزيل'), findsOneWidget);
       expect(find.text('Cancel download'), findsNothing);
     });
 
@@ -451,10 +451,10 @@ void main() {
       ),);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.textContaining('تحميل الدرس'));
+      await tester.tap(find.textContaining('تنزيل الدرس'));
       await tester.pump();
 
-      expect(find.text('اتصل بشبكة Wi-Fi للتحميل'), findsOneWidget);
+      expect(find.text('اتصل بـ Wi-Fi للتنزيل'), findsOneWidget);
       expect(find.text('Connect to Wi-Fi to download'), findsNothing);
     });
   });
