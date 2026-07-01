@@ -330,8 +330,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.delete_outline_rounded));
       await tester.pumpAndSettle();
 
-      // Dialog title + confirm button both read "إزالة التحميل".
-      expect(find.text('إزالة التحميل'), findsNWidgets(2));
+      // Dialog title + confirm button both read "إزالة التنزيل".
+      expect(find.text('إزالة التنزيل'), findsNWidgets(2));
       expect(find.text('Remove download'), findsNothing);
 
       // Dialog message shows the Arabic lecture title (list tile + dialog).

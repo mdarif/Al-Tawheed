@@ -11,11 +11,6 @@ import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
-// Confirm-delete dialog chrome shown in Arabic for the Arabic series,
-// matching offline_sheet.dart's per-lecture delete confirmation.
-const _arRemoveDownload = 'إزالة التحميل';
-const _arCancel = 'إلغاء';
-
 class OfflineLibraryScreen extends StatelessWidget {
   const OfflineLibraryScreen({super.key});
 
@@ -306,8 +301,7 @@ class _LectureTile extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
 
-    final removeLabel =
-        series.isRtl ? _arRemoveDownload : context.l10n.offlineRemoveDownload;
+    final removeLabel = context.l10nForSeries(series).offlineRemoveDownload;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -350,13 +344,14 @@ class _LectureTile extends StatelessWidget {
     String title,
     String removeLabel,
   ) async {
-    final series = context.read<SeriesProvider>().currentSeries;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final confirmed = await showConfirmDialog(
       context,
       title: removeLabel,
       message: title,
       confirmLabel: removeLabel,
-      cancelLabel: series.isRtl ? _arCancel : 'Cancel',
+      cancelLabel: l10n.cancel,
       destructive: true,
     );
     if (confirmed && context.mounted) {
