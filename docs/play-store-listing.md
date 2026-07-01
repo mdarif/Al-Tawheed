@@ -203,3 +203,44 @@ docs/store-assets/
 ```
 
 Keep screenshots under ~8 MB each for git; or store in Drive and link in this doc.
+
+---
+
+## 8. Release notes ("What's new") — per version
+
+Paste into Play Console → the release → **Release notes**, inside the language
+tags. Limit: **500 chars per language**. The `<ar>` block is only valid once
+Arabic is added as a **store-listing** language (Store presence → Main store
+listing → Manage translations → Add Arabic) — otherwise Play Console rejects it.
+The auto-generated notes from the release pipeline are a raw changelog; prefer
+these human-readable versions for production.
+
+### 2.3.0 — Arabic series
+
+English (`en-GB`, the current default listing language):
+
+```
+<en-GB>
+New in this version:
+• Arabic series — the complete Kitab at-Tawheed explained in Arabic by Shaikh Salih al-Fawzan, including the full Arabic text of the book in a new Book tab.
+• Switch series and language anytime from Settings.
+• Faster loading, smoother offline downloads, and improved stability.
+• Bug fixes and refinements.
+
+JazakumAllahu khayran for using the app.
+</en-GB>
+```
+
+Arabic (`ar`, only after adding Arabic as a store-listing language):
+
+```
+<ar>
+الجديد في هذا الإصدار:
+• سلسلة عربية — شرح كتاب التوحيد كاملًا باللغة العربية لفضيلة الشيخ صالح الفوزان حفظه الله، مع النص الكامل للكتاب في تبويب «الكتاب».
+• بدّل السلسلة واللغة في أي وقت من الإعدادات.
+• تحميل أسرع، وتنزيل أفضل للاستماع بلا إنترنت، وثبات محسّن.
+• إصلاحات وتحسينات متنوعة.
+
+جزاكم الله خيرًا على استخدام التطبيق.
+</ar>
+```
