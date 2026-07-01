@@ -311,9 +311,12 @@ jobs:
       #      artifact — open it, copy, paste into Play Console.
       # ------------------------------------------------------------------ #
       - name: Generate Play Store release notes
+        # Pass the changelog via env, NOT inline `${{ }}` in the script body —
+        # commit subjects contain double quotes (e.g. 'Now Playing') that would
+        # otherwise close the bash string and break the step (exit 127).
+        env:
+          MARKDOWN: ${{ steps.cliff.outputs.content }}
         run: |
-          MARKDOWN="${{ steps.cliff.outputs.content }}"
-
           # Strip Markdown: remove ### headings, bold (**text**), leading dashes
           PLAIN=$(echo "$MARKDOWN" \
             | sed 's/^### //g' \
@@ -403,28 +406,37 @@ jobs:
       # ------------------------------------------------------------------ #
       - name: Create GitHub Release
         if: inputs.dry_run != true
+        # CHANGELOG goes via env, not inline `${{ }}` — commit subjects contain
+        # double quotes that would otherwise break the command. The notes body
+        # is written to a file and passed with --notes-file for the same reason.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGELOG: ${{ steps.cliff.outputs.content }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           APK="${{ steps.version.outputs.apk }}"
           NEW_VERSION="${{ steps.version.outputs.new_version }}"
-          CHANGELOG="${{ steps.cliff.outputs.content }}"
 
           [ -z "$CHANGELOG" ] && CHANGELOG="- Maintenance release"
 
-          gh release create "${TAG}" \
-            "${APK}#Al-Tawheed Android APK (release, signed)" \
-            "play-store-notes.txt#Play Store release notes (plain text)" \
-            --title "Al-Tawheed ${TAG}" \
-            --notes "## What's changed
+          # Env-var expansion inserts CHANGELOG literally (its own quotes/
+          # backticks are not re-parsed); the \` escapes keep literal backticks.
+          cat > release-notes.md <<EOF
+          ## What's changed
 
           ${CHANGELOG}
 
           ---
           **Build:** \`${NEW_VERSION}\`
           **APK:** release build, signed with the production key — install via \`adb install ${APK}\`
-          **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new"
+          **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new
+          EOF
+
+          gh release create "${TAG}" \
+            "${APK}#Al-Tawheed Android APK (release, signed)" \
+            "play-store-notes.txt#Play Store release notes (plain text)" \
+            --title "Al-Tawheed ${TAG}" \
+            --notes-file release-notes.md
 
       # ------------------------------------------------------------------ #
       # Dry run summary — confirms analyze/test/build succeeded without
