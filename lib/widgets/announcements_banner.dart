@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:myapp/models/announcement_model.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/safe_url_launcher.dart';
 
 class AnnouncementsBanner extends StatelessWidget {
   static const _iconForType = {
@@ -114,10 +114,7 @@ class AnnouncementCard extends StatelessWidget {
                         announcement.ctaLabel != null) ...[
                       const SizedBox(height: 10),
                       GestureDetector(
-                        onTap: () => launchUrl(
-                          Uri.parse(announcement.ctaUrl!),
-                          mode: LaunchMode.externalApplication,
-                        ),
+                        onTap: () => launchExternalUrl(announcement.ctaUrl!),
                         child: Text(
                           lang.resolve(announcement.ctaLabel!),
                           style: context.textTheme.labelMedium?.copyWith(

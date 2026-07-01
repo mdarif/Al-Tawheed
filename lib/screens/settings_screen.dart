@@ -15,29 +15,24 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/safe_url_launcher.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/settings/about_card.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
 /// Opens [url] in an external app, showing [fallbackMessage] in a snackbar if
-/// the launch fails (no handler, malformed URL). Mirrors the Contact Us
-/// fallback so every outbound link degrades gracefully instead of silently.
+/// the launch fails (no handler, malformed URL, or a disallowed scheme —
+/// these links come from the remote app-config, so [launchExternalUrl]
+/// enforces an https/mailto allowlist). Mirrors the Contact Us fallback so
+/// every outbound link degrades gracefully instead of silently.
 Future<void> _launchOrNotify(
   BuildContext context,
   String url, {
   required String fallbackMessage,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
-  var launched = false;
-  try {
-    launched = await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication,
-    );
-  } catch (_) {
-    launched = false;
-  }
+  final launched = await launchExternalUrl(url);
   if (!launched) {
     messenger.showSnackBar(SnackBar(content: Text(fallbackMessage)));
   }

@@ -70,7 +70,7 @@ class AppConfigBranding {
     appBrand: 'Al Marfa Duroos',
     appBrandUrl: 'https://www.youtube.com/@almarfaduroos',
     publisher: 'Al Marfa Technologies',
-    publisherUrl: 'http://almarfa.co',
+    publisherUrl: 'https://almarfa.co',
     poweredByLabel: 'Powered by Al Marfa Technologies',
   );
 }
