@@ -117,77 +117,68 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          _SectionHeader(l10n.settingsApp),
-          _SettingsCard(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.mail_outline_rounded),
-                  title: Text(l10n.settingsContactUs),
-                  onTap: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final launched = await launchUrl(
-                      Uri(
-                        scheme: 'mailto',
-                        path: config.contact.email,
-                        queryParameters: {'subject': config.contact.subject},
-                      ),
-                      mode: LaunchMode.externalApplication,
-                    );
-                    if (!launched) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(config.contact.email)),
+          // The App section bundles promotional/outbound links (contact, share,
+          // rate, YouTube). Gated behind its own feature flag (default off) so it
+          // can be hidden now and re-enabled remotely. The official website is
+          // surfaced separately in the About card, so it is not duplicated here.
+          if (flags.features.appLinks) ...[
+            _SectionHeader(l10n.settingsApp),
+            _SettingsCard(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline_rounded),
+                    title: Text(l10n.settingsContactUs),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final launched = await launchUrl(
+                        Uri(
+                          scheme: 'mailto',
+                          path: config.contact.email,
+                          queryParameters: {'subject': config.contact.subject},
+                        ),
+                        mode: LaunchMode.externalApplication,
                       );
-                    }
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.share_rounded),
-                  title: Text(l10n.settingsShareApp),
-                  onTap: () => SharePlus.instance.share(
-                    ShareParams(text: config.share.message),
+                      if (!launched) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(config.contact.email)),
+                        );
+                      }
+                    },
                   ),
-                ),
-                if (config.links.playStore != null)
                   ListTile(
-                    leading: const Icon(Icons.star_outline_rounded),
-                    title: Text(l10n.settingsRateApp),
-                    onTap: () => _launchOrNotify(
-                      context,
-                      config.links.playStore!,
-                      fallbackMessage: config.links.playStore!,
+                    leading: const Icon(Icons.share_rounded),
+                    title: Text(l10n.settingsShareApp),
+                    onTap: () => SharePlus.instance.share(
+                      ShareParams(text: config.share.message),
                     ),
                   ),
-                if (config.links.website != null)
-                  ListTile(
-                    leading: const Icon(Icons.language_rounded),
-                    title: Text(l10n.settingsVisitWebsite),
-                    subtitle: Text(
-                      config.links.website!
-                          .replaceFirst('https://', '')
-                          .replaceFirst('http://', ''),
+                  if (config.links.playStore != null)
+                    ListTile(
+                      leading: const Icon(Icons.star_outline_rounded),
+                      title: Text(l10n.settingsRateApp),
+                      onTap: () => _launchOrNotify(
+                        context,
+                        config.links.playStore!,
+                        fallbackMessage: config.links.playStore!,
+                      ),
                     ),
-                    onTap: () => _launchOrNotify(
-                      context,
-                      config.links.website!,
-                      fallbackMessage: config.links.website!,
+                  if (config.links.youtube != null)
+                    ListTile(
+                      leading: const Icon(Icons.play_circle_outline_rounded),
+                      title: Text(config.branding.appBrand),
+                      subtitle: Text(l10n.settingsYouTubeChannel),
+                      onTap: () => _launchOrNotify(
+                        context,
+                        config.links.youtube!,
+                        fallbackMessage: config.links.youtube!,
+                      ),
                     ),
-                  ),
-                if (config.links.youtube != null)
-                  ListTile(
-                    leading: const Icon(Icons.play_circle_outline_rounded),
-                    title: Text(config.branding.appBrand),
-                    subtitle: Text(l10n.settingsYouTubeChannel),
-                    onTap: () => _launchOrNotify(
-                      context,
-                      config.links.youtube!,
-                      fallbackMessage: config.links.youtube!,
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Divider(height: 32),
+            const Divider(height: 32),
+          ],
 
           if (flags.features.downloads) const _DownloadsSection(),
 
@@ -197,6 +188,7 @@ class SettingsScreen extends StatelessWidget {
             child: AboutCard(
               about: config.about,
               catalog: context.watch<CatalogProvider>().catalog,
+              website: config.links.website,
             ),
           ),
           _BrandingFooter(branding: config.branding),

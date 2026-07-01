@@ -6,16 +6,29 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/safe_url_launcher.dart';
 
 /// Two-zone About card.
 ///
-/// Top zone — content identity: cover image, app name, Arabic title, lecturer.
+/// Top zone — content identity: cover image, app name, Arabic title, lecturer,
+/// and (when configured) the official website.
 /// Bottom strip — stats: lecture count, class/duration count, offline-ready indicator.
 class AboutCard extends StatelessWidget {
   final AppConfigAbout about;
   final Catalog? catalog;
 
-  const AboutCard({super.key, required this.about, this.catalog});
+  /// Official website URL (e.g. `https://kitabattawheed.com`). Rendered as a
+  /// centered, tappable bare domain under the lecturer line; hidden when null
+  /// or empty. This is the website's permanent home now that the Settings
+  /// "App" section is feature-gated.
+  final String? website;
+
+  const AboutCard({
+    super.key,
+    required this.about,
+    this.catalog,
+    this.website,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +100,10 @@ class AboutCard extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
+                  if (website != null && website!.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _WebsiteLink(url: website!),
+                  ],
                 ],
               ),
             ),
@@ -135,6 +152,58 @@ class AboutCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Centered, tappable official-website link shown in the About identity zone.
+/// Displays the bare domain (scheme stripped) and opens the URL externally,
+/// falling back to a snackbar if the launch is blocked. Forced LTR so the
+/// domain never mirrors under an RTL (Urdu/Arabic) UI.
+class _WebsiteLink extends StatelessWidget {
+  final String url;
+
+  const _WebsiteLink({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final domain = url
+        .replaceFirst('https://', '')
+        .replaceFirst('http://', '')
+        .replaceFirst(RegExp(r'/+$'), '');
+    final color = context.brandColor;
+
+    return Semantics(
+      button: true,
+      label: context.l10n.settingsVisitWebsite,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          final launched = await launchExternalUrl(url);
+          if (!launched) {
+            messenger.showSnackBar(SnackBar(content: Text(domain)));
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            textDirection: TextDirection.ltr,
+            children: [
+              Text(
+                domain,
+                style: context.textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Icon(Icons.open_in_new_rounded, size: 12, color: color),
+            ],
+          ),
         ),
       ),
     );

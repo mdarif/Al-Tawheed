@@ -15,6 +15,12 @@ class FeatureFlags {
   /// the switcher stays hidden until explicitly enabled in the remote config.
   final bool seriesSwitcher;
 
+  /// Whether the Settings "App" section (contact, share, rate, YouTube links)
+  /// is shown. Defaults to `false` so the promotional links stay hidden until
+  /// explicitly enabled in the remote config; the official website is surfaced
+  /// separately in the About card regardless of this flag.
+  final bool appLinks;
+
   const FeatureFlags({
     required this.bookmarks,
     required this.downloads,
@@ -26,6 +32,7 @@ class FeatureFlags {
     required this.continueListening,
     required this.language,
     required this.seriesSwitcher,
+    required this.appLinks,
   });
 
   factory FeatureFlags.fromJson(Map<String, dynamic> j) {
@@ -41,6 +48,7 @@ class FeatureFlags {
       continueListening: _bool(j, 'continueListening') ?? d.continueListening,
       language: _bool(j, 'language') ?? d.language,
       seriesSwitcher: _bool(j, 'seriesSwitcher') ?? d.seriesSwitcher,
+      appLinks: _bool(j, 'appLinks') ?? d.appLinks,
     );
   }
 
@@ -60,6 +68,7 @@ class FeatureFlags {
     continueListening: true,
     language: false,
     seriesSwitcher: false,
+    appLinks: false,
   );
 }
 
