@@ -379,11 +379,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAll => 'Delete all';
 
   @override
-  String get changeSeriesConfirmTitle => 'Change Series?';
+  String get changeSeriesConfirmTitle => 'Change language?';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'You are switching to \"$seriesName\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.';
+    return 'You are switching to \"$seriesName\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.';
   }
 
   @override

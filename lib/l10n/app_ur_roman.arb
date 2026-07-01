@@ -112,8 +112,8 @@
   "clearAllDownloadsMessage": "{count} dars ({size}) is device se hata diye jayenge.",
   "deleteAll": "Sab hata dein",
 
-  "changeSeriesConfirmTitle": "Silsila tabdeel karein?",
-  "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se aap ke active dars tabdeel ho jayenge. Aap ki progress, downloads aur bookmarks alag se mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",
+  "changeSeriesConfirmTitle": "Zabaan tabdeel karein?",
+  "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se aap ke dars ki zabaan tabdeel ho jayegi. Aap ki progress, downloads aur bookmarks har zabaan ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",
   "changeSeriesConfirm": "Tabdeel karein",
 
   "startListening": "Sunna shuru karein",

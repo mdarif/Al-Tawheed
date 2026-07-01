@@ -87,8 +87,8 @@ class SettingsScreen extends StatelessWidget {
           if (flags.features.seriesSwitcher &&
               flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
-            _SectionHeader(l10n.settingsSeries),
-            const _SeriesSection(),
+            _SectionHeader(l10n.settingsLanguage),
+            const _SettingsCard(child: _SeriesLanguageSelector()),
             const Divider(height: 32),
           ],
 
@@ -405,54 +405,72 @@ class _DownloadsSection extends StatelessWidget {
   }
 }
 
-/// The series' canonical English name (e.g. "Kitab at-Tawheed (Arabic)") —
-/// shown in the series section/picker regardless of UI language, since these
-/// are product/edition names rather than translatable content.
-String _seriesName(SeriesConfig series) =>
-    series.displayName['en'] as String? ?? series.id;
+/// The listener-facing label for a series: its language endonym (e.g. "اردو",
+/// "العربية"). Internally these are content *series* (each edition has its own
+/// teacher and catalog), but to listeners the choice reads as a language, so
+/// that is what we show — with the teacher carried as the row subtitle.
+String _seriesLanguageLabel(BuildContext context, SeriesConfig series) {
+  final l10n = context.l10n;
+  return switch (series.language) {
+    'ar' => l10n.languageArabic,
+    'ur' => l10n.languageUrdu,
+    'roman' => l10n.languageRomanUrdu,
+    'en' => l10n.languageEnglish,
+    _ => series.displayName['en'] as String? ?? series.id,
+  };
+}
 
-class _SeriesSection extends StatelessWidget {
-  const _SeriesSection();
+/// Content-language selector, presented as "Language" though it swaps the whole
+/// content series. Lists every available edition inline as a checkmark row
+/// (language endonym + teacher); tapping a different one confirms first because
+/// the switch stops playback and reloads the catalog.
+class _SeriesLanguageSelector extends StatelessWidget {
+  const _SeriesLanguageSelector();
 
   @override
   Widget build(BuildContext context) {
-    final current = context.watch<SeriesProvider>().currentSeries;
+    final series = context.watch<SeriesProvider>();
+    final lang = context.read<LanguageProvider>();
+    final current = series.currentSeries;
+    final available = series.availableSeries;
 
-    return _SettingsCard(
-      child: ListTile(
-        leading: const Icon(Icons.library_books_rounded),
-        title: Text(_seriesName(current)),
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: () => _openPicker(context),
-      ),
+    return Column(
+      children: [
+        for (var i = 0; i < available.length; i++) ...[
+          if (i > 0)
+            Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: context.groupedBorder,
+            ),
+          _SeriesLanguageRow(
+            series: available[i],
+            teacher: lang.resolveForSeries(
+              available[i].speakerName,
+              available[i],
+            ),
+            selected: available[i].id == current.id,
+            onTap: () => _switchTo(context, available[i]),
+          ),
+        ],
+      ],
     );
   }
 
-  Future<void> _openPicker(BuildContext context) async {
-    final chosen = await showModalBottomSheet<SeriesConfig>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const _SeriesPickerSheet(),
-    );
-    if (chosen == null || !context.mounted) return;
-
-    final current = context.read<SeriesProvider>().currentSeries;
-    if (chosen.id == current.id) return;
-
+  Future<void> _switchTo(BuildContext context, SeriesConfig target) async {
     final l10n = context.l10n;
-    final seriesName = _seriesName(chosen);
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.changeSeriesConfirmTitle,
-      message: l10n.changeSeriesConfirmMessage(seriesName),
+      message:
+          l10n.changeSeriesConfirmMessage(_seriesLanguageLabel(context, target)),
       confirmLabel: l10n.changeSeriesConfirm,
       filledConfirm: true,
     );
     if (!confirmed || !context.mounted) return;
 
-    await switchSeries(context, chosen);
+    await switchSeries(context, target);
     if (!context.mounted) return;
     // Navigate to / and let the router decide: welcome screen if this is the
     // first encounter with the new series, /lectures redirect otherwise.
@@ -460,46 +478,37 @@ class _SeriesSection extends StatelessWidget {
   }
 }
 
-class _SeriesPickerSheet extends StatelessWidget {
-  const _SeriesPickerSheet();
+class _SeriesLanguageRow extends StatelessWidget {
+  final SeriesConfig series;
+  final String teacher;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SeriesLanguageRow({
+    required this.series,
+    required this.teacher,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final series = context.watch<SeriesProvider>();
-    final current = series.currentSeries;
-    final l10n = context.l10n;
-
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l10n.settingsSeries,
-                style: context.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-          ...series.availableSeries.map((s) {
-            final selected = s.id == current.id;
-            return ListTile(
-              leading: Icon(
-                selected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: selected ? context.brandColor : context.mutedIconColor,
-              ),
-              title: Text(_seriesName(s)),
-              onTap: () => Navigator.pop(context, s),
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      title: Text(
+        _seriesLanguageLabel(context, series),
+        style: context.textTheme.bodyMedium?.copyWith(
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
+      subtitle: teacher.isNotEmpty
+          ? Text(teacher, style: context.textTheme.bodySmall)
+          : null,
+      trailing: selected
+          ? Icon(Icons.check_rounded, color: context.brandColor)
+          : null,
+      // Selected row is inert; only the other editions are actionable.
+      onTap: selected ? null : onTap,
     );
   }
 }

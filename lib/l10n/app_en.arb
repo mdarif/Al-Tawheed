@@ -188,8 +188,8 @@
   },
   "deleteAll": "Delete all",
 
-  "changeSeriesConfirmTitle": "Change Series?",
-  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.",
+  "changeSeriesConfirmTitle": "Change language?",
+  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },

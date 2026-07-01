@@ -184,8 +184,8 @@
   },
   "deleteAll": "حذف الكل",
 
-  "changeSeriesConfirmTitle": "تغيير السلسلة؟",
-  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل سلسلة بشكل منفصل — ويمكنك العودة في أيّ وقت.",
+  "changeSeriesConfirmTitle": "تغيير اللغة؟",
+  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل لغة بشكل منفصل — ويمكنك العودة في أيّ وقت.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },

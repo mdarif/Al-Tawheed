@@ -108,26 +108,8 @@ void main() {
     );
   });
 
-  group('SettingsScreen — series picker canonical names', () {
-    testWidgets(
-        'series section shows the canonical English name, even with Urdu UI',
-        (tester) async {
-      final series = SeriesProvider()
-        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
-        ..setCurrentSeriesForTest(_seriesUrdu);
-
-      final language = LanguageProvider()..load();
-      language.applyLanguageFeatureFlag(true);
-      await language.setLanguage(AppLanguage.urdu);
-
-      await tester.pumpWidget(_wrap(series: series, language: language));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Kitab at-Tawheed (Urdu)'), findsOneWidget);
-      expect(find.text('کتاب التوحید (اردو)'), findsNothing);
-    });
-
-    testWidgets('picker sheet lists canonical names for both series',
+  group('SettingsScreen — content language selector', () {
+    testWidgets('lists each edition as a language endonym with the teacher',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
@@ -136,15 +118,23 @@ void main() {
       await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Kitab at-Tawheed (Urdu)'));
-      await tester.pumpAndSettle();
+      // Language endonyms as titles — not the internal edition/series name.
+      expect(find.text('اردو'), findsOneWidget);
+      expect(find.text('العربية'), findsOneWidget);
+      expect(find.text('Kitab at-Tawheed (Urdu)'), findsNothing);
 
-      // Section title (page body) + picker entry.
-      expect(find.text('Kitab at-Tawheed (Urdu)'), findsNWidgets(2));
-      expect(find.text('Kitab at-Tawheed (Arabic)'), findsOneWidget);
+      // Teacher carried as the row subtitle for each edition.
+      expect(
+        find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Shaikh Salih al-Fawzan Hafizhahullah'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('confirm dialog names the chosen series by its canonical name',
+    testWidgets('switching editions confirms with a language-worded dialog',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
@@ -153,44 +143,42 @@ void main() {
       await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Kitab at-Tawheed (Urdu)'));
+      // Tap the non-current (Arabic) edition.
+      await tester.tap(find.text('العربية'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Kitab at-Tawheed (Arabic)'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('"Kitab at-Tawheed (Arabic)"'),
-          findsOneWidget,);
+      // Dialog is worded around language, not "series".
+      expect(find.text('Change language?'), findsOneWidget);
+      expect(find.textContaining('العربية'), findsWidgets);
     });
   });
 
-  group('SettingsScreen — series switcher feature flag', () {
-    testWidgets('series section is hidden when seriesSwitcher flag is off',
+  group('SettingsScreen — content language feature flag', () {
+    testWidgets('language section is hidden when seriesSwitcher flag is off',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
         ..setCurrentSeriesForTest(_seriesUrdu);
 
-      await tester.pumpWidget(
-          _wrap(series: series, seriesSwitcher: false),);
+      await tester.pumpWidget(_wrap(series: series, seriesSwitcher: false));
       await tester.pumpAndSettle();
 
-      // The SERIES section header and the current series tile are both gone.
-      expect(find.text('SERIES'), findsNothing);
-      expect(find.text('Kitab at-Tawheed (Urdu)'), findsNothing);
+      // No edition rows (and the manual Language picker is off by default too).
+      expect(find.text('اردو'), findsNothing);
+      expect(find.text('العربية'), findsNothing);
     });
 
-    testWidgets('series section is shown when seriesSwitcher flag is on',
+    testWidgets('language section is shown when seriesSwitcher flag is on',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
         ..setCurrentSeriesForTest(_seriesUrdu);
 
-      await tester.pumpWidget(
-          _wrap(series: series, seriesSwitcher: true),);
+      await tester.pumpWidget(_wrap(series: series, seriesSwitcher: true));
       await tester.pumpAndSettle();
 
-      expect(find.text('Kitab at-Tawheed (Urdu)'), findsOneWidget);
+      expect(find.text('اردو'), findsOneWidget);
+      expect(find.text('العربية'), findsOneWidget);
     });
   });
 

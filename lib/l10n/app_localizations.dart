@@ -734,13 +734,13 @@ abstract class AppLocalizations {
   /// No description provided for @changeSeriesConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Change Series?'**
+  /// **'Change language?'**
   String get changeSeriesConfirmTitle;
 
   /// No description provided for @changeSeriesConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks for each series are kept separately — you can switch back anytime.'**
+  /// **'You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.'**
   String changeSeriesConfirmMessage(String seriesName);
 
   /// No description provided for @changeSeriesConfirm.

@@ -375,11 +375,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteAll => 'حذف الكل';
 
   @override
-  String get changeSeriesConfirmTitle => 'تغيير السلسلة؟';
+  String get changeSeriesConfirmTitle => 'تغيير اللغة؟';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'ستنتقل إلى \"$seriesName\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل سلسلة بشكل منفصل — ويمكنك العودة في أيّ وقت.';
+    return 'ستنتقل إلى \"$seriesName\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل لغة بشكل منفصل — ويمكنك العودة في أيّ وقت.';
   }
 
   @override
