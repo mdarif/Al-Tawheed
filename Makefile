@@ -157,7 +157,9 @@ screenshots: pub-get
 	@test -d $(SCREENSHOT_VENV) || python3 -m venv $(SCREENSHOT_VENV)
 	@$(SCREENSHOT_VENV)/bin/pip install --quiet Pillow
 	@$(SCREENSHOT_VENV)/bin/python scripts/frame_screenshots.py
-	@echo "✓ Framed set: docs/play-store/v3/framed/  (review docs/play-store/v3/preview.png)"
+	@$(SCREENSHOT_VENV)/bin/python scripts/frame_screenshots.py tablet
+	@echo "✓ Phone:  docs/play-store/v3/framed/        (preview.png)"
+	@echo "✓ Tablet: docs/play-store/v3/framed-tablet/ (preview-tablet.png — 7\" & 10\")"
 
 # Portrait/landscape flip coverage across all key screens (lecture list, player,
 # home, mini player, settings). Runs the same on-device harness as integration.

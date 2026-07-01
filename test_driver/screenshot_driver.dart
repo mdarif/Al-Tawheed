@@ -12,13 +12,17 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 ///     --target=integration_test/screenshots_test.dart \
 ///     -d DEVICE_ID
 Future<void> main() async {
+  // Output dir is overridable so phone vs tablet captures don't collide:
+  //   SCREENSHOT_RAW_DIR=docs/play-store/v3/raw-tablet flutter drive ...
+  final rawDir =
+      Platform.environment['SCREENSHOT_RAW_DIR'] ?? 'docs/play-store/v3/raw';
   await integrationDriver(
     onScreenshot: (
       String name,
       List<int> bytes, [
       Map<String, Object?>? args,
     ]) async {
-      final dir = Directory('docs/play-store/v3/raw');
+      final dir = Directory(rawDir);
       if (!dir.existsSync()) dir.createSync(recursive: true);
       File('${dir.path}/$name.png').writeAsBytesSync(bytes);
       return true;

@@ -103,9 +103,18 @@ must be represented.
 | 9 | `09-lectures-ar-framed.png`    | Arabic lectures الدروس (swap-in)          | Arabic |
 | 10 | `10-settings-ur-framed.png`   | Settings (swap-in)                        | English |
 
-To re-capture next release: `make screenshots DEVICE=<id>`, review `preview.png`,
-re-upload. Tune framing (bezel/shadow/gradient/canvas) in
-`scripts/frame_screenshots.py`.
+**Tablet slots (7-inch + 10-inch, both required).** `make screenshots` also
+emits `docs/play-store/v3/framed-tablet/` — the same captures reframed onto a
+**1440×2560 (9:16)** canvas (Play's tablet range is 9:16..16:9; the phone 2:1
+frames are too elongated to reuse). One set satisfies **both** the 7-inch and
+10-inch slots — upload `01`–`08` from `framed-tablet/` to each. These are the
+phone captures on a tablet-aspect canvas, not native iPad/Android-tablet layouts
+(the iOS app isn't iPad-native; the Android-tablet emulator flag load was flaky)
+— which Play accepts (only aspect/size are checked, not tablet-optimised UI).
+
+To re-capture next release: `make screenshots DEVICE=<id>`, review `preview.png`
++ `preview-tablet.png`, re-upload. Tune framing (bezel/shadow/gradient/canvas)
+in `scripts/frame_screenshots.py`.
 
 ---
 

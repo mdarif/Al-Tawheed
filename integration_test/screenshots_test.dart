@@ -108,9 +108,10 @@ void main() {
       await shot(tester, '04-welcome-ur');
 
       // Let flags + manifest load so START LISTENING routes to /choose-series.
+      // Slower on a freshly-booted Android emulator than on iOS — wait long.
       await AppFlow.pumpFrames(
         tester,
-        count: 12,
+        count: 44,
         duration: const Duration(milliseconds: 500),
       );
 
@@ -119,7 +120,7 @@ void main() {
       await AppFlow.waitFor(
         tester,
         find.text('Select a series to begin learning'),
-        timeout: const Duration(seconds: 20),
+        timeout: const Duration(seconds: 30),
         reason: 'Choose-Series picker (needs multiSeries flag loaded)',
       );
       await shot(tester, '03-choose-series');

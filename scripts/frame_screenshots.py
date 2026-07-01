@@ -80,11 +80,17 @@ def frame_one(raw_path):
     shot = Image.open(raw_path).convert("RGB")
     cw, ch = CANVAS
 
-    # Phone body size (bezel wraps the screen).
-    body_w = round(cw * PHONE_W_FRAC)
-    screen_w = body_w - 2 * BEZEL
-    scale = screen_w / shot.width
-    screen_h = round(shot.height * scale)
+    # Fit the phone body within both a max width and max height (whichever
+    # binds) — so a tall phone raw sits cleanly on a wider/taller tablet canvas.
+    max_body_w = cw * PHONE_W_FRAC
+    max_body_h = ch * 0.92
+    screen_w = max_body_w - 2 * BEZEL
+    screen_h = shot.height * (screen_w / shot.width)
+    if screen_h + 2 * BEZEL > max_body_h:
+        screen_h = max_body_h - 2 * BEZEL
+        screen_w = shot.width * (screen_h / shot.height)
+    screen_w, screen_h = round(screen_w), round(screen_h)
+    body_w = screen_w + 2 * BEZEL
     body_h = screen_h + 2 * BEZEL
 
     shot = shot.resize((screen_w, screen_h), Image.LANCZOS)
@@ -133,7 +139,26 @@ def build_preview(frames):
     strip.save(PREVIEW)
 
 
+def _apply_mode(mode):
+    """Phone (default) or tablet. Tablet uses a portrait 3:4 canvas (1800x2400):
+    both sides land in [1080, 3840], so ONE set satisfies both the 7-inch and
+    10-inch Play slots, and 0.75 is within Play's 9:16..16:9 tablet range."""
+    global RAW, OUT, PREVIEW, CANVAS
+    if mode == "tablet":
+        # Reuse the high-res phone captures — Play accepts phone content in the
+        # tablet slots; only the aspect/size must fit. 1440x2560 is 9:16 (within
+        # Play's 9:16..16:9 tablet range) and both sides land in [1080, 3840], so
+        # ONE set satisfies both the 7-inch and 10-inch slots.
+        RAW = ROOT / "docs/play-store/v3/raw"
+        OUT = ROOT / "docs/play-store/v3/framed-tablet"
+        PREVIEW = ROOT / "docs/play-store/v3/preview-tablet.png"
+        CANVAS = (1440, 2560)
+
+
 def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else "phone"
+    _apply_mode(mode)
+    print(f"mode: {mode}  canvas: {CANVAS[0]}x{CANVAS[1]}")
     OUT.mkdir(parents=True, exist_ok=True)
     frames = []
     missing = []
