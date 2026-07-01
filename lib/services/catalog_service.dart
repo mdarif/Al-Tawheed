@@ -1,8 +1,15 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/services/remote_content_service.dart';
+
+/// Decode + parse the catalog. Top-level so it can run in a background isolate
+/// via [compute] — the payload is a large multilingual JSON blob and parsing it
+/// on the UI thread hitches first load and every stale-while-revalidate refresh.
+Catalog _decodeCatalog(String body) =>
+    Catalog.fromJson(jsonDecode(body) as Map<String, dynamic>);
 
 class CatalogService {
   CatalogService._();
@@ -26,8 +33,7 @@ class CatalogService {
       ttlMs: AppConfig.catalogCacheTtlMs,
     );
 
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    final catalog = Catalog.fromJson(json);
+    final catalog = await compute(_decodeCatalog, body);
 
     if (catalog.version > AppConfig.maxSupportedCatalogVersion) {
       throw Exception(
