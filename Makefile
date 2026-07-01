@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test run ci ci-logs
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test orientation-test run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -17,13 +17,15 @@ help:
 	@echo "  make run-ios         - Run on iOS simulator"
 	@echo ""
 	@echo "CI / CD:"
-	@echo "  make ci              - Run full CI pipeline locally (analyze + test + build)"
-	@echo "  make release-apk     - Release pipeline: pub get, tests, integration, release APK"
-	@echo "  make integration-test - Run integration_test on device (DEVICE required)"
-	@echo "  make patrol-test     - Run Patrol native tests on device (DEVICE optional)"
-	@echo "  make ci-logs         - Fetch latest failed GitHub Actions run logs"
-	@echo "  make release         - Trigger release workflow (BUMP=patch|minor|major), from master"
-	@echo "  make release-auto    - One-click release from develop (promotes, releases, syncs back)"
+	@echo "  make ci                   - Run full CI pipeline locally (analyze + test + build)"
+	@echo "  make release-apk          - Release pipeline: pub get, tests, integration, release APK"
+	@echo "  make integration-test     - Run integration_test on device (DEVICE required)"
+	@echo "  make orientation-test     - Run orientation flip test on device (DEVICE required)"
+	@echo "  make patrol-test          - Run Patrol native tests on device (DEVICE optional)"
+	@echo "  make ci-logs              - Fetch latest failed GitHub Actions run logs"
+	@echo "  make setup-release-secrets - One-time: push signing + Play Store creds to GitHub secrets"
+	@echo "  make release              - Trigger release workflow (BUMP=patch|minor|major), from master"
+	@echo "  make release-auto         - One-click release from develop (promotes, releases, syncs back)"
 	@echo ""
 	@echo "Testing & Quality:"
 	@echo "  make test            - Run tests (mirrors CI)"
@@ -135,6 +137,17 @@ integration-test: pub-get
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
 
+# Portrait/landscape flip coverage across all key screens (lecture list, player,
+# home, mini player, settings). Runs the same on-device harness as integration.
+orientation-test: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required."; \
+		echo "  flutter devices"; \
+		echo "  make orientation-test DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter test integration_test/orientation_test.dart -d $(DEVICE) --timeout 15m
+
 # Patrol native tests (airplane mode, notification shade, permission dialogs).
 # Install CLI once: dart pub global activate patrol_cli
 patrol-test:
@@ -187,6 +200,15 @@ build-web:
 
 build-all: build-android build-ios build-web
 	@echo "✓ All builds complete!"
+
+# One-time (or key-rotation) setup: push the signing keystore + Play Store
+# service-account credentials into GitHub Actions secrets so the Release
+# workflow can build a signed AAB and upload it to the Play Store. Reads from
+# the Dropbox key vault + android/key.properties — no secret values live in
+# the repo. Override paths via env, e.g. VAULT=... make setup-release-secrets.
+# Run `scripts/setup-release-secrets.sh --verify-only` to just list secrets.
+setup-release-secrets:
+	@scripts/setup-release-secrets.sh
 
 # Release
 # Trigger the GitHub Actions release workflow (runs on master in CI).

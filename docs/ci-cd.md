@@ -75,6 +75,19 @@ The release workflow commits a version bump directly to master. Without this, st
 
 ### 5. Add CD Phase 2 signing secrets
 
+> **Shortcut — sets all 5 secrets (this section + section 6) in one command:**
+> ```sh
+> make setup-release-secrets
+> ```
+> Reads the keystore from the Dropbox key vault, the passwords from
+> `android/key.properties`, and the newest `*.json` from the "Service Account
+> JSON" folder — streaming each straight to `gh secret set` (no values ever
+> printed). Re-run it only on key rotation or a new machine. Override paths
+> via env (`VAULT=… KEYSTORE=… make setup-release-secrets`). Just want to
+> check what's set? `scripts/setup-release-secrets.sh --verify-only`.
+>
+> The manual per-secret commands below remain valid if you prefer them.
+
 The release workflow now builds a **production-signed** APK + AAB, using the
 same upload key as `android/key.properties`. Without these 4 repo secrets,
 the "Configure release signing" step fails fast with a clear error.
