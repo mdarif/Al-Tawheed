@@ -7,8 +7,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-
-const _arStartListening = 'ابدأ الاستماع';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 // Arabic tagline shown when the series includes a companion book.
 const _arTagline = 'شرح صوتي مع متن الكتاب';
@@ -306,7 +305,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   color: semantic.onBrand,
                                 ),
                                 label: Text(
-                                  isRtl ? _arStartListening : 'START LISTENING',
+                                  // Arabic series shows the localized label;
+                                  // the pre-selection Urdu screen keeps a
+                                  // neutral English CTA.
+                                  isRtl
+                                      ? arabicL10n.startListening
+                                      : 'START LISTENING',
                                   style: TextStyle(
                                     color: semantic.onBrand,
                                     fontSize: isRtl ? 20 : null,
