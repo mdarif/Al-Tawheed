@@ -15,24 +15,13 @@ import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/announcements_banner.dart';
 import 'package:myapp/widgets/offline_prep_strip.dart';
 
-// Home-screen chrome strings shown in Arabic for the Arabic series,
-// independent of the app's UI language (which still governs other
-// screens' navigation/chrome).
-const _arSaved = 'المحفوظات';
-const _arContinueListening = 'متابعة الاستماع';
-const _arContinueListeningEmpty =
-    'ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا';
-String _arListenedDuration(String listened, String remaining) =>
-    'تم الاستماع: $listened · المتبقي: $remaining';
-String _arPercentComplete(int percent) => '$percent% مكتمل';
-const _arDailyBenefit = 'فائدة اليوم';
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -46,11 +35,11 @@ class HomeScreen extends StatelessWidget {
           slivers: [
             SliverAppBar(
               pinned: true,
-              title: Text(context.l10n.tabHome),
+              title: Text(l10n.tabHome),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.bookmark_outline_rounded),
-                  tooltip: isArabic ? _arSaved : context.l10n.saved,
+                  tooltip: l10n.saved,
                   onPressed: () => context.push('/bookmarks'),
                 ),
               ],
@@ -100,9 +89,9 @@ class _ContinueListeningCard extends StatelessWidget {
     final fraction = progress.getFraction(lastId, lecture.durationSeconds);
     final savedSeconds = progress.getPositionSeconds(lastId);
     final remaining = lecture.durationSeconds - savedSeconds;
-    final l10n = context.l10n;
     final series = context.read<SeriesProvider>().currentSeries;
     final isArabic = series.isRtl;
+    final l10n = context.l10nForSeries(series);
     // Watch the language so the resolved title refreshes on a UI-language
     // change while Home stays alive in the bottom-nav shell.
     final lectureTitle = context
@@ -159,15 +148,10 @@ class _ContinueListeningCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        isArabic
-                            ? _arListenedDuration(
-                                DurationFormatter.fromSeconds(savedSeconds),
-                                DurationFormatter.fromSeconds(remaining),
-                              )
-                            : l10n.listenedDuration(
-                                DurationFormatter.fromSeconds(savedSeconds),
-                                DurationFormatter.fromSeconds(remaining),
-                              ),
+                        l10n.listenedDuration(
+                          DurationFormatter.fromSeconds(savedSeconds),
+                          DurationFormatter.fromSeconds(remaining),
+                        ),
                         style: context.textTheme.bodySmall,
                       ),
                     ],
@@ -200,9 +184,7 @@ class _ContinueListeningCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              isArabic
-                  ? _arPercentComplete((fraction * 100).round())
-                  : l10n.percentComplete((fraction * 100).round()),
+              l10n.percentComplete((fraction * 100).round()),
               style: context.textTheme.bodySmall,
             ),
           ],
@@ -225,15 +207,15 @@ class _ContinueListeningCard extends StatelessWidget {
   }
 
   Widget _header(BuildContext context, StudyProgressProvider study) {
-    final l10n = context.l10n;
     final stats = study.stats;
     final series = context.watch<SeriesProvider>().currentSeries;
+    final l10n = context.l10nForSeries(series);
     final hasStudyMode = series.hasStudyMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          series.isRtl ? _arContinueListening : l10n.continueListening,
+          l10n.continueListening,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -251,10 +233,11 @@ class _ContinueListeningCard extends StatelessWidget {
   }
 
   Widget _emptyState(BuildContext context, StudyProgressProvider study) {
-    final l10n = context.l10n;
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final series = context.read<SeriesProvider>().currentSeries;
+    final isArabic = series.isRtl;
+    final l10n = context.l10nForSeries(series);
     final messageWidget = Text(
-      isArabic ? _arContinueListeningEmpty : l10n.continueListeningEmpty,
+      l10n.continueListeningEmpty,
       textAlign: isArabic ? TextAlign.right : null,
       style: context.textTheme.bodyMedium?.copyWith(
         color: context.secondaryTextColor,
@@ -358,14 +341,14 @@ class _DailyBenefitCard extends StatelessWidget {
     // Watch the language so the resolved benefit text/source refresh on a
     // UI-language change while Home stays alive in the bottom-nav shell.
     final lang = context.watch<LanguageProvider>();
-    final l10n = context.l10n;
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isArabic ? _arDailyBenefit : l10n.dailyBenefit,
+          l10n.dailyBenefit,
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),

@@ -191,8 +191,7 @@ void main() {
       await tester.pumpWidget(_wrap(series: series, catalog: _arabicCatalog()));
       await tester.pumpAndSettle();
 
-      expect(find.text('ابدأ الاستماع إلى أحد الدروس لمتابعته من هنا'),
-          findsOneWidget,);
+      expect(find.text('ابدأ درسًا للمتابعة من هنا'), findsOneWidget);
       expect(find.text('Start a lecture to resume here'), findsNothing);
       expect(find.byTooltip('المحفوظات'), findsOneWidget);
     });
@@ -248,7 +247,7 @@ void main() {
       expect(find.text('Lecture 1'), findsNothing);
       expect(find.text('متابعة الاستماع'), findsOneWidget);
       expect(find.text('Continue Listening'), findsNothing);
-      expect(find.text('تم الاستماع: 1:00 · المتبقي: 9:00'), findsOneWidget);
+      expect(find.text('1:00 مستمَع · 9:00 متبقٍّ'), findsOneWidget);
       expect(find.text('1:00 listened · 9:00 left'), findsNothing);
       expect(find.text('10% مكتمل'), findsOneWidget);
       expect(find.text('10% complete'), findsNothing);
