@@ -9,12 +9,34 @@ class DownloadCancelled implements Exception {
   const DownloadCancelled();
 }
 
+final _safeSegment = RegExp(r'^[A-Za-z0-9._-]+$');
+
+/// Whether [segment] is safe to interpolate as a single path component.
+///
+/// Lecture and series ids come straight from the remote catalog JSON, which is
+/// attacker-influenceable (compromised endpoint / MITM). Without this check an
+/// id like `../../databases/x` would let a download escape the `audio/`
+/// directory and overwrite arbitrary app files. The allowlist admits only
+/// `[A-Za-z0-9._-]` and rejects the `.`/`..` traversal segments, which also
+/// blocks path separators, null bytes, and whitespace.
+bool isSafePathSegment(String segment) =>
+    _safeSegment.hasMatch(segment) && segment != '.' && segment != '..';
+
 /// Local audio file path for [lectureId] within [seriesId] under [documentsPath].
 /// The default series (`tawheed-ur`) keeps its original, unprefixed layout
 /// (`{docs}/audio/{id}.mp3`) — zero migration for existing downloads.
+///
+/// Throws [ArgumentError] if either id is not a safe path segment, so a
+/// tampered catalog can never produce a path outside `audio/`.
 String _localPathFor(String documentsPath, String seriesId, String lectureId) {
+  if (!isSafePathSegment(lectureId)) {
+    throw ArgumentError.value(lectureId, 'lectureId', 'unsafe path segment');
+  }
   if (seriesId == SeriesConfig.legacyId) {
     return '$documentsPath/audio/$lectureId.mp3';
+  }
+  if (!isSafePathSegment(seriesId)) {
+    throw ArgumentError.value(seriesId, 'seriesId', 'unsafe path segment');
   }
   return '$documentsPath/audio/$seriesId/$lectureId.mp3';
 }
@@ -25,7 +47,11 @@ Future<Set<String>> reconcileDownloadedIds(
 ) async {
   final (ids, documentsPath, seriesId) = args;
   final valid = <String>{};
+  if (seriesId != SeriesConfig.legacyId && !isSafePathSegment(seriesId)) {
+    return valid;
+  }
   for (final id in ids) {
+    if (!isSafePathSegment(id)) continue;
     if (await File(_localPathFor(documentsPath, seriesId, id)).exists()) {
       valid.add(id);
     }
@@ -87,7 +113,11 @@ class DownloadService {
     String seriesId = SeriesConfig.legacyId,
   }) {
     if (_documentsPath == null) return false;
-    return File(localPath(lectureId, seriesId: seriesId)).existsSync();
+    try {
+      return File(localPath(lectureId, seriesId: seriesId)).existsSync();
+    } on ArgumentError {
+      return false;
+    }
   }
 
   /// Aborts an in-flight download for [cancelKey] and deletes any partial file.
@@ -171,8 +201,12 @@ class DownloadService {
     if (_documentsPath == null) return 0;
     int total = 0;
     for (final id in lectureIds) {
-      final f = File(localPath(id, seriesId: seriesId));
-      if (f.existsSync()) total += f.lengthSync();
+      try {
+        final f = File(localPath(id, seriesId: seriesId));
+        if (f.existsSync()) total += f.lengthSync();
+      } on ArgumentError {
+        continue;
+      }
     }
     return total;
   }
