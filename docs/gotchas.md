@@ -67,6 +67,17 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## CI / release
 
+- **The one-click release job runs in detached HEAD — push with `HEAD:master`,
+  not `master`.** When dispatched from `develop`, the `release` job checks out
+  the promote SHA (`ref: needs.promote.outputs.sha`), so there is no local
+  `master` branch. `git push origin master` fails with `src refspec master does
+  not match any`; use `git push origin HEAD:master`. (Latent until the first
+  release that actually reached the commit/tag/push step.)
+- **A consumed versionCode can't be reused.** If a release uploads the AAB to
+  Play (versionCode N) but then fails *after* the upload (e.g. the push bug
+  above), N is burned. A naive re-run recomputes the same N and the upload is
+  rejected with "Version code N has already been used". Bump `pubspec.yaml`'s
+  `+BUILD` so the compute step produces N+1 before re-running.
 - **Never inline `${{ steps.*.outputs.* }}` into a shell `run:` body when the
   value is free text** (changelogs, commit subjects). A commit subject with a
   double quote (e.g. `Localize "Now Playing" header`) closes the bash string and

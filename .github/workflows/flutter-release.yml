@@ -397,7 +397,11 @@ jobs:
           git add pubspec.yaml
           git commit -m "chore: release ${TAG}"
           git tag "${TAG}" -m "Release ${TAG}"
-          git push origin master
+          # HEAD:master (not "master") — when dispatched from develop the job
+          # checks out the promote SHA in detached-HEAD state, so there is no
+          # local "master" branch to push. HEAD:master works detached and
+          # on-branch alike. ("src refspec master does not match any" otherwise.)
+          git push origin HEAD:master
           git push origin "${TAG}"
 
       # ------------------------------------------------------------------ #
