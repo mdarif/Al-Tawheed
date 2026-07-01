@@ -73,6 +73,14 @@ is portable memory: any LLM working the repo should read and extend it.
   `master` branch. `git push origin master` fails with `src refspec master does
   not match any`; use `git push origin HEAD:master`. (Latent until the first
   release that actually reached the commit/tag/push step.)
+- **`github-actions[bot]` must be on BOTH branches' bypass lists.** The
+  `sync-develop` job fast-forwards `develop` to `master` and pushes, but
+  `develop`'s protection ("Flutter CI" required status check) rejects the bot's
+  push (`GH006: Protected branch update failed`) unless the bot is in develop's
+  bypass list — same requirement already documented for `master`. Until added,
+  the release ships fine but `sync-develop` fails; recover by fast-forwarding
+  develop to master by hand (admin push bypasses protection):
+  `git checkout develop && git merge --ff-only origin/master && git push origin develop`.
 - **A consumed versionCode can't be reused.** If a release uploads the AAB to
   Play (versionCode N) but then fails *after* the upload (e.g. the push bug
   above), N is burned. A naive re-run recomputes the same N and the upload is
