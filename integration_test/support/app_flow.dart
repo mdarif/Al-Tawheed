@@ -85,9 +85,9 @@ class AppFlow {
   }
 
   static Future<void> dismissPlayer(WidgetTester tester) async {
-    // Arabic series shows 'يتم التشغيل الآن' instead of 'Now Playing'.
+    // Arabic series shows 'يُشغَّل الآن' instead of 'Now Playing'.
     final isOpen = tester.any(find.text('Now Playing')) ||
-        tester.any(find.text('يتم التشغيل الآن'));
+        tester.any(find.text('يُشغَّل الآن'));
     if (!isOpen) return;
     await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
     await pumpFrames(tester, count: 5);
@@ -129,13 +129,13 @@ class AppFlow {
   }
 
   static Future<void> waitForPlayerReady(WidgetTester tester) async {
-    // Arabic series shows 'يتم التشغيل الآن' instead of 'Now Playing'.
+    // Arabic series shows 'يُشغَّل الآن' instead of 'Now Playing'.
     await waitFor(
       tester,
       find.byWidgetPredicate(
         (w) =>
             w is Text &&
-            (w.data == 'Now Playing' || w.data == 'يتم التشغيل الآن'),
+            (w.data == 'Now Playing' || w.data == 'يُشغَّل الآن'),
       ),
       timeout: const Duration(seconds: 30),
       reason: 'player screen',

@@ -22,25 +22,13 @@ import 'package:myapp/widgets/player/seek_bar.dart';
 import 'package:myapp/widgets/player/transport_controls.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 
-// Player-screen chrome strings shown in Arabic for the Arabic series,
-// independent of the app's UI language (which still governs other
-// screens' navigation/chrome).
-const _arNowPlaying = 'يتم التشغيل الآن';
-const _arStreaming = 'بث مباشر';
-const _arSavedOffline = 'محفوظ للاستماع دون اتصال';
-const _arNotAvailableOffline = 'غير متاح دون اتصال';
-const _arNoConnection = 'لا يوجد اتصال';
-const _arConnectionLost = 'انقطع الاتصال';
-const _arBookmark = 'إضافة إشارة مرجعية';
-const _arRemoveBookmark = 'إزالة الإشارة المرجعية';
-String _arDownloading(int percent) => 'جارٍ التحميل... $percent%';
-
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     return _NextBlockedListener(
       child: _StudyCompletionListener(
         child: Scaffold(
@@ -50,9 +38,9 @@ class PlayerScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              // Non-Arabic series use the localized chrome string so Urdu /
-              // Roman-Urdu users don't see a hardcoded English header.
-              isArabic ? _arNowPlaying : context.l10n.nowPlaying,
+              // Series-aware: Arabic for the Arabic series, else the app UI
+              // language — so Urdu/Roman users never see a hardcoded header.
+              l10n.nowPlaying,
               style: context.textTheme.titleMedium?.copyWith(fontSize: 14),
             ),
             centerTitle: true,
@@ -322,15 +310,13 @@ class _OfflineStatusStrip extends StatelessWidget {
     BuildContext context,
     OfflineStripResolution resolution,
   ) {
-    final l10n = context.l10n;
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
           icon: Icons.download_rounded,
-          label: isArabic
-              ? _arDownloading(resolution.downloadPercent)
-              : l10n.offlineDownloading(resolution.downloadPercent),
+          label: l10n.offlineDownloading(resolution.downloadPercent),
           fgColor: context.brandColor,
           bgColor: context.brandColor,
           showProgress: true,
@@ -338,37 +324,35 @@ class _OfflineStatusStrip extends StatelessWidget {
         ),
       OfflineStripKind.saved => _StripConfig(
           icon: Icons.check_circle_outline_rounded,
-          label: isArabic ? _arSavedOffline : l10n.offlineSourceSaved,
+          label: l10n.offlineSourceSaved,
           fgColor: const Color(0xFF2E7D32),
           bgColor: const Color(0xFF2E7D32),
           tappable: true,
         ),
       OfflineStripKind.streaming => _StripConfig(
           icon: Icons.podcasts_rounded,
-          label: isArabic ? _arStreaming : l10n.offlineSourceStreaming,
+          label: l10n.offlineSourceStreaming,
           fgColor: context.secondaryTextColor,
           bgColor: context.brandColor,
           tappable: true,
         ),
       OfflineStripKind.connectionLost => _StripConfig(
           icon: Icons.wifi_off_rounded,
-          label: isArabic ? _arConnectionLost : l10n.offlineConnectionLost,
+          label: l10n.offlineConnectionLost,
           fgColor: context.colorScheme.error,
           bgColor: context.colorScheme.error,
           tappable: true,
         ),
       OfflineStripKind.noConnection => _StripConfig(
           icon: Icons.wifi_off_rounded,
-          label: isArabic ? _arNoConnection : l10n.offlineNoConnection,
+          label: l10n.offlineNoConnection,
           fgColor: const Color(0xFFE65100),
           bgColor: const Color(0xFFE65100),
           tappable: true,
         ),
       OfflineStripKind.notAvailableOffline => _StripConfig(
           icon: Icons.cloud_off_rounded,
-          label: isArabic
-              ? _arNotAvailableOffline
-              : l10n.offlineNotAvailableOffline,
+          label: l10n.offlineNotAvailableOffline,
           fgColor: const Color(0xFFE65100),
           bgColor: const Color(0xFFE65100),
           tappable: true,
@@ -560,13 +544,10 @@ class _BookmarkButton extends StatelessWidget {
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
     );
-    final isArabic = context.read<SeriesProvider>().currentSeries.isRtl;
-
-    final l10n = context.l10n;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     return IconButton(
-      tooltip: isArabic
-          ? (isBookmarked ? _arRemoveBookmark : _arBookmark)
-          : (isBookmarked ? l10n.removeBookmark : l10n.bookmark),
+      tooltip: isBookmarked ? l10n.removeBookmark : l10n.bookmark,
       icon: Icon(
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
         color: isBookmarked ? context.brandColor : context.primaryTextColor,

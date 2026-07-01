@@ -376,7 +376,7 @@ void main() {
       );
 
       // App bar title
-      expect(find.text('يتم التشغيل الآن'), findsOneWidget);
+      expect(find.text('يُشغَّل الآن'), findsOneWidget);
       expect(find.text('Now Playing'), findsNothing);
 
       // Track title (resolved via resolveForSeries) and speaker.
@@ -387,7 +387,7 @@ void main() {
       expect(find.text('كتاب التوحيد'), findsOneWidget);
 
       // Offline strip label in Arabic — not downloaded, offline by default.
-      expect(find.text('غير متاح دون اتصال'), findsOneWidget);
+      expect(find.text('غير متاح بلا إنترنت'), findsOneWidget);
 
       // Numeric seek-bar times stay in Western numerals.
       expect(find.text('0:00'), findsOneWidget);
@@ -407,7 +407,7 @@ void main() {
         ),
       );
 
-      expect(find.text('بث مباشر'), findsOneWidget);
+      expect(find.text('يُبثّ مباشرةً'), findsOneWidget);
     });
 
     testWidgets('shows bookmark tooltip in Arabic', (tester) async {
