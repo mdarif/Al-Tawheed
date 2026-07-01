@@ -67,7 +67,49 @@ No Photoshop; optional free account on the web tool.
 
 ---
 
-## 2. Screenshot shot list (capture on device or emulator)
+## 2. Screenshot shot list
+
+### v3 — both series, automated (current)
+
+Fully automated — capture + clean device framing in one command:
+
+```sh
+make screenshots DEVICE=<id>     # flutter devices to find <id> (iOS sim is fine)
+```
+
+This runs `integration_test/screenshots_test.dart` (drives a fresh install
+through onboarding, picks Arabic, then switches to Urdu via Settings — capturing
+**both** the Arabic-chrome and English/Urdu-chrome experiences via `AppFlow` +
+`takeScreenshot`) → raws in `docs/play-store/v3/raw/`, then
+`scripts/frame_screenshots.py` composites clean thin-bezel device frames on the
+cream→gold brand gradient (no captions) → `docs/play-store/v3/framed/` +
+`preview.png`. Output is **1290×2580 (2:1), RGB, no alpha** — Play-compliant.
+
+10 frames captured; **Play allows max 8** — upload `01`–`08` (below); `09`–`10`
+are framed as swap-ins. The key point: the Urdu series shows **English chrome**
+(Now Playing, Study Mode, Settings) while Arabic shows **Arabic chrome** — both
+must be represented.
+
+| # | File (`docs/play-store/v3/framed/`) | Screen | Chrome |
+|---|-------------------------------------|--------|--------|
+| 1 | `01-welcome-ar-framed.png`     | Arabic welcome — al-Fawzan (**lead**)     | Arabic |
+| 2 | `02-book-ar-framed.png`        | Book tab الكتاب — full Arabic text (new)   | Arabic |
+| 3 | `03-choose-series-framed.png`  | Choose-Series picker (both)               | English |
+| 4 | `04-welcome-ur-framed.png`     | Urdu welcome — "START LISTENING"          | English |
+| 5 | `05-lectures-ur-framed.png`    | Urdu lectures — Class 01, Study tab       | English |
+| 6 | `06-study-ur-framed.png`       | Study Mode — Urdu-only feature            | English |
+| 7 | `07-player-ur-framed.png`      | Now Playing                               | English |
+| 8 | `08-player-ar-framed.png`      | Player يُشغَّل الآن (chrome contrast)       | Arabic |
+| 9 | `09-lectures-ar-framed.png`    | Arabic lectures الدروس (swap-in)          | Arabic |
+| 10 | `10-settings-ur-framed.png`   | Settings (swap-in)                        | English |
+
+To re-capture next release: `make screenshots DEVICE=<id>`, review `preview.png`,
+re-upload. Tune framing (bezel/shadow/gradient/canvas) in
+`scripts/frame_screenshots.py`.
+
+---
+
+### Legacy manual shot list (v2, superseded)
 
 Use **light theme** for most shots (palette B — cream + gold). Add **1–2 dark theme** shots for variety.
 
@@ -115,52 +157,64 @@ Export as **PNG** or **JPEG**, no transparency.
 
 ## 4. Store listing copy (paste into Play Console)
 
+> **Updated for 2.3.0 (both series).** The old copy below the divider was
+> Urdu-only; this version covers the new Arabic series (al-Fawzan) + Book tab.
+
 ### App name (30 chars max)
 
 ```
-Sharah Kitab al-Tawheed
+Sharah Kitab at-Tawheed
 ```
 
 ### Short description (80 chars max)
 
 ```
-50 audio lectures on Kitab al-Tawheed — by Shaikh Abdullah Nasir Rahmani. Resume & study.
+Kitab at-Tawheed audio Sharh in Arabic & Urdu — offline, Book, Study Mode
 ```
 
-(79 characters)
-
-**Alternate (Urdu audience):**
-
-```
-Kitab al-Tawheed ki 50 audio dars — Shaikh Abdullah Nasir Rahmani. Suno aur seekho.
-```
+(73 characters)
 
 ### Full description (4000 chars max)
 
 ```
-Sharah Kitab al-Tawheed brings the complete audio series explaining Kitab al-Tawheed — the foundation of Islamic monotheism (Tawheed) — into one simple app.
+Sharah Kitab at-Tawheed is a complete audio companion for studying the foundational Islamic text Kitab at-Tawheed — now with TWO full lecture series to choose from.
 
-🎧 50 LECTURES · 15 CLASSES
-Listen to the full explanation by Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah, organised by class and part. Pick up where you left off with automatic progress saving.
+📚 TWO SERIES, ONE APP
+• Arabic — the explanation by Shaikh Salih al-Fawzan (hafizahullah), with the complete Arabic text of the book built in.
+• Urdu — the detailed 50-lecture series by Fazilat Shaikh Abdullah Nasir Rahmani (hafizahullah).
+Choose your series when you open the app, and switch anytime from Settings.
 
-✨ HIGHLIGHTS
-• High-quality audio lectures streamed from our CDN (works on Wi‑Fi and mobile data)
-• Continue Listening on Home — resume your last lecture instantly
-• Daily Benefit — a short reminder from the Sunnah each day
-• Save lectures — bookmark parts you want to hear again
-• Playback speed — 0.75× to 2× for comfortable listening
-• Study Mode — work through all 15 classes in order at your own pace
-• Light and dark themes
-• English, Urdu, and Roman Urdu interface (when enabled)
+📖 READ THE BOOK (ARABIC SERIES)
+The Arabic series includes the full text of Kitab at-Tawheed in a dedicated Book tab — read the chapters (abwab) alongside the audio, with clear verse and hadith highlighting.
 
-📖 ABOUT THE BOOK
-Kitab al-Tawheed (The Book of Monotheism) by Imam Muhammad ibn Abdul-Wahhab explains what it means to worship Allah alone — the core of Islam. This app is the audio sharah (explanation) of that book.
+📈 STUDY MODE (URDU SERIES)
+Go beyond listening. Study Mode tracks your progress class by class across all 15 classes, so you always know where you left off and how far you've come.
+
+🎧 LISTEN ANYTIME, ANYWHERE
+Stream every lecture, organised by chapter, or save it for offline listening — perfect for commutes, travel, or low-connectivity areas.
+
+📥 OFFLINE MODE
+Download individual lectures or whole chapters with one tap. Choose Wi‑Fi‑only downloads to manage your data, and reach everything you've saved from your Offline Library — no internet required.
+
+🔖 BOOKMARKS & CONTINUE LISTENING
+Pick up right where you stopped, and bookmark key moments in any lecture to revisit whenever you like.
+
+⏩ VARIABLE SPEED
+Listen at 0.75× to 2× to match your pace.
+
+🌙 LIGHT & DARK THEMES
+A clean, distraction-free design with full dark mode for comfortable listening day or night.
+
+🔔 LOCK-SCREEN & NOTIFICATION CONTROLS
+Play, pause, and skip straight from your lock screen or notification shade — even with the app in the background.
+
+Whether you're beginning your journey with Kitab at-Tawheed or returning for deeper study — in Arabic or Urdu — Sharah Kitab at-Tawheed puts these teachings in your pocket, online or off.
 
 🔗 MORE FROM AL-MARFA
 • Website: https://kitabattawheed.com
-• YouTube: Al-Marfa Publications
+• YouTube: Al-Marfa Duroos
 
-Developed by Al-Marfa Publications. For feedback or issues, use Contact Us in Settings.
+Developed by Al-Marfa. For feedback or issues, use Contact Us in Settings.
 
 May Allah make this knowledge beneficial.
 ```

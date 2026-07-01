@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test orientation-test run ci ci-logs
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test orientation-test screenshots run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -21,6 +21,7 @@ help:
 	@echo "  make release-apk          - Release pipeline: pub get, tests, integration, release APK"
 	@echo "  make integration-test     - Run integration_test on device (DEVICE required)"
 	@echo "  make orientation-test     - Run orientation flip test on device (DEVICE required)"
+	@echo "  make screenshots          - Capture + frame Play Store screenshots (DEVICE required)"
 	@echo "  make patrol-test          - Run Patrol native tests on device (DEVICE optional)"
 	@echo "  make ci-logs              - Fetch latest failed GitHub Actions run logs"
 	@echo "  make setup-release-secrets - One-time: push signing + Play Store creds to GitHub secrets"
@@ -136,6 +137,27 @@ integration-test: pub-get
 		exit 1; \
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+
+# Capture + frame the Play Store screenshot set (v3, Arabic-led). Runs the
+# on-device capture harness, then composites clean device frames on the brand
+# background. Output: docs/play-store/v3/framed/ + preview.png. Needs DEVICE
+# (an iOS sim or Android device) and python3 (Pillow installed into a
+# gitignored build/ venv).
+SCREENSHOT_VENV ?= build/screenshot-venv
+screenshots: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required. Run 'flutter devices'."; \
+		echo "  make screenshots DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter drive \
+		--driver=test_driver/screenshot_driver.dart \
+		--target=integration_test/screenshots_test.dart \
+		-d $(DEVICE)
+	@test -d $(SCREENSHOT_VENV) || python3 -m venv $(SCREENSHOT_VENV)
+	@$(SCREENSHOT_VENV)/bin/pip install --quiet Pillow
+	@$(SCREENSHOT_VENV)/bin/python scripts/frame_screenshots.py
+	@echo "✓ Framed set: docs/play-store/v3/framed/  (review docs/play-store/v3/preview.png)"
 
 # Portrait/landscape flip coverage across all key screens (lecture list, player,
 # home, mini player, settings). Runs the same on-device harness as integration.

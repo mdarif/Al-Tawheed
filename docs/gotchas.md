@@ -51,6 +51,28 @@ is portable memory: any LLM working the repo should read and extend it.
   tree. On first install with multiple series it routes to `/choose-series`, not
   `/lectures` — handle both. See `integration_test/support/app_flow.dart`.
 
+## Screenshots (Play Store)
+
+- **Automated via `make screenshots DEVICE=<id>`** — `flutter drive` runs
+  `integration_test/screenshots_test.dart` (reuses `AppFlow` to navigate) →
+  raws → `scripts/frame_screenshots.py` (Pillow) frames them on the brand
+  gradient → `docs/play-store/v3/`. iOS sim works well.
+- **The two series have different chrome — capture BOTH.** The Urdu series
+  renders the app UI in **English** (Now Playing, Study Mode, Settings) and has a
+  Study tab; the Arabic series renders **Arabic** chrome (يُشغَّل الآن، الدروس) and
+  has a Book tab instead of Study. A screenshot set must show both. The harness
+  picks Arabic first (for the Arabic welcome + Book), then switches to Urdu via
+  Settings → language row (`اردو`/`العربية` endonyms) to capture the English
+  screens. Switching routes through the new series' welcome if unseen.
+- **iOS `takeScreenshot` captures the Flutter surface only — no native status
+  bar** (clean, good for framing). Android needs
+  `binding.convertFlutterSurfaceToImage()` first; iOS must NOT call it.
+- **Clear prefs at the start** (`SharedPreferences.getInstance().clear()` before
+  `app.main()`) so onboarding (welcome + choose-series) renders — otherwise a
+  persisted series selection skips straight to lectures.
+- Play caps phone screenshots at **8** and **2:1 max aspect**. The iPhone raw is
+  ~2.17:1, so the framer composites onto a 2:1 canvas (1290×2580).
+
 ## i18n & multi-series
 
 - **Content language ≠ UI language.** The app does NOT force the locale to Arabic
