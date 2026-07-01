@@ -103,8 +103,17 @@ is portable memory: any LLM working the repo should read and extend it.
   hour and re-run. `make release-auto` is idempotent (promote becomes a no-op).
 - **The service account needs a Play Console *invite*, not just the JSON.** Create
   it in Google Cloud (enable "Google Play Android Developer API"), then in Play
-  Console → Users and permissions → invite its email with **"Release apps to
-  testing tracks"**. The old "API access → link project" page is deprecated.
+  Console → Users and permissions → invite its email. The old "API access → link
+  project" page is deprecated — inviting the SA email *is* the link.
+- **Account-level permission was NOT enough — grant it at the APP level with
+  "Manage testing tracks".** This is what finally cleared the persistent
+  `403 The caller does not have permission` (after account-level "Release apps to
+  testing tracks" kept failing across several runs). Fix: Users and permissions →
+  the SA → **Manage → App permissions tab → Add app → com.almarfa.tawheed**, then
+  enable **Release apps to testing tracks** *and* **Manage testing tracks and edit
+  tester lists** → Apply. Distinguish this from pure propagation delay: if
+  account-level looks correct and it still 403s after ~30 min, it's the missing
+  app-level grant, not time.
 - `make release-auto` must run from `develop`; `make release` from `master`. Each
   refuses the wrong branch on purpose.
 

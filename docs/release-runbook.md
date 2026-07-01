@@ -223,6 +223,47 @@ manually.
 
 ## Troubleshooting
 
+**"Upload to Play Store failed: 'The caller does not have permission' (403),
+even though the service account is invited and Active"**
+Account-level "Release apps to testing tracks" is **not sufficient**. Grant it
+at the **app level**: Users and permissions → the service account → Manage →
+**App permissions → Add app → com.almarfa.tawheed** → enable **Release apps to
+testing tracks** *and* **Manage testing tracks and edit tester lists** → Apply.
+(First observed on the 2.3.0 release — account-level alone 403'd across several
+runs; the app-level grant with "Manage testing tracks" cleared it.) If
+account-level looks right and it still 403s within the first ~30 min it may also
+be permission propagation — but if it persists past that, it's the missing
+app-level grant, not time.
+
+**"Release job failed at 'Commit, tag, and push': 'src refspec master does not
+match any'"**
+The one-click (develop-dispatched) flow checks out the promote SHA, so the
+release job runs in **detached HEAD** — there is no local `master` branch. The
+step must push with `git push origin HEAD:master`, not `git push origin master`.
+Fixed in `flutter-release.yml` on the 2.3.0 release; if it regresses, check that
+step. Note: if the Play upload already ran before this failure, that versionCode
+is consumed — bump `pubspec.yaml`'s `+BUILD` before re-running (see below).
+
+**"sync-develop failed: 'GH006: Protected branch update failed for
+refs/heads/develop'"**
+`develop`'s "Flutter CI" required status check rejects the release bot's push
+(`github-actions[bot]` isn't on develop's bypass list; `enforce_admins:false`
+lets *you* bypass but not the bot). The release itself already shipped — this is
+only the post-release sync. Recover by fast-forwarding by hand (your admin push
+bypasses protection):
+```sh
+git checkout develop && git merge --ff-only origin/master && git push origin develop
+```
+Permanent fix: migrate `develop` to a Repository Ruleset with the bot in the
+bypass list (classic branch protection has no bypass-actor field). See
+`docs/gotchas.md` → CI / release.
+
+**"Upload failed: 'Version code N has already been used'"**
+A prior run uploaded that AAB to Play (consuming versionCode N) but then failed
+*after* the upload, so no tag/commit was made and a re-run recomputes the same
+N. Bump `pubspec.yaml`'s `+BUILD` (e.g. `2.2.0+15` → `+16`) so the compute step
+yields N+1, commit, push, and re-run.
+
 **"Release workflow failed at 'Configure release signing': signing secrets
 are not set"**
 One or more of `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEY_PASSWORD`,
