@@ -118,7 +118,70 @@ void main() {
         reason: 'transport control visible after returning to portrait',
       );
 
-      // ── 3. Mini player ────────────────────────────────────────────────────
+      // ── 3. Home screen ───────────────────────────────────────────────────
+      // Dismiss player first so the nav bar is accessible.
+      await AppFlow.dismissPlayer(tester);
+
+      // Navigate to Home — try English label first, then Arabic for the
+      // Arabic series (mirrors the pattern in navigateToLecturesTab).
+      for (final label in ['Home', 'الرئيسية']) {
+        final tab = find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text(label),
+        );
+        if (tester.any(tab)) {
+          await tester.tap(tab);
+          await AppFlow.pumpFrames(tester, count: 5);
+          break;
+        }
+      }
+
+      // The Home tab has a SliverAppBar — it's always present regardless of
+      // content load state (no catalog needed for the Home chrome).
+      expect(
+        find.byType(SliverAppBar),
+        findsOneWidget,
+        reason: 'Home screen SliverAppBar visible in portrait',
+      );
+
+      await _toL(tester, landscape);
+      expect(
+        find.byType(NavigationBar),
+        findsOneWidget,
+        reason: 'nav bar visible on Home in landscape',
+      );
+      expect(
+        find.byType(SliverAppBar),
+        findsOneWidget,
+        reason: 'Home SliverAppBar visible in landscape',
+      );
+      // Scroll down slightly to catch overflow in the card content area.
+      if (tester.any(find.byType(CustomScrollView))) {
+        await tester.drag(
+          find.byType(CustomScrollView).first,
+          const Offset(0, -200),
+        );
+        await AppFlow.pumpFrames(tester, count: 3);
+        // Scroll back up.
+        await tester.drag(
+          find.byType(CustomScrollView).first,
+          const Offset(0, 200),
+        );
+        await AppFlow.pumpFrames(tester, count: 3);
+      }
+
+      await _toP(tester, portrait);
+      expect(
+        find.byType(SliverAppBar),
+        findsOneWidget,
+        reason: 'Home SliverAppBar visible after returning to portrait',
+      );
+
+      // Return to Lectures before mini player and settings checks.
+      await AppFlow.navigateToLecturesTab(tester);
+      await AppFlow.openFirstLecture(tester);
+
+      // ── 4. Mini player ────────────────────────────────────────────────────
       await AppFlow.dismissPlayer(tester);
       await AppFlow.expectMiniPlayerVisible(tester);
 
@@ -133,7 +196,7 @@ void main() {
       await _toP(tester, portrait);
       await AppFlow.expectMiniPlayerVisible(tester);
 
-      // ── 4. Settings screen ────────────────────────────────────────────────
+      // ── 5. Settings screen ────────────────────────────────────────────────
       await AppFlow.navigateToSettingsTab(tester);
       await AppFlow.pumpFrames(tester, count: 3);
 
