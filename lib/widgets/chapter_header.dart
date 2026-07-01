@@ -81,7 +81,7 @@ class _ChapterDownloadAction extends StatelessWidget {
 
     if (allSaved) {
       return Padding(
-        padding: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsetsDirectional.only(start: 4),
         child: Icon(
           Icons.check_circle_outline_rounded,
           size: 18,

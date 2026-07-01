@@ -92,7 +92,7 @@ class AnnouncementCard extends StatelessWidget {
                               .read<AnnouncementsProvider>()
                               .dismiss(announcement.id),
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsetsDirectional.only(start: 8),
                             child: Icon(
                               Icons.close_rounded,
                               size: 16,

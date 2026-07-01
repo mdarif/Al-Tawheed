@@ -59,10 +59,10 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  AnnouncementsBanner(),
+                  const AnnouncementsBanner(),
                   const _ContinueListeningCard(),
                   if (context.watch<FeatureFlagsProvider>().features.downloads)
-                    OfflinePrepStrip(),
+                    const OfflinePrepStrip(),
                   const SizedBox(height: 24),
                   const _DailyBenefitCard(),
                   const SizedBox(height: 24),

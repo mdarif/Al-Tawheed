@@ -201,7 +201,7 @@ class _TileTrailing extends StatelessWidget {
             selector: (_, p) => p.isBookmarked(lecture.id),
             builder: (_, saved, __) => saved
                 ? Padding(
-                    padding: const EdgeInsets.only(right: 2),
+                    padding: const EdgeInsetsDirectional.only(end: 2),
                     child: Icon(
                       Icons.bookmark_rounded,
                       size: 14,

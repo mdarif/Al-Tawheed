@@ -207,7 +207,7 @@ class _OfflinePrepStripState extends State<OfflinePrepStrip> {
                     GestureDetector(
                       onTap: () => setState(() => _dismissed = true),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 4),
+                        padding: const EdgeInsetsDirectional.only(start: 4),
                         child: Icon(
                           Icons.close_rounded,
                           size: 16,
