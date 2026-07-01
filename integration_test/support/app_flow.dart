@@ -30,8 +30,37 @@ class AppFlow {
 
     final start = find.text('START LISTENING');
     if (tester.any(start)) {
-      await tester.tap(start);
+      // The button lives inside IgnorePointer(ignoring: !isReady) and is
+      // present in the tree at opacity 0 before SeriesProvider.isSeriesReady
+      // becomes true. Retry until the tap lands and navigation occurs (the
+      // widget disappears from the tree).
+      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      while (tester.any(start) && DateTime.now().isBefore(deadline)) {
+        await tester.tap(start, warnIfMissed: false);
+        await pumpFrames(tester, count: 5);
+      }
+      if (tester.any(start)) {
+        fail(
+          'START LISTENING button still blocked by IgnorePointer after 15s — '
+          'SeriesProvider.isSeriesReady never became true',
+        );
+      }
+    }
+
+    // On first install with multiple series, START LISTENING pushes to
+    // /choose-series instead of /lectures. Tap the first series card, then
+    // confirm the dialog if one appears.
+    if (tester.any(find.text('Select a series to begin learning'))) {
+      await tester.tap(find.byType(InkWell).first);
       await pumpFrames(tester, count: 5);
+      final confirmBtn = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(FilledButton),
+      );
+      if (tester.any(confirmBtn)) {
+        await tester.tap(confirmBtn);
+        await pumpFrames(tester, count: 5);
+      }
     }
 
     await waitForCatalog(tester);
