@@ -178,6 +178,11 @@ class _BookBodyState extends State<_BookBody> {
   double _lastOffset = 0;
   late ReadingProvider _reading;
 
+  /// Style-independent parse of [_BookBody.text], computed once per chapter
+  /// (see [_parseChapter]). Each entry is a line: null = blank spacer, else a
+  /// list of (text, type) runs. Only the [TextStyle] is applied at build time.
+  late List<List<(String, int)>?> _parsedLines;
+
   static final _verseRe = RegExp(r'\{[^}]+\}');
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
   static final _hadithRe = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
@@ -198,14 +203,22 @@ class _BookBodyState extends State<_BookBody> {
   static const _hadithOpen = '\u{00AB}'; // «  at hadith start
   static const _hadithClose = '\u{00BB}'; // »  at hadith end
 
-  // 1 = verse, 2 = citation, 3 = hadith. Colours are resolved from the active
-  // theme (see [_HighlightColors]) so each mode gets a shade tuned for contrast
-  // against its reading background.
-  List<TextSpan> _buildSpans(
-    String line,
-    TextStyle base,
-    _HighlightColors colors,
-  ) {
+  // Parses the whole chapter once into style-independent runs. The regex
+  // passes, interval sort, and string rewriting (ornaments, guillemets,
+  // Eastern-Arabic digits) depend only on the source text — not on font size or
+  // theme colours — so doing this once (not on every rebuild) keeps A−/A+ and
+  // light/dark switches cheap. Each line becomes null (a blank spacer) or a
+  // list of (text, type) runs.
+  List<List<(String, int)>?> _parseChapter(String source) {
+    return [
+      for (final line in source.split('\n'))
+        line.trim().isEmpty ? null : _parseLine(line),
+    ];
+  }
+
+  // Run types: 0 = plain, 1 = verse, 2 = citation, 3 = hadith. Colours are
+  // resolved from the active theme at render time (see [_renderLines]).
+  List<(String, int)> _parseLine(String line) {
     // Eastern Arabic-Indic numerals for inline ayah numbers etc. Digit chars
     // map 1:1 so the regex match positions below stay valid.
     final text = arabicDigitsInString(line);
@@ -222,17 +235,12 @@ class _BookBodyState extends State<_BookBody> {
     }
     intervals.sort((a, b) => a.$1.compareTo(b.$1));
 
-    final spans = <TextSpan>[];
+    final runs = <(String, int)>[];
     int last = 0;
     for (final (start, end, type) in intervals) {
       if (start > last) {
-        spans.add(TextSpan(text: text.substring(last, start), style: base));
+        runs.add((text.substring(last, start), 0));
       }
-      final color = type == 1
-          ? colors.verse
-          : type == 2
-              ? colors.citation
-              : colors.hadith;
       var segment = text.substring(start, end);
       if (type == 1) {
         segment =
@@ -244,38 +252,50 @@ class _BookBodyState extends State<_BookBody> {
             segment.substring(2, segment.length - 2) +
             _hadithClose;
       }
-      spans.add(
-        TextSpan(
-          text: segment,
-          style: base.copyWith(color: color),
-        ),
-      );
+      runs.add((segment, type));
       last = end;
     }
     if (last < text.length) {
-      spans.add(TextSpan(text: text.substring(last), style: base));
+      runs.add((text.substring(last), 0));
     }
-    return spans;
+    return runs;
   }
 
-  List<Widget> _buildLines(TextStyle base, _HighlightColors colors) {
-    final lines = widget.text.split('\n');
+  Color _colorFor(int type, _HighlightColors colors) => switch (type) {
+        1 => colors.verse,
+        2 => colors.citation,
+        _ => colors.hadith,
+      };
+
+  // Applies [base]/theme colours to the precomputed runs — the only per-rebuild
+  // work now. No regex, sort, or substring here.
+  List<Widget> _renderLines(TextStyle base, _HighlightColors colors) {
     final widgets = <Widget>[];
-    for (final line in lines) {
-      if (line.trim().isEmpty) {
+    for (final runs in _parsedLines) {
+      if (runs == null) {
         widgets.add(const SizedBox(height: 8));
-      } else {
-        widgets.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text.rich(
-              TextSpan(children: _buildSpans(line, base, colors)),
-              textAlign: TextAlign.right,
-              textDirection: TextDirection.rtl,
-            ),
-          ),
-        );
+        continue;
       }
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                for (final (text, type) in runs)
+                  TextSpan(
+                    text: text,
+                    style: type == 0
+                        ? base
+                        : base.copyWith(color: _colorFor(type, colors)),
+                  ),
+              ],
+            ),
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
+          ),
+        ),
+      );
     }
     return widgets;
   }
@@ -283,7 +303,16 @@ class _BookBodyState extends State<_BookBody> {
   @override
   void initState() {
     super.initState();
+    _parsedLines = _parseChapter(widget.text);
     _scrollController.addListener(() => _lastOffset = _scrollController.offset);
+  }
+
+  @override
+  void didUpdateWidget(_BookBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.text != oldWidget.text) {
+      _parsedLines = _parseChapter(widget.text);
+    }
   }
 
   @override
@@ -341,7 +370,7 @@ class _BookBodyState extends State<_BookBody> {
         textDirection: TextDirection.rtl,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _buildLines(
+          children: _renderLines(
             baseStyle,
             (
               verse: context.bookVerseColor,
