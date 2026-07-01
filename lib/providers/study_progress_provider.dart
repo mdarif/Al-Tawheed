@@ -120,6 +120,11 @@ class StudyProgressProvider extends ChangeNotifier {
   }
 
   /// After progress updates, promote live-complete chapters to studied.
+  ///
+  /// Does not call [notifyListeners] itself — the change-driven callers
+  /// ([_onProgressChanged]/[_onCatalogChanged]) already notify exactly once,
+  /// and it previously fired a second, redundant rebuild whenever a chapter
+  /// was promoted. Persists only when the studied set actually grew.
   Future<void> syncStudiedChapters() async {
     final catalog = _catalog.catalog;
     if (catalog == null) return;
@@ -132,10 +137,11 @@ class StudyProgressProvider extends ChangeNotifier {
     if (added.isEmpty) return;
 
     _studiedChapterIds = {..._studiedChapterIds, ...added};
-    notifyListeners();
     await _prefs.saveStudiedChapterIds(_studiedChapterIds, prefix: _prefix);
   }
 
+  // A single notify per change covers both promoted-to-studied chapters and
+  // live progress that study screens derive from _progress (stats/chapterInfos).
   void _onProgressChanged() {
     syncStudiedChapters();
     notifyListeners();
