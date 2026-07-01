@@ -189,13 +189,33 @@ class Catalog {
   final List<Lecture> lectures;
   final List<DailyBenefit> dailyBenefits;
 
-  const Catalog({
+  Catalog({
     required this.version,
     required this.book,
     required this.chapters,
     required this.lectures,
     required this.dailyBenefits,
   });
+
+  // Lookup indexes, built lazily on first access. Before this, `chapterById`,
+  // `lectureById`, and `lecturesForChapter` were O(n) scans called many times
+  // per rebuild (study aggregates, lecture-list headers, home) — an
+  // O(chapters × lectures) cost every frame. These make each lookup O(1).
+  late final Map<String, Chapter> _chapterById = {
+    for (final c in chapters) c.id: c,
+  };
+  late final Map<String, Lecture> _lectureById = {
+    for (final l in lectures) l.id: l,
+  };
+  late final Map<String, List<Lecture>> _lecturesByChapter = _groupLectures();
+
+  Map<String, List<Lecture>> _groupLectures() {
+    final map = <String, List<Lecture>>{};
+    for (final l in lectures) {
+      (map[l.chapterId] ??= <Lecture>[]).add(l);
+    }
+    return map;
+  }
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
     // The book is mandatory — without it there's nothing to show. A missing or
@@ -213,8 +233,12 @@ class Catalog {
     );
   }
 
-  Chapter chapterById(String id) => chapters.firstWhere((c) => c.id == id);
+  Chapter chapterById(String id) =>
+      _chapterById[id] ?? (throw StateError('No chapter with id "$id"'));
+
+  /// The lecture with [id], or null if the catalog has no such lecture.
+  Lecture? lectureById(String id) => _lectureById[id];
 
   List<Lecture> lecturesForChapter(String chapterId) =>
-      lectures.where((l) => l.chapterId == chapterId).toList();
+      _lecturesByChapter[chapterId] ?? const [];
 }

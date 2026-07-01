@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
-import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -92,11 +91,9 @@ class _ContinueListeningCard extends StatelessWidget {
       return _emptyState(context, study);
     }
 
-    Lecture? lecture;
-    try {
-      lecture = catalog.catalog!.lectures.firstWhere((l) => l.id == lastId);
-    } catch (e) {
-      debugPrint('HomeScreen: last-played lecture not found in catalog: $e');
+    final lecture = catalog.catalog!.lectureById(lastId);
+    if (lecture == null) {
+      debugPrint('HomeScreen: last-played lecture not found in catalog');
       return _emptyState(context, study);
     }
 
@@ -116,7 +113,7 @@ class _ContinueListeningCard extends StatelessWidget {
       onTap: () {
         final player = context.read<PlayerNotifier>();
         final allLectures = catalog.catalog!.lectures;
-        player.loadAndPlay(lecture!, allLectures);
+        player.loadAndPlay(lecture, allLectures);
         context.push('/player');
       },
       child: Container(
