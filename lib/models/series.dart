@@ -31,16 +31,29 @@ class SeriesConfig {
   /// governs navigation/chrome separately.
   bool get isRtl => language == 'ar';
 
-  factory SeriesConfig.fromJson(Map<String, dynamic> json) => SeriesConfig(
-        id: json['id'] as String,
-        catalogUrl: json['catalogUrl'] as String,
-        storagePrefix: json['storagePrefix'] as String? ?? '',
-        hasStudyMode: json['hasStudyMode'] as bool? ?? false,
-        hasBook: json['hasBook'] as bool? ?? false,
-        language: json['language'] as String? ?? 'en',
-        displayName: toI18nMap(json['displayName']),
-        speakerName: toI18nMap(json['speakerName']),
-      );
+  factory SeriesConfig.fromJson(Map<String, dynamic> json) {
+    // id keys all per-series state and catalogUrl is the fetch target — a
+    // series missing either is unusable, so throw and let the manifest parser
+    // skip just this entry rather than defaulting to a broken series.
+    final id = json['id'];
+    final catalogUrl = json['catalogUrl'];
+    if (id is! String || id.isEmpty) {
+      throw const FormatException('series: missing "id"');
+    }
+    if (catalogUrl is! String || catalogUrl.isEmpty) {
+      throw const FormatException('series: missing "catalogUrl"');
+    }
+    return SeriesConfig(
+      id: id,
+      catalogUrl: catalogUrl,
+      storagePrefix: json['storagePrefix'] as String? ?? '',
+      hasStudyMode: json['hasStudyMode'] as bool? ?? false,
+      hasBook: json['hasBook'] as bool? ?? false,
+      language: json['language'] as String? ?? 'en',
+      displayName: toI18nMap(json['displayName']),
+      speakerName: toI18nMap(json['speakerName']),
+    );
+  }
 
   /// Id of the legacy Urdu series — used as a default-parameter constant
   /// since `legacyUrduFallback.id` is not itself a constant expression.

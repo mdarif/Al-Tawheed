@@ -22,9 +22,18 @@ class SeriesManifestService {
         ttlMs: AppConfig.seriesManifestCacheTtlMs,
       );
       final json = jsonDecode(body) as Map<String, dynamic>;
-      final list = (json['series'] as List<dynamic>)
-          .map((e) => SeriesConfig.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final raw = json['series'];
+      final list = <SeriesConfig>[];
+      if (raw is List) {
+        for (final e in raw) {
+          if (e is! Map<String, dynamic>) continue;
+          try {
+            list.add(SeriesConfig.fromJson(e));
+          } catch (_) {
+            // Skip one malformed series entry; keep the rest.
+          }
+        }
+      }
       if (list.isEmpty) return const [SeriesConfig.legacyUrduFallback];
       return list;
     } catch (e) {

@@ -26,4 +26,24 @@ void main() {
   test('legacyUrduFallback has no book', () {
     expect(SeriesConfig.legacyUrduFallback.hasBook, isFalse);
   });
+
+  group('SeriesConfig.fromJson — required fields', () {
+    test('throws when id is missing or empty', () {
+      expect(
+        () => SeriesConfig.fromJson({'catalogUrl': 'https://x/c.json'}),
+        throwsFormatException,
+      );
+      expect(
+        () => SeriesConfig.fromJson({'id': '', 'catalogUrl': 'https://x/c.json'}),
+        throwsFormatException,
+      );
+    });
+
+    test('throws when catalogUrl is missing', () {
+      expect(
+        () => SeriesConfig.fromJson({'id': 'tawheed-ur'}),
+        throwsFormatException,
+      );
+    });
+  });
 }

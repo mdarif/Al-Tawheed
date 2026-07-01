@@ -142,4 +142,28 @@ void main() {
       expect(p.visible, isEmpty);
     });
   });
+
+  group('AnnouncementsModel.fromJson — per-entry resilience', () {
+    test('skips a malformed entry but keeps the valid ones', () {
+      final model = AnnouncementsModel.fromJson({
+        'version': 1,
+        'announcements': [
+          {
+            'id': 'good-1',
+            'title': {'en': 'One'},
+            'body': {'en': 'B'},
+          },
+          {'title': 'no id here'}, // malformed — must not drop the whole feed
+          'not-even-a-map',
+          {
+            'id': 'good-2',
+            'title': {'en': 'Two'},
+            'body': {'en': 'B'},
+          },
+        ],
+      });
+
+      expect(model.announcements.map((a) => a.id), ['good-1', 'good-2']);
+    });
+  });
 }

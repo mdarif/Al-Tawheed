@@ -27,7 +27,12 @@ class Announcement {
   });
 
   factory Announcement.fromJson(Map<String, dynamic> j) {
-    final id = j['id'] as String;
+    // `id` keys dismissal tracking and overlay lookup — an entry without one is
+    // dropped by [AnnouncementsModel.fromJson]'s per-entry guard.
+    final id = j['id'] as String?;
+    if (id == null || id.isEmpty) {
+      throw const FormatException('announcement: missing "id"');
+    }
     final overlay = announcementOverlays[id];
 
     return Announcement(
@@ -55,7 +60,7 @@ class Announcement {
           ? DateTime.tryParse(j['validUntil'] as String)
           : null,
       platforms: (j['platforms'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.whereType<String>()
               .toList() ??
           ['android', 'ios'],
     );
@@ -86,14 +91,26 @@ class AnnouncementsModel {
     required this.announcements,
   });
 
-  factory AnnouncementsModel.fromJson(Map<String, dynamic> j) =>
-      AnnouncementsModel(
-        version: j['version'] as int? ?? 1,
-        announcements: (j['announcements'] as List<dynamic>?)
-                ?.map((e) => Announcement.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
+  factory AnnouncementsModel.fromJson(Map<String, dynamic> j) {
+    // Parse per-entry: skip a single malformed announcement rather than letting
+    // it throw and drop the whole feed (the provider's catch would discard all).
+    final raw = j['announcements'];
+    final announcements = <Announcement>[];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is! Map<String, dynamic>) continue;
+        try {
+          announcements.add(Announcement.fromJson(e));
+        } catch (_) {
+          // Skip this one; keep the rest.
+        }
+      }
+    }
+    return AnnouncementsModel(
+      version: (j['version'] as num?)?.toInt() ?? 1,
+      announcements: announcements,
+    );
+  }
 
   /// Active announcements for the current platform and date.
   List<Announcement> get active =>
