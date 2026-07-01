@@ -5,6 +5,7 @@ import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -19,16 +20,43 @@ class OfflineLibraryScreen extends StatelessWidget {
     final catalog = context.watch<CatalogProvider>().catalog;
     final downloads = context.watch<DownloadsProvider>();
 
-    final chaptersWithDownloads = catalog == null
-        ? <_ChapterGroup>[]
-        : catalog.chapters
-            .map((ch) {
-              final lectures = catalog.lecturesForChapter(ch.id);
-              final saved = lectures.where((l) => downloads.isDownloaded(l.id)).toList();
-              return _ChapterGroup(chapter: ch, allLectures: lectures, savedLectures: saved);
-            })
-            .where((g) => g.savedLectures.isNotEmpty)
-            .toList();
+    if (catalog == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.offlineLibrary)),
+        body: _EmptyState(),
+      );
+    }
+
+    if (catalog.chapters.isEmpty) {
+      // Flat series (e.g. standalone duroos) — no chapter grouping, just
+      // list the downloaded lectures directly.
+      final saved =
+          catalog.lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.offlineLibrary)),
+        body: saved.isEmpty
+            ? _EmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.only(top: 8, bottom: 32),
+                itemCount: saved.length,
+                itemBuilder: (context, i) => _LectureTile(lecture: saved[i]),
+              ),
+      );
+    }
+
+    final chaptersWithDownloads = catalog.chapters
+        .map((ch) {
+          final lectures = catalog.lecturesForChapter(ch.id);
+          final saved =
+              lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+          return _ChapterGroup(
+            chapter: ch,
+            allLectures: lectures,
+            savedLectures: saved,
+          );
+        })
+        .where((g) => g.savedLectures.isNotEmpty)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.offlineLibrary)),
@@ -56,11 +84,16 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.download_outlined,
-                size: 56, color: context.mutedIconColor),
+            Icon(
+              Icons.download_outlined,
+              size: 56,
+              color: context.mutedIconColor,
+            ),
             const SizedBox(height: 16),
-            Text(l10n.offlineLibraryEmpty,
-                style: context.textTheme.titleMedium),
+            Text(
+              l10n.offlineLibraryEmpty,
+              style: context.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               l10n.offlineLibraryEmptyHint,
@@ -81,10 +114,11 @@ class _ChapterGroup {
   final Chapter chapter;
   final List<Lecture> allLectures;
   final List<Lecture> savedLectures;
-  const _ChapterGroup(
-      {required this.chapter,
-      required this.allLectures,
-      required this.savedLectures});
+  const _ChapterGroup({
+    required this.chapter,
+    required this.allLectures,
+    required this.savedLectures,
+  });
 }
 
 class _ChapterSection extends StatelessWidget {
@@ -98,10 +132,9 @@ class _ChapterSection extends StatelessWidget {
     final connectivity = context.read<ConnectivityProvider>();
     final isChapterDownloading =
         downloads.isChapterDownloading(group.chapter.id);
-    final allSaved =
-        downloads.isChapterFullyDownloaded(group.allLectures);
-    final savedBytes = group.savedLectures
-        .fold(0, (sum, l) => sum + l.fileSizeBytes);
+    final allSaved = downloads.isChapterFullyDownloaded(group.allLectures);
+    final savedBytes =
+        group.savedLectures.fold(0, (sum, l) => sum + l.fileSizeBytes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,16 +170,15 @@ class _ChapterSection extends StatelessWidget {
                   label: l10n.cancelChapterDownload,
                   icon: Icons.stop_rounded,
                   color: context.colorScheme.error,
-                  onTap: () => downloads
-                      .cancelChapterDownload(group.chapter.id),
+                  onTap: () =>
+                      downloads.cancelChapterDownload(group.chapter.id),
                 )
               else if (!allSaved)
                 _ActionChip(
                   label: l10n.downloadRemaining,
                   icon: Icons.download_rounded,
                   onTap: () {
-                    if (downloads.downloadOnWifiOnly &&
-                        !connectivity.isWifi) {
+                    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(l10n.wifiOnlyBlocked),
@@ -156,7 +188,9 @@ class _ChapterSection extends StatelessWidget {
                       return;
                     }
                     downloads.downloadChapter(
-                        group.chapter.id, group.allLectures);
+                      group.chapter.id,
+                      group.allLectures,
+                    );
                   },
                 )
               else
@@ -180,19 +214,19 @@ class _ChapterSection extends StatelessWidget {
   }
 
   void _confirmDeleteChapter(
-      BuildContext context, DownloadsProvider downloads) async {
+    BuildContext context,
+    DownloadsProvider downloads,
+  ) async {
     final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.deleteChapterConfirm,
-      message: context
-          .read<LanguageProvider>()
-          .resolve(group.chapter.title),
+      message: context.read<LanguageProvider>().resolve(group.chapter.title),
       confirmLabel: l10n.deleteChapter,
       destructive: true,
     );
     if (confirmed && context.mounted) {
-      downloads.deleteChapter(group.allLectures);
+      await downloads.deleteChapter(group.allLectures);
     }
   }
 
@@ -251,9 +285,23 @@ class _LectureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final title = context
+        .read<LanguageProvider>()
+        .resolveForSeries(lecture.title, series);
     final sizeMb = lecture.fileSizeBytes > 0
         ? '${(lecture.fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB'
         : '';
+
+    final titleWidget = Text(
+      title,
+      style: context.textTheme.bodyMedium,
+      textAlign: series.isRtl ? TextAlign.right : null,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final removeLabel = context.l10nForSeries(series).offlineRemoveDownload;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -267,41 +315,47 @@ class _LectureTile extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           lecture.number.toString().padLeft(2, '0'),
-          style: context.textTheme.labelSmall
-              ?.copyWith(color: context.brandColor),
+          style:
+              context.textTheme.labelSmall?.copyWith(color: context.brandColor),
         ),
       ),
-      title: Text(
-        context.read<LanguageProvider>().resolve(lecture.title),
-        style: context.textTheme.bodyMedium,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: series.isRtl
+          ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
+          : titleWidget,
       subtitle: Text(
         '${DurationFormatter.fromSeconds(lecture.durationSeconds)}  ·  $sizeMb',
         style: context.textTheme.bodySmall
             ?.copyWith(color: context.secondaryTextColor),
       ),
       trailing: IconButton(
-        icon: Icon(Icons.delete_outline_rounded,
-            size: 20, color: context.mutedIconColor),
-        onPressed: () => _confirmDelete(context),
-        tooltip: context.l10n.offlineRemoveDownload,
+        icon: Icon(
+          Icons.delete_outline_rounded,
+          size: 20,
+          color: context.mutedIconColor,
+        ),
+        onPressed: () => _confirmDelete(context, title, removeLabel),
+        tooltip: removeLabel,
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context) async {
-    final l10n = context.l10n;
+  void _confirmDelete(
+    BuildContext context,
+    String title,
+    String removeLabel,
+  ) async {
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final confirmed = await showConfirmDialog(
       context,
-      title: l10n.offlineRemoveDownload,
-      message: lecture.title.en,
-      confirmLabel: l10n.offlineRemoveDownload,
+      title: removeLabel,
+      message: title,
+      confirmLabel: removeLabel,
+      cancelLabel: l10n.cancel,
       destructive: true,
     );
     if (confirmed && context.mounted) {
-      context.read<DownloadsProvider>().delete(lecture.id);
+      await context.read<DownloadsProvider>().delete(lecture.id);
     }
   }
 }

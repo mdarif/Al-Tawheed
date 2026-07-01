@@ -23,12 +23,14 @@ class DownloadNotificationService {
 
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(const AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      importance: Importance.low,
-      showBadge: false,
-    ));
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        importance: Importance.low,
+        showBadge: false,
+      ),
+    );
     // Don't await: on Android 13+ this shows a native system dialog whose
     // Future only resolves once the user responds — blocking on it here would
     // delay runApp() until the user dismisses a dialog they haven't even seen
@@ -39,7 +41,10 @@ class DownloadNotificationService {
   int _idFor(String lectureId) => lectureId.hashCode & 0x7FFFFFFF;
 
   Future<void> showProgress(
-      String lectureId, String title, double progress) async {
+    String lectureId,
+    String title,
+    double progress,
+  ) async {
     if (!Platform.isAndroid) return;
     _cancelPendingDismiss(lectureId);
     final percent = (progress * 100).round();

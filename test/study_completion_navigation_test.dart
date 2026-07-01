@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
@@ -101,6 +103,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOffline()),
         ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+        ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
       ],
       child: MaterialApp.router(
         theme: AppTheme.dark,
@@ -129,10 +132,10 @@ void main() {
           ],
         ),
       ),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
-    GoRouter.of(tester.element(find.text('Home'))).push('/player');
+    unawaited(GoRouter.of(tester.element(find.text('Home'))).push('/player'));
     await tester.pumpAndSettle();
     expect(find.byType(PlayerScreen), findsOneWidget);
 

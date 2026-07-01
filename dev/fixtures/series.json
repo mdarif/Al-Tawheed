@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-13T00:00:00Z",
+  "series": [
+    {
+      "id": "tawheed-ur",
+      "catalogUrl": "https://al-tawheed-content.pages.dev/tawheed/catalog.json",
+      "storagePrefix": "",
+      "hasStudyMode": true,
+      "language": "ur",
+      "displayName": {
+        "en": "Kitab at-Tawheed (Urdu)",
+        "ur": "کتاب التوحید (اردو)"
+      },
+      "speakerName": {
+        "en": "Shaikh Abdullah Nasir Rahmani Hafizahullah",
+        "ur": "فضیلت شیخ عبداللہ ناصر رحمانی"
+      }
+    },
+    {
+      "id": "tawheed-ar",
+      "catalogUrl": "https://al-tawheed-content.pages.dev/tawheed-ar/catalog.json",
+      "storagePrefix": "ar_",
+      "hasStudyMode": false,
+      "language": "ar",
+      "displayName": {
+        "en": "Kitab at-Tawheed (Arabic)",
+        "ar": "كتاب التوحيد"
+      },
+      "speakerName": {
+        "en": "Shaikh Salih al-Fawzan Hafizahullah",
+        "ar": "الشيخ صالح الفوزان حفظه الله"
+      }
+    }
+  ]
+}

@@ -13,10 +13,11 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
   });
 
-  Widget wrap(Widget child, {ThemeMode themeMode = ThemeMode.dark}) {
+  Widget wrap(Widget child, {ThemeMode themeMode = ThemeMode.system}) {
     return ChangeNotifierProvider(
       create: (_) => ThemeProvider()..load(),
       child: MaterialApp(
@@ -30,7 +31,7 @@ void main() {
     );
   }
 
-  testWidgets('ThemeModeSwitch shows current mode label and adaptive switch',
+  testWidgets('ThemeModeSwitch shows Dark mode label in dark theme',
       (tester) async {
     await tester.pumpWidget(
       wrap(const ThemeModeSwitch(), themeMode: ThemeMode.dark),
@@ -41,7 +42,7 @@ void main() {
     expect(find.byType(SwitchListTile), findsOneWidget);
   });
 
-  testWidgets('ThemeModeSwitch shows Light mode when light theme is active',
+  testWidgets('ThemeModeSwitch shows Light mode label in light theme',
       (tester) async {
     await tester.pumpWidget(
       wrap(const ThemeModeSwitch(), themeMode: ThemeMode.light),
@@ -51,9 +52,26 @@ void main() {
     expect(find.text('Dark mode'), findsNothing);
   });
 
-  testWidgets('ThemeModeSwitch toggles ThemeProvider to light',
+  testWidgets('ThemeModeSwitch toggling on sets ThemeProvider to dark',
       (tester) async {
-    await tester.pumpWidget(wrap(const ThemeModeSwitch()));
+    await tester.pumpWidget(
+      wrap(const ThemeModeSwitch(), themeMode: ThemeMode.light),
+    );
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    final provider = tester
+        .element(find.byType(ThemeModeSwitch))
+        .read<ThemeProvider>();
+    expect(provider.themeMode, ThemeMode.dark);
+  });
+
+  testWidgets('ThemeModeSwitch toggling off sets ThemeProvider to light',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(const ThemeModeSwitch(), themeMode: ThemeMode.dark),
+    );
 
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();

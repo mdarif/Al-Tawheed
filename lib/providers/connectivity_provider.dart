@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
-class ConnectivityProvider extends ChangeNotifier {
+class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _sub;
   Timer? _debounce;
@@ -16,6 +17,7 @@ class ConnectivityProvider extends ChangeNotifier {
   bool get isMobile => _results.contains(ConnectivityResult.mobile);
 
   ConnectivityProvider() {
+    WidgetsBinding.instance.addObserver(this);
     _init();
   }
 
@@ -30,8 +32,7 @@ class ConnectivityProvider extends ChangeNotifier {
         _results = const [ConnectivityResult.mobile];
 
   @visibleForTesting
-  factory ConnectivityProvider.testOnline() =>
-      ConnectivityProvider._test(true);
+  factory ConnectivityProvider.testOnline() => ConnectivityProvider._test(true);
 
   @visibleForTesting
   factory ConnectivityProvider.testOffline() =>
@@ -43,22 +44,35 @@ class ConnectivityProvider extends ChangeNotifier {
       ConnectivityProvider._testMobile();
 
   Future<void> _init() async {
-    final results = await _connectivity.checkConnectivity();
-    _results = results;
-    _isOnline = _resultsOnline(results);
-    _sub = _connectivity.onConnectivityChanged.listen(_onChanged);
+    await _refresh();
+    _sub =
+        _connectivity.onConnectivityChanged.listen((_) => _scheduleRefresh());
   }
 
-  void _onChanged(List<ConnectivityResult> results) {
-    final nowOnline = _resultsOnline(results);
-    final changed = nowOnline != _isOnline || !listEquals(results, _results);
-    if (!changed) return;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _scheduleRefresh();
+    }
+  }
+
+  void _scheduleRefresh() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _results = results;
-      _isOnline = nowOnline;
-      notifyListeners();
-    });
+    _debounce = Timer(const Duration(milliseconds: 500), _refresh);
+  }
+
+  // Re-query the platform directly rather than trusting the results handed
+  // to onConnectivityChanged: during a wifi-to-mobile handoff, the wifi
+  // "lost" callback can arrive after the mobile "available" one, so the
+  // stream's last event can be a transient `none` with nothing afterwards
+  // to correct it — leaving the app stuck thinking it's offline.
+  Future<void> _refresh() async {
+    final results = await _connectivity.checkConnectivity();
+    final nowOnline = _resultsOnline(results);
+    if (nowOnline == _isOnline && listEquals(results, _results)) return;
+    _results = results;
+    _isOnline = nowOnline;
+    notifyListeners();
   }
 
   static bool _resultsOnline(List<ConnectivityResult> results) =>
@@ -68,6 +82,7 @@ class ConnectivityProvider extends ChangeNotifier {
   void dispose() {
     _debounce?.cancel();
     _sub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 }

@@ -4,18 +4,22 @@ import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/offline_player_strip.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/download_button.dart';
 import 'package:myapp/widgets/offline_sheet.dart';
+import 'package:myapp/widgets/player/seek_bar.dart';
+import 'package:myapp/widgets/player/transport_controls.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 
 class PlayerScreen extends StatelessWidget {
@@ -23,6 +27,8 @@ class PlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     return _NextBlockedListener(
       child: _StudyCompletionListener(
         child: Scaffold(
@@ -32,7 +38,9 @@ class PlayerScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              'Now Playing',
+              // Series-aware: Arabic for the Arabic series, else the app UI
+              // language — so Urdu/Roman users never see a hardcoded header.
+              l10n.nowPlaying,
               style: context.textTheme.titleMedium?.copyWith(fontSize: 14),
             ),
             centerTitle: true,
@@ -56,9 +64,9 @@ class PlayerScreen extends StatelessWidget {
                   const _TrackInfo(),
                   const _OfflineStatusStrip(),
                   const SizedBox(height: 32),
-                  const _SeekBar(),
+                  const PlayerSeekBar(),
                   const SizedBox(height: 28),
-                  const _TransportControls(),
+                  const PlayerTransportControls(),
                   const SizedBox(height: 24),
                   const PlaybackSpeedSelectorCompact(),
                   const SizedBox(height: 16),
@@ -113,7 +121,8 @@ class _NextBlockedListenerState extends State<_NextBlockedListener> {
     Lecture? next,
   ) async {
     final l10n = context.l10n;
-    final downloadsEnabled = context.read<FeatureFlagsProvider>().features.downloads;
+    final downloadsEnabled =
+        context.read<FeatureFlagsProvider>().features.downloads;
 
     if (!downloadsEnabled || next == null) {
       await showAlertDialog(
@@ -241,9 +250,8 @@ class _OfflineStatusStrip extends StatelessWidget {
       dlStatus: dlStatus,
       dlProgress: dlProgress,
     );
-    final strip = resolution == null
-        ? null
-        : _stripFromResolution(context, resolution);
+    final strip =
+        resolution == null ? null : _stripFromResolution(context, resolution);
     if (strip == null) return const SizedBox.shrink();
 
     return Padding(
@@ -285,9 +293,11 @@ class _OfflineStatusStrip extends StatelessWidget {
               ),
               if (strip.tappable) ...[
                 const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded,
-                    size: 14,
-                    color: strip.fgColor.withValues(alpha: 0.7)),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 14,
+                  color: strip.fgColor.withValues(alpha: 0.7),
+                ),
               ],
             ],
           ),
@@ -300,7 +310,8 @@ class _OfflineStatusStrip extends StatelessWidget {
     BuildContext context,
     OfflineStripResolution resolution,
   ) {
-    final l10n = context.l10n;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
@@ -399,6 +410,15 @@ class _CoverArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final catalog = context.watch<CatalogProvider>().catalog;
+    // Watch the language so the wordmark refreshes on a UI-language change.
+    final wordmark = series.isRtl && catalog != null
+        ? context
+            .watch<LanguageProvider>()
+            .resolveForSeries(catalog.book.title, series)
+        : 'شرح كتاب التوحيد';
+
     return Container(
       width: 240,
       height: 240,
@@ -419,11 +439,10 @@ class _CoverArt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.headphones_rounded,
-              size: 72, color: context.brandColor),
+          Icon(Icons.headphones_rounded, size: 72, color: context.brandColor),
           const SizedBox(height: 12),
           Text(
-            'شرح كتاب التوحيد',
+            wordmark,
             style: context.textTheme.titleMedium?.copyWith(
               color: context.brandColor,
               letterSpacing: 0.5,
@@ -442,254 +461,72 @@ class _TrackInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    // Watch so the resolved title/speaker refresh on a UI-language change.
+    final lang = context.watch<LanguageProvider>();
     return Selector<PlayerNotifier, _TrackInfoSnapshot>(
       selector: (_, player) => _TrackInfoSnapshot(
-        title: player.current?.title.en ?? '',
+        lectureId: player.current?.id,
+        title: player.current?.title,
         studyLabel: player.studyContextLabel,
       ),
-      builder: (_, snapshot, __) => Column(
-        children: [
-          Text(
-            snapshot.studyLabel ?? snapshot.title,
-            style: context.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Shaikh Abdullah Nasir Rahmani Hafizahullah',
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: context.secondaryTextColor,
+      builder: (_, snapshot, __) {
+        final catalog = context.watch<CatalogProvider>().catalog;
+        final speaker = catalog != null
+            ? lang.resolveForSeries(catalog.book.speaker, series)
+            : '';
+        final title = snapshot.studyLabel ??
+            lang.resolveForSeries(snapshot.title, series);
+
+        final content = Column(
+          children: [
+            Text(
+              title,
+              style: context.textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
-      ),
+            if (speaker.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                speaker,
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: context.secondaryTextColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        );
+
+        return series.isRtl
+            ? Directionality(textDirection: TextDirection.rtl, child: content)
+            : content;
+      },
     );
   }
 }
 
 class _TrackInfoSnapshot {
-  final String title;
+  final String? lectureId;
+  final Map<String, dynamic>? title;
   final String? studyLabel;
 
-  const _TrackInfoSnapshot({required this.title, required this.studyLabel});
+  const _TrackInfoSnapshot({
+    required this.lectureId,
+    required this.title,
+    required this.studyLabel,
+  });
 
   @override
   bool operator ==(Object other) =>
       other is _TrackInfoSnapshot &&
-      other.title == title &&
+      other.lectureId == lectureId &&
       other.studyLabel == studyLabel;
 
   @override
-  int get hashCode => Object.hash(title, studyLabel);
-}
-
-// ── Seek bar ─────────────────────────────────────────────────────────────────
-
-class _SeekBar extends StatefulWidget {
-  const _SeekBar();
-
-  @override
-  State<_SeekBar> createState() => _SeekBarState();
-}
-
-class _SeekBarState extends State<_SeekBar> {
-  double? _draggingValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, _SeekSnapshot>(
-      selector: (_, player) => _SeekSnapshot(
-        progress: player.progress,
-        positionSeconds: player.position.inSeconds,
-        durationSeconds: player.duration.inSeconds,
-      ),
-      builder: (_, snapshot, __) {
-        final sliderValue = _draggingValue ?? snapshot.progress;
-
-        return Column(
-          children: [
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape:
-                    const RoundSliderOverlayShape(overlayRadius: 14),
-              ),
-              child: Slider(
-                value: sliderValue.clamp(0.0, 1.0),
-                onChangeStart: (v) => setState(() => _draggingValue = v),
-                onChanged: (v) => setState(() => _draggingValue = v),
-                onChangeEnd: (v) {
-                  setState(() => _draggingValue = null);
-                  context.read<PlayerNotifier>().seek(Duration(
-                        milliseconds:
-                            (v * snapshot.durationSeconds * 1000).round(),
-                      ));
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DurationFormatter.fromSeconds(snapshot.positionSeconds),
-                    style: context.textTheme.bodySmall,
-                  ),
-                  Text(
-                    DurationFormatter.fromSeconds(snapshot.durationSeconds),
-                    style: context.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SeekSnapshot {
-  final double progress;
-  final int positionSeconds;
-  final int durationSeconds;
-
-  const _SeekSnapshot({
-    required this.progress,
-    required this.positionSeconds,
-    required this.durationSeconds,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _SeekSnapshot &&
-      other.progress == progress &&
-      other.positionSeconds == positionSeconds &&
-      other.durationSeconds == durationSeconds;
-
-  @override
-  int get hashCode => Object.hash(progress, positionSeconds, durationSeconds);
-}
-
-// ── Transport controls ───────────────────────────────────────────────────────
-
-class _TransportControls extends StatelessWidget {
-  const _TransportControls();
-
-  @override
-  Widget build(BuildContext context) {
-    return Selector<PlayerNotifier, _TransportSnapshot>(
-      selector: (_, player) => _TransportSnapshot(
-        isPlaying: player.isPlaying,
-        isLoading: player.isLoading,
-        hasPrevious: player.hasPrevious,
-        hasNext: player.hasNext,
-      ),
-      builder: (_, snapshot, __) {
-        final enabledColor = context.primaryTextColor;
-        final disabledColor = context.mutedIconColor;
-        final player = context.read<PlayerNotifier>();
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              iconSize: 32,
-              icon: Icon(
-                Icons.skip_previous_rounded,
-                color: snapshot.hasPrevious ? enabledColor : disabledColor,
-              ),
-              onPressed: snapshot.hasPrevious ? player.playPrevious : null,
-            ),
-            IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.replay_10_rounded, color: enabledColor),
-              onPressed: player.skipBackward,
-            ),
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                color: context.brandColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: context.brandColor.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: snapshot.isLoading
-                  ? Center(
-                      child: SizedBox(
-                        width: 26,
-                        height: 26,
-                        child: CircularProgressIndicator(
-                          color: context.onBrandColor,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                    )
-                  : IconButton(
-                      iconSize: 36,
-                      icon: Icon(
-                        snapshot.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: context.onBrandColor,
-                      ),
-                      onPressed: player.playPause,
-                    ),
-            ),
-            IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.forward_10_rounded, color: enabledColor),
-              onPressed: player.skipForward,
-            ),
-            IconButton(
-              iconSize: 32,
-              icon: Icon(
-                Icons.skip_next_rounded,
-                color: snapshot.hasNext ? enabledColor : disabledColor,
-              ),
-              onPressed: snapshot.hasNext ? player.playNext : null,
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _TransportSnapshot {
-  final bool isPlaying;
-  final bool isLoading;
-  final bool hasPrevious;
-  final bool hasNext;
-
-  const _TransportSnapshot({
-    required this.isPlaying,
-    required this.isLoading,
-    required this.hasPrevious,
-    required this.hasNext,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _TransportSnapshot &&
-      other.isPlaying == isPlaying &&
-      other.isLoading == isLoading &&
-      other.hasPrevious == hasPrevious &&
-      other.hasNext == hasNext;
-
-  @override
-  int get hashCode => Object.hash(isPlaying, isLoading, hasPrevious, hasNext);
+  int get hashCode => Object.hash(lectureId, studyLabel);
 }
 
 // ── App bar buttons ──────────────────────────────────────────────────────────
@@ -707,9 +544,10 @@ class _BookmarkButton extends StatelessWidget {
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
     );
-
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     return IconButton(
-      tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark',
+      tooltip: isBookmarked ? l10n.removeBookmark : l10n.bookmark,
       icon: Icon(
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
         color: isBookmarked ? context.brandColor : context.primaryTextColor,

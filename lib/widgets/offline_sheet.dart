@@ -5,13 +5,20 @@ import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
 void showOfflineSheet(BuildContext context, Lecture lecture) {
   final catalog = context.read<CatalogProvider>().catalog;
-  final chapterLectures = catalog?.lecturesForChapter(lecture.chapterId) ?? [];
+  // Flat-list series (no chapters) have no "whole chapter" concept — treat
+  // each lecture as its own single-item group so the bulk download option
+  // below stays hidden for them.
+  final chapterLectures = (catalog != null && catalog.chapters.isNotEmpty)
+      ? catalog.lecturesForChapter(lecture.chapterId)
+      : <Lecture>[lecture];
 
   showModalBottomSheet<void>(
     context: context,
@@ -23,10 +30,15 @@ void showOfflineSheet(BuildContext context, Lecture lecture) {
       providers: [
         ChangeNotifierProvider.value(value: context.read<DownloadsProvider>()),
         ChangeNotifierProvider.value(
-            value: context.read<ConnectivityProvider>()),
+          value: context.read<ConnectivityProvider>(),
+        ),
+        ChangeNotifierProvider.value(value: context.read<SeriesProvider>()),
+        ChangeNotifierProvider.value(value: context.read<LanguageProvider>()),
       ],
       child: _OfflineSheetContent(
-          lecture: lecture, chapterLectures: chapterLectures),
+        lecture: lecture,
+        chapterLectures: chapterLectures,
+      ),
     ),
   );
 }
@@ -34,23 +46,26 @@ void showOfflineSheet(BuildContext context, Lecture lecture) {
 class _OfflineSheetContent extends StatelessWidget {
   final Lecture lecture;
   final List<Lecture> chapterLectures;
-  const _OfflineSheetContent(
-      {required this.lecture, required this.chapterLectures});
+  const _OfflineSheetContent({
+    required this.lecture,
+    required this.chapterLectures,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final downloads = context.watch<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final status = downloads.statusFor(lecture.id);
     final isDownloaded = status == DownloadStatus.downloaded;
     final isDownloading = status == DownloadStatus.downloading;
     final isChapterDownloading =
         downloads.isChapterDownloading(lecture.chapterId);
-    final chapterFull =
-        downloads.isChapterFullyDownloaded(chapterLectures);
+    final chapterFull = downloads.isChapterFullyDownloaded(chapterLectures);
     final sizeMb = _sizeMb(lecture.fileSizeBytes);
-    final chapterTotalMb = _sizeMb(downloads.chapterTotalBytes(chapterLectures));
+    final chapterTotalMb =
+        _sizeMb(downloads.chapterTotalBytes(chapterLectures));
 
     return SafeArea(
       child: Padding(
@@ -137,26 +152,37 @@ class _OfflineSheetContent extends StatelessWidget {
     );
   }
 
-  void _startDownload(BuildContext context, DownloadsProvider downloads,
-      ConnectivityProvider connectivity) {
+  void _startDownload(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ConnectivityProvider connectivity,
+  ) {
     if (_wifiOnlyBlocked(context, downloads, connectivity)) return;
     Navigator.pop(context);
     downloads.download(lecture);
   }
 
-  void _startChapterDownload(BuildContext context, DownloadsProvider downloads,
-      ConnectivityProvider connectivity) {
+  void _startChapterDownload(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ConnectivityProvider connectivity,
+  ) {
     if (_wifiOnlyBlocked(context, downloads, connectivity)) return;
     Navigator.pop(context);
     downloads.downloadChapter(lecture.chapterId, chapterLectures);
   }
 
-  bool _wifiOnlyBlocked(BuildContext context, DownloadsProvider downloads,
-      ConnectivityProvider connectivity) {
+  bool _wifiOnlyBlocked(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ConnectivityProvider connectivity,
+  ) {
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
+      final l10n =
+          context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.wifiOnlyBlocked),
+          content: Text(l10n.wifiOnlyBlocked),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -176,37 +202,55 @@ class _OfflineSheetContent extends StatelessWidget {
         ),
       );
 
-  Widget _header(BuildContext context, bool isDownloaded) => Row(
-        children: [
-          Icon(
-            isDownloaded
-                ? Icons.check_circle_outline_rounded
-                : Icons.headphones_rounded,
-            size: 20,
-            color: isDownloaded
-                ? context.brandColor
-                : context.secondaryTextColor,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              lecture.title.en,
-              style: context.textTheme.titleSmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
+  Widget _header(BuildContext context, bool isDownloaded) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final title = context
+        .read<LanguageProvider>()
+        .resolveForSeries(lecture.title, series);
+    final titleWidget = Text(
+      title,
+      style: context.textTheme.titleSmall,
+      textAlign: series.isRtl ? TextAlign.right : null,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+    return Row(
+      children: [
+        Icon(
+          isDownloaded
+              ? Icons.check_circle_outline_rounded
+              : Icons.headphones_rounded,
+          size: 20,
+          color: isDownloaded ? context.brandColor : context.secondaryTextColor,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: series.isRtl
+              ? Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: titleWidget,
+                )
+              : titleWidget,
+        ),
+      ],
+    );
+  }
 
   void _confirmDeleteLecture(
-      BuildContext context, DownloadsProvider downloads) {
-    final l10n = context.l10n;
+    BuildContext context,
+    DownloadsProvider downloads,
+  ) {
+    final series = context.read<SeriesProvider>().currentSeries;
+    final l10n = context.l10nForSeries(series);
+    final title = context
+        .read<LanguageProvider>()
+        .resolveForSeries(lecture.title, series);
     showConfirmDialog(
       context,
       title: l10n.offlineRemoveDownload,
-      message: lecture.title.en,
+      message: title,
       confirmLabel: l10n.offlineRemoveDownload,
+      cancelLabel: l10n.cancel,
       destructive: true,
     ).then((confirmed) {
       if (confirmed && context.mounted) {
@@ -232,7 +276,8 @@ class _ProgressRow extends StatelessWidget {
     final progress = context.select<DownloadsProvider, double>(
       (d) => d.progressFor(lectureId),
     );
-    final l10n = context.l10n;
+    final l10n =
+        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
     final percent = (progress * 100).round();
 
     return Padding(

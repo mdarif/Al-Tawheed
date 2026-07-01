@@ -12,6 +12,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get tabLectures => 'دروس';
 
   @override
+  String get tabBook => 'کتاب';
+
+  @override
   String get tabHome => 'ہوم';
 
   @override
@@ -25,6 +28,19 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get nowPlaying => 'ابھی چل رہا ہے';
+
+  @override
+  String get bookmark => 'بک مارک کریں';
+
+  @override
+  String get removeBookmark => 'بک مارک ہٹائیں';
+
+  @override
+  String get allLecturesComplete => 'تمام دروس مکمل';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'آپ نے تمام دروس سن لیے ہیں۔ اللہ تعالیٰ آپ کو علمِ نافع سے نوازے۔';
 
   @override
   String get continueListening => 'سننا جاری رکھیں';
@@ -117,6 +133,16 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get studySeriesComplete => 'سلسلہ مکمل';
+
+  @override
+  String get studySeriesCompleteTitle => '!سلسلہ مکمل';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'آپ نے سلسلے کے تمام دروس مکمل کر لیے ہیں۔ اللہ تعالیٰ اسے آپ کے لیے نافع علم بنائے۔';
+
+  @override
   String get studyNextUp => 'اگلا درس';
 
   @override
@@ -164,6 +190,33 @@ class AppLocalizationsUr extends AppLocalizations {
   String get couldNotLoadLectures => 'دروس لوڈ نہیں ہو سکے';
 
   @override
+  String get lecturesEmpty => 'ابھی کوئی درس دستیاب نہیں';
+
+  @override
+  String get bookCouldNotLoad => 'کتاب لوڈ نہیں ہو سکی';
+
+  @override
+  String get bookShareChapter => 'باب شیئر کریں';
+
+  @override
+  String get bookDecreaseText => 'متن چھوٹا کریں';
+
+  @override
+  String get bookIncreaseText => 'متن بڑا کریں';
+
+  @override
+  String get bookColorKey => 'رنگوں کی کنجی';
+
+  @override
+  String get bookLegendVerse => 'قرآنی آیت';
+
+  @override
+  String get bookLegendCitation => 'حوالہ (سورت:آیت)';
+
+  @override
+  String get bookLegendHadith => 'حدیث';
+
+  @override
   String get retry => 'دوبارہ کوشش کریں';
 
   @override
@@ -181,10 +234,25 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAppearance => 'ظاہری شکل';
 
   @override
+  String get settingsSeries => 'سلسلہ';
+
+  @override
   String get settingsDarkMode => 'ڈارک موڈ';
 
   @override
   String get settingsLightMode => 'لائٹ موڈ';
+
+  @override
+  String get settingsThemeSystem => 'سسٹم کے مطابق';
+
+  @override
+  String get settingsVisitWebsite => 'سرکاری ویب سائٹ';
+
+  @override
+  String get settingsBookFontSize => 'متن کا سائز';
+
+  @override
+  String get settingsVersionCopied => 'ورژن کاپی ہو گیا';
 
   @override
   String get settingsPlayback => 'پلے بیک';
@@ -248,7 +316,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return '$lecturer کی طرف سے';
+    return '$lecturer';
   }
 
   @override
@@ -299,7 +367,21 @@ class AppLocalizationsUr extends AppLocalizations {
   String get deleteAll => 'سب حذف کریں';
 
   @override
+  String get changeSeriesConfirmTitle => 'زبان تبدیل کریں؟';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return '\"$seriesName\" پر سوئچ کرنے سے آپ کے دروس کی زبان تبدیل ہو جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر زبان کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'تبدیل کریں';
+
+  @override
   String get startListening => 'سننا شروع کریں';
+
+  @override
+  String get chooseSeriesTitle => 'اپنا سفرِ توحید شروع کریں';
 
   @override
   String get languageEnglish => 'English';
@@ -315,6 +397,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get languageArabic => 'العربية';
+
+  @override
+  String get audioLabel => 'آڈیو';
 
   @override
   String partsCount(int count) {
@@ -452,6 +537,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get tabLectures => 'Duroos';
 
   @override
+  String get tabBook => 'Kitab';
+
+  @override
   String get tabHome => 'Home';
 
   @override
@@ -465,6 +553,19 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get nowPlaying => 'Abhi chal raha hai';
+
+  @override
+  String get bookmark => 'Bookmark karein';
+
+  @override
+  String get removeBookmark => 'Bookmark hataayein';
+
+  @override
+  String get allLecturesComplete => 'Tamam Daras Mukammal';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'Aap ne tamam daras sun liye hain. Allah Ta\'ala aap ko ilm-e-nafe se nawaze.';
 
   @override
   String get continueListening => 'Sunna Jari Rakhein';
@@ -559,6 +660,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   }
 
   @override
+  String get studySeriesComplete => 'Silsila Mukammal';
+
+  @override
+  String get studySeriesCompleteTitle => 'Silsila Mukammal!';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'Aap ne silsile ke tamam daras mukammal kar liye hain. Allah Ta\'ala ise aap ke liye nafe ka ilm banaye.';
+
+  @override
   String get studyNextUp => 'Agla Dars';
 
   @override
@@ -606,6 +717,33 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get couldNotLoadLectures => 'Dars load nahin ho sake';
 
   @override
+  String get lecturesEmpty => 'Abhi koi dars dastiyab nahin';
+
+  @override
+  String get bookCouldNotLoad => 'Kitab load nahin ho saki';
+
+  @override
+  String get bookShareChapter => 'Baab share karein';
+
+  @override
+  String get bookDecreaseText => 'Text chhota karein';
+
+  @override
+  String get bookIncreaseText => 'Text bada karein';
+
+  @override
+  String get bookColorKey => 'Rangon ki kunji';
+
+  @override
+  String get bookLegendVerse => 'Qurani ayat';
+
+  @override
+  String get bookLegendCitation => 'Hawala (surat:ayat)';
+
+  @override
+  String get bookLegendHadith => 'Hadith';
+
+  @override
   String get retry => 'Dobara koshish karein';
 
   @override
@@ -623,10 +761,25 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get settingsAppearance => 'Zahiri shakl';
 
   @override
+  String get settingsSeries => 'Silsila';
+
+  @override
   String get settingsDarkMode => 'Dark mode';
 
   @override
   String get settingsLightMode => 'Light mode';
+
+  @override
+  String get settingsThemeSystem => 'System ke mutabiq';
+
+  @override
+  String get settingsVisitWebsite => 'Official website';
+
+  @override
+  String get settingsBookFontSize => 'Text size';
+
+  @override
+  String get settingsVersionCopied => 'Version copy ho gaya';
 
   @override
   String get settingsPlayback => 'Playback';
@@ -692,7 +845,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return '$lecturer ki taraf se';
+    return '$lecturer';
   }
 
   @override
@@ -743,7 +896,21 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get deleteAll => 'Sab hata dein';
 
   @override
+  String get changeSeriesConfirmTitle => 'Zabaan tabdeel karein?';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return '\"$seriesName\" par switch karne se aap ke dars ki zabaan tabdeel ho jayegi. Aap ki progress, downloads aur bookmarks har zabaan ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'Tabdeel karein';
+
+  @override
   String get startListening => 'Sunna shuru karein';
+
+  @override
+  String get chooseSeriesTitle => 'Apna Safar-e-Tawheed Shuru Karein';
 
   @override
   String get languageEnglish => 'English';
@@ -759,6 +926,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get languageArabic => 'العربية';
+
+  @override
+  String get audioLabel => 'Audio';
 
   @override
   String partsCount(int count) {

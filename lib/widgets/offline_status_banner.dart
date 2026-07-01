@@ -34,8 +34,11 @@ class OfflineStatusBanner extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.wifi_off_rounded,
-                  size: 14, color: const Color(0xFFE65100)),
+              Icon(
+                Icons.wifi_off_rounded,
+                size: 14,
+                color: const Color(0xFFE65100),
+              ),
               const SizedBox(width: 6),
               Text(
                 l10n.offlineBadge,

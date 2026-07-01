@@ -18,7 +18,11 @@ class PlaybackSpeedSelector extends StatelessWidget {
         for (var i = 0; i < _speeds.length; i++)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: i < _speeds.length - 1 ? 6 : 0),
+              // Directional so the inter-chip gap follows the layout direction
+              // (RTL for Arabic) instead of always sitting on the physical right.
+              padding: EdgeInsetsDirectional.only(
+                end: i < _speeds.length - 1 ? 6 : 0,
+              ),
               child: _SpeedChip(
                 speed: _speeds[i],
                 selected: (player.speed - _speeds[i]).abs() < 0.01,
@@ -45,14 +49,14 @@ class PlaybackSpeedSelectorCompact extends StatelessWidget {
         for (var i = 0; i < PlaybackSpeedSelector._speeds.length; i++)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: i < PlaybackSpeedSelector._speeds.length - 1 ? 4 : 0,
+              padding: EdgeInsetsDirectional.only(
+                end: i < PlaybackSpeedSelector._speeds.length - 1 ? 4 : 0,
               ),
               child: _SpeedChip(
                 speed: PlaybackSpeedSelector._speeds[i],
-                selected: (player.speed - PlaybackSpeedSelector._speeds[i])
-                        .abs() <
-                    0.01,
+                selected:
+                    (player.speed - PlaybackSpeedSelector._speeds[i]).abs() <
+                        0.01,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 onSelect: () =>
                     player.setSpeed(PlaybackSpeedSelector._speeds[i]),

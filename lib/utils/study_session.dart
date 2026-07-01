@@ -26,7 +26,8 @@ void startStudySession(
   Chapter chapter;
   try {
     chapter = catalog.chapterById(chapterId);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('startStudySession: chapter $chapterId not in catalog: $e');
     return;
   }
 

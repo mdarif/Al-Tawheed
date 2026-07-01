@@ -11,6 +11,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -79,6 +80,7 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: connectivity),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),
@@ -131,7 +133,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsOneWidget);
@@ -146,7 +148,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOffline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -161,7 +163,7 @@ void main() {
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
       downloadsFeatureEnabled: false,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -176,7 +178,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -196,7 +198,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: downloads,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsNothing);
@@ -210,7 +212,7 @@ void main() {
       progress: progress,
       connectivity: ConnectivityProvider.testOnline(),
       downloads: DownloadsProvider(),
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     expect(find.text('Download'), findsOneWidget);

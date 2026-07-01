@@ -6,6 +6,7 @@ import 'package:myapp/audio/playback_mode.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -16,6 +17,7 @@ class PlayerNotifier extends ChangeNotifier {
   final ProgressProvider _progress;
   final DownloadsProvider _downloads;
   final ConnectivityProvider _connectivity;
+  final CatalogProvider? _catalog;
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _saveTimer;
   Timer? _stuckBufferingTimer;
@@ -36,9 +38,15 @@ class PlayerNotifier extends ChangeNotifier {
   bool _pendingNextBlocked = false;
   String? _pendingNextBlockedTitle;
   Lecture? _pendingNextBlockedLecture;
+  bool _pendingAllLecturesComplete = false;
 
   PlayerNotifier(
-      this._handler, this._progress, this._downloads, this._connectivity) {
+    this._handler,
+    this._progress,
+    this._downloads,
+    this._connectivity, [
+    this._catalog,
+  ]) {
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
       _speed = savedSpeed;
@@ -107,6 +115,7 @@ class PlayerNotifier extends ChangeNotifier {
   bool get pendingNextBlocked => _pendingNextBlocked;
   String? get pendingNextBlockedTitle => _pendingNextBlockedTitle;
   Lecture? get pendingNextBlockedLecture => _pendingNextBlockedLecture;
+  bool get pendingAllLecturesComplete => _pendingAllLecturesComplete;
 
   String? get studyContextLabel => formatStudyContextLabel(
         mode: _playbackMode,
@@ -152,6 +161,7 @@ class PlayerNotifier extends ChangeNotifier {
       _studyChapter = null;
     }
     _pendingStudyChapterCompleteId = null;
+    _pendingAllLecturesComplete = false;
     _saveCurrentPosition();
     _cancelSaveTimer();
     _cancelStuckBufferingTimer();
@@ -181,10 +191,16 @@ class PlayerNotifier extends ChangeNotifier {
         ? Duration(seconds: saved)
         : Duration.zero;
 
+    final lang = _catalog?.currentSeriesLanguage ?? 'ur';
+    final displayTitle = lecture.title.forLanguage(lang);
+    final speaker = _catalog?.catalog?.book.speaker.forLanguage(lang);
+
     await _handler.loadLecture(
       lecture,
       startFrom: resumeAt,
       localFilePath: localPath,
+      artist: speaker?.isNotEmpty == true ? speaker! : 'Sharah Kitab al-Tawheed',
+      displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
     );
     _startSaveTimer();
   }
@@ -275,6 +291,10 @@ class PlayerNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearPendingAllLecturesComplete() {
+    _pendingAllLecturesComplete = false;
+  }
+
   /// Injects playback state for the offline status strip without touching
   /// the audio player — for tests only.
   @visibleForTesting
@@ -310,7 +330,9 @@ class PlayerNotifier extends ChangeNotifier {
         mode: _playbackMode,
         studyChapter: _studyChapter,
       );
-    } else if (_connectivity.isOnline && _playbackSource == PlaybackSource.blocked && _current != null) {
+    } else if (_connectivity.isOnline &&
+        _playbackSource == PlaybackSource.blocked &&
+        _current != null) {
       // Was blocked because offline; now online so the UI can unlock.
       // Don't auto-play — user may have put phone down. Just clear blocked state.
       _playbackSource = PlaybackSource.stream;
@@ -321,7 +343,9 @@ class PlayerNotifier extends ChangeNotifier {
     }
 
     if (_connectivity.isOnline) {
-      unawaited(_downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi));
+      unawaited(
+        _downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi),
+      );
     }
   }
 
@@ -331,8 +355,9 @@ class PlayerNotifier extends ChangeNotifier {
 
     if (_playbackSource != PlaybackSource.local) return;
 
-    _playbackSource =
-        _connectivity.isOffline ? PlaybackSource.blocked : PlaybackSource.stream;
+    _playbackSource = _connectivity.isOffline
+        ? PlaybackSource.blocked
+        : PlaybackSource.stream;
     unawaited(_handler.pause());
     notifyListeners();
   }
@@ -410,6 +435,12 @@ class PlayerNotifier extends ChangeNotifier {
         mode: _playbackMode,
         studyChapter: _studyChapter,
       );
+    } else if (idx == _queue.length - 1) {
+      final allLectures = _catalog?.catalog?.lectures;
+      if (allLectures != null && _progress.allComplete(allLectures)) {
+        _pendingAllLecturesComplete = true;
+        notifyListeners();
+      }
     }
   }
 

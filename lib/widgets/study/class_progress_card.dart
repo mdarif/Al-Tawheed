@@ -36,7 +36,8 @@ class ClassProgressCard extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.brandColor.withValues(alpha: 0.38)),
+            border:
+                Border.all(color: context.brandColor.withValues(alpha: 0.38)),
             boxShadow: [
               BoxShadow(
                 color: context.brandColor.withValues(alpha: 0.14),
@@ -78,8 +79,11 @@ class ClassProgressCard extends StatelessWidget {
                     if (info.isRecommended) ...[
                       Row(
                         children: [
-                          Icon(Icons.auto_awesome_rounded,
-                              size: 12, color: context.brandColor),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 12,
+                            color: context.brandColor,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             l10n.studyRecommendedNext.toUpperCase(),
@@ -98,8 +102,10 @@ class ClassProgressCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
+                            // Watch so the title refreshes on a UI-language
+                            // change while Study Mode stays alive in the shell.
                             context
-                                .read<LanguageProvider>()
+                                .watch<LanguageProvider>()
                                 .resolve(chapter.title),
                             style: context.textTheme.titleSmall?.copyWith(
                               fontSize: 15,
@@ -118,9 +124,8 @@ class ClassProgressCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: PartsProgressBar(
-                            completed: studied
-                                ? info.totalParts
-                                : info.completedParts,
+                            completed:
+                                studied ? info.totalParts : info.completedParts,
                             total: info.totalParts,
                           ),
                         ),

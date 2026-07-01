@@ -10,8 +10,7 @@ extension AppThemeContext on BuildContext {
 
   TextTheme get textTheme => appTheme.textTheme;
 
-  AppSemanticColors get semantic =>
-      appTheme.extension<AppSemanticColors>()!;
+  AppSemanticColors get semantic => appTheme.extension<AppSemanticColors>()!;
 
   bool get isDarkTheme => appTheme.brightness == Brightness.dark;
 
@@ -40,4 +39,10 @@ extension AppThemeContext on BuildContext {
   Color get brandColor => semantic.brand;
 
   Color get onBrandColor => semantic.onBrand;
+
+  Color get bookVerseColor => semantic.bookVerse;
+
+  Color get bookCitationColor => semantic.bookCitation;
+
+  Color get bookHadithColor => semantic.bookHadith;
 }

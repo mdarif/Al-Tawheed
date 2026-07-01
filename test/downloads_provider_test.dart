@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 Lecture _lec(String id,
-        {int bytes = 1000, String chapterId = 'ch-01', String audioUrl = ''}) =>
+        {int bytes = 1000, String chapterId = 'ch-01', String audioUrl = '',}) =>
     Lecture(
       id: id,
       number: 1,

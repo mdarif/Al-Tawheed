@@ -27,9 +27,7 @@ class BookmarksScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          lectures.isEmpty
-              ? l10n.saved
-              : l10n.savedCount(lectures.length),
+          lectures.isEmpty ? l10n.saved : l10n.savedCount(lectures.length),
         ),
       ),
       body: lectures.isEmpty
@@ -71,14 +69,19 @@ class _EmptyState extends StatelessWidget {
     final l10n = context.l10n;
 
     if (isLoading) {
-      return Center(child: CircularProgressIndicator(color: context.brandColor));
+      return Center(
+        child: CircularProgressIndicator(color: context.brandColor),
+      );
     }
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bookmark_outline_rounded,
-              size: 52, color: context.mutedIconColor),
+          Icon(
+            Icons.bookmark_outline_rounded,
+            size: 52,
+            color: context.mutedIconColor,
+          ),
           const SizedBox(height: 16),
           Text(
             l10n.noSavedLectures,

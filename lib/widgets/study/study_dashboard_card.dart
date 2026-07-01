@@ -28,8 +28,7 @@ class StudyDashboardCard extends StatelessWidget {
     final fraction =
         totalChapterCount == 0 ? 0.0 : studiedCount / totalChapterCount;
     final percent = (fraction * 100).round();
-    final complete =
-        totalChapterCount > 0 && studiedCount == totalChapterCount;
+    final complete = totalChapterCount > 0 && studiedCount == totalChapterCount;
     final durationFraction =
         totalSeconds == 0 ? 0.0 : completedSeconds / totalSeconds;
     final l10n = context.l10n;

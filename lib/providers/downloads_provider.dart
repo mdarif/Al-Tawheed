@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/download_notification_service.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -9,6 +11,15 @@ import 'package:myapp/services/preferences_service.dart';
 enum DownloadStatus { notDownloaded, downloading, downloaded, failed }
 
 class DownloadsProvider extends ChangeNotifier {
+  DownloadsProvider([this._series]);
+
+  final SeriesProvider? _series;
+
+  SeriesConfig get _activeSeries =>
+      _series?.currentSeries ?? SeriesConfig.legacyUrduFallback;
+  String get _prefix => _activeSeries.storagePrefix;
+  String get _seriesId => _activeSeries.id;
+
   final Map<String, DownloadStatus> _statuses = {};
   final Map<String, double> _progress = {};
   Set<String> _downloadedIds = {};
@@ -20,13 +31,14 @@ class DownloadsProvider extends ChangeNotifier {
 
   /// Reconcile disk state off the UI thread — call once at startup.
   Future<void> load() async {
-    _downloadedIds = PreferencesService.instance.loadDownloadedIds();
+    _downloadedIds =
+        PreferencesService.instance.loadDownloadedIds(prefix: _prefix);
     final savedCount = _downloadedIds.length;
 
     if (_downloadedIds.isNotEmpty) {
       _downloadedIds = await compute(
         reconcileDownloadedIds,
-        (_downloadedIds.toList(), DownloadService.documentsPath),
+        (_downloadedIds.toList(), DownloadService.documentsPath, _seriesId),
       );
     }
 
@@ -35,11 +47,32 @@ class DownloadsProvider extends ChangeNotifier {
     }
 
     if (_downloadedIds.length != savedCount) {
-      await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
+      await PreferencesService.instance
+          .saveDownloadedIds(_downloadedIds, prefix: _prefix);
     }
 
-    _refreshTotalBytes();
+    // Tally storage off the UI thread; kept in sync incrementally thereafter.
+    _totalDownloadedBytes = _downloadedIds.isEmpty
+        ? 0
+        : await compute(
+            totalBytesForIds,
+            (_downloadedIds.toList(), DownloadService.documentsPath, _seriesId),
+          );
     notifyListeners();
+  }
+
+  /// Re-scopes all in-memory state to the current series and reloads from
+  /// disk — call after switching series.
+  Future<void> reload() async {
+    _statuses.clear();
+    _progress.clear();
+    _downloadedIds = {};
+    _totalDownloadedBytes = 0;
+    _downloadingChapterIds.clear();
+    _cancelledChapterIds.clear();
+    _chapterActiveLectureId.clear();
+    _queuedDownload = null;
+    await load();
   }
 
   // ── Getters ──────────────────────────────────────────────────────────────
@@ -84,7 +117,7 @@ class DownloadsProvider extends ChangeNotifier {
   /// Returns local file path if downloaded, null otherwise.
   String? localPathIfDownloaded(String lectureId) {
     if (!isDownloaded(lectureId)) return null;
-    return DownloadService.localPath(lectureId);
+    return DownloadService.localPath(lectureId, seriesId: _seriesId);
   }
 
   /// Queues a lecture to download when connectivity allows.
@@ -135,7 +168,7 @@ class DownloadsProvider extends ChangeNotifier {
       await DownloadService.download(
         cancelKey: lecture.id,
         url: lecture.audioUrl,
-        savePath: DownloadService.localPath(lecture.id),
+        savePath: DownloadService.localPath(lecture.id, seriesId: _seriesId),
         fileSizeBytes: lecture.fileSizeBytes,
         onProgress: (p) {
           if (_statuses[lecture.id] != DownloadStatus.downloading) return;
@@ -143,28 +176,39 @@ class DownloadsProvider extends ChangeNotifier {
           final stepped = (p * 100).floorToDouble() / 100;
           if (stepped != lastNotifiedProgress || p >= 1.0) {
             lastNotifiedProgress = stepped;
-            unawaited(DownloadNotificationService.instance
-                .showProgress(lecture.id, lecture.title.en, p));
+            unawaited(
+              DownloadNotificationService.instance
+                  .showProgress(lecture.id, lecture.title.en, p),
+            );
             notifyListeners();
           }
         },
       );
 
       if (_statuses[lecture.id] != DownloadStatus.downloading) {
-        await DownloadService.delete(lecture.id);
+        await DownloadService.delete(lecture.id, seriesId: _seriesId);
         return;
       }
 
+      final wasDownloaded = _downloadedIds.contains(lecture.id);
       _statuses[lecture.id] = DownloadStatus.downloaded;
       _downloadedIds.add(lecture.id);
       _progress.remove(lecture.id);
-      await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
-      _refreshTotalBytes();
-      unawaited(DownloadNotificationService.instance
-          .showComplete(lecture.id, lecture.title.en));
+      await PreferencesService.instance
+          .saveDownloadedIds(_downloadedIds, prefix: _prefix);
+      // Add just this file's size — no full re-stat of every download.
+      if (!wasDownloaded) {
+        _totalDownloadedBytes +=
+            DownloadService.fileSizeSync(lecture.id, seriesId: _seriesId);
+      }
+      unawaited(
+        DownloadNotificationService.instance
+            .showComplete(lecture.id, lecture.title.en),
+      );
     } on DownloadCancelled {
       _resetAfterCancel(lecture.id);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('DownloadsProvider: download error for ${lecture.id}: $e');
       if (_statuses[lecture.id] == DownloadStatus.downloading) {
         _statuses[lecture.id] = DownloadStatus.failed;
         _progress.remove(lecture.id);
@@ -183,8 +227,7 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   /// Downloads all lectures in a chapter serially. Safe to call if already running.
-  Future<void> downloadChapter(
-      String chapterId, List<Lecture> lectures) async {
+  Future<void> downloadChapter(String chapterId, List<Lecture> lectures) async {
     if (_downloadingChapterIds.contains(chapterId)) return;
     _downloadingChapterIds.add(chapterId);
     _cancelledChapterIds.remove(chapterId);
@@ -219,11 +262,14 @@ class DownloadsProvider extends ChangeNotifier {
       return;
     }
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
-    await DownloadService.delete(lectureId);
+    // Read the size before deleting the file, then subtract incrementally.
+    final freed = DownloadService.fileSizeSync(lectureId, seriesId: _seriesId);
+    await DownloadService.delete(lectureId, seriesId: _seriesId);
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _downloadedIds.remove(lectureId);
-    await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
-    _refreshTotalBytes();
+    await PreferencesService.instance
+        .saveDownloadedIds(_downloadedIds, prefix: _prefix);
+    _reduceTotalBytes(freed);
     notifyListeners();
   }
 
@@ -232,19 +278,22 @@ class DownloadsProvider extends ChangeNotifier {
       if (isDownloading(lecture.id)) {
         cancelDownload(lecture.id);
       } else if (isDownloaded(lecture.id)) {
-        await DownloadService.delete(lecture.id);
+        final freed =
+            DownloadService.fileSizeSync(lecture.id, seriesId: _seriesId);
+        await DownloadService.delete(lecture.id, seriesId: _seriesId);
         _statuses[lecture.id] = DownloadStatus.notDownloaded;
         _downloadedIds.remove(lecture.id);
+        _reduceTotalBytes(freed);
       }
     }
-    await PreferencesService.instance.saveDownloadedIds(_downloadedIds);
-    _refreshTotalBytes();
+    await PreferencesService.instance
+        .saveDownloadedIds(_downloadedIds, prefix: _prefix);
     notifyListeners();
   }
 
   Future<void> deleteAll() async {
     for (final id in List.of(_downloadedIds)) {
-      await DownloadService.delete(id);
+      await DownloadService.delete(id, seriesId: _seriesId);
     }
     for (final id in _statuses.keys.toList()) {
       if (_statuses[id] == DownloadStatus.downloading) {
@@ -254,7 +303,7 @@ class DownloadsProvider extends ChangeNotifier {
     _statuses.clear();
     _downloadedIds.clear();
     _totalDownloadedBytes = 0;
-    await PreferencesService.instance.saveDownloadedIds({});
+    await PreferencesService.instance.saveDownloadedIds({}, prefix: _prefix);
     notifyListeners();
   }
 
@@ -269,8 +318,9 @@ class DownloadsProvider extends ChangeNotifier {
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
   }
 
-  void _refreshTotalBytes() {
-    _totalDownloadedBytes = DownloadService.totalBytesSync(_downloadedIds);
+  void _reduceTotalBytes(int freed) {
+    _totalDownloadedBytes -= freed;
+    if (_totalDownloadedBytes < 0) _totalDownloadedBytes = 0;
   }
 
   // ── Test helpers ─────────────────────────────────────────────────────────

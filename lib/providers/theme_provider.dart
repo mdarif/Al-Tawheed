@@ -4,7 +4,7 @@ import 'package:myapp/services/preferences_service.dart';
 class ThemeProvider extends ChangeNotifier {
   final _prefs = PreferencesService.instance;
 
-  ThemeMode _themeMode = ThemeMode.dark;
+  ThemeMode _themeMode = ThemeMode.system;
 
   ThemeMode get themeMode => _themeMode;
 

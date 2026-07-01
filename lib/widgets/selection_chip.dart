@@ -26,7 +26,8 @@ class SelectionChip extends StatelessWidget {
         width: expand ? double.infinity : null,
         padding: padding,
         decoration: BoxDecoration(
-          color: selected ? context.brandColor : context.chipUnselectedBackground,
+          color:
+              selected ? context.brandColor : context.chipUnselectedBackground,
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: expand ? Alignment.center : null,

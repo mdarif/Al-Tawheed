@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_ur.dart';
 
@@ -94,6 +95,7 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
     Locale('en'),
     Locale('ur'),
     Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman')
@@ -104,6 +106,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lectures'**
   String get tabLectures;
+
+  /// No description provided for @tabBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get tabBook;
 
   /// No description provided for @tabHome.
   ///
@@ -134,6 +142,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Now Playing'**
   String get nowPlaying;
+
+  /// No description provided for @bookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark'**
+  String get bookmark;
+
+  /// No description provided for @removeBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove bookmark'**
+  String get removeBookmark;
+
+  /// No description provided for @allLecturesComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'All Lectures Complete'**
+  String get allLecturesComplete;
+
+  /// No description provided for @allLecturesCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have listened to every lecture. May Allah bless you with beneficial knowledge.'**
+  String get allLecturesCompleteMessage;
 
   /// No description provided for @continueListening.
   ///
@@ -279,6 +311,24 @@ abstract class AppLocalizations {
   /// **'Continue to {title}'**
   String studyContinueToNext(String title);
 
+  /// No description provided for @studySeriesComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Series Complete'**
+  String get studySeriesComplete;
+
+  /// No description provided for @studySeriesCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Series Completed!'**
+  String get studySeriesCompleteTitle;
+
+  /// No description provided for @studySeriesCompleteCelebration.
+  ///
+  /// In en, this message translates to:
+  /// **'You have studied every class in the series. May Allah make it a source of lasting benefit for you.'**
+  String get studySeriesCompleteCelebration;
+
   /// No description provided for @studyNextUp.
   ///
   /// In en, this message translates to:
@@ -363,6 +413,60 @@ abstract class AppLocalizations {
   /// **'Could not load lectures'**
   String get couldNotLoadLectures;
 
+  /// No description provided for @lecturesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No lectures available yet'**
+  String get lecturesEmpty;
+
+  /// No description provided for @bookCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the book'**
+  String get bookCouldNotLoad;
+
+  /// No description provided for @bookShareChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Share chapter'**
+  String get bookShareChapter;
+
+  /// No description provided for @bookDecreaseText.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease text size'**
+  String get bookDecreaseText;
+
+  /// No description provided for @bookIncreaseText.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase text size'**
+  String get bookIncreaseText;
+
+  /// No description provided for @bookColorKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Color key'**
+  String get bookColorKey;
+
+  /// No description provided for @bookLegendVerse.
+  ///
+  /// In en, this message translates to:
+  /// **'Qur\'an verse'**
+  String get bookLegendVerse;
+
+  /// No description provided for @bookLegendCitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference (surah:ayah)'**
+  String get bookLegendCitation;
+
+  /// No description provided for @bookLegendHadith.
+  ///
+  /// In en, this message translates to:
+  /// **'Hadith'**
+  String get bookLegendHadith;
+
   /// No description provided for @retry.
   ///
   /// In en, this message translates to:
@@ -393,6 +497,12 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get settingsAppearance;
 
+  /// No description provided for @settingsSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get settingsSeries;
+
   /// No description provided for @settingsDarkMode.
   ///
   /// In en, this message translates to:
@@ -404,6 +514,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Light mode'**
   String get settingsLightMode;
+
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow System'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsVisitWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Official website'**
+  String get settingsVisitWebsite;
+
+  /// No description provided for @settingsBookFontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get settingsBookFontSize;
+
+  /// No description provided for @settingsVersionCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Version copied'**
+  String get settingsVersionCopied;
 
   /// No description provided for @settingsPlayback.
   ///
@@ -516,7 +650,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAboutBy.
   ///
   /// In en, this message translates to:
-  /// **'By {lecturer}'**
+  /// **'{lecturer}'**
   String settingsAboutBy(String lecturer);
 
   /// No description provided for @settingsDownloads.
@@ -597,11 +731,35 @@ abstract class AppLocalizations {
   /// **'Delete all'**
   String get deleteAll;
 
+  /// No description provided for @changeSeriesConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change language?'**
+  String get changeSeriesConfirmTitle;
+
+  /// No description provided for @changeSeriesConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.'**
+  String changeSeriesConfirmMessage(String seriesName);
+
+  /// No description provided for @changeSeriesConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get changeSeriesConfirm;
+
   /// No description provided for @startListening.
   ///
   /// In en, this message translates to:
   /// **'Start Listening'**
   String get startListening;
+
+  /// No description provided for @chooseSeriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Series'**
+  String get chooseSeriesTitle;
 
   /// No description provided for @languageEnglish.
   ///
@@ -632,6 +790,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'العربية'**
   String get languageArabic;
+
+  /// No description provided for @audioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get audioLabel;
 
   /// No description provided for @partsCount.
   ///
@@ -855,7 +1019,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ur'].contains(locale.languageCode);
+      <String>['ar', 'en', 'ur'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -876,6 +1040,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
     case 'ur':

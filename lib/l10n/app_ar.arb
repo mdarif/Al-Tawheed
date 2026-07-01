@@ -1,0 +1,279 @@
+{
+  "@@locale": "ar",
+
+  "tabLectures": "الدروس",
+  "tabBook": "الكتاب",
+  "tabHome": "الرئيسية",
+  "tabStudyMode": "الدراسة",
+  "tabSettings": "الإعدادات",
+
+  "appTitle": "شرح كتاب التوحيد",
+  "nowPlaying": "يُشغَّل الآن",
+  "bookmark": "إضافة إشارة مرجعية",
+  "removeBookmark": "إزالة الإشارة المرجعية",
+
+  "allLecturesComplete": "اكتملت جميع الدروس",
+  "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",
+  "continueListening": "متابعة الاستماع",
+  "continueListeningEmpty": "ابدأ درسًا للمتابعة من هنا",
+  "listenedDuration": "{listened} مستمَع · {remaining} متبقٍّ",
+  "@listenedDuration": {
+    "placeholders": {
+      "listened": { "type": "String" },
+      "remaining": { "type": "String" }
+    }
+  },
+  "percentComplete": "{percent}% مكتمل",
+  "@percentComplete": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+
+  "dailyBenefit": "فائدة اليوم",
+  "studyMode": "وضع الدراسة",
+  "studyModeSubtitle": "{studied} من {total} درسًا مدروسًا",
+  "@studyModeSubtitle": {
+    "placeholders": {
+      "studied": { "type": "int" },
+      "total":   { "type": "int" }
+    }
+  },
+  "studyContinueClass": "متابعة {title}",
+  "@studyContinueClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyStartClass": "بدء {title}",
+  "@studyStartClass": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyAllComplete": "تمّت دراسة جميع الدروس — راجعها في أيّ وقت",
+  "studyOpenOverview": "فتح نظرة عامة على الدراسة",
+  "studyClasses": "الدروس",
+  "studyCouldNotLoadClasses": "تعذّر تحميل الدروس",
+  "studyRestartTitle": "إعادة بدء {title}؟",
+  "@studyRestartTitle": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studyRestartMessage": "تمّت دراسة هذا الدرس بالفعل. هل تريد البدء من الجزء الأول مجدّدًا؟",
+  "studyRestart": "إعادة البدء",
+  "studyOverallComplete": "أتممتَ السلسلة بالكامل.",
+  "studyOverallInProgress": "تدرّج في كلّ درس بوتيرتك الخاصة.",
+  "studyOverallProgress": "التقدم الكلّي",
+  "studyClassComplete": "اكتمل الدرس",
+  "studyClassCompleteFallback": "اكتمل الدرس",
+  "studyCompletedLabel": "مكتمل",
+  "studyCelebrationMessage": "زادك الله علمًا نافعًا.",
+  "studyContinueToNext": "الانتقال إلى {title}",
+  "@studyContinueToNext": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "studySeriesComplete": "اكتملت السلسلة",
+  "studySeriesCompleteTitle": "!اكتملت السلسلة",
+  "studySeriesCompleteCelebration": "لقد أتممتَ دراسة جميع الدروس في السلسلة. جعله الله علمًا نافعًا لك.",
+  "studyNextUp": "التالي",
+  "studyBackToOverview": "العودة إلى وضع الدراسة",
+  "studyStatusStudied": "مدروس",
+  "studyStatusInProgress": "قيد الدراسة",
+  "studyStatusNotStarted": "لم يُبدأ بعد",
+  "studyStart": "ابدأ",
+  "studyYourProgress": "تقدّمك",
+  "studyRecommendedNext": "الموصى به تاليًا",
+  "studyPartsComplete": "{completed} من {total} جزء مكتمل",
+  "@studyPartsComplete": {
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "saved": "المحفوظات",
+  "savedCount": "المحفوظات ({count})",
+  "@savedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noSavedLectures": "لا توجد دروس محفوظة بعد",
+  "noSavedHint": "اضغط أيقونة الإشارة المرجعية في المشغّل لحفظ درس",
+
+  "couldNotLoadLectures": "تعذّر تحميل الدروس",
+  "lecturesEmpty": "لا توجد دروس متاحة بعد",
+  "bookCouldNotLoad": "تعذّر تحميل الكتاب",
+  "bookShareChapter": "مشاركة الباب",
+  "bookDecreaseText": "تصغير حجم الخط",
+  "bookIncreaseText": "تكبير حجم الخط",
+  "bookColorKey": "مفتاح الألوان",
+  "bookLegendVerse": "آية قرآنية",
+  "bookLegendCitation": "مرجع (سورة:آية)",
+  "bookLegendHadith": "حديث",
+  "retry": "إعادة المحاولة",
+  "catalogConnectToLoadTitle": "اتصل بالإنترنت لتحميل الدروس",
+  "catalogConnectToLoadMessage": "افتح التطبيق مرة واحدة مع الإنترنت لتنزيل عناوين الدروس وروابط الصوت. ستعمل الدروس التي حفظتها على جهازك دون اتصال.",
+
+  "settingsLanguage": "اللغة",
+  "settingsAppearance": "المظهر",
+  "settingsSeries": "السلسلة",
+  "settingsDarkMode": "الوضع الداكن",
+  "settingsLightMode": "الوضع الفاتح",
+  "settingsThemeSystem": "اتبع النظام",
+  "settingsVisitWebsite": "الموقع الرسمي",
+  "settingsBookFontSize": "حجم الخط",
+  "settingsVersionCopied": "تم نسخ الإصدار",
+  "settingsPlayback": "التشغيل",
+  "settingsPlaybackSpeed": "سرعة التشغيل",
+  "settingsApp": "التطبيق",
+  "settingsContactUs": "اتصل بنا",
+  "settingsShareApp": "مشاركة التطبيق",
+  "settingsRateApp": "تقييم في متجر Play",
+  "settingsYouTubeChannel": "قناة يوتيوب",
+  "settingsAbout": "حول",
+  "statLectures": "الدروس",
+  "statClasses": "الصفوف",
+  "statDuration": "المدة",
+  "statOfflineReady": "متاح بلا إنترنت",
+  "settingsAboutArabicTitle": "شرح كتاب التوحيد",
+  "settingsAboutStats": "{lectures} درسًا · {classes} صفًا · {duration}",
+  "@settingsAboutStats": {
+    "placeholders": {
+      "lectures": { "type": "int" },
+      "classes": { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  },
+  "settingsAboutDescriptionLine1": "سلسلة صوتية كاملة على كتاب التوحيد.",
+  "settingsAboutDescriptionLine2": "أساس التوحيد في الإسلام.",
+  "settingsAboutVersion": "الإصدار {version}",
+  "@settingsAboutVersion": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "settingsAboutLine": "{count} درسًا · {appName}",
+  "@settingsAboutLine": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "appName": { "type": "String" }
+    }
+  },
+  "settingsAboutBy": "{lecturer}",
+  "@settingsAboutBy": {
+    "placeholders": { "lecturer": { "type": "String" } }
+  },
+  "settingsDownloads": "التنزيلات",
+  "settingsNoDownloads": "لا توجد دروس محمَّلة",
+  "settingsDownloadsCount": "{count, plural, one{{count} درس محمَّل} other{{count} دروس محمَّلة}}",
+  "@settingsDownloadsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsClearDownloads": "مسح جميع التنزيلات",
+  "settingsStorageUsed": "{size} مستخدَم",
+  "@settingsStorageUsed": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+
+  "downloadForOffline": "تنزيل للاستماع بلا إنترنت",
+  "deleteDownload": "حذف التنزيل؟",
+  "deleteDownloadMessage": "سيتم حذف {title} من التخزين غير المتصل.",
+  "@deleteDownloadMessage": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "delete": "حذف",
+  "cancel": "إلغاء",
+  "clearAllDownloads": "مسح جميع التنزيلات؟",
+  "clearAllDownloadsMessage": "{count, plural, one{{count} درس} other{{count} دروس}} ({size}) سيتم حذفها من هذا الجهاز.",
+  "@clearAllDownloadsMessage": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "size":  { "type": "String" }
+    }
+  },
+  "deleteAll": "حذف الكل",
+
+  "changeSeriesConfirmTitle": "تغيير اللغة؟",
+  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل لغة بشكل منفصل — ويمكنك العودة في أيّ وقت.",
+  "@changeSeriesConfirmMessage": {
+    "placeholders": { "seriesName": { "type": "String" } }
+  },
+  "changeSeriesConfirm": "تغيير",
+
+  "startListening": "ابدأ الاستماع",
+
+  "chooseSeriesTitle": "ابدأ رحلتك مع التوحيد",
+
+  "languageEnglish": "English",
+  "languageUrdu": "اردو",
+  "languageRomanUrdu": "Roman Urdu",
+  "languageHindi": "हिंदी",
+  "languageArabic": "العربية",
+
+  "audioLabel": "صوتي",
+
+  "partsCount": "{count, plural, one{{count} جزء} other{{count} أجزاء}}",
+  "@partsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "lecturesCount": "{count} درس · {duration}",
+  "@lecturesCount": {
+    "placeholders": {
+      "count":    { "type": "int" },
+      "duration": { "type": "String" }
+    }
+  },
+
+  "offlineSourceSaved": "محفوظ بلا إنترنت",
+  "offlineSourceStreaming": "يُبثّ مباشرةً",
+  "offlineNotAvailableOffline": "غير متاح بلا إنترنت",
+  "offlineBadge": "بلا إنترنت",
+  "retryDownload": "إعادة التنزيل",
+  "offlineNoConnection": "لا يوجد اتصال",
+  "offlineConnectionLost": "انقطع الاتصال",
+  "offlineDownloading": "جارٍ التنزيل… {percent}%",
+  "@offlineDownloading": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "offlineDownloadLecture": "تنزيل الدرس · {size} ميغابايت",
+  "@offlineDownloadLecture": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlineCancelDownload": "إلغاء التنزيل",
+  "offlineRemoveDownload": "إزالة التنزيل",
+  "offlineManageDownloads": "إدارة التنزيلات",
+  "offlineNextBlockedTitle": "غير متاح بلا إنترنت",
+  "offlineNextBlockedBody": "'{title}' غير محفوظ. نزّله عند عودة الاتصال.",
+  "@offlineNextBlockedBody": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "offlineNextBlockedQueued": "'{title}' سيُنزَّل عند عودة الاتصال.",
+  "@offlineNextBlockedQueued": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "offlineNotDownloaded": "نزّل هذا الدرس للاستماع بلا إنترنت.",
+
+  "offlineLibrary": "التنزيلات",
+  "offlineLibraryEmpty": "لا توجد تنزيلات بعد",
+  "offlineLibraryEmptyHint": "اضغط أيقونة التنزيل على أي درس للاستماع بلا إنترنت",
+  "viewOfflineLibrary": "عرض التنزيلات",
+  "downloadOnWifiOnly": "التنزيل عبر Wi-Fi فقط",
+  "downloadOnWifiOnlyHint": "إيقاف التنزيل على بيانات الجوال",
+  "wifiOnlyBlocked": "اتصل بـ Wi-Fi للتنزيل",
+  "downloadChapterAll": "تنزيل الباب (~{size} ميغابايت)",
+  "@downloadChapterAll": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "cancelChapterDownload": "إلغاء تنزيل الباب",
+  "offlineChapterProgress": "{downloaded} من {total} جزء محفوظ",
+  "@offlineChapterProgress": {
+    "placeholders": {
+      "downloaded": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "deleteChapter": "إزالة الباب",
+  "downloadRemaining": "تنزيل الباقي",
+  "deleteChapterConfirm": "إزالة جميع الأجزاء المحفوظة؟",
+  "offlinePrepTitle": "{count, plural, one{تنزيل الجزء التالي بلا إنترنت} other{تنزيل {count} أجزاء التالية بلا إنترنت}}",
+  "@offlinePrepTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlinePrepSize": "~{size} ميغابايت",
+  "@offlinePrepSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "offlinePrepSave": "تنزيل",
+  "downloadComplete": "اكتمل التنزيل"
+}

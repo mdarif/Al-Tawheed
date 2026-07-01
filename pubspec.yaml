@@ -28,9 +28,7 @@ dependencies:
   connectivity_plus: ^6.0.0
   # Localisation
   intl: ^0.20.2
-  google_fonts: ^6.2.1
   # UI utilities
-  cupertino_icons: ^1.0.9
   url_launcher: ^6.3.1
   share_plus: ^13.1.0
   package_info_plus: ^10.1.0
@@ -44,6 +42,11 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   patrol: ^4.6.1
+  # Faking ConnectivityPlatform in connectivity_provider_test.dart
+  connectivity_plus_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.8
+  # Faking SharePlatform in book_reader_screen_test.dart
+  share_plus_platform_interface: ^7.1.0
 
 patrol:
   app_name: At-Tawheed
@@ -58,3 +61,8 @@ flutter:
   assets:
     - assets/
     - assets/images/
+    - assets/content/
+  fonts:
+    - family: NotoNaskhArabic
+      fonts:
+        - asset: assets/fonts/NotoNaskhArabic-Regular.ttf

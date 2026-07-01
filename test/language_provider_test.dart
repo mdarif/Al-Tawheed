@@ -1,7 +1,10 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/services/preferences_service.dart';
 
 void main() {
   group('LanguageProvider.isRtl', () {
@@ -30,20 +33,32 @@ void main() {
   });
 
   group('LanguageProvider feature flag', () {
-    test('effective language is English when feature is disabled', () {
-      final provider = LanguageProvider()
-        ..applyLanguageFeatureFlag(false);
-      expect(provider.language, AppLanguage.english);
-      expect(provider.code, 'en');
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      PreferencesService.instance.resetForTest();
+      await PreferencesService.instance.init();
     });
 
-    test('resolve uses en when feature is disabled', () {
-      final provider = LanguageProvider()
-        ..applyLanguageFeatureFlag(false);
-      expect(
-        provider.resolve({'en': 'Hello', 'ur': 'سلام'}),
-        'Hello',
-      );
+    test('resolved language and content are unaffected by the feature flag',
+        () async {
+      final provider = LanguageProvider()..applyLanguageFeatureFlag(true);
+      await provider.setLanguage(AppLanguage.urdu);
+
+      // Turning the switcher feature off again must not revert the
+      // already-resolved language back to English.
+      provider.applyLanguageFeatureFlag(false);
+
+      expect(provider.language, AppLanguage.urdu);
+      expect(provider.code, 'ur');
+      expect(provider.isRtl, isTrue);
+      expect(provider.locale, const Locale('ur'));
+      expect(provider.resolve({'en': 'Hello', 'ur': 'سلام'}), 'سلام');
+    });
+
+    test('setLanguage is a no-op when the feature flag is off', () async {
+      final provider = LanguageProvider()..applyLanguageFeatureFlag(false);
+      await provider.setLanguage(AppLanguage.urdu);
+      expect(provider.language, AppLanguage.english);
     });
   });
 }
@@ -63,5 +78,6 @@ class _LocaleProbe {
         AppLanguage.urdu => const Locale('ur'),
         AppLanguage.romanUrdu =>
           const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'roman'),
+        AppLanguage.arabic => const Locale('ar'),
       };
 }

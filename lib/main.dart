@@ -10,7 +10,7 @@ import 'package:myapp/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // Must be initialised before ProgressProvider.load() is called synchronously
   await PreferencesService.instance.init();

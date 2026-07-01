@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -6,15 +8,21 @@ import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
+import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
+import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
@@ -36,10 +44,19 @@ final _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   routes: [
-    // Splash / onboarding — shown on cold start
+    // Splash / onboarding — shown on cold start.
+    // Redirect fires before the widget builds, so returning users never see
+    // even a single frame of WelcomeScreen.
     GoRoute(
       path: '/',
-      builder: (context, state) => WelcomeScreen(),
+      redirect: (context, state) {
+        final s = context.read<SeriesProvider>();
+        if (!s.shouldShowWelcomeForCurrentSeries) {
+          return '/lectures';
+        }
+        return null;
+      },
+      builder: (context, state) => const WelcomeScreen(),
     ),
 
     // Shell: bottom navigation wraps these four tabs
@@ -51,11 +68,23 @@ final _router = GoRouter(
           builder: (context, state) => const LectureListScreen(),
         ),
         GoRoute(
+          path: '/book',
+          redirect: (context, state) =>
+              context.read<SeriesProvider>().currentSeries.hasBook
+                  ? null
+                  : '/home',
+          builder: (context, state) => const BookChapterListScreen(),
+        ),
+        GoRoute(
           path: '/home',
           builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/study',
+          redirect: (context, state) =>
+              context.read<SeriesProvider>().currentSeries.hasStudyMode
+                  ? null
+                  : '/home',
           builder: (context, state) => const StudyScreen(),
         ),
         GoRoute(
@@ -63,6 +92,14 @@ final _router = GoRouter(
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+    ),
+
+    // Series picker — root navigator, full-screen (no bottom nav), shown
+    // only to genuinely fresh installs when multi-series is enabled.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/choose-series',
+      builder: (context, state) => const ChooseSeriesScreen(),
     ),
 
     // Bookmarks — root navigator so it opens as a full-screen pushed view
@@ -80,6 +117,16 @@ final _router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/offline-library',
       builder: (context, state) => const OfflineLibraryScreen(),
+    ),
+
+    // Book reader — root navigator (same as /player) so the bottom nav bar
+    // is hidden while reading a chapter.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/book/:chapterId',
+      builder: (context, state) => BookReaderScreen(
+        chapterId: state.pathParameters['chapterId']!,
+      ),
     ),
 
     // Full-screen player — parentNavigatorKey forces it onto the root
@@ -116,21 +163,54 @@ class MyApp extends StatelessWidget {
       providers: [
         // Remote content — load eagerly (lazy: false) so fetches start at startup
         ChangeNotifierProvider(
-            create: (_) => AppConfigProvider()..load(), lazy: false),
+          create: (_) => AppConfigProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
-            create: (_) => FeatureFlagsProvider()..load(), lazy: false),
+          create: (_) => FeatureFlagsProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
-            create: (_) => AnnouncementsProvider()..load(), lazy: false),
-        ChangeNotifierProvider(create: (_) => CatalogProvider()),
+          create: (_) => AnnouncementsProvider()..load(),
+          lazy: false,
+        ),
+        // SeriesProvider re-resolves whenever the multiSeries flag updates —
+        // lazy: false so its currentSeries is ready before the providers
+        // below read it.
+        ChangeNotifierProxyProvider<FeatureFlagsProvider, SeriesProvider>(
+          create: (_) => SeriesProvider()..load(false),
+          update: (_, flags, series) {
+            series ??= SeriesProvider();
+            // definitive only after the async fetch has settled — the
+            // initial synchronous update() fires with default values
+            // (multiSeriesEnabled=false) before any network data is read.
+            series.load(flags.multiSeriesEnabled, definitive: flags.hasLoaded);
+            if (flags.multiSeriesEnabled) {
+              unawaited(series.loadManifest());
+            }
+            return series;
+          },
+          lazy: false,
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => CatalogProvider(ctx.read<SeriesProvider>()),
+        ),
+        ChangeNotifierProvider(create: (_) => BookProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
-        ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) => ProgressProvider(ctx.read<SeriesProvider>())..load(),
+        ),
         ChangeNotifierProvider(
           create: (ctx) => StudyProgressProvider(
             ctx.read<ProgressProvider>(),
             ctx.read<CatalogProvider>(),
+            ctx.read<SeriesProvider>(),
           )..load(),
         ),
-        ChangeNotifierProvider(create: (_) => DownloadsProvider()..load()),
+        ChangeNotifierProvider(
+          create: (ctx) =>
+              DownloadsProvider(ctx.read<SeriesProvider>())..load(),
+        ),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(
@@ -138,10 +218,17 @@ class MyApp extends StatelessWidget {
             ctx.read<ProgressProvider>(),
             ctx.read<DownloadsProvider>(),
             ctx.read<ConnectivityProvider>(),
+            ctx.read<CatalogProvider>(),
           ),
         ),
         ChangeNotifierProvider(
-            create: (_) => ThemeProvider()..load(), lazy: false),
+          create: (_) => ThemeProvider()..load(),
+          lazy: false,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ReadingProvider()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProxyProvider<FeatureFlagsProvider, LanguageProvider>(
           create: (_) => LanguageProvider()..load(),
           update: (_, flags, lang) {

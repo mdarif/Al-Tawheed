@@ -7,7 +7,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/services/download_service.dart';
 
 Lecture _lec(String id,
-        {int bytes = 5120, String chapterId = 'ch-01', required String audioUrl}) =>
+        {int bytes = 5120, String chapterId = 'ch-01', required String audioUrl,}) =>
     Lecture(
       id: id,
       number: 1,

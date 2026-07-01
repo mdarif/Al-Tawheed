@@ -114,6 +114,61 @@ void main() {
     });
   });
 
+  group('series-prefixed storage', () {
+    test('keeps progress separate per series prefix', () async {
+      await prefs.saveProgress('lec-a', 100);
+      await prefs.saveProgress('lec-a', 50, prefix: 'ar_');
+
+      expect(prefs.loadAllProgress(), {'lec-a': 100});
+      expect(prefs.loadAllProgress(prefix: 'ar_'), {'lec-a': 50});
+    });
+
+    test('tracks the last-played lecture separately per series prefix',
+        () async {
+      await prefs.saveProgress('lec-a', 30);
+      await prefs.saveProgress('lec-b', 45, prefix: 'ar_');
+
+      expect(prefs.lastLectureId, 'lec-a');
+      expect(prefs.lastPositionSeconds, 30);
+      expect(prefs.lastLectureIdFor('ar_'), 'lec-b');
+      expect(prefs.lastPositionSecondsFor('ar_'), 45);
+    });
+
+    test('keeps bookmarks separate per series prefix', () async {
+      await prefs.saveBookmarks({'lec-a'});
+      await prefs.saveBookmarks({'lec-b'}, prefix: 'ar_');
+
+      expect(prefs.loadBookmarks(), {'lec-a'});
+      expect(prefs.loadBookmarks(prefix: 'ar_'), {'lec-b'});
+    });
+
+    test('keeps downloaded ids separate per series prefix', () async {
+      await prefs.saveDownloadedIds({'lec-a'});
+      await prefs.saveDownloadedIds({'lec-b'}, prefix: 'ar_');
+
+      expect(prefs.loadDownloadedIds(), {'lec-a'});
+      expect(prefs.loadDownloadedIds(prefix: 'ar_'), {'lec-b'});
+    });
+
+    test('keeps studied chapter ids separate per series prefix', () async {
+      await prefs.saveStudiedChapterIds({'ch-01'});
+      await prefs.saveStudiedChapterIds({'ch-02'}, prefix: 'ar_');
+
+      expect(prefs.loadStudiedChapterIds(), {'ch-01'});
+      expect(prefs.loadStudiedChapterIds(prefix: 'ar_'), {'ch-02'});
+    });
+  });
+
+  group('selected series', () {
+    test('defaults to null and round-trips a saved id', () async {
+      expect(prefs.selectedSeriesId, isNull);
+
+      await prefs.saveSelectedSeriesId('tawheed-ar');
+
+      expect(prefs.selectedSeriesId, 'tawheed-ar');
+    });
+  });
+
   group('remote JSON cache', () {
     test('round-trips body and reports age once cached', () async {
       expect(prefs.loadRemoteJson('catalog'), isNull);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -64,7 +65,7 @@ class RemoteContentService {
         return cached!;
 
       case CacheStrategy.staleCacheWithBackgroundRefresh:
-        _refreshInBackground(url: url, cacheKey: cacheKey);
+        unawaited(_refreshInBackground(url: url, cacheKey: cacheKey));
         return cached!;
 
       case CacheStrategy.fetchSynchronously:
@@ -98,8 +99,8 @@ class RemoteContentService {
   }) async {
     try {
       await _fetchAndCache(url: url, cacheKey: cacheKey);
-    } catch (_) {
-      // Background refresh failures are silent — stale cache continues serving
+    } catch (e) {
+      debugPrint('RemoteContentService: background refresh failed for $cacheKey: $e');
     }
   }
 
@@ -107,9 +108,8 @@ class RemoteContentService {
     required String url,
     required String cacheKey,
   }) async {
-    final response = await http
-        .get(Uri.parse(url))
-        .timeout(const Duration(seconds: 10));
+    final response =
+        await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode} fetching $url');

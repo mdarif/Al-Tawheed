@@ -108,4 +108,82 @@ void main() {
     await expectLater(done, throwsA(isA<DownloadCancelled>()));
     expect(await File(savePath).exists(), isFalse);
   });
+
+  group('path-traversal defense', () {
+    test('isSafePathSegment accepts real ids, rejects traversal', () {
+      expect(isSafePathSegment('l1'), isTrue);
+      expect(isSafePathSegment('tawheed-ur'), isTrue);
+      expect(isSafePathSegment('dars_01'), isTrue);
+
+      expect(isSafePathSegment('..'), isFalse);
+      expect(isSafePathSegment('.'), isFalse);
+      expect(isSafePathSegment('../evil'), isFalse);
+      expect(isSafePathSegment('a/b'), isFalse);
+      expect(isSafePathSegment(r'a\b'), isFalse);
+      expect(isSafePathSegment(''), isFalse);
+      expect(isSafePathSegment('with space'), isFalse);
+    });
+
+    test('localPath throws on a traversal lecture id', () {
+      expect(
+        () => DownloadService.localPath('../../databases/x'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('localPath throws on a traversal series id', () {
+      expect(
+        () => DownloadService.localPath('l1', seriesId: '../evil'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('localPath still resolves safe ids under the audio/ directory', () {
+      final legacy = DownloadService.localPath('l1');
+      expect(legacy, '${tempDir.path}/audio/l1.mp3');
+
+      final scoped = DownloadService.localPath('l1', seriesId: 'tawheed-ar');
+      expect(scoped, '${tempDir.path}/audio/tawheed-ar/l1.mp3');
+    });
+
+    test('reconcileDownloadedIds skips unsafe ids', () async {
+      // Create a real file for a safe id (scoped-series layout) so it
+      // reconciles as present.
+      final safe = File('${tempDir.path}/audio/tawheed-ar/keep.mp3');
+      await safe.parent.create(recursive: true);
+      await safe.writeAsBytes([1, 2, 3]);
+
+      final result = await reconcileDownloadedIds(
+        (['keep', '../../etc/passwd', 'a/b'], tempDir.path, 'tawheed-ar'),
+      );
+
+      expect(result, {'keep'});
+    });
+  });
+
+  group('byte accounting', () {
+    test('fileSizeSync returns on-disk size, 0 for missing/unsafe', () async {
+      final f = File('${tempDir.path}/audio/tawheed-ar/l1.mp3');
+      await f.parent.create(recursive: true);
+      await f.writeAsBytes(List<int>.filled(1234, 0));
+
+      expect(DownloadService.fileSizeSync('l1', seriesId: 'tawheed-ar'), 1234);
+      expect(DownloadService.fileSizeSync('missing', seriesId: 'tawheed-ar'), 0);
+      expect(DownloadService.fileSizeSync('../evil'), 0);
+    });
+
+    test('totalBytesForIds sums present files and skips unsafe ids', () async {
+      final a = File('${tempDir.path}/audio/tawheed-ar/a.mp3');
+      await a.parent.create(recursive: true);
+      await a.writeAsBytes(List<int>.filled(100, 0));
+      final b = File('${tempDir.path}/audio/tawheed-ar/b.mp3');
+      await b.writeAsBytes(List<int>.filled(50, 0));
+
+      final total = totalBytesForIds(
+        (['a', 'b', 'missing', '../evil'], tempDir.path, 'tawheed-ar'),
+      );
+
+      expect(total, 150);
+    });
+  });
 }

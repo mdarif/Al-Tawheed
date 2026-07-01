@@ -2,13 +2,18 @@
   "@@locale": "en",
 
   "tabLectures": "Lectures",
+  "tabBook": "Book",
   "tabHome": "Home",
   "tabStudyMode": "Study",
   "tabSettings": "Settings",
 
   "appTitle": "Sharah Kitab al-Tawheed",
   "nowPlaying": "Now Playing",
+  "bookmark": "Bookmark",
+  "removeBookmark": "Remove bookmark",
 
+  "allLecturesComplete": "All Lectures Complete",
+  "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",
   "continueListening": "Continue Listening",
   "continueListeningEmpty": "Start a lecture to resume here",
   "listenedDuration": "{listened} listened · {remaining} left",
@@ -63,6 +68,9 @@
   "@studyContinueToNext": {
     "placeholders": { "title": { "type": "String" } }
   },
+  "studySeriesComplete": "Series Complete",
+  "studySeriesCompleteTitle": "Series Completed!",
+  "studySeriesCompleteCelebration": "You have studied every class in the series. May Allah make it a source of lasting benefit for you.",
   "studyNextUp": "Next Up",
   "studyBackToOverview": "Back to Study Mode",
   "studyStatusStudied": "Studied",
@@ -88,14 +96,28 @@
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 
   "couldNotLoadLectures": "Could not load lectures",
+  "lecturesEmpty": "No lectures available yet",
+  "bookCouldNotLoad": "Could not load the book",
+  "bookShareChapter": "Share chapter",
+  "bookDecreaseText": "Decrease text size",
+  "bookIncreaseText": "Increase text size",
+  "bookColorKey": "Color key",
+  "bookLegendVerse": "Qur'an verse",
+  "bookLegendCitation": "Reference (surah:ayah)",
+  "bookLegendHadith": "Hadith",
   "retry": "Retry",
   "catalogConnectToLoadTitle": "Connect to load lectures",
   "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",
 
   "settingsLanguage": "Language",
   "settingsAppearance": "Appearance",
+  "settingsSeries": "Series",
   "settingsDarkMode": "Dark mode",
   "settingsLightMode": "Light mode",
+  "settingsThemeSystem": "Follow System",
+  "settingsVisitWebsite": "Official website",
+  "settingsBookFontSize": "Text size",
+  "settingsVersionCopied": "Version copied",
   "settingsPlayback": "Playback",
   "settingsPlaybackSpeed": "Playback speed",
   "settingsApp": "App",
@@ -132,7 +154,7 @@
       "appName": { "type": "String" }
     }
   },
-  "settingsAboutBy": "By {lecturer}",
+  "settingsAboutBy": "{lecturer}",
   "@settingsAboutBy": {
     "placeholders": { "lecturer": { "type": "String" } }
   },
@@ -166,13 +188,24 @@
   },
   "deleteAll": "Delete all",
 
+  "changeSeriesConfirmTitle": "Change language?",
+  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.",
+  "@changeSeriesConfirmMessage": {
+    "placeholders": { "seriesName": { "type": "String" } }
+  },
+  "changeSeriesConfirm": "Switch",
+
   "startListening": "Start Listening",
+
+  "chooseSeriesTitle": "Choose Your Series",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "languageRomanUrdu": "Roman Urdu",
   "languageHindi": "हिंदी",
   "languageArabic": "العربية",
+
+  "audioLabel": "Audio",
 
   "partsCount": "{count, plural, one{{count} part} other{{count} parts}}",
   "@partsCount": {

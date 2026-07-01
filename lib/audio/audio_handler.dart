@@ -25,8 +25,14 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
 
   TawheedAudioHandler() {
     _init();
-    // Pipe just_audio playback events into audio_service's playbackState stream
-    _player.playbackEventStream.map(_stateFromEvent).pipe(playbackState);
+    // Forward just_audio playback events into audio_service's playbackState
+    // stream. `.listen()` rather than `.pipe()` — `pipe()`/`addStream()`
+    // would permanently lock `playbackState` against direct `.add()` calls
+    // (e.g. from `super.stop()`) for as long as the player's event stream
+    // stays open, which is its entire lifetime.
+    _player.playbackEventStream
+        .map(_stateFromEvent)
+        .listen(playbackState.add, onError: playbackState.addError);
   }
 
   AudioPlayer get player => _player;
@@ -74,16 +80,19 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     Lecture lecture, {
     Duration startFrom = Duration.zero,
     String? localFilePath,
+    String artist = 'Sharah Kitab al-Tawheed',
+    String? displayTitle,
   }) async {
-    mediaItem.add(MediaItem(
-      id: lecture.id,
-      title: lecture.title.en,
-      artist: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
-      duration: Duration(seconds: lecture.durationSeconds),
-    ));
+    mediaItem.add(
+      MediaItem(
+        id: lecture.id,
+        title: displayTitle ?? lecture.title.en,
+        artist: artist,
+        duration: Duration(seconds: lecture.durationSeconds),
+      ),
+    );
 
-    final useLocal =
-        localFilePath != null && File(localFilePath).existsSync();
+    final useLocal = localFilePath != null && File(localFilePath).existsSync();
     final source = useLocal
         ? AudioSource.uri(Uri.file(localFilePath))
         : AudioSource.uri(Uri.parse(lecture.audioUrl));

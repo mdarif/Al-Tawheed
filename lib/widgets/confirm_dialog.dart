@@ -34,7 +34,7 @@ Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String cancelLabel = 'Cancel',
+  String? cancelLabel,
   required String confirmLabel,
   bool destructive = false,
   bool filledConfirm = false,
@@ -43,9 +43,12 @@ Future<bool> showConfirmDialog(
     context: context,
     builder: (dialogContext) {
       final theme = Theme.of(dialogContext);
-      final confirmStyle = destructive
-          ? TextStyle(color: theme.colorScheme.error)
-          : null;
+      final confirmStyle =
+          destructive ? TextStyle(color: theme.colorScheme.error) : null;
+      // Fall back to the platform-localised "Cancel" (e.g. "إلغاء" in Arabic)
+      // when no explicit label is provided.
+      final resolvedCancel = cancelLabel ??
+          MaterialLocalizations.of(dialogContext).cancelButtonLabel;
 
       Widget confirmButton;
       if (filledConfirm) {
@@ -66,7 +69,7 @@ Future<bool> showConfirmDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(cancelLabel),
+            child: Text(resolvedCancel),
           ),
           confirmButton,
         ],

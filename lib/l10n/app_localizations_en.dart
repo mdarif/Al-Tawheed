@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabLectures => 'Lectures';
 
   @override
+  String get tabBook => 'Book';
+
+  @override
   String get tabHome => 'Home';
 
   @override
@@ -25,6 +28,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nowPlaying => 'Now Playing';
+
+  @override
+  String get bookmark => 'Bookmark';
+
+  @override
+  String get removeBookmark => 'Remove bookmark';
+
+  @override
+  String get allLecturesComplete => 'All Lectures Complete';
+
+  @override
+  String get allLecturesCompleteMessage =>
+      'You have listened to every lecture. May Allah bless you with beneficial knowledge.';
 
   @override
   String get continueListening => 'Continue Listening';
@@ -116,6 +132,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get studySeriesComplete => 'Series Complete';
+
+  @override
+  String get studySeriesCompleteTitle => 'Series Completed!';
+
+  @override
+  String get studySeriesCompleteCelebration =>
+      'You have studied every class in the series. May Allah make it a source of lasting benefit for you.';
+
+  @override
   String get studyNextUp => 'Next Up';
 
   @override
@@ -163,6 +189,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotLoadLectures => 'Could not load lectures';
 
   @override
+  String get lecturesEmpty => 'No lectures available yet';
+
+  @override
+  String get bookCouldNotLoad => 'Could not load the book';
+
+  @override
+  String get bookShareChapter => 'Share chapter';
+
+  @override
+  String get bookDecreaseText => 'Decrease text size';
+
+  @override
+  String get bookIncreaseText => 'Increase text size';
+
+  @override
+  String get bookColorKey => 'Color key';
+
+  @override
+  String get bookLegendVerse => 'Qur\'an verse';
+
+  @override
+  String get bookLegendCitation => 'Reference (surah:ayah)';
+
+  @override
+  String get bookLegendHadith => 'Hadith';
+
+  @override
   String get retry => 'Retry';
 
   @override
@@ -179,10 +232,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearance => 'Appearance';
 
   @override
+  String get settingsSeries => 'Series';
+
+  @override
   String get settingsDarkMode => 'Dark mode';
 
   @override
   String get settingsLightMode => 'Light mode';
+
+  @override
+  String get settingsThemeSystem => 'Follow System';
+
+  @override
+  String get settingsVisitWebsite => 'Official website';
+
+  @override
+  String get settingsBookFontSize => 'Text size';
+
+  @override
+  String get settingsVersionCopied => 'Version copied';
 
   @override
   String get settingsPlayback => 'Playback';
@@ -248,7 +316,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String settingsAboutBy(String lecturer) {
-    return 'By $lecturer';
+    return '$lecturer';
   }
 
   @override
@@ -311,7 +379,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAll => 'Delete all';
 
   @override
+  String get changeSeriesConfirmTitle => 'Change language?';
+
+  @override
+  String changeSeriesConfirmMessage(String seriesName) {
+    return 'You are switching to \"$seriesName\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.';
+  }
+
+  @override
+  String get changeSeriesConfirm => 'Switch';
+
+  @override
   String get startListening => 'Start Listening';
+
+  @override
+  String get chooseSeriesTitle => 'Choose Your Series';
 
   @override
   String get languageEnglish => 'English';
@@ -327,6 +409,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageArabic => 'العربية';
+
+  @override
+  String get audioLabel => 'Audio';
 
   @override
   String partsCount(int count) {

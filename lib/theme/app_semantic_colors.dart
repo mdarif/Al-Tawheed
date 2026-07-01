@@ -20,6 +20,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   final Color scrimOverlay;
   final Color onScrim;
   final Color onScrimMuted;
+  final Color bookVerse;
+  final Color bookCitation;
+  final Color bookHadith;
 
   const AppSemanticColors({
     required this.brand,
@@ -37,6 +40,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     required this.scrimOverlay,
     required this.onScrim,
     required this.onScrimMuted,
+    required this.bookVerse,
+    required this.bookCitation,
+    required this.bookHadith,
   });
 
   factory AppSemanticColors.dark(ColorScheme scheme) => AppSemanticColors(
@@ -55,6 +61,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
         scrimOverlay: AppColors.backgroundDark.withValues(alpha: 0.8),
         onScrim: AppColors.onDark,
         onScrimMuted: AppColors.onDark.withValues(alpha: 0.65),
+        bookVerse: AppColors.bookVerseDark,
+        bookCitation: AppColors.bookCitationDark,
+        bookHadith: AppColors.bookHadithDark,
       );
 
   factory AppSemanticColors.light(ColorScheme scheme) => AppSemanticColors(
@@ -73,6 +82,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
         scrimOverlay: AppColors.backgroundDark.withValues(alpha: 0.8),
         onScrim: Colors.white,
         onScrimMuted: Colors.white.withValues(alpha: 0.65),
+        bookVerse: AppColors.bookVerseLight,
+        bookCitation: AppColors.bookCitationLight,
+        bookHadith: AppColors.bookHadithLight,
       );
 
   @override
@@ -92,6 +104,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     Color? scrimOverlay,
     Color? onScrim,
     Color? onScrimMuted,
+    Color? bookVerse,
+    Color? bookCitation,
+    Color? bookHadith,
   }) {
     return AppSemanticColors(
       brand: brand ?? this.brand,
@@ -109,6 +124,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       scrimOverlay: scrimOverlay ?? this.scrimOverlay,
       onScrim: onScrim ?? this.onScrim,
       onScrimMuted: onScrimMuted ?? this.onScrimMuted,
+      bookVerse: bookVerse ?? this.bookVerse,
+      bookCitation: bookCitation ?? this.bookCitation,
+      bookHadith: bookHadith ?? this.bookHadith,
     );
   }
 
@@ -134,6 +152,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       scrimOverlay: Color.lerp(scrimOverlay, other.scrimOverlay, t)!,
       onScrim: Color.lerp(onScrim, other.onScrim, t)!,
       onScrimMuted: Color.lerp(onScrimMuted, other.onScrimMuted, t)!,
+      bookVerse: Color.lerp(bookVerse, other.bookVerse, t)!,
+      bookCitation: Color.lerp(bookCitation, other.bookCitation, t)!,
+      bookHadith: Color.lerp(bookHadith, other.bookHadith, t)!,
     );
   }
 }
