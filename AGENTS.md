@@ -106,6 +106,7 @@ first. That is what makes this a second brain rather than a static readme.
 - [deployment.md](docs/deployment.md) — build/deploy commands, signing keys
 
 **Deeper reference:**
+- ⭐ [mobile-engineering-playbook.md](docs/mobile-engineering-playbook.md) — **portable lessons for any mobile app** (networking/CDN, offline, testing, release) — read for the *why*, reuse on the next project
 - [i18n-architecture.md](docs/i18n-architecture.md) — localisation + series model
 - [remote-content-strategy.md](docs/remote-content-strategy.md) — CDN config/catalog
 - [offline-mode-plan.md](docs/offline-mode-plan.md) — download/offline design

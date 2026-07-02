@@ -97,6 +97,8 @@ flutter test integration_test/app_test.dart -d <id> # end-to-end on device
 
 | | |
 |---|---|
+| ⭐ [Mobile Engineering Playbook](docs/mobile-engineering-playbook.md) | **Portable lessons for future apps** — networking/CDN, offline, testing, release |
+| [Agent guide](AGENTS.md) · [Gotchas](docs/gotchas.md) | AI/dev entry point · hard-won landmines |
 | [Setup](docs/setup.md) | Environment, dependencies, signing |
 | [CI/CD](docs/ci-cd.md) | Pipelines, pre-push hook, release workflow |
 | [Deployment](docs/deployment.md) | Build & machine setup guide |

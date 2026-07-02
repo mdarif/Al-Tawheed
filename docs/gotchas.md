@@ -164,6 +164,27 @@ is portable memory: any LLM working the repo should read and extend it.
   `decideCacheStrategy`; the actual fetch/failure/retry had **zero coverage** (no
   mock client). The fetch is now testable via an injected `MockClient`
   (`package:http/testing.dart`) — see the `fetch — retries` group.
+- **"Works in the browser" ≠ "works in the app."** Browsers use Happy Eyeballs
+  (race IPv4+IPv6, prefer whichever answers) and cache/retry, so they hide a
+  flaky IPv4 path; the Dart client lands on it and fails. The pages.dev failure
+  was **intermittent** (~7 of 8 IPv4 tries reset), which is exactly why it "works
+  after a few tries" and why a no-cache fresh install (needs one success) is the
+  worst case.
+- **The CDN content lives in a *separate* repo — `mdarif/Al-Tawheed-Content`**
+  (checked out at `../Al-Tawheed-Content`), auto-deployed to Cloudflare Pages on
+  push to `main`. This app repo only has *dev fixtures* under `dev/fixtures/`.
+  The 2.3.1 fix needed edits in **both**: `AppConfig.contentBaseUrl` here, and
+  `series.json`'s `catalogUrl`s + the catalogs' `coverImageUrl` there.
+- **Updating the CDN `series.json` fixes existing users at runtime — no app
+  release.** The app fetches `series.json` and follows its `catalogUrl` per
+  series, so repointing those at the custom domain repairs already-installed
+  apps as their cache refreshes. The app-code change (`contentBaseUrl`) only
+  helps new/updated installs.
+- **Cloudflare Pages edge-caches JSON (`_headers`: `max-age=3600`,
+  `stale-while-revalidate=86400`).** A content push is live at the origin
+  immediately but the **edge serves the old copy for up to ~1 h** before
+  revalidating. Verify a deploy with a **cache-buster query** (`?cb=<ts>` bypasses
+  the edge cache); purge in the Cloudflare dashboard for urgent changes.
 
 ## Security
 
