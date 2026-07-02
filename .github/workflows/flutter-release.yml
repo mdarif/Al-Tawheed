@@ -471,6 +471,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          # Push to the protected `develop` branch as the repo owner (admin) so
+          # the fast-forward isn't rejected by the "Flutter CI" required check —
+          # the default GITHUB_TOKEN (github-actions[bot]) has no bypass. checkout
+          # persists this token, so the later `git push` uses it. See
+          # docs/gotchas.md → CI / release.
+          token: ${{ secrets.DEVELOP_SYNC_TOKEN }}
 
       - name: Configure git identity
         run: |

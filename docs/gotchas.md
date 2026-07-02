@@ -95,14 +95,20 @@ is portable memory: any LLM working the repo should read and extend it.
   `master` branch. `git push origin master` fails with `src refspec master does
   not match any`; use `git push origin HEAD:master`. (Latent until the first
   release that actually reached the commit/tag/push step.)
-- **`github-actions[bot]` must be on BOTH branches' bypass lists.** The
-  `sync-develop` job fast-forwards `develop` to `master` and pushes, but
-  `develop`'s protection ("Flutter CI" required status check) rejects the bot's
-  push (`GH006: Protected branch update failed`) unless the bot is in develop's
-  bypass list — same requirement already documented for `master`. Until added,
-  the release ships fine but `sync-develop` fails; recover by fast-forwarding
-  develop to master by hand (admin push bypasses protection):
-  `git checkout develop && git merge --ff-only origin/master && git push origin develop`.
+- **`sync-develop` pushes to protected `develop` with an admin PAT, not the bot
+  token.** `develop`'s protection ("Flutter CI" required status check) rejects a
+  push from `github-actions[bot]` (`GH006: Protected branch update failed`), and
+  classic branch protection on a *personal* repo has no bypass-actor field to
+  whitelist the bot (rulesets could, but only offer "Repository admin"/deploy-key
+  bypass on User-owned repos — not the default token). Fix (in
+  `flutter-release.yml`): the `sync-develop` checkout uses
+  `token: ${{ secrets.DEVELOP_SYNC_TOKEN }}` — a fine-grained PAT (Contents +
+  Workflows: write) owned by the repo admin, so the push runs *as the admin* and
+  bypasses (`develop` has `enforce_admins: false`). **The PAT expires** — when it
+  does, `sync-develop` fails again; rotate the token + update the secret. Manual
+  recovery if it ever fails:
+  `git checkout develop && git merge --ff-only origin/master && git push origin develop`
+  (your own admin push bypasses too).
 - **A consumed versionCode can't be reused.** If a release uploads the AAB to
   Play (versionCode N) but then fails *after* the upload (e.g. the push bug
   above), N is burned. A naive re-run recomputes the same N and the upload is

@@ -246,17 +246,17 @@ is consumed — bump `pubspec.yaml`'s `+BUILD` before re-running (see below).
 
 **"sync-develop failed: 'GH006: Protected branch update failed for
 refs/heads/develop'"**
-`develop`'s "Flutter CI" required status check rejects the release bot's push
-(`github-actions[bot]` isn't on develop's bypass list; `enforce_admins:false`
-lets *you* bypass but not the bot). The release itself already shipped — this is
-only the post-release sync. Recover by fast-forwarding by hand (your admin push
-bypasses protection):
+`develop`'s "Flutter CI" required status check rejects a push from
+`github-actions[bot]` (no bypass; `enforce_admins:false` lets *admins* bypass but
+not the bot). **Fixed as of 2.3.1+**: `sync-develop` checks out with
+`secrets.DEVELOP_SYNC_TOKEN` (a fine-grained admin PAT), so its push runs as the
+repo owner and bypasses. If it fails again, the usual cause is **the PAT expired**
+— regenerate the fine-grained token (Contents + Workflows: write on this repo)
+and update the `DEVELOP_SYNC_TOKEN` secret. Manual recovery meanwhile (your own
+admin push bypasses too):
 ```sh
 git checkout develop && git merge --ff-only origin/master && git push origin develop
 ```
-Permanent fix: migrate `develop` to a Repository Ruleset with the bot in the
-bypass list (classic branch protection has no bypass-actor field). See
-`docs/gotchas.md` → CI / release.
 
 **"Upload failed: 'Version code N has already been used'"**
 A prior run uploaded that AAB to Play (consuming versionCode N) but then failed
