@@ -285,6 +285,22 @@ listing → Manage translations → Add Arabic) — otherwise Play Console rejec
 The auto-generated notes from the release pipeline are a raw changelog; prefer
 these human-readable versions for production.
 
+### 2.3.1 — reliability fix
+
+Fixes the "Connect to load lectures" failure on fresh installs (CDN moved off
+`*.pages.dev` to `content.kitabattawheed.com` + client-side fetch retries). Keep
+it user-facing — no CDN/IPv4 jargon.
+
+```
+<en-GB>
+• Fixed an issue where lectures could fail to load on first open, even with a working connection.
+• More reliable loading — the app now retries automatically and recovers as soon as your connection is back.
+• Minor stability improvements.
+
+JazakumAllahu khayran.
+</en-GB>
+```
+
 ### 2.3.0 — Arabic series
 
 English (`en-GB`, the current default listing language):
