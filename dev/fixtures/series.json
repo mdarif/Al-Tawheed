@@ -4,7 +4,7 @@
   "series": [
     {
       "id": "tawheed-ur",
-      "catalogUrl": "https://al-tawheed-content.pages.dev/tawheed/catalog.json",
+      "catalogUrl": "https://content.kitabattawheed.com/tawheed/catalog.json",
       "storagePrefix": "",
       "hasStudyMode": true,
       "language": "ur",
@@ -19,7 +19,7 @@
     },
     {
       "id": "tawheed-ar",
-      "catalogUrl": "https://al-tawheed-content.pages.dev/tawheed-ar/catalog.json",
+      "catalogUrl": "https://content.kitabattawheed.com/tawheed-ar/catalog.json",
       "storagePrefix": "ar_",
       "hasStudyMode": false,
       "language": "ar",

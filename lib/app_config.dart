@@ -2,7 +2,11 @@ class AppConfig {
   AppConfig._();
 
   // ── CDN base ────────────────────────────────────────────────────────────
-  static const String contentBaseUrl = 'https://al-tawheed-content.pages.dev';
+  // Custom domain on kitabattawheed.com (Cloudflare anycast IPs reachable over
+  // IPv4) rather than the *.pages.dev subdomain, whose 172.66.44.x IPv4 range
+  // is TCP-reset on some ISPs and stranded fresh installs. See docs/gotchas.md.
+  // NOTE: series.json's per-series catalogUrl values must also point here.
+  static const String contentBaseUrl = 'https://content.kitabattawheed.com';
 
   // ── Remote JSON endpoints ────────────────────────────────────────────────
   static const String catalogUrl = '$contentBaseUrl/tawheed/catalog.json';
