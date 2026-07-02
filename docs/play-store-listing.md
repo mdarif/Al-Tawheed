@@ -179,10 +179,16 @@ Sharah Kitab at-Tawheed
 ### Short description (80 chars max)
 
 ```
-Kitab at-Tawheed audio Sharh in Arabic & Urdu — offline, Book, Study Mode
+Kitab at-Tawheed audio lectures | Arabic & Urdu | Offline | Book | Study Mode
 ```
 
-(73 characters)
+(77 characters — pipe format, matches the previous listing style)
+
+Sentence-style alternate:
+
+```
+Kitab at-Tawheed audio Sharh in Arabic & Urdu — offline, Book, Study Mode
+```
 
 ### Full description (4000 chars max)
 
