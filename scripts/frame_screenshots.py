@@ -24,21 +24,23 @@ RAW = ROOT / "docs/play-store/v3/raw"
 OUT = ROOT / "docs/play-store/v3/framed"
 PREVIEW = ROOT / "docs/play-store/v3/preview.png"
 
-# Play Store display order. Balanced across both series (Arabic new-feature lead
-# + the Urdu/English experience). Play allows max 8 — 01-08 are the recommended
-# upload set; 09-10 are framed too as easy swap-ins.
+# Play Store upload order: onboarding first (the neutral welcome everyone sees,
+# then the series picker), then the Arabic block, then the Urdu block. Each
+# entry is (raw_capture_id, output_label); the framed file is numbered by
+# position, so output name == upload order regardless of raw capture names.
+# Play allows max 8 — positions 1-8 are the upload set; 9-10 are swap-ins.
 ORDER = [
-    "01-welcome-ar",    # Arabic welcome — al-Fawzan (lead, the new series)
-    "02-book-ar",       # Arabic Book tab — full Arabic text (new feature)
-    "03-choose-series",  # picker — both series/languages
-    "04-welcome-ur",    # Urdu welcome — English "START LISTENING"
-    "05-lectures-ur",   # Urdu lectures — English chrome + Study tab
-    "06-study-ur",      # Study Mode — Urdu-only feature
-    "07-player-ur",     # Now Playing — English player chrome
-    "08-player-ar",     # Arabic player يُشغَّل الآن — Arabic chrome contrast
+    ("04-welcome-ur", "welcome"),        # 1 — generic welcome (everyone's 1st screen)
+    ("03-choose-series", "choose-series"),  # 2 — pick Arabic or Urdu
+    ("01-welcome-ar", "welcome-ar"),     # 3 — Arabic series welcome (al-Fawzan)
+    ("02-book-ar", "book-ar"),           # 4 — Arabic Book tab (new feature)
+    ("08-player-ar", "player-ar"),       # 5 — Arabic player يُشغَّل الآن
+    ("05-lectures-ur", "lectures-ur"),   # 6 — Urdu lectures (Class 01)
+    ("06-study-ur", "study-ur"),         # 7 — Study Mode (Urdu-only)
+    ("07-player-ur", "player-ur"),       # 8 — Urdu Now Playing
     # ── swap-in extras (beyond Play's 8-slot cap) ──
-    "09-lectures-ar",   # Arabic lectures الدروس
-    "10-settings-ur",   # Settings — English chrome
+    ("09-lectures-ar", "lectures-ar"),   # 9 — Arabic lectures الدروس
+    ("10-settings-ur", "settings-ur"),   # 10 — Settings
 ]
 
 # Canvas: 2:1 (Play's max aspect), high-res. Phone content is ~2.17:1 so it sits
@@ -162,15 +164,16 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     frames = []
     missing = []
-    for name in ORDER:
-        raw = RAW / f"{name}.png"
+    for i, (raw_name, label) in enumerate(ORDER, start=1):
+        raw = RAW / f"{raw_name}.png"
         if not raw.exists():
-            missing.append(name)
+            missing.append(raw_name)
             continue
         framed = frame_one(raw)
-        framed.save(OUT / f"{name}-framed.png")
+        out_name = f"{i:02d}-{label}-framed.png"
+        framed.save(OUT / out_name)
         frames.append(framed)
-        print(f"  framed {name}  ->  {framed.size[0]}x{framed.size[1]}")
+        print(f"  {out_name}  <-  {raw_name}  ({framed.size[0]}x{framed.size[1]})")
     if missing:
         print(f"WARNING: missing raws (skipped): {', '.join(missing)}", file=sys.stderr)
     if frames:

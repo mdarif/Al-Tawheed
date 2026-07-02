@@ -85,21 +85,22 @@ through onboarding, picks Arabic, then switches to Urdu via Settings — capturi
 cream→gold brand gradient (no captions) → `docs/play-store/v3/framed/` +
 `preview.png`. Output is **1290×2580 (2:1), RGB, no alpha** — Play-compliant.
 
-10 frames captured; **Play allows max 8** — upload `01`–`08` (below); `09`–`10`
-are framed as swap-ins. The key point: the Urdu series shows **English chrome**
-(Now Playing, Study Mode, Settings) while Arabic shows **Arabic chrome** — both
-must be represented.
+10 frames; **Play allows max 8** — upload `01`–`08` (below); `09`–`10` are
+swap-ins. Order = the real user journey: the neutral welcome everyone sees →
+the series picker → the Arabic block → the Urdu block. Filenames are numbered by
+upload order (framer decouples this from the raw capture names). Note the two
+chromes: Urdu = **English** UI (Now Playing, Study Mode), Arabic = **Arabic** UI.
 
 | # | File (`docs/play-store/v3/framed/`) | Screen | Chrome |
 |---|-------------------------------------|--------|--------|
-| 1 | `01-welcome-ar-framed.png`     | Arabic welcome — al-Fawzan (**lead**)     | Arabic |
-| 2 | `02-book-ar-framed.png`        | Book tab الكتاب — full Arabic text (new)   | Arabic |
-| 3 | `03-choose-series-framed.png`  | Choose-Series picker (both)               | English |
-| 4 | `04-welcome-ur-framed.png`     | Urdu welcome — "START LISTENING"          | English |
-| 5 | `05-lectures-ur-framed.png`    | Urdu lectures — Class 01, Study tab       | English |
-| 6 | `06-study-ur-framed.png`       | Study Mode — Urdu-only feature            | English |
-| 7 | `07-player-ur-framed.png`      | Now Playing                               | English |
-| 8 | `08-player-ar-framed.png`      | Player يُشغَّل الآن (chrome contrast)       | Arabic |
+| 1 | `01-welcome-framed.png`        | **Generic welcome** — everyone's first screen | neutral |
+| 2 | `02-choose-series-framed.png`  | Choose-Series picker (Arabic + Urdu)      | English |
+| 3 | `03-welcome-ar-framed.png`     | Arabic series welcome — al-Fawzan         | Arabic |
+| 4 | `04-book-ar-framed.png`        | Book tab الكتاب — full Arabic text (new)   | Arabic |
+| 5 | `05-player-ar-framed.png`      | Player يُشغَّل الآن                          | Arabic |
+| 6 | `06-lectures-ur-framed.png`    | Urdu lectures — Class 01, Study tab       | English |
+| 7 | `07-study-ur-framed.png`       | Study Mode — Urdu-only feature            | English |
+| 8 | `08-player-ur-framed.png`      | Now Playing                               | English |
 | 9 | `09-lectures-ar-framed.png`    | Arabic lectures الدروس (swap-in)          | Arabic |
 | 10 | `10-settings-ur-framed.png`   | Settings (swap-in)                        | English |
 
