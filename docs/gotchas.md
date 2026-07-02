@@ -139,6 +139,32 @@ is portable memory: any LLM working the repo should read and extend it.
 - `make release-auto` must run from `develop`; `make release` from `master`. Each
   refuses the wrong branch on purpose.
 
+## Networking / CDN
+
+- **`*.pages.dev` can be unreachable over IPv4 on some networks — serve content
+  from a custom domain.** The content CDN was `al-tawheed-content.pages.dev`,
+  which resolves to Cloudflare's `172.66.44.x` IPv4 range. On some ISPs that
+  range gets **TCP-reset** (connects, then RST) while IPv6 and other Cloudflare
+  ranges work. Browsers/curl prefer IPv6 and succeed; the Dart `http` client
+  hits the broken IPv4 path → `SocketException: Connection reset by peer` → a
+  **fresh install with no cache strands on "Connect to load lectures"** (2.3.0
+  production). Existing users are shielded by the cached catalog
+  (stale-while-revalidate). Root fix: point `AppConfig.contentBaseUrl` at a
+  custom domain under `kitabattawheed.com` (uses the reachable 104.21.x/172.67.x
+  anycast IPs). Diagnostic: `curl -4 URL` vs `curl -6 URL` — if v4 fails and v6
+  works, it's this.
+- **Resilience added in 2.3.1:** `RemoteContentService.fetch` now retries the
+  fetch (3 attempts, injectable `http.Client` + `maxAttempts`/`retryDelay`), and
+  `CatalogProvider` listens to `ConnectivityProvider` and auto-reloads when the
+  network returns (previously the user was stuck until manually tapping Retry).
+  **Retry delay defaults to `Duration.zero`** on purpose — a non-zero delay
+  schedules a `Timer`, and a fire-and-forget `catalog.load()` in a widget test
+  then trips "A Timer is still pending after the widget tree was disposed."
+- **How we missed it:** `remote_content_service_test` only exercised the *pure*
+  `decideCacheStrategy`; the actual fetch/failure/retry had **zero coverage** (no
+  mock client). The fetch is now testable via an injected `MockClient`
+  (`package:http/testing.dart`) — see the `fetch — retries` group.
+
 ## Security
 
 - Remote-sourced URLs are launched through an https/mailto allowlist

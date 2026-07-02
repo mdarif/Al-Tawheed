@@ -43,6 +43,17 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
   factory ConnectivityProvider.testOnlineMobile() =>
       ConnectivityProvider._testMobile();
 
+  /// Flips online/offline at runtime and notifies listeners — for tests that
+  /// exercise a connectivity transition (e.g. offline → online recovery).
+  @visibleForTesting
+  void setOnlineForTest(bool online) {
+    _isOnline = online;
+    _results = online
+        ? const [ConnectivityResult.wifi]
+        : const [ConnectivityResult.none];
+    notifyListeners();
+  }
+
   Future<void> _init() async {
     await _refresh();
     _sub =

@@ -192,8 +192,14 @@ class MyApp extends StatelessWidget {
           },
           lazy: false,
         ),
+        // ConnectivityProvider before CatalogProvider so the catalog can retry
+        // its load automatically when the network comes back.
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(
-          create: (ctx) => CatalogProvider(ctx.read<SeriesProvider>()),
+          create: (ctx) => CatalogProvider(
+            ctx.read<SeriesProvider>(),
+            ctx.read<ConnectivityProvider>(),
+          ),
         ),
         ChangeNotifierProvider(create: (_) => BookProvider()),
         // ProgressProvider and DownloadsProvider before PlayerNotifier
@@ -211,7 +217,6 @@ class MyApp extends StatelessWidget {
           create: (ctx) =>
               DownloadsProvider(ctx.read<SeriesProvider>())..load(),
         ),
-        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(
             audioHandler,

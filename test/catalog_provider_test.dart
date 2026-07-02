@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/services/content_fetch_exception.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -58,6 +59,19 @@ Map<String, dynamic> _catalogJson(String bookId) => {
       'dailyBenefits': <Map<String, dynamic>>[],
     };
 
+/// A CatalogProvider that counts load() calls instead of hitting the network,
+/// so the connectivity-restore auto-retry can be verified without any I/O.
+class _SpyCatalog extends CatalogProvider {
+  _SpyCatalog(ConnectivityProvider connectivity) : super(null, connectivity);
+
+  int loads = 0;
+
+  @override
+  Future<void> load([SeriesConfig? series]) async {
+    loads++;
+  }
+}
+
 void main() {
   group('RemoteContentService — no cache offline', () {
     setUp(() async {
@@ -87,6 +101,44 @@ void main() {
 
       expect(provider.status, CatalogStatus.error);
       expect(provider.needsOnlineToLoad, isTrue);
+    });
+  });
+
+  group('CatalogProvider — auto-retry on connectivity restore', () {
+    test('reloads when the network returns while in an error state', () {
+      final conn = ConnectivityProvider.testOffline();
+      final catalog = _SpyCatalog(conn);
+      catalog.setErrorForTest(const NoCachedContentException('catalog'));
+
+      expect(catalog.loads, 0);
+      conn.setOnlineForTest(true); // offline → online
+      expect(catalog.loads, 1, reason: 'load should auto-retry on reconnect');
+    });
+
+    test('does not reload if connectivity notifies but is still offline', () {
+      final conn = ConnectivityProvider.testOffline();
+      final catalog = _SpyCatalog(conn);
+      catalog.setErrorForTest(const NoCachedContentException('catalog'));
+
+      conn.setOnlineForTest(false); // still offline (but notifies)
+      expect(catalog.loads, 0);
+    });
+
+    test('does not reload when online but not in an error state', () {
+      final conn = ConnectivityProvider.testOffline();
+      final catalog = _SpyCatalog(conn); // status stays idle
+      conn.setOnlineForTest(true);
+      expect(catalog.loads, 0);
+    });
+
+    test('stops listening after dispose', () {
+      final conn = ConnectivityProvider.testOffline();
+      final catalog = _SpyCatalog(conn);
+      catalog.setErrorForTest(const NoCachedContentException('catalog'));
+      catalog.dispose();
+
+      conn.setOnlineForTest(true);
+      expect(catalog.loads, 0, reason: 'disposed provider must not retry');
     });
   });
 

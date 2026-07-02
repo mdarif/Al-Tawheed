@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/catalog_service.dart';
 import 'package:myapp/services/content_fetch_exception.dart';
@@ -14,9 +15,27 @@ class CatalogProvider extends ChangeNotifier {
   /// no explicit one is passed — mirrors the [ProgressProvider]/
   /// [DownloadsProvider] pattern so a no-arg retry always targets the series
   /// the rest of the app is showing, not the legacy fallback.
-  CatalogProvider([this._series]);
+  CatalogProvider([this._series, this._connectivity]) {
+    // When the network returns after a failed load, retry automatically instead
+    // of stranding the user on the "connect to load" screen until they tap Retry.
+    _connectivity?.addListener(_onConnectivityChanged);
+  }
 
   final SeriesProvider? _series;
+  final ConnectivityProvider? _connectivity;
+
+  void _onConnectivityChanged() {
+    final conn = _connectivity;
+    if (conn != null && conn.isOnline && _status == CatalogStatus.error) {
+      load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _connectivity?.removeListener(_onConnectivityChanged);
+    super.dispose();
+  }
 
   CatalogStatus _status = CatalogStatus.idle;
   Catalog? _catalog;
