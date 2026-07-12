@@ -1,6 +1,13 @@
 class AppConfig {
   AppConfig._();
 
+  // ── Brand ────────────────────────────────────────────────────────────────
+  // Locale-invariant app/brand name — single source of truth for non-UI
+  // surfaces (media/notification metadata, share text, welcome fallback).
+  // Both series share this name; only the native-script title differs.
+  // UI-facing copy is localised separately via the ARB (`appTitle`).
+  static const String appTitle = 'Sharah Kitab at-Tawheed';
+
   // ── CDN base ────────────────────────────────────────────────────────────
   // Custom domain on kitabattawheed.com (Cloudflare anycast IPs reachable over
   // IPv4) rather than the *.pages.dev subdomain, whose 172.66.44.x IPv4 range

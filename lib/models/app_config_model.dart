@@ -1,3 +1,5 @@
+import 'package:myapp/app_config.dart';
+
 class AppConfigLinks {
   final String? playStore;
   final String? appStore;
@@ -143,15 +145,15 @@ class AppConfigModel {
         ),
         contact: const AppConfigContact(
           email: 'arif.mohammed@gmail.com',
-          subject: 'Sharah Kitab at-Tawheed — Feedback',
+          subject: '${AppConfig.appTitle} — Feedback',
         ),
         share: const AppConfigShare(
-          message: 'The *Sharah Kitab at-Tawheed* app — 50 audio lectures of '
+          message: 'The *${AppConfig.appTitle}* app — 50 audio lectures of '
               'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
               'https://kitabattawheed.com/download/',
         ),
         about: const AppConfigAbout(
-          appName: 'Sharah Kitab at-Tawheed',
+          appName: AppConfig.appTitle,
           lecturer: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
           lectureCount: 50,
           classCount: 15,

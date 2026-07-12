@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/app_config.dart';
 import 'package:myapp/models/catalog.dart';
 
 class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
@@ -80,7 +81,7 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     Lecture lecture, {
     Duration startFrom = Duration.zero,
     String? localFilePath,
-    String artist = 'Sharah Kitab at-Tawheed',
+    String artist = AppConfig.appTitle,
     String? displayTitle,
   }) async {
     mediaItem.add(

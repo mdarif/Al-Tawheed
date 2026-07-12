@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart' show ProcessingState;
+import 'package:myapp/app_config.dart';
 import 'package:myapp/audio/playback_mode.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/audio/audio_handler.dart';
@@ -199,7 +200,7 @@ class PlayerNotifier extends ChangeNotifier {
       lecture,
       startFrom: resumeAt,
       localFilePath: localPath,
-      artist: speaker?.isNotEmpty == true ? speaker! : 'Sharah Kitab at-Tawheed',
+      artist: speaker?.isNotEmpty == true ? speaker! : AppConfig.appTitle,
       displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
     );
     _startSaveTimer();

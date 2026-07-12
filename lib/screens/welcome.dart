@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/app_config.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -17,7 +18,7 @@ const _urTagline = 'شیخ الاسلام محمد بن عبدالوہاب رح�
 
 // Shown on the Urdu welcome screen before the user has selected a language —
 // neutral English title that applies regardless of which series they choose.
-const _enWelcomeTitle = 'Sharah Kitab at-Tawheed';
+const _enWelcomeTitle = AppConfig.appTitle;
 
 // Both series are "Sharah Kitab at-Tawheed" — only the script characters differ.
 String _nativeTitleFor(SeriesConfig s) => switch (s.language) {
