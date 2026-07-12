@@ -211,44 +211,27 @@ void main() {
     });
   });
 
-  group('SettingsScreen — official website in About', () {
-    // The About card sits at the bottom of the settings list; a tall surface
-    // renders the whole screen so the lazy ListView builds it (and any App
-    // section) for reliable duplicate counting.
-    void useTallSurface(WidgetTester tester) {
+  // Note: About (with the website link) moved out of Settings into its own
+  // AboutPage — those assertions now live in about_page_test.dart.
+
+  group('SettingsScreen — secondary destinations', () {
+    testWidgets('shows Bookmarks and About rows (reached via the Home gear)',
+        (tester) async {
+      // Tall surface so the lazy ListView builds the rows at the bottom.
       tester.view.physicalSize = const Size(1200, 3200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-    }
 
-    testWidgets('About shows the website as a bare domain, once, '
-        'regardless of the App section flag', (tester) async {
-      useTallSurface(tester);
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu])
         ..setCurrentSeriesForTest(_seriesUrdu);
 
-      // App section off: website lives only in About.
-      await tester.pumpWidget(_wrap(series: series, appLinks: false));
+      await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();
 
-      // Defaults (AppConfigModel.defaults) carry https://kitabattawheed.com.
-      expect(find.text('kitabattawheed.com'), findsOneWidget);
-    });
-
-    testWidgets('website is not duplicated when the App section is enabled',
-        (tester) async {
-      useTallSurface(tester);
-      final series = SeriesProvider()
-        ..setAvailableSeriesForTest([_seriesUrdu])
-        ..setCurrentSeriesForTest(_seriesUrdu);
-
-      await tester.pumpWidget(_wrap(series: series, appLinks: true));
-      await tester.pumpAndSettle();
-
-      // Only the About link — the App section no longer carries a website row.
-      expect(find.text('kitabattawheed.com'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Saved'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'About'), findsOneWidget);
     });
   });
 }

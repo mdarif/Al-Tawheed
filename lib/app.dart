@@ -20,6 +20,7 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
@@ -87,11 +88,23 @@ final _router = GoRouter(
                   : '/home',
           builder: (context, state) => const StudyScreen(),
         ),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
-        ),
       ],
+    ),
+
+    // Settings — root navigator so it opens full-screen (with a back button)
+    // from the gear on the Home app bar, rather than occupying a bottom tab.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
+    ),
+
+    // About — its own full-screen page, split out of Settings and pushed from
+    // the About row there (mirrors the al-Quran app).
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/about',
+      builder: (context, state) => const AboutPage(),
     ),
 
     // Series picker — root navigator, full-screen (no bottom nav), shown

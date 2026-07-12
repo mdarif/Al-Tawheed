@@ -38,9 +38,9 @@ class HomeScreen extends StatelessWidget {
               title: Text(l10n.tabHome),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.bookmark_outline_rounded),
-                  tooltip: l10n.saved,
-                  onPressed: () => context.push('/bookmarks'),
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: l10n.tabSettings,
+                  onPressed: () => context.push('/settings'),
                 ),
               ],
             ),

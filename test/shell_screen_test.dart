@@ -154,24 +154,25 @@ void main() {
   });
 
   testWidgets(
-      'shows 5 tabs including Book and Study for the Urdu series',
+      'shows 4 tabs (Lectures, Book, Home, Study) for the Urdu series',
       (tester) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    // The Urdu series now has both a Book tab and Study mode.
+    // The Urdu series has a Book tab and Study mode. Settings is not a tab —
+    // it lives behind the gear on the Home app bar.
     // "Lectures" appears twice: the page body and the nav destination label.
     expect(find.text('Lectures'), findsNWidgets(2));
     expect(find.text('Book'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Study'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.text('Settings'), findsNothing);
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
   });
 
-  testWidgets('shows 4 tabs with Book instead of Study for the Arabic series',
+  testWidgets('shows 3 tabs (Lectures, Book, Home) for the Arabic series',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
@@ -182,7 +183,7 @@ void main() {
 
     expect(find.text('Lectures'), findsOneWidget); // page body only
     expect(find.text('Study'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
   testWidgets('shows Arabic nav labels for the Arabic series', (tester) async {
@@ -196,24 +197,8 @@ void main() {
     expect(find.text('الدروس'), findsOneWidget);
     expect(find.text('الكتاب'), findsOneWidget);
     expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
-  });
-
-  testWidgets('tapping Settings navigates correctly in the 4-tab layout',
-      (tester) async {
-    final series = SeriesProvider()
-      ..load(false)
-      ..setCurrentSeriesForTest(_arabicSeries);
-
-    await tester.pumpWidget(_wrap(series: series));
-    await tester.pumpAndSettle();
-
-    await tester
-        .tap(find.widgetWithText(NavigationDestination, 'الإعدادات'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Settings'), findsOneWidget); // page body
-    expect(find.text('الإعدادات'), findsOneWidget); // nav label
+    // Settings moved to the Home gear — no longer a nav label.
+    expect(find.text('الإعدادات'), findsNothing);
   });
 
   group('ShellScreen — mini player', () {
@@ -255,7 +240,7 @@ void main() {
       expect(find.text('Lectures'), findsOneWidget); // page body only
       expect(find.text('الدروس'), findsOneWidget);
       expect(find.text('الرئيسية'), findsOneWidget);
-      expect(find.text('الإعدادات'), findsOneWidget);
+      expect(find.text('الإعدادات'), findsNothing); // Settings is not a tab
     });
   });
 }
