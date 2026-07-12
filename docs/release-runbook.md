@@ -10,6 +10,27 @@ commands, see [deployment.md](deployment.md).
 Follow these steps **in order** — each one says what to run, what success
 looks like, and what to do if it doesn't go to plan.
 
+> ### ⚠️ Pending action — reveal the Urdu Book tab (raised 2026-07-12)
+>
+> The `feature/urdu-book` branch bundles `assets/content/book_tawheed-ur.json`
+> and makes the app **capable** of an Urdu Book tab, but production keeps it
+> **hidden** until a matching release ships. When you cut the release that
+> contains this branch, do these two things:
+>
+> 1. **Remove the debug-only override** in
+>    [lib/models/series.dart](../lib/models/series.dart) — the
+>    `kDebugMode && id == legacyId` branch on `hasBook` (tagged
+>    `TODO: remove before final merge`). It must not reach a release.
+> 2. **After the release has reached broad rollout**, add `"hasBook": true` to
+>    the `tawheed-ur` entry in `Al-Tawheed-Content/series.json` and push (that
+>    repo deploys to `content.kitabattawheed.com/series.json`; edge cache ~1h).
+>    **Not before** — all app versions read the same `series.json`, so flipping
+>    it early gives not-yet-updated installs a Book tab whose bundled asset is
+>    missing (graceful "Book could not load" error, but avoidable).
+>
+> The Urdu book is currently the **Arabic matn as a placeholder** until clean
+> Urdu text is sourced (see [gotchas.md → Book](gotchas.md)).
+
 ## Pre-flight checklist
 
 - [ ] `develop` has everything you want to ship, pushed, and CI is green:
