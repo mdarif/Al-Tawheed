@@ -223,12 +223,12 @@ void main() {
     testWidgets('Book chip shown only for series with hasBook', (tester) async {
       final series = SeriesProvider()
         ..load(false)
-        ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+        ..setAvailableSeriesForTest(const [_minimalSeries, _arabicSeries]);
 
       await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();
 
-      // Arabic has book, Urdu does not
+      // Arabic has a book, the minimal series does not.
       expect(find.text('Book'), findsOneWidget);
     });
 

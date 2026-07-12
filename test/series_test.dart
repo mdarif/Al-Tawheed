@@ -23,8 +23,8 @@ void main() {
     });
   });
 
-  test('legacyUrduFallback has no book', () {
-    expect(SeriesConfig.legacyUrduFallback.hasBook, isFalse);
+  test('legacyUrduFallback ships a book (Urdu Book tab)', () {
+    expect(SeriesConfig.legacyUrduFallback.hasBook, isTrue);
   });
 
   group('SeriesConfig.fromJson — required fields', () {

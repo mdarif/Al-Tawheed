@@ -153,19 +153,22 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('shows 4 tabs including Study for the Urdu (study-mode) series',
+  testWidgets(
+      'shows 5 tabs including Book and Study for the Urdu series',
       (tester) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
+    // The Urdu series now has both a Book tab and Study mode.
     // "Lectures" appears twice: the page body and the nav destination label.
     expect(find.text('Lectures'), findsNWidgets(2));
+    expect(find.text('Book'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
   });
 
   testWidgets('shows 4 tabs with Book instead of Study for the Arabic series',

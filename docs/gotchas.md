@@ -87,6 +87,38 @@ is portable memory: any LLM working the repo should read and extend it.
   leave them as constants. A *new series* still needs its native title/tagline
   wired there, not via ARB.
 
+## Book (bundled reader)
+
+- **The Urdu Book tab currently ships the *Arabic* matn as a placeholder.**
+  `assets/content/book_tawheed-ur.json` is a copy of `book_tawheed-ar.json`
+  until clean Urdu text is sourced — swapping is just replacing that file (the
+  reader/loader key off `book_<seriesId>.json`, no code change). Why not the
+  real text yet: the Urdu print PDF is set in *Jameel Noori Nastaleeq* (CID
+  Nastaliq) whose ToUnicode map mangles ligature order, so every extractor
+  returns scrambled characters (`اتكباوتلیح` for `کتاب التوحید`); Nastaliq OCR
+  isn't reliable enough for scripture. Need the source `.docx`, not the PDF.
+- **The Urdu series now renders 5 bottom-nav tabs** (Lectures · Book · Home ·
+  Study · Settings) because it has both `hasBook` and `hasStudyMode`. Crowded
+  but functional; the deferred nav rework
+  ([todo-feature-flag-navigation.md](todo-feature-flag-navigation.md)) is the
+  place to fix it (e.g. overflow/"More").
+- **Rollout order matters for a bundled book.** The asset ships in an app
+  release; only flip `series.json`'s `hasBook:true` for `tawheed-ur` *after*
+  that release has rolled out. An older install (no bundled asset) that sees
+  `hasBook:true` hits `BookProvider`'s error path — graceful (error UI, no
+  crash), but stage the flip anyway. The `legacyUrduFallback.hasBook` in
+  `series.dart` only governs the flag-off / manifest-fail paths.
+- **Switching series must clear the book, not keep it.** `BookProvider.load`
+  short-circuits once loaded, so `switchSeries` calls `BookProvider.reload()`
+  (clear to idle); the Book tab lazy-loads the current series' book on open.
+  Eager-loading inside `switchSeries` blocks the switch on `rootBundle` I/O and
+  hangs `pumpAndSettle` in tests (the load future doesn't resolve under fake
+  async) — clear-only avoids both.
+- **The Book reader font is per-series** via `SeriesConfig.bookFontFamily`
+  (default `NotoNaskhArabic`). To render the Urdu book in Nastaliq later, bundle
+  a Nastaliq face and return it from that getter — the reader/chapter-list never
+  hardcode the family.
+
 ## CI / release
 
 - **The one-click release job runs in detached HEAD — push with `HEAD:master`,

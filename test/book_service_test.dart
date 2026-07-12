@@ -31,4 +31,15 @@ void main() {
       expect(chapter.text, isNotEmpty);
     }
   });
+
+  test('loadBook resolves the Urdu series book asset', () async {
+    // The Urdu series now has a Book tab; its asset is a placeholder copy of
+    // the Arabic matn until the clean Urdu text lands. Assert only that the
+    // asset is wired and parses, so this survives the content swap.
+    final book =
+        await BookService.instance.loadBook(SeriesConfig.legacyUrduFallback);
+
+    expect(book.chapters, isNotEmpty);
+    expect(book.chapters.first.text, isNotEmpty);
+  });
 }

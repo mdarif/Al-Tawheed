@@ -14,13 +14,24 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
+const _noBookSeries = SeriesConfig(
+  id: 'no-book',
+  catalogUrl: 'https://example.com/no-book/catalog.json',
+  storagePrefix: 'nb_',
+  hasStudyMode: false,
+  hasBook: false,
+  language: 'en',
+  displayName: {'en': 'No Book Series'},
+  speakerName: {'en': 'Speaker'},
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('load is a no-op for a series without a book', () async {
     final provider = BookProvider();
 
-    await provider.load(SeriesConfig.legacyUrduFallback);
+    await provider.load(_noBookSeries);
 
     expect(provider.status, BookStatus.idle);
     expect(provider.book, isNull);

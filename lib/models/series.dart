@@ -74,7 +74,11 @@ class SeriesConfig {
     catalogUrl: AppConfig.catalogUrl,
     storagePrefix: '',
     hasStudyMode: true,
-    hasBook: false,
+    // The Urdu series now ships a Book tab. Interim: `book_tawheed-ur.json` is
+    // a placeholder copy of the Arabic matn until the clean Urdu text lands
+    // (swap the asset, no code change). Production reveals the tab via
+    // series.json's `hasBook` once an asset-bearing release has rolled out.
+    hasBook: true,
     language: 'ur',
     displayName: {'en': 'Kitab at-Tawheed (Urdu)'},
     speakerName: {'en': 'Shaikh Abdullah Nasir Rahmani Hafizahullah'},
