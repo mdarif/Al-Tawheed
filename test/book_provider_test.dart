@@ -64,4 +64,32 @@ void main() {
     expect(provider.status, BookStatus.error);
     expect(provider.error, contains('boom'));
   });
+
+  // Regression: switching series must re-scope the book. Because [load]
+  // short-circuits once loaded, it would keep serving the previous series'
+  // book. [reload] clears back to idle so the Book tab re-loads on next open.
+  test('reload clears the loaded book back to idle', () async {
+    final provider = BookProvider();
+    await provider.load(_arabicSeries);
+    expect(provider.status, BookStatus.loaded);
+
+    provider.reload();
+
+    expect(provider.status, BookStatus.idle);
+    expect(provider.book, isNull);
+  });
+
+  test('a load after reload re-fetches (no stale short-circuit)', () async {
+    final provider = BookProvider();
+    await provider.load(_arabicSeries);
+    final first = provider.book;
+
+    provider.reload(); // e.g. series switch
+    expect(provider.status, BookStatus.idle);
+    await provider.load(_arabicSeries); // e.g. Book tab re-opened
+
+    expect(provider.status, BookStatus.loaded);
+    expect(provider.book, isNot(same(first))); // freshly parsed, not the stale one
+    expect(provider.book!.chapters, hasLength(67));
+  });
 }

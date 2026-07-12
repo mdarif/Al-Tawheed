@@ -31,6 +31,13 @@ class SeriesConfig {
   /// governs navigation/chrome separately.
   bool get isRtl => language == 'ar';
 
+  /// Font family used to render this series' bundled Book text (chapter list +
+  /// reader). All series use the bundled Naskh face today; switching the Urdu
+  /// book to a Nastaliq face later is a one-line change here (plus bundling the
+  /// asset) — the Book screens resolve the font from this rather than
+  /// hardcoding `'NotoNaskhArabic'`.
+  String get bookFontFamily => 'NotoNaskhArabic';
+
   factory SeriesConfig.fromJson(Map<String, dynamic> json) {
     // id keys all per-series state and catalogUrl is the fetch target — a
     // series missing either is unusable, so throw and let the manifest parser

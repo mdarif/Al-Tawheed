@@ -37,6 +37,20 @@ class BookProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Re-scopes the book when the active series changes.
+  ///
+  /// [load] short-circuits once a book is loaded, so it would otherwise keep
+  /// serving the previous series' book. Resetting to [idle] discards the stale
+  /// book; the Book tab lazy-loads the current series' book from its
+  /// `initState` when next opened (see `BookChapterListScreen`). Kept
+  /// synchronous so a series switch never blocks on book asset I/O.
+  void reload() {
+    _book = null;
+    _error = null;
+    _status = BookStatus.idle;
+    notifyListeners();
+  }
+
   /// Injects book content without loading the asset — for tests only.
   @visibleForTesting
   void setBookForTest(BookContent book) {

@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -87,6 +88,8 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     }
 
     final chapter = _chapters[_currentIndex];
+    final fontFamily =
+        context.watch<SeriesProvider>().currentSeries.bookFontFamily;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +101,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
             overflow: TextOverflow.ellipsis,
             style: context.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              fontFamily: 'NotoNaskhArabic',
+              fontFamily: fontFamily,
             ),
           ),
         ),
@@ -150,6 +153,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
           itemBuilder: (context, i) => _BookBody(
             text: _chapters[i].text,
             chapterId: _chapters[i].id,
+            fontFamily: fontFamily,
           ),
         ),
       ),
@@ -166,7 +170,12 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
 class _BookBody extends StatefulWidget {
   final String text;
   final String chapterId;
-  const _BookBody({required this.text, required this.chapterId});
+  final String fontFamily;
+  const _BookBody({
+    required this.text,
+    required this.chapterId,
+    required this.fontFamily,
+  });
 
   @override
   State<_BookBody> createState() => _BookBodyState();
@@ -351,7 +360,7 @@ class _BookBodyState extends State<_BookBody> {
     // ReadingProvider). Watching here rebuilds the body when it changes.
     final fontSize = context.watch<ReadingProvider>().bookFontSize;
     final baseStyle = context.textTheme.bodyLarge?.copyWith(
-          fontFamily: 'NotoNaskhArabic',
+          fontFamily: widget.fontFamily,
           fontSize: fontSize,
           height: 1.8,
           // letterSpacing must be 0/absent for Arabic — any positive value

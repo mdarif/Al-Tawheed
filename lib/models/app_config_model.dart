@@ -96,7 +96,7 @@ class AppConfigAbout {
         appName: j['appName'] as String? ?? '',
         lecturer: j['lecturer'] as String? ?? '',
         lectureCount: j['lectureCount'] as int? ?? 0,
-        classCount: j['classCount'] as int? ?? 15,
+        classCount: j['classCount'] as int? ?? 0,
         totalDuration: j['totalDuration'] as String? ?? '',
       );
 }

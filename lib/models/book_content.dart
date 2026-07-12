@@ -5,6 +5,25 @@
 // the book's own text is never translated, regardless of the app's UI
 // language (see SeriesConfig.isRtl / LanguageProvider.resolveForSeries).
 
+// ── Defensive parsing helpers ───────────────────────────────────────────────
+//
+// The book is a bundled asset, but a single malformed chapter must not throw
+// and blank the whole reader. A chapter's `id` (keys scroll-position storage)
+// and `text` (its content) are required; a bad chapter is skipped. Everything
+// else defaults. Mirrors the lenient approach in catalog.dart.
+
+String _reqStr(dynamic v, String field) {
+  if (v is String && v.isNotEmpty) return v;
+  throw FormatException('book: missing/invalid "$field"');
+}
+
+int _asInt(dynamic v, [int fallback = 0]) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? fallback;
+  return fallback;
+}
+
 class BookChapter {
   final String id;
   final int number;
@@ -19,10 +38,10 @@ class BookChapter {
   });
 
   factory BookChapter.fromJson(Map<String, dynamic> json) => BookChapter(
-        id: json['id'] as String,
-        number: json['number'] as int,
-        title: json['title'] as String,
-        text: json['text'] as String,
+        id: _reqStr(json['id'], 'chapter.id'),
+        number: _asInt(json['number']),
+        title: json['title'] is String ? json['title'] as String : '',
+        text: _reqStr(json['text'], 'chapter.text'),
       );
 }
 
@@ -37,13 +56,27 @@ class BookContent {
     required this.chapters,
   });
 
-  factory BookContent.fromJson(Map<String, dynamic> json) => BookContent(
-        title: json['book']['title'] as String,
-        author: json['book']['author'] as String,
-        chapters: (json['chapters'] as List<dynamic>)
-            .map((e) => BookChapter.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+  factory BookContent.fromJson(Map<String, dynamic> json) {
+    final rawBook = json['book'];
+    final meta = rawBook is Map<String, dynamic> ? rawBook : const <String, dynamic>{};
+    final rawChapters = json['chapters'];
+    final chapters = <BookChapter>[];
+    if (rawChapters is List) {
+      for (final e in rawChapters) {
+        if (e is! Map<String, dynamic>) continue;
+        try {
+          chapters.add(BookChapter.fromJson(e));
+        } catch (_) {
+          // Skip a single malformed chapter rather than blanking the reader.
+        }
+      }
+    }
+    return BookContent(
+      title: meta['title'] is String ? meta['title'] as String : '',
+      author: meta['author'] is String ? meta['author'] as String : '',
+      chapters: chapters,
+    );
+  }
 
   BookChapter chapterById(String id) => chapters.firstWhere((c) => c.id == id);
 }

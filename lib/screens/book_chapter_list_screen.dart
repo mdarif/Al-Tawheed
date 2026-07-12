@@ -33,6 +33,8 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
     final provider = context.watch<BookProvider>();
     final book = provider.book;
     final l10n = context.l10n;
+    final fontFamily =
+        context.watch<SeriesProvider>().currentSeries.bookFontFamily;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +46,7 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
                   textAlign: TextAlign.right,
                   style: context.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'NotoNaskhArabic',
+                    fontFamily: fontFamily,
                   ),
                 ),
               )
@@ -62,7 +64,10 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
               context.read<SeriesProvider>().currentSeries,
             ),
           ),
-        BookStatus.loaded => _ChapterList(chapters: book!.chapters),
+        BookStatus.loaded => _ChapterList(
+            chapters: book!.chapters,
+            fontFamily: fontFamily,
+          ),
       },
     );
   }
@@ -70,8 +75,9 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
 
 class _ChapterList extends StatelessWidget {
   final List<BookChapter> chapters;
+  final String fontFamily;
 
-  const _ChapterList({required this.chapters});
+  const _ChapterList({required this.chapters, required this.fontFamily});
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +87,7 @@ class _ChapterList extends StatelessWidget {
         final chapter = chapters[index];
         return Column(
           children: [
-            _ChapterTile(chapter: chapter),
+            _ChapterTile(chapter: chapter, fontFamily: fontFamily),
             Divider(
               height: 1,
               indent: 70,
@@ -97,8 +103,9 @@ class _ChapterList extends StatelessWidget {
 
 class _ChapterTile extends StatelessWidget {
   final BookChapter chapter;
+  final String fontFamily;
 
-  const _ChapterTile({required this.chapter});
+  const _ChapterTile({required this.chapter, required this.fontFamily});
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +126,7 @@ class _ChapterTile extends StatelessWidget {
                   style: context.textTheme.titleMedium?.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    fontFamily: 'NotoNaskhArabic',
+                    fontFamily: fontFamily,
                   ),
                 ),
               ),

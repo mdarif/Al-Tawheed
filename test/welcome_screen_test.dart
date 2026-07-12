@@ -10,6 +10,7 @@ import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -71,6 +72,7 @@ Widget _wrapWithRouter({
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
+      ChangeNotifierProvider(create: (_) => BookProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider(create: (_) => CatalogProvider()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),

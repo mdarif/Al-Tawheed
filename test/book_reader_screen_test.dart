@@ -8,6 +8,7 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/theme/app_theme.dart';
 
@@ -28,6 +29,7 @@ Widget _wrap(BookProvider book, String chapterId) {
     providers: [
       ChangeNotifierProvider.value(value: book),
       ChangeNotifierProvider(create: (_) => ReadingProvider()),
+      ChangeNotifierProvider(create: (_) => SeriesProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
@@ -219,6 +220,7 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   final progress = context.read<ProgressProvider>();
   final study = context.read<StudyProgressProvider>();
   final downloads = context.read<DownloadsProvider>();
+  final book = context.read<BookProvider>();
   final lang = context.read<LanguageProvider>();
 
   await player.stop();
@@ -227,5 +229,6 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   progress.reload();
   study.reload();
   await downloads.reload();
+  book.reload(); // clears the stale book; Book tab lazy-loads the new series'
   await lang.applySeriesLanguage(newSeries.language);
 }
