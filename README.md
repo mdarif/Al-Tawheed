@@ -1,9 +1,9 @@
-# Sharah Kitab al-Tawheed — شرح کتاب التوحید
+# Sharah Kitab at-Tawheed — شرح کتاب التوحید
 
 [![CI](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml)
 [![codecov](https://codecov.io/gh/mdarif/Al-Tawheed/graph/badge.svg)](https://codecov.io/gh/mdarif/Al-Tawheed)
 
-**Al Marfa Duroos** — a free offline-first audio app for the complete Sharah Kitab al-Tawheed lecture series by Shaikh Abdullah Nasir Rahmani Hafizahullah. Stream or download all 50 lectures, follow the structured study programme class by class, and listen with full lock-screen and notification controls.
+**Al Marfa Duroos** — a free offline-first audio app for the complete Sharah Kitab at-Tawheed lecture series by Shaikh Abdullah Nasir Rahmani Hafizahullah. Stream or download all 50 lectures, follow the structured study programme class by class, and listen with full lock-screen and notification controls.
 
 **[kitabattawheed.com](https://kitabattawheed.com)** &nbsp;·&nbsp;
 **[Play Store](https://play.google.com/store/apps/details?id=com.almarfa.tawheed)** &nbsp;·&nbsp;
@@ -24,7 +24,7 @@
 
 ## Features
 
-- **50 lectures · 27+ hours** — the complete Sharah Kitab al-Tawheed series
+- **50 lectures · 27+ hours** — the complete Sharah Kitab at-Tawheed series
 - **Offline playback** — download any lecture for listening without a connection
 - **Study Mode** — 15 structured classes to work through the series systematically
 - **Background audio** — lock-screen controls and notification transport on Android and iOS

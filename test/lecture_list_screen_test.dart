@@ -245,7 +245,7 @@ void main() {
       jsonEncode(_catalogJson(
         bookId: 'legacy-book',
         chapters: const [],
-        bookTitle: const {'en': 'Sharah Kitab al-Tawheed'},
+        bookTitle: const {'en': 'Sharah Kitab at-Tawheed'},
         lectures: [_lectureJson('lec-001', 1)],
       ),),
     );
@@ -270,7 +270,7 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sharah Kitab al-Tawheed'), findsOneWidget);
+    expect(find.text('Sharah Kitab at-Tawheed'), findsOneWidget);
     expect(find.text('كتاب التوحيد'), findsNothing);
 
     // The active series flips to Arabic (restored from prefs / device default).
@@ -280,6 +280,6 @@ void main() {
     // The catalog must follow the series — Arabic content now, Urdu gone.
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
-    expect(find.text('Sharah Kitab al-Tawheed'), findsNothing);
+    expect(find.text('Sharah Kitab at-Tawheed'), findsNothing);
   });
 }

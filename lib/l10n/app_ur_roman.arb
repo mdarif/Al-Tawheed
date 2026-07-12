@@ -5,7 +5,7 @@
   "tabStudyMode": "Taleem",
   "tabSettings": "Tarteebat",
 
-  "appTitle": "Sharah Kitab al-Tawheed",
+  "appTitle": "Sharah Kitab at-Tawheed",
   "nowPlaying": "Abhi chal raha hai",
   "bookmark": "Bookmark karein",
   "removeBookmark": "Bookmark hataayein",
@@ -92,7 +92,7 @@
   "statOfflineReady": "Offline Ready",
   "settingsAboutArabicTitle": "شرح کتاب التوحید",
   "settingsAboutStats": "{lectures} Lectures · {classes} Classes · {duration}",
-  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab al-Tawheed.",
+  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab at-Tawheed.",
   "settingsAboutDescriptionLine2": "The Foundation of Islamic Monotheism.",
   "settingsAboutVersion": "Version {version}",
   "settingsAboutLine": "{count} dars · {appName}",

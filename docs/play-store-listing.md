@@ -38,7 +38,7 @@ Use a **store screenshot generator** — upload your raw PNGs, pick Android phon
 
    | Screenshot | Headline (like Greentech) |
    |------------|---------------------------|
-   | Welcome | Complete Sharah of Kitab al-Tawheed |
+   | Welcome | Complete Sharah of Kitab at-Tawheed |
    | Lectures | 50 Lectures · 15 Classes |
    | Player | Listen in the Background |
    | Home | Resume Where You Left Off |
@@ -63,7 +63,7 @@ No Photoshop; optional free account on the web tool.
 | Short description | Video / YouTube focus | 50 audio lectures, offline-friendly, Urdu support |
 | Full description | Outdated features | See copy below |
 | Feature graphic | Old branding | New banner (see `docs/store-assets/feature-graphic-spec.md`) |
-| App name | May say “At-Tawheed” | **Sharah Kitab al-Tawheed** (match welcome screen) |
+| App name | May say “al-Tawheed” (old canon) | **Sharah Kitab at-Tawheed** (assimilated form — match welcome screen + kitabattawheed.com) |
 
 ---
 
@@ -127,7 +127,7 @@ Use **light theme** for most shots (palette B — cream + gold). Add **1–2 dar
 
 | # | Screen | How to capture | Caption idea (optional overlay in Canva) |
 |---|--------|----------------|------------------------------------------|
-| 1 | **Welcome** | Cold start → welcome with cover + “START LISTENING” | *Complete Sharah of Kitab al-Tawheed* |
+| 1 | **Welcome** | Cold start → welcome with cover + “START LISTENING” | *Complete Sharah of Kitab at-Tawheed* |
 | 2 | **Lectures** | Tab: Lectures → class list expanded | *15 classes · 50 lectures* |
 | 3 | **Lecture parts** | Open one class → part list | *Listen part by part* |
 | 4 | **Player** | Play a lecture → full player | *Background playback · speed control* |

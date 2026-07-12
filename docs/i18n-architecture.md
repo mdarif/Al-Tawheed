@@ -116,9 +116,9 @@ Every multilingual field in every JSON file **must** have an `en` value. All oth
   "version": 1,
   "book": {
     "title": {
-      "en": "Sharah Kitab al-Tawheed",
+      "en": "Sharah Kitab at-Tawheed",
       "ur": "شرح کتاب التوحید",
-      "roman": "Sharah Kitab al-Tawheed",
+      "roman": "Sharah Kitab at-Tawheed",
       "hi": "शरह किताब अल-तौहीद",
       "ar": "شرح كتاب التوحيد"
     },
@@ -207,9 +207,9 @@ Every multilingual field in every JSON file **must** have an `en` value. All oth
 {
   "share": {
     "message": {
-      "en": "The Sharah Kitab Al-Tawheed app — 50 audio lectures...",
+      "en": "The Sharah Kitab at-Tawheed app — 50 audio lectures...",
       "ur": "شرح کتاب التوحید ایپ — ۵۰ آڈیو دروس...",
-      "roman": "Sharah Kitab al-Tawheed app — 50 audio duroos..."
+      "roman": "Sharah Kitab at-Tawheed app — 50 audio duroos..."
     }
   }
 }

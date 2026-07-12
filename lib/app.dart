@@ -246,7 +246,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, langProvider, _) =>
             MaterialApp.router(
-          title: 'Sharah Kitab al-Tawheed',
+          title: 'Sharah Kitab at-Tawheed',
           routerConfig: _router,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,

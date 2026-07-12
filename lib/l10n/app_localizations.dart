@@ -134,7 +134,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Sharah Kitab al-Tawheed'**
+  /// **'Sharah Kitab at-Tawheed'**
   String get appTitle;
 
   /// No description provided for @nowPlaying.
@@ -626,7 +626,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAboutDescriptionLine1.
   ///
   /// In en, this message translates to:
-  /// **'Complete Audio Series on Kitab al-Tawheed.'**
+  /// **'Complete Audio Series on Kitab at-Tawheed.'**
   String get settingsAboutDescriptionLine1;
 
   /// No description provided for @settingsAboutDescriptionLine2.

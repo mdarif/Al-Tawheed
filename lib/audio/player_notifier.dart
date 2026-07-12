@@ -199,7 +199,7 @@ class PlayerNotifier extends ChangeNotifier {
       lecture,
       startFrom: resumeAt,
       localFilePath: localPath,
-      artist: speaker?.isNotEmpty == true ? speaker! : 'Sharah Kitab al-Tawheed',
+      artist: speaker?.isNotEmpty == true ? speaker! : 'Sharah Kitab at-Tawheed',
       displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
     );
     _startSaveTimer();

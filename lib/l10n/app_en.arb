@@ -7,7 +7,7 @@
   "tabStudyMode": "Study",
   "tabSettings": "Settings",
 
-  "appTitle": "Sharah Kitab al-Tawheed",
+  "appTitle": "Sharah Kitab at-Tawheed",
   "nowPlaying": "Now Playing",
   "bookmark": "Bookmark",
   "removeBookmark": "Remove bookmark",
@@ -139,7 +139,7 @@
       "duration": { "type": "String" }
     }
   },
-  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab al-Tawheed.",
+  "settingsAboutDescriptionLine1": "Complete Audio Series on Kitab at-Tawheed.",
   "settingsAboutDescriptionLine2": "The Foundation of Islamic Monotheism.",
   "settingsAboutVersion": "Version {version}",
   "@settingsAboutVersion": {

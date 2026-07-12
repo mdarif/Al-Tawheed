@@ -23,7 +23,7 @@ Google Play **requires** a feature graphic. It appears at the top of your store 
 
 **Right two-thirds (text):**
 
-1. **English title** — “Sharah Kitab al-Tawheed”  
+1. **English title** — “Sharah Kitab at-Tawheed”  
    - Font: serif or elegant sans (e.g. Playfair Display, Cormorant)  
    - Color: `#1C1C1E`  
    - Size: ~48–56px

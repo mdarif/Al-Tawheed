@@ -72,13 +72,13 @@ Controls all links, contact details, and static text currently hardcoded in Dart
   },
   "contact": {
     "email": "arif.mohammed@gmail.com",
-    "subject": "Sharah Kitab Al-Tawheed — Feedback"
+    "subject": "Sharah Kitab at-Tawheed — Feedback"
   },
   "share": {
-    "message": "The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\nDownload: https://play.google.com/store/apps/details?id=com.almarfa.tawheed"
+    "message": "The *Sharah Kitab at-Tawheed* app — 50 audio lectures of Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\nDownload: https://play.google.com/store/apps/details?id=com.almarfa.tawheed"
   },
   "about": {
-    "appName": "Sharah Kitab al-Tawheed",
+    "appName": "Sharah Kitab at-Tawheed",
     "lecturer": "Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah",
     "lectureCount": 50,
     "totalDuration": "27h 7m"

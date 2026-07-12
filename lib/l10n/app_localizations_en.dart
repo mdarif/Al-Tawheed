@@ -24,7 +24,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabSettings => 'Settings';
 
   @override
-  String get appTitle => 'Sharah Kitab al-Tawheed';
+  String get appTitle => 'Sharah Kitab at-Tawheed';
 
   @override
   String get nowPlaying => 'Now Playing';
@@ -298,7 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAboutDescriptionLine1 =>
-      'Complete Audio Series on Kitab al-Tawheed.';
+      'Complete Audio Series on Kitab at-Tawheed.';
 
   @override
   String get settingsAboutDescriptionLine2 =>

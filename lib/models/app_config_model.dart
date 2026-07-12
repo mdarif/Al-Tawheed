@@ -143,15 +143,15 @@ class AppConfigModel {
         ),
         contact: const AppConfigContact(
           email: 'arif.mohammed@gmail.com',
-          subject: 'Sharah Kitab Al-Tawheed — Feedback',
+          subject: 'Sharah Kitab at-Tawheed — Feedback',
         ),
         share: const AppConfigShare(
-          message: 'The *Sharah Kitab Al-Tawheed* app — 50 audio lectures of '
+          message: 'The *Sharah Kitab at-Tawheed* app — 50 audio lectures of '
               'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
               'https://kitabattawheed.com/download/',
         ),
         about: const AppConfigAbout(
-          appName: 'Sharah Kitab al-Tawheed',
+          appName: 'Sharah Kitab at-Tawheed',
           lecturer: 'Shaikh Abdullah Nasir Rahmani Hafizahullah',
           lectureCount: 50,
           classCount: 15,

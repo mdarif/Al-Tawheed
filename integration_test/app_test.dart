@@ -30,7 +30,7 @@ void main() {
 
       // ── Catalog load & lecture list ─────────────────────────────────────
       await AppFlow.goToLectureList(tester);
-      expect(find.text('Sharah Kitab al-Tawheed'), findsWidgets);
+      expect(find.text('Sharah Kitab at-Tawheed'), findsWidgets);
       expect(find.byType(LectureTile), findsWidgets);
 
       // ── Chapter download action on multi-part classes ─────────────────────

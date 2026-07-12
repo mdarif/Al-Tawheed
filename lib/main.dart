@@ -23,7 +23,7 @@ Future<void> main() async {
     builder: () => TawheedAudioHandler(),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.almarfa.tawheed.audio',
-      androidNotificationChannelName: 'Sharah Kitab al-Tawheed',
+      androidNotificationChannelName: 'Sharah Kitab at-Tawheed',
       androidNotificationOngoing: true,
       androidShowNotificationBadge: true,
       notificationColor: AppColors.goldLightTheme,

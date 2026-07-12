@@ -79,8 +79,8 @@ Same JSON the Flutter app uses. Adding content (lectures, benefits) automaticall
 ### Per-lecture page
 
 ```html
-<title>Class 01 Part 01 — Sharah Kitab al-Tawheed | Urdu Islamic Lectures</title>
-<meta name="description" content="Listen to Class 01 Part 01 of Sharah Kitab al-Tawheed by Sheikh Abdullah Nasir Rahmani. Free online and offline via the Android app.">
+<title>Class 01 Part 01 — Sharah Kitab at-Tawheed | Urdu Islamic Lectures</title>
+<meta name="description" content="Listen to Class 01 Part 01 of Sharah Kitab at-Tawheed by Sheikh Abdullah Nasir Rahmani. Free online and offline via the Android app.">
 ```
 
 ### Structured data (JSON-LD)

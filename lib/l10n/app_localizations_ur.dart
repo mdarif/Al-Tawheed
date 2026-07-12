@@ -549,7 +549,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get tabSettings => 'Tarteebat';
 
   @override
-  String get appTitle => 'Sharah Kitab al-Tawheed';
+  String get appTitle => 'Sharah Kitab at-Tawheed';
 
   @override
   String get nowPlaying => 'Abhi chal raha hai';
@@ -827,7 +827,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsAboutDescriptionLine1 =>
-      'Complete Audio Series on Kitab al-Tawheed.';
+      'Complete Audio Series on Kitab at-Tawheed.';
 
   @override
   String get settingsAboutDescriptionLine2 =>

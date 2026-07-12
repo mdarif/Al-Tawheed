@@ -171,16 +171,16 @@ Step 11  Upload APK artifact               ← retained 7 days, downloadable fro
 
 It used to be the unmodified Flutter counter-app template (`find.text('0')`, `Icons.add`) and was
 excluded from the test run. It has since been **rewritten** with real welcome-screen tests
-(`Widget Tests - Sharah Kitab At-Tawheed`) and is now included in the plain
+(`Widget Tests - Sharah Kitab at-Tawheed`) and is now included in the plain
 `flutter test --reporter=expanded` run along with everything else in `test/`. There is nothing to
 delete or exclude — the workflow comments referencing it as a stale template are outdated.
 
 One consequence worth knowing: because it asserts on the literal welcome-screen title string
-(`find.textContaining('Kitab al-Tawheed')`), it will break again if that copy changes — e.g. it
-broke on 2026-06-07 when the title was reformatted to `'Sharah\n Kitab al-Tawheed'` (the old
+(`find.textContaining('Kitab at-Tawheed')`), it will break again if that copy changes — e.g. it
+broke on 2026-06-07 when the title was reformatted to `'Sharah\n Kitab at-Tawheed'` (the old
 assertion `'Sharah Kitab'` no longer matched because the line break moved). Fixed in
 [test/widget_test.dart](../test/widget_test.dart) by matching the more stable substring
-`'Kitab al-Tawheed'`.
+`'Kitab at-Tawheed'`.
 
 ### `keys.dart` stub step — removed (no longer needed)
 

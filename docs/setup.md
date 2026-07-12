@@ -1,7 +1,7 @@
 # Al-Tawheed Project Setup Guide
 
 ## Overview
-This document provides complete setup instructions for the Sharah Kitab At-Tawheed Flutter application, including local development environment configuration, testing setup, and troubleshooting.
+This document provides complete setup instructions for the Sharah Kitab at-Tawheed Flutter application, including local development environment configuration, testing setup, and troubleshooting.
 
 ## Prerequisites
 - macOS (Intel or Apple Silicon)

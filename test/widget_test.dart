@@ -53,7 +53,7 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  group('Widget Tests - Sharah Kitab At-Tawheed', () {
+  group('Widget Tests - Sharah Kitab at-Tawheed', () {
     testWidgets('App starts and displays welcome screen',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(WelcomeScreen()));
