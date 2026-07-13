@@ -67,4 +67,12 @@ class BookProvider extends ChangeNotifier {
     _status = BookStatus.error;
     notifyListeners();
   }
+
+  /// Pins the loading state — for tests only (avoids depending on auto-load
+  /// timing, which varies with the bundled asset size).
+  @visibleForTesting
+  void setLoadingForTest() {
+    _status = BookStatus.loading;
+    notifyListeners();
+  }
 }

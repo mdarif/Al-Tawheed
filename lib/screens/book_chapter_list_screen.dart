@@ -34,8 +34,9 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
     final provider = context.watch<BookProvider>();
     final book = provider.book;
     final l10n = context.l10n;
-    final fontFamily =
-        context.watch<SeriesProvider>().currentSeries.bookFontFamily;
+    final series = context.watch<SeriesProvider>().currentSeries;
+    final fontFamily = series.bookFontFamily;
+    final language = series.language;
 
     return Scaffold(
       appBar: AppBar(
@@ -69,6 +70,7 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
         BookStatus.loaded => _ChapterList(
             chapters: book!.chapters,
             fontFamily: fontFamily,
+            language: language,
           ),
       },
     );
@@ -78,8 +80,13 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
 class _ChapterList extends StatelessWidget {
   final List<BookChapter> chapters;
   final String fontFamily;
+  final String language;
 
-  const _ChapterList({required this.chapters, required this.fontFamily});
+  const _ChapterList({
+    required this.chapters,
+    required this.fontFamily,
+    required this.language,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +96,13 @@ class _ChapterList extends StatelessWidget {
         final chapter = chapters[index];
         return Column(
           children: [
-            _ChapterTile(chapter: chapter, fontFamily: fontFamily),
+            _ChapterTile(
+              chapter: chapter,
+              // 1-based position, so the list reads ۱, ۲, ۳… not ۰, ۱, ۲…
+              displayNumber: index + 1,
+              fontFamily: fontFamily,
+              language: language,
+            ),
             Divider(
               height: 1,
               indent: 70,
@@ -105,9 +118,16 @@ class _ChapterList extends StatelessWidget {
 
 class _ChapterTile extends StatelessWidget {
   final BookChapter chapter;
+  final int displayNumber;
   final String fontFamily;
+  final String language;
 
-  const _ChapterTile({required this.chapter, required this.fontFamily});
+  const _ChapterTile({
+    required this.chapter,
+    required this.displayNumber,
+    required this.fontFamily,
+    required this.language,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +137,7 @@ class _ChapterTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _NumberBadge(number: chapter.number),
+            _NumberBadge(number: displayNumber, language: language),
             const SizedBox(width: 14),
             Expanded(
               child: Directionality(
@@ -142,8 +162,9 @@ class _ChapterTile extends StatelessWidget {
 
 class _NumberBadge extends StatelessWidget {
   final int number;
+  final String language;
 
-  const _NumberBadge({required this.number});
+  const _NumberBadge({required this.number, required this.language});
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +177,7 @@ class _NumberBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        arabicDigitsInString(number.toString().padLeft(2, '0')),
+        localizedDigitsInString(number.toString().padLeft(2, '0'), language),
         style: context.textTheme.labelMedium?.copyWith(
           color: context.brandColor,
           letterSpacing: 0.5,

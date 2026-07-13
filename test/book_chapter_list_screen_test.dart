@@ -86,9 +86,25 @@ void main() {
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('مقدمة'), findsOneWidget);
     expect(find.text('باب فضل التوحيد'), findsOneWidget);
-    // Chapter badges render Eastern Arabic-Indic numerals (٠٠، ٠١).
-    expect(find.text('٠٠'), findsOneWidget);
+    // Badges are 1-based (start at 1, not 0), in Eastern Arabic-Indic for the
+    // Arabic series.
     expect(find.text('٠١'), findsOneWidget);
+    expect(find.text('٠٢'), findsOneWidget);
+  });
+
+  testWidgets('Urdu series numbers chapters 1-based in Urdu digits',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(SeriesConfig.legacyUrduFallback);
+
+    await tester.pumpWidget(_wrap(book: book, series: series));
+    await tester.pumpAndSettle();
+
+    // Urdu numerals (U+06F0…) start at ۰۱, not Arabic-Indic ٠١.
+    expect(find.text('۰۱'), findsOneWidget);
+    expect(find.text('۰۲'), findsOneWidget);
   });
 
   testWidgets('tapping a chapter navigates to the reader', (tester) async {
@@ -106,8 +122,10 @@ void main() {
     expect(find.text('Reader: ch-01'), findsOneWidget);
   });
 
-  testWidgets('idle state shows a progress indicator', (tester) async {
-    final book = BookProvider();
+  testWidgets('loading state shows a progress indicator', (tester) async {
+    // Pin the loading state so the assertion doesn't race the screen's
+    // auto-load (which resolves within a pump for a small bundled asset).
+    final book = BookProvider()..setLoadingForTest();
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(SeriesConfig.legacyUrduFallback);

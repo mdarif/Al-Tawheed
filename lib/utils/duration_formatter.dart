@@ -57,3 +57,26 @@ String arabicDigitsInString(String s) => s.replaceAllMapped(
       RegExp(r'[0-9]'),
       (m) => _easternArabicDigits[int.parse(m[0]!)],
     );
+
+// Urdu uses a distinct set of Perso-Arabic numerals (U+06F0-06F9) that differ
+// from the Arabic-Indic ones above — e.g. Urdu ۴ vs Arabic ٤.
+const _urduDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+/// Converts the Western digits of [n] to Urdu numerals. 91 → "۹۱"
+String toUrduDigits(int n) =>
+    n.toString().split('').map((d) => _urduDigits[int.parse(d)]).join();
+
+/// Converts every Western digit (0-9) inside [s] to Urdu numerals.
+String urduDigitsInString(String s) => s.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (m) => _urduDigits[int.parse(m[0]!)],
+    );
+
+/// Localises digits in [s] for [language]: Urdu numerals for `'ur'`,
+/// Eastern Arabic-Indic otherwise (Arabic content).
+String localizedDigitsInString(String s, String language) =>
+    language == 'ur' ? urduDigitsInString(s) : arabicDigitsInString(s);
+
+/// Localises the digits of [n] for [language] (Urdu vs Arabic-Indic).
+String toLocalizedDigits(int n, String language) =>
+    language == 'ur' ? toUrduDigits(n) : toArabicDigits(n);

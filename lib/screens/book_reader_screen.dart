@@ -88,8 +88,9 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     }
 
     final chapter = _chapters[_currentIndex];
-    final fontFamily =
-        context.watch<SeriesProvider>().currentSeries.bookFontFamily;
+    final series = context.watch<SeriesProvider>().currentSeries;
+    final fontFamily = series.bookFontFamily;
+    final language = series.language;
 
     return Scaffold(
       appBar: AppBar(
@@ -154,6 +155,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
             text: _chapters[i].text,
             chapterId: _chapters[i].id,
             fontFamily: fontFamily,
+            language: language,
           ),
         ),
       ),
@@ -171,10 +173,12 @@ class _BookBody extends StatefulWidget {
   final String text;
   final String chapterId;
   final String fontFamily;
+  final String language;
   const _BookBody({
     required this.text,
     required this.chapterId,
     required this.fontFamily,
+    required this.language,
   });
 
   @override
@@ -228,9 +232,9 @@ class _BookBodyState extends State<_BookBody> {
   // Run types: 0 = plain, 1 = verse, 2 = citation, 3 = hadith. Colours are
   // resolved from the active theme at render time (see [_renderLines]).
   List<(String, int)> _parseLine(String line) {
-    // Eastern Arabic-Indic numerals for inline ayah numbers etc. Digit chars
-    // map 1:1 so the regex match positions below stay valid.
-    final text = arabicDigitsInString(line);
+    // Digits are localised per-run at render time (by the run's script), so
+    // keep the raw text here.
+    final text = line;
 
     final intervals = <(int, int, int)>[];
     for (final m in _verseRe.allMatches(text)) {
@@ -276,15 +280,39 @@ class _BookBodyState extends State<_BookBody> {
         _ => colors.hadith,
       };
 
-  // Applies [base]/theme colours to the precomputed runs — the only per-rebuild
-  // work now. No regex, sort, or substring here.
-  List<Widget> _renderLines(TextStyle base, _HighlightColors colors) {
+  // Urdu uses letters (ک گ چ پ ژ ٹ ڈ ڑ ں ھ ہ ی ے) that Qur'anic Arabic never
+  // does, so a line's script is unambiguous. Arabic (verses, hadith, narrator
+  // prose) renders in Naskh; Urdu (translation, sharah, masā'il) in the series
+  // font (Nastaliq), which also needs a larger size and more generous leading.
+  static final _urduLetters = RegExp(
+    r'[کگچپژٹڈڑںھہیے]',
+  );
+
+  // Noto Nastaliq Urdu renders visually larger than Noto Naskh Arabic at the
+  // same point size, so Urdu is scaled to sit level with the Arabic matn.
+  // Tunable: raise toward 1.0 for larger Urdu, lower for smaller. Nastaliq's
+  // tall, sloping glyphs still get generous leading via [_urduHeight].
+  static const _urduSizeFactor = 0.78;
+  static const _urduHeight = 2.0;
+  static const _arabicHeight = 1.8;
+
+  // Applies per-line script (font/size/leading) + theme colours to the
+  // precomputed runs — the only per-rebuild work. No regex-heavy parsing here.
+  List<Widget> _renderLines(
+    TextStyle template,
+    double fontSize,
+    _HighlightColors colors,
+  ) {
     final widgets = <Widget>[];
     for (final runs in _parsedLines) {
       if (runs == null) {
         widgets.add(const SizedBox(height: 8));
         continue;
       }
+      // Line leading follows the taller script present (Nastaliq needs more),
+      // so a mixed Urdu-intro + Arabic-āyah line still breathes.
+      final height =
+          runs.any((r) => _urduLetters.hasMatch(r.$1)) ? _urduHeight : _arabicHeight;
       widgets.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -292,12 +320,7 @@ class _BookBodyState extends State<_BookBody> {
             TextSpan(
               children: [
                 for (final (text, type) in runs)
-                  TextSpan(
-                    text: text,
-                    style: type == 0
-                        ? base
-                        : base.copyWith(color: _colorFor(type, colors)),
-                  ),
+                  _runSpan(text, type, fontSize, height, template, colors),
               ],
             ),
             textAlign: TextAlign.right,
@@ -307,6 +330,32 @@ class _BookBodyState extends State<_BookBody> {
       );
     }
     return widgets;
+  }
+
+  // Font & size are chosen per run by its OWN script — Arabic (Qur'anic āyāt)
+  // in Naskh, Urdu in the series font (Nastaliq), scaled to sit level — so a
+  // single line can mix an Urdu intro with an Arabic verse. Digits, however,
+  // follow the BOOK's language (Urdu numerals throughout an Urdu book, even
+  // inside the Arabic āyāt/citations), which is what an Urdu reader expects.
+  TextSpan _runSpan(
+    String text,
+    int type,
+    double fontSize,
+    double height,
+    TextStyle template,
+    _HighlightColors colors,
+  ) {
+    final isUrdu = _urduLetters.hasMatch(text);
+    var style = template.copyWith(
+      fontFamily: isUrdu ? widget.fontFamily : 'NotoNaskhArabic',
+      fontSize: isUrdu ? fontSize * _urduSizeFactor : fontSize,
+      height: height,
+    );
+    if (type != 0) style = style.copyWith(color: _colorFor(type, colors));
+    return TextSpan(
+      text: localizedDigitsInString(text, widget.language),
+      style: style,
+    );
   }
 
   @override
@@ -359,15 +408,10 @@ class _BookBodyState extends State<_BookBody> {
     // Font size is driven by the A−/A+ controls in the app bar (see
     // ReadingProvider). Watching here rebuilds the body when it changes.
     final fontSize = context.watch<ReadingProvider>().bookFontSize;
-    final baseStyle = context.textTheme.bodyLarge?.copyWith(
-          fontFamily: widget.fontFamily,
-          fontSize: fontSize,
-          height: 1.8,
-          // letterSpacing must be 0/absent for Arabic — any positive value
-          // inserts gaps between glyphs and breaks cursive joins and
-          // ligatures (including the mandatory الله ligature).
-        ) ??
-        const TextStyle();
+    // The template carries theme + colour only; per-line font, size and leading
+    // are chosen by script in _renderLines. letterSpacing stays 0 — any
+    // positive value breaks Arabic cursive joins and the الله ligature.
+    final template = context.textTheme.bodyLarge ?? const TextStyle();
 
     // SelectionArea makes the passages selectable/copyable — essential for a
     // study text. No pinch-zoom gesture here, so it never competes with the
@@ -380,7 +424,8 @@ class _BookBodyState extends State<_BookBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: _renderLines(
-            baseStyle,
+            template,
+            fontSize,
             (
               verse: context.bookVerseColor,
               citation: context.bookCitationColor,
