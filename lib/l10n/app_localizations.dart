@@ -386,19 +386,19 @@ abstract class AppLocalizations {
   /// No description provided for @saved.
   ///
   /// In en, this message translates to:
-  /// **'Saved'**
+  /// **'Bookmarks'**
   String get saved;
 
   /// No description provided for @savedCount.
   ///
   /// In en, this message translates to:
-  /// **'Saved ({count})'**
+  /// **'Bookmarks ({count})'**
   String savedCount(int count);
 
   /// No description provided for @noSavedLectures.
   ///
   /// In en, this message translates to:
-  /// **'No saved lectures yet'**
+  /// **'No bookmarked lectures yet'**
   String get noSavedLectures;
 
   /// No description provided for @noSavedHint.

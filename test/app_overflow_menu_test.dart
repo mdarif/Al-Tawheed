@@ -64,19 +64,20 @@ Future<void> _openMenu(WidgetTester tester) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('opens with Saved, Settings and About entries', (tester) async {
+  testWidgets('opens with Bookmarks, Settings and About entries',
+      (tester) async {
     await tester.pumpWidget(_wrap(SeriesProvider()));
     await _openMenu(tester);
 
-    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Bookmarks'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
   });
 
-  testWidgets('selecting Saved pushes /bookmarks', (tester) async {
+  testWidgets('selecting Bookmarks pushes /bookmarks', (tester) async {
     await tester.pumpWidget(_wrap(SeriesProvider()));
     await _openMenu(tester);
-    await tester.tap(find.text('Saved'));
+    await tester.tap(find.text('Bookmarks'));
     await tester.pumpAndSettle();
 
     expect(find.text('BOOKMARKS PAGE'), findsOneWidget);

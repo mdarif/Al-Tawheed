@@ -87,12 +87,12 @@
     }
   },
 
-  "saved": "Saved",
-  "savedCount": "Saved ({count})",
+  "saved": "Bookmarks",
+  "savedCount": "Bookmarks ({count})",
   "@savedCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "noSavedLectures": "No saved lectures yet",
+  "noSavedLectures": "No bookmarked lectures yet",
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 
   "couldNotLoadLectures": "Could not load lectures",

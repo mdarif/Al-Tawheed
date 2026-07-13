@@ -171,15 +171,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get saved => 'Saved';
+  String get saved => 'Bookmarks';
 
   @override
   String savedCount(int count) {
-    return 'Saved ($count)';
+    return 'Bookmarks ($count)';
   }
 
   @override
-  String get noSavedLectures => 'No saved lectures yet';
+  String get noSavedLectures => 'No bookmarked lectures yet';
 
   @override
   String get noSavedHint =>
