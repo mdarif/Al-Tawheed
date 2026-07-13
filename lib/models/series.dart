@@ -55,7 +55,13 @@ class SeriesConfig {
       catalogUrl: catalogUrl,
       storagePrefix: json['storagePrefix'] as String? ?? '',
       hasStudyMode: json['hasStudyMode'] as bool? ?? false,
-      hasBook: json['hasBook'] as bool? ?? false,
+      // The legacy Urdu series ships its Book as a bundled asset in this app
+      // version, so it defaults to having a Book tab even when series.json
+      // omits the flag. This ties the Book tab to what the app ACTUALLY
+      // bundles (older app versions have neither this default nor the asset,
+      // so they stay unaffected) instead of a coordinated series.json deploy.
+      // An explicit `hasBook: false` in the manifest still wins.
+      hasBook: json['hasBook'] as bool? ?? (id == legacyId),
       language: json['language'] as String? ?? 'en',
       displayName: toI18nMap(json['displayName']),
       speakerName: toI18nMap(json['speakerName']),

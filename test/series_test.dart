@@ -3,10 +3,29 @@ import 'package:myapp/models/series.dart';
 
 void main() {
   group('SeriesConfig.fromJson — hasBook', () {
-    test('defaults to false when omitted', () {
+    test('the Urdu series defaults to true (ships a bundled book)', () {
       final series = SeriesConfig.fromJson({
         'id': 'tawheed-ur',
         'catalogUrl': 'https://example.com/catalog.json',
+      });
+
+      expect(series.hasBook, isTrue);
+    });
+
+    test('other series default to false when hasBook is omitted', () {
+      final series = SeriesConfig.fromJson({
+        'id': 'tawheed-hi',
+        'catalogUrl': 'https://example.com/catalog.json',
+      });
+
+      expect(series.hasBook, isFalse);
+    });
+
+    test('an explicit hasBook:false in the manifest wins for Urdu', () {
+      final series = SeriesConfig.fromJson({
+        'id': 'tawheed-ur',
+        'catalogUrl': 'https://example.com/catalog.json',
+        'hasBook': false,
       });
 
       expect(series.hasBook, isFalse);

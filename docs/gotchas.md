@@ -97,17 +97,20 @@ is portable memory: any LLM working the repo should read and extend it.
   Nastaliq) whose ToUnicode map mangles ligature order, so every extractor
   returns scrambled characters (`اتكباوتلیح` for `کتاب التوحید`); Nastaliq OCR
   isn't reliable enough for scripture. Need the source `.docx`, not the PDF.
-- **The Urdu series now renders 5 bottom-nav tabs** (Lectures · Book · Home ·
-  Study · Settings) because it has both `hasBook` and `hasStudyMode`. Crowded
-  but functional; the deferred nav rework
-  ([todo-feature-flag-navigation.md](todo-feature-flag-navigation.md)) is the
-  place to fix it (e.g. overflow/"More").
-- **Rollout order matters for a bundled book.** The asset ships in an app
-  release; only flip `series.json`'s `hasBook:true` for `tawheed-ur` *after*
-  that release has rolled out. An older install (no bundled asset) that sees
-  `hasBook:true` hits `BookProvider`'s error path — graceful (error UI, no
-  crash), but stage the flip anyway. The `legacyUrduFallback.hasBook` in
-  `series.dart` only governs the flag-off / manifest-fail paths.
+- **The Urdu series renders 4 bottom-nav tabs** (Lectures · Book · Home ·
+  Study) — it has both `hasBook` and `hasStudyMode`. Settings / Bookmarks /
+  About are **not** tabs; they live in the `⋯` overflow menu
+  ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)) shown on
+  every shell tab.
+- **The Urdu Book tab is enabled client-side, not via `series.json`.**
+  `SeriesConfig.fromJson` defaults `hasBook` to `true` for the legacy Urdu
+  series (`id == legacyId`) because this app version bundles
+  `book_tawheed-ur.json`. This deliberately **decouples** the tab from a
+  coordinated `series.json` deploy: older app versions have neither the default
+  nor the asset, so a shared `series.json` can never strand them with a Book
+  tab whose asset is missing. **Do not** add `hasBook:true` to `series.json`
+  for `tawheed-ur` — it's unnecessary and would break not-yet-updated installs.
+  An explicit `hasBook:false` in the manifest still disables it.
 - **Switching series must clear the book, not keep it.** `BookProvider.load`
   short-circuits once loaded, so `switchSeries` calls `BookProvider.reload()`
   (clear to idle); the Book tab lazy-loads the current series' book on open.
