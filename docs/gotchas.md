@@ -89,14 +89,36 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Book (bundled reader)
 
-- **The Urdu Book tab currently ships the *Arabic* matn as a placeholder.**
-  `assets/content/book_tawheed-ur.json` is a copy of `book_tawheed-ar.json`
-  until clean Urdu text is sourced — swapping is just replacing that file (the
-  reader/loader key off `book_<seriesId>.json`, no code change). Why not the
-  real text yet: the Urdu print PDF is set in *Jameel Noori Nastaleeq* (CID
-  Nastaliq) whose ToUnicode map mangles ligature order, so every extractor
-  returns scrambled characters (`اتكباوتلیح` for `کتاب التوحید`); Nastaliq OCR
-  isn't reliable enough for scripture. Need the source `.docx`, not the PDF.
+- **The Urdu Book ships real *bilingual* content (Arabic āyah + Urdu), NOT the
+  Arabic placeholder.** `assets/content/book_tawheed-ur.json` is built by
+  `/tmp/build_urdu_book.py` (kept out of the repo): it pulls each clean Arabic
+  āyah from `book_tawheed-ar.json` and pairs it with the Urdu **transcribed
+  verbatim from the print PDF**, then the masāʾil/hadith in Urdu. Only ch-00 and
+  ch-01 are done so far (a proofed sample); the rest of the ~156-page book is
+  pending.
+- **The Urdu source text is UN-EXTRACTABLE — transcribe from rendered images.**
+  Both the print PDF *and* its `.docx` carry a corrupted text layer (the CID
+  *Jameel Noori Nastaleeq* font's char mapping drops/reorders letters), so every
+  extractor lies: `pdftotext`, `textutil`, and even reading the docx
+  `word/document.xml` `<w:t>` runs directly all return scrambled/letters-missing
+  garbage (`اتكباوتلیح` for `کتاب التوحید`; `ار شد ت ریتعا یلٰہ` for `ارشادِ باری
+  تعالیٰ ہے`). The **only** reliable path is `pdftoppm -r 220 -png` → read the
+  page image visually and transcribe. Nastaliq OCR tools aren't accurate enough
+  for scripture; don't trust any *text* extraction of this source.
+- **Faithfulness beats a "cleaner" paraphrase.** The first Urdu pass was a
+  fluent paraphrase; proofing against the PDF showed the print edition's exact
+  wording differs throughout (intros `ارشادِ باری تعالیٰ ہے` / `مزید ارشاد ہے`,
+  every long āyah translation, both hadith sets, and all masāʾil — which also
+  embed āyah translations the paraphrase dropped). Match the PDF verbatim; flag
+  edition quirks for a scholar rather than "correcting" them (e.g. the Muʿādh
+  hadith *question* in this edition names only Allah's right over the servants,
+  not both directions — the Arabic matn has both).
+- **Prophet's name is spelled out (`صلی اللہ علیہ وسلم`), not the `ﷺ` glyph**,
+  in the bundled Urdu JSON — the glyph didn't render reliably in the Nastaliq
+  font. Digits in the JSON stay Western (`56`, `151`) and are localised **at
+  render time** to the *book's* language (Urdu numerals everywhere in an Urdu
+  book, even inside Arabic āyāt), via `localizedDigitsInString(text,
+  widget.language)` in the reader.
 - **The Urdu series renders 4 bottom-nav tabs** (Lectures · Book · Home ·
   Study) — it has both `hasBook` and `hasStudyMode`. Settings / Bookmarks /
   About are **not** tabs; they live in the `⋯` overflow menu
