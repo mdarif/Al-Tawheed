@@ -8,6 +8,7 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
+import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
@@ -50,6 +51,7 @@ class _StudyScreenState extends State<StudyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.studyMode),
+        actions: const [AppOverflowMenu()],
       ),
       body: switch (catalog.status) {
         CatalogStatus.idle || CatalogStatus.loading => Center(

@@ -13,6 +13,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/announcements_banner.dart';
+import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/offline_prep_strip.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -36,13 +37,7 @@ class HomeScreen extends StatelessWidget {
             SliverAppBar(
               pinned: true,
               title: Text(l10n.tabHome),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  tooltip: l10n.tabSettings,
-                  onPressed: () => context.push('/settings'),
-                ),
-              ],
+              actions: const [AppOverflowMenu()],
             ),
             SliverPadding(
               padding: const EdgeInsets.all(16),

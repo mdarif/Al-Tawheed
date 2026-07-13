@@ -7,6 +7,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 
 class BookChapterListScreen extends StatefulWidget {
@@ -51,6 +52,7 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
                 ),
               )
             : Text(l10n.tabBook),
+        actions: const [AppOverflowMenu()],
       ),
       body: switch (provider.status) {
         BookStatus.idle || BookStatus.loading => Center(

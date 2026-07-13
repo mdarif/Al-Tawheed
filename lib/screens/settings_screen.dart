@@ -177,26 +177,8 @@ class SettingsScreen extends StatelessWidget {
 
           if (flags.features.downloads) const _DownloadsSection(),
 
-          // Secondary destinations gathered here (reached via the Home gear)
-          // rather than each taking a bottom-nav slot or app-bar icon.
-          _SettingsCard(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.bookmark_outline_rounded),
-                  title: Text(l10n.saved),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/bookmarks'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.info_outline_rounded),
-                  title: Text(l10n.settingsAbout),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/about'),
-                ),
-              ],
-            ),
-          ),
+          // Settings is pure config — Bookmarks / About / Settings are reached
+          // from the ⋯ overflow menu (see AppOverflowMenu), not from here.
           const SizedBox(height: 24),
         ],
       ),

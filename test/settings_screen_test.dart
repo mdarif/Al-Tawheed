@@ -211,27 +211,7 @@ void main() {
     });
   });
 
-  // Note: About (with the website link) moved out of Settings into its own
-  // AboutPage — those assertions now live in about_page_test.dart.
-
-  group('SettingsScreen — secondary destinations', () {
-    testWidgets('shows Bookmarks and About rows (reached via the Home gear)',
-        (tester) async {
-      // Tall surface so the lazy ListView builds the rows at the bottom.
-      tester.view.physicalSize = const Size(1200, 3200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final series = SeriesProvider()
-        ..setAvailableSeriesForTest([_seriesUrdu])
-        ..setCurrentSeriesForTest(_seriesUrdu);
-
-      await tester.pumpWidget(_wrap(series: series));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(ListTile, 'Saved'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'About'), findsOneWidget);
-    });
-  });
+  // Note: Bookmarks / About / Settings are now reached from the ⋯ overflow
+  // menu (see app_overflow_menu_test.dart); About content lives in
+  // about_page_test.dart. Settings itself is pure config.
 }

@@ -10,6 +10,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/chapter_header.dart';
@@ -288,6 +289,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
       centerTitle: false,
       expandedHeight: catalog != null ? 130 : 80,
       automaticallyImplyLeading: false,
+      actions: const [AppOverflowMenu()],
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
         titlePadding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),

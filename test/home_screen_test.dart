@@ -179,8 +179,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Start a lecture to resume here'), findsOneWidget);
-      // Home app bar carries the Settings gear (Saved moved into Settings).
-      expect(find.byTooltip('Settings'), findsOneWidget);
+      // Home app bar carries the ⋯ overflow menu (routes hub).
+      expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
     });
 
     testWidgets('shows Arabic empty state and tooltip for the Arabic series',
@@ -194,8 +194,8 @@ void main() {
 
       expect(find.text('ابدأ درسًا للمتابعة من هنا'), findsOneWidget);
       expect(find.text('Start a lecture to resume here'), findsNothing);
-      // Settings gear tooltip in Arabic for the Arabic series.
-      expect(find.byTooltip('الإعدادات'), findsOneWidget);
+      // The ⋯ overflow menu is present for the Arabic series too.
+      expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
     });
 
     testWidgets('shows lecture title and progress when resuming',
