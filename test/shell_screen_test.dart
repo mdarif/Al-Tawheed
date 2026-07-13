@@ -122,11 +122,6 @@ Widget _wrap({
                     const Scaffold(body: Center(child: Text('Book'))),
               ),
               GoRoute(
-                path: '/home',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Home'))),
-              ),
-              GoRoute(
                 path: '/study',
                 builder: (_, __) =>
                     const Scaffold(body: Center(child: Text('Study'))),
@@ -154,25 +149,25 @@ void main() {
   });
 
   testWidgets(
-      'shows 4 tabs (Lectures, Book, Home, Study) for the Urdu series',
+      'shows 3 tabs (Lectures, Book, Study) for the Urdu series',
       (tester) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    // The Urdu series has a Book tab and Study mode. Settings is not a tab —
-    // it lives behind the gear on the Home app bar.
+    // The Urdu series has a Book tab and Study mode. Home was retired; Settings
+    // is not a tab — both live behind the ⋯ overflow menu.
     // "Lectures" appears twice: the page body and the nav destination label.
     expect(find.text('Lectures'), findsNWidgets(2));
     expect(find.text('Book'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Settings'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
-  testWidgets('shows 3 tabs (Lectures, Book, Home) for the Arabic series',
+  testWidgets('shows 2 tabs (Lectures, Book) for the Arabic series',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
@@ -183,7 +178,7 @@ void main() {
 
     expect(find.text('Lectures'), findsOneWidget); // page body only
     expect(find.text('Study'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.byType(NavigationDestination), findsNWidgets(2));
   });
 
   testWidgets('shows Arabic nav labels for the Arabic series', (tester) async {
@@ -196,8 +191,9 @@ void main() {
 
     expect(find.text('الدروس'), findsOneWidget);
     expect(find.text('الكتاب'), findsOneWidget);
-    expect(find.text('الرئيسية'), findsOneWidget);
-    // Settings moved to the Home gear — no longer a nav label.
+    // Home retired; Settings lives behind the ⋯ overflow menu — neither is a
+    // nav label.
+    expect(find.text('الرئيسية'), findsNothing);
     expect(find.text('الإعدادات'), findsNothing);
   });
 
@@ -239,7 +235,6 @@ void main() {
       // Bottom nav is Arabic for the Arabic series.
       expect(find.text('Lectures'), findsOneWidget); // page body only
       expect(find.text('الدروس'), findsOneWidget);
-      expect(find.text('الرئيسية'), findsOneWidget);
       expect(find.text('الإعدادات'), findsNothing); // Settings is not a tab
     });
   });

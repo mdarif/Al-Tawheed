@@ -8,7 +8,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 // Arabic title shown on the Arabic series' card, independent of the app's
-// UI language — mirrors the lecture-title pattern in HomeScreen.
+// UI language — mirrors the lecture-title pattern in ContinueListeningBanner.
 const _arBookTitle = 'كتاب التوحيد';
 
 // Native script subtitles — gives each card its cultural identity.

@@ -27,10 +27,10 @@ Widget _wrap(SeriesProvider series) {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
-        initialLocation: '/home',
+        initialLocation: '/host',
         routes: [
           GoRoute(
-            path: '/home',
+            path: '/host',
             builder: (_, __) => Scaffold(
               appBar: AppBar(actions: const [AppOverflowMenu()]),
             ),

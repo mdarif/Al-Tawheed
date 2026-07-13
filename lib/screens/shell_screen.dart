@@ -9,13 +9,12 @@ import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
-enum _Tab { lectures, book, home, study }
+enum _Tab { lectures, book, study }
 
 extension on _Tab {
   String get path => switch (this) {
         _Tab.lectures => '/lectures',
         _Tab.book => '/book',
-        _Tab.home => '/home',
         _Tab.study => '/study',
       };
 
@@ -32,11 +31,6 @@ extension on _Tab {
             selectedIcon: const Icon(Icons.menu_book_rounded),
             label: l10n.tabBook,
           ),
-        _Tab.home => NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: l10n.tabHome,
-          ),
         _Tab.study => NavigationDestination(
             icon: const Icon(Icons.school_outlined),
             selectedIcon: const Icon(Icons.school_rounded),
@@ -48,7 +42,6 @@ extension on _Tab {
 List<_Tab> _tabsFor(SeriesConfig series) => [
       _Tab.lectures,
       if (series.hasBook) _Tab.book,
-      _Tab.home,
       if (series.hasStudyMode) _Tab.study,
     ];
 

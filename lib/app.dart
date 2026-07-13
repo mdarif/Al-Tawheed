@@ -24,7 +24,6 @@ import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
-import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
@@ -60,7 +59,8 @@ final _router = GoRouter(
       builder: (context, state) => const WelcomeScreen(),
     ),
 
-    // Shell: bottom navigation wraps these four tabs
+    // Shell: bottom navigation wraps these tabs (series-aware: Book and Study
+    // appear only for series that have them).
     ShellRoute(
       builder: (context, state, child) => ShellScreen(child: child),
       routes: [
@@ -73,26 +73,22 @@ final _router = GoRouter(
           redirect: (context, state) =>
               context.read<SeriesProvider>().currentSeries.hasBook
                   ? null
-                  : '/home',
+                  : '/lectures',
           builder: (context, state) => const BookChapterListScreen(),
-        ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/study',
           redirect: (context, state) =>
               context.read<SeriesProvider>().currentSeries.hasStudyMode
                   ? null
-                  : '/home',
+                  : '/lectures',
           builder: (context, state) => const StudyScreen(),
         ),
       ],
     ),
 
     // Settings — root navigator so it opens full-screen (with a back button)
-    // from the gear on the Home app bar, rather than occupying a bottom tab.
+    // from the ⋯ overflow menu, rather than occupying a bottom tab.
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/settings',

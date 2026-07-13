@@ -19,6 +19,14 @@ is portable memory: any LLM working the repo should read and extend it.
   first, not just this repo. CI pins Java 21 explicitly, so it's a local-only trap.
 - **Flutter is pinned to 3.41.1 in CI** (`.github/workflows/*.yml`). Match it
   locally when reproducing a CI-only failure.
+- **A newly-added file in a directory-declared asset folder needs a build-cache
+  bust before `flutter test`/`flutter run` sees it.** `pubspec.yaml` lists
+  `assets/images/` (the *directory*), so the asset build cache keys off pubspec
+  and does NOT re-scan the folder when you drop a new file in — pre-existing
+  files in the same dir load fine, but the new one throws `Unable to load asset:
+  "assets/images/…"` at runtime/in tests. `flutter pub get` does **not** fix it;
+  `rm -rf .dart_tool/flutter_build build` (or `flutter clean`) does. Cost us two
+  green-looking runs before we spotted it.
 
 ## Testing
 
@@ -119,11 +127,19 @@ is portable memory: any LLM working the repo should read and extend it.
   render time** to the *book's* language (Urdu numerals everywhere in an Urdu
   book, even inside Arabic āyāt), via `localizedDigitsInString(text,
   widget.language)` in the reader.
-- **The Urdu series renders 4 bottom-nav tabs** (Lectures · Book · Home ·
-  Study) — it has both `hasBook` and `hasStudyMode`. Settings / Bookmarks /
-  About are **not** tabs; they live in the `⋯` overflow menu
+- **The Urdu series renders 3 bottom-nav tabs** (Lectures · Book · Study) — it
+  has both `hasBook` and `hasStudyMode`. Settings / Bookmarks / About are **not**
+  tabs; they live in the `⋯` overflow menu
   ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)) shown on
   every shell tab.
+- **There is no Home tab, and Lectures is the landing screen** (`/` →
+  `/lectures`). The old Home tab was retired: its **only** keeper, the resume
+  card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)
+  atop the Lectures list, and **announcements** moved from the space-eating
+  inline banner to a bell+badge ([announcements_bell.dart](../lib/widgets/announcements_bell.dart))
+  in the Lectures app bar (tap → bottom sheet of `AnnouncementCard`s). Daily
+  Benefit + the offline-prep nudge were dropped. `/book` and `/study` redirect to
+  `/lectures` (not `/home`) for series lacking those features.
 - **The Urdu Book tab is enabled client-side, not via `series.json`.**
   `SeriesConfig.fromJson` defaults `hasBook` to `true` for the legacy Urdu
   series (`id == legacyId`) because this app version bundles

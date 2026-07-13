@@ -13,6 +13,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -33,6 +34,15 @@ const _arabicSeries = SeriesConfig(
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
+
+/// The series teacher's portrait the redesigned Lectures hero shows beside the
+/// title — a different asset per series (Rahmani for Urdu, Fawzan for Arabic).
+Finder _avatarFinder(String asset) => find.byWidgetPredicate(
+      (w) =>
+          w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == asset,
+    );
 
 Map<String, dynamic> _lectureJson(String id, int number, {String? titleAr}) =>
     {
@@ -82,6 +92,7 @@ Widget _wrap({required SeriesProvider series}) {
       ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      ChangeNotifierProvider(create: (_) => AnnouncementsProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider(
         create: (ctx) => PlayerNotifier(
@@ -212,6 +223,8 @@ void main() {
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الشيخ صالح الفوزان حفظه الله'), findsOneWidget);
     expect(find.textContaining('محاضرة'), findsOneWidget);
+    // The redesigned hero shows the Arabic series teacher (Shaikh al-Fawzan).
+    expect(_avatarFinder('assets/images/sheikh_fawzan.png'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
@@ -272,6 +285,11 @@ void main() {
 
     expect(find.text('Sharah Kitab at-Tawheed'), findsOneWidget);
     expect(find.text('كتاب التوحيد'), findsNothing);
+    // The Urdu series shows its teacher (Shaikh Abdullah Nasir Rahmani).
+    expect(
+      _avatarFinder('assets/images/sheikh-abdullah-nasir-rahmani.jpg'),
+      findsOneWidget,
+    );
 
     // The active series flips to Arabic (restored from prefs / device default).
     series.setCurrentSeriesForTest(_arabicSeries);
