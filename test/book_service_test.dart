@@ -22,10 +22,10 @@ void main() {
     expect(book.title, 'كتاب التوحيد');
     expect(book.author, isNotEmpty);
     expect(book.chapters, hasLength(67));
-    expect(book.chapters.first.id, 'ch-00');
-    expect(book.chapters.first.number, 0);
-    expect(book.chapters.last.id, 'ch-66');
-    expect(book.chapters.last.number, 66);
+    expect(book.chapters.first.id, 'ch-01');
+    expect(book.chapters.first.number, 1);
+    expect(book.chapters.last.id, 'ch-67');
+    expect(book.chapters.last.number, 67);
     for (final chapter in book.chapters) {
       expect(chapter.title, isNotEmpty);
       expect(chapter.text, isNotEmpty);
