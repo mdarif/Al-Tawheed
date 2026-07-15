@@ -20,10 +20,11 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizahullah'},
 );
 
-Widget _wrap(SeriesProvider series) {
+Widget _wrap(SeriesProvider series, {Locale? locale}) {
   return MultiProvider(
     providers: [ChangeNotifierProvider.value(value: series)],
     child: MaterialApp.router(
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -101,12 +102,13 @@ void main() {
     expect(find.text('ABOUT PAGE'), findsOneWidget);
   });
 
-  testWidgets('shows Arabic labels for the Arabic series', (tester) async {
+  testWidgets('shows Arabic labels for the Arabic series under Arabic UI',
+      (tester) async {
     final series = SeriesProvider()..setCurrentSeriesForTest(_arabicSeries);
-    await tester.pumpWidget(_wrap(series));
+    await tester.pumpWidget(_wrap(series, locale: const Locale('ar')));
     await _openMenu(tester);
 
-    // Series-aware chrome: Arabic labels regardless of UI language.
+    // Chrome follows the UI locale (ar) — independent of the content edition.
     expect(find.text(arabicL10n.saved), findsOneWidget);
     expect(find.text(arabicL10n.tabSettings), findsOneWidget);
     expect(find.text(arabicL10n.settingsAbout), findsOneWidget);

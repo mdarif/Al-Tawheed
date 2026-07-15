@@ -76,19 +76,22 @@ class SettingsScreen extends StatelessWidget {
           const _SettingsCard(child: ThemeModeSwitch()),
           const Divider(height: 32),
 
-          // The series switcher is gated behind its own feature flag (default
-          // off) so it can be hidden remotely, on top of requiring multi-series
-          // to be active and more than one series to actually be available.
-          if (flags.features.seriesSwitcher &&
-              flags.multiSeriesEnabled &&
+          // The edition switcher is always reachable whenever multi-series is
+          // active with more than one series available — there is no separate
+          // opt-in flag, so users can never get locked into whichever edition
+          // launched.
+          if (flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
             _SectionHeader(l10n.settingsLanguage),
             const _SettingsCard(child: _SeriesLanguageSelector()),
             const Divider(height: 32),
           ],
 
+          // The UI-language picker is headed "App language" (distinct from the
+          // content-edition switcher above, which is headed "Language"): the two
+          // are independent axes — content edition vs app/chrome language.
           if (flags.features.language) ...[
-            _SectionHeader(l10n.settingsLanguage),
+            _SectionHeader(l10n.settingsAppLanguage),
             const _SettingsCard(child: _LanguageSelector()),
             const Divider(height: 32),
           ],

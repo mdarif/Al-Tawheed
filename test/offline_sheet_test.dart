@@ -113,6 +113,7 @@ Widget _wrap({
   ConnectivityProvider? connectivity,
   List<Lecture> allLectures = const [],
   SeriesProvider? series,
+  Locale? locale,
 }) {
   final chapters = allLectures.isEmpty
       ? <Chapter>[]
@@ -157,6 +158,7 @@ Widget _wrap({
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -370,6 +372,7 @@ void main() {
         lecture: lec,
         downloads: DownloadsProvider(),
         series: series,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 
@@ -397,6 +400,7 @@ void main() {
         lecture: lec,
         downloads: downloads,
         series: series,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 
@@ -426,6 +430,7 @@ void main() {
         lecture: lec,
         downloads: downloads,
         series: series,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 
@@ -448,6 +453,7 @@ void main() {
         downloads: downloads,
         connectivity: ConnectivityProvider.testOnlineMobile(),
         series: series,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 

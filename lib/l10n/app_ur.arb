@@ -72,6 +72,7 @@
   "catalogConnectToLoadMessage": "ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔",
 
   "settingsLanguage": "زبان",
+  "settingsAppLanguage": "ایپ کی زبان",
   "settingsAppearance": "ظاہری شکل",
   "settingsSeries": "سلسلہ",
   "settingsDarkMode": "ڈارک موڈ",

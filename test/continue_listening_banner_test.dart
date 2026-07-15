@@ -67,6 +67,7 @@ Widget _wrap({
   ProgressProvider? progress,
   SeriesProvider? series,
   ConnectivityProvider? connectivity,
+  Locale? locale,
 }) {
   final catalogProvider = CatalogProvider()
     ..setCatalogForTest(catalog ?? _catalog());
@@ -93,6 +94,7 @@ Widget _wrap({
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -161,7 +163,8 @@ void main() {
     expect(find.text('Player'), findsOneWidget);
   });
 
-  testWidgets('Arabic series shows Arabic title and chrome', (tester) async {
+  testWidgets('Arabic series shows Arabic title; chrome follows Arabic UI',
+      (tester) async {
     final progress = ProgressProvider()..load();
     await progress.saveProgress('l1', 60);
 
@@ -173,9 +176,12 @@ void main() {
       progress: progress,
       series: series,
       catalog: _catalog(arabic: true),
+      locale: const Locale('ar'),
     ),);
     await tester.pumpAndSettle();
 
+    // Content (الدرس 1) is Arabic per edition; the chrome labels below are
+    // Arabic because the UI locale is Arabic.
     expect(find.text('الدرس 1'), findsOneWidget);
     expect(find.text('متابعة الاستماع'), findsOneWidget);
     expect(find.text('1:00 مستمَع · 9:00 متبقٍّ'), findsOneWidget);

@@ -231,6 +231,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsLanguage => 'زبان';
 
   @override
+  String get settingsAppLanguage => 'ایپ کی زبان';
+
+  @override
   String get settingsAppearance => 'ظاہری شکل';
 
   @override
@@ -756,6 +759,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsLanguage => 'Zabaan';
+
+  @override
+  String get settingsAppLanguage => 'App ki Zabaan';
 
   @override
   String get settingsAppearance => 'Zahiri shakl';

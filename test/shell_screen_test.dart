@@ -68,6 +68,9 @@ Widget _wrap({
   ProgressProvider? progress,
   DownloadsProvider? downloads,
   ConnectivityProvider? connectivity,
+  // UI/chrome locale. Chrome now follows the UI language independently of the
+  // content edition, so Arabic-chrome expectations require an Arabic UI locale.
+  Locale? locale,
 }) {
   final catalogProvider = CatalogProvider();
   if (catalog != null) {
@@ -103,6 +106,7 @@ Widget _wrap({
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -173,7 +177,8 @@ void main() {
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(series: series));
+    // Arabic UI locale → Arabic nav labels, so the page-body 'Lectures' is unique.
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     expect(find.text('Lectures'), findsOneWidget); // page body only
@@ -181,12 +186,13 @@ void main() {
     expect(find.byType(NavigationDestination), findsNWidgets(2));
   });
 
-  testWidgets('shows Arabic nav labels for the Arabic series', (tester) async {
+  testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI',
+      (tester) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     expect(find.text('الدروس'), findsOneWidget);
@@ -226,13 +232,15 @@ void main() {
         progress: progress,
         downloads: downloads,
         connectivity: connectivity,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 
+      // Content (mini-player track title) is Arabic per edition, regardless of UI.
       expect(find.text('الدرس 2'), findsOneWidget);
       expect(find.text('Dars 02'), findsNothing);
 
-      // Bottom nav is Arabic for the Arabic series.
+      // Bottom nav is Arabic because the UI locale is Arabic.
       expect(find.text('Lectures'), findsOneWidget); // page body only
       expect(find.text('الدروس'), findsOneWidget);
       expect(find.text('الإعدادات'), findsNothing); // Settings is not a tab

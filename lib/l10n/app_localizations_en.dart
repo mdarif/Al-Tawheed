@@ -229,6 +229,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguage => 'Language';
 
   @override
+  String get settingsAppLanguage => 'App language';
+
+  @override
   String get settingsAppearance => 'Appearance';
 
   @override

@@ -100,7 +100,7 @@ Catalog _arabicCatalog() => Catalog(
 // ── Widget helpers ────────────────────────────────────────────────────────────
 
 Widget _wrap(DownloadsProvider downloads,
-    {Catalog? catalog, SeriesProvider? series,}) {
+    {Catalog? catalog, SeriesProvider? series, Locale? locale,}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -115,6 +115,7 @@ Widget _wrap(DownloadsProvider downloads,
     ],
     child: MaterialApp(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const OfflineLibraryScreen(),
@@ -323,14 +324,17 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(
-          _wrap(downloads, catalog: _arabicCatalog(), series: series),);
+      await tester.pumpWidget(_wrap(downloads,
+          catalog: _arabicCatalog(),
+          series: series,
+          locale: const Locale('ar'),),);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline_rounded));
       await tester.pumpAndSettle();
 
-      // Dialog title + confirm button both read "إزالة التنزيل".
+      // Chrome follows the ar UI locale: dialog title + confirm button both
+      // read "إزالة التنزيل".
       expect(find.text('إزالة التنزيل'), findsNWidgets(2));
       expect(find.text('Remove download'), findsNothing);
 

@@ -110,6 +110,7 @@
   "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",
 
   "settingsLanguage": "Language",
+  "settingsAppLanguage": "App language",
   "settingsAppearance": "Appearance",
   "settingsSeries": "Series",
   "settingsDarkMode": "Dark mode",

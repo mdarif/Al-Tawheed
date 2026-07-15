@@ -363,7 +363,12 @@ void main() {
     });
   });
 
-  group('PlayerScreen — Arabic series', () {
+  // Chrome/UI language is independent of the content edition (see
+  // l10nForSeries). These represent an Arabic-UI user on the Arabic edition
+  // (locale: ar) → Arabic chrome AND Arabic content. The decouple test below
+  // proves an English-UI user on the Arabic edition still gets Arabic content
+  // with English chrome.
+  group('PlayerScreen — Arabic series, Arabic UI', () {
     testWidgets(
         'shows Arabic chrome, track title, speaker, and cover art while seek-bar times stay in Western numerals',
         (tester) async {
@@ -373,9 +378,10 @@ void main() {
         queue: _arabicLectures,
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
       );
 
-      // App bar title
+      // App bar title (chrome — follows the ar UI locale)
       expect(find.text('يُشغَّل الآن'), findsOneWidget);
       expect(find.text('Now Playing'), findsNothing);
 
@@ -401,6 +407,7 @@ void main() {
         connectivity: ConnectivityProvider.testOnline(),
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
         configurePlayer: (p) => p.setPlaybackStateForTest(
           _arabicLectures[0],
           source: PlaybackSource.stream,
@@ -417,6 +424,7 @@ void main() {
         queue: _arabicLectures,
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
       );
 
       expect(find.byTooltip('إضافة إشارة مرجعية'), findsOneWidget);
@@ -425,6 +433,29 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('إزالة الإشارة المرجعية'), findsOneWidget);
+    });
+  });
+
+  group('PlayerScreen — Arabic series, non-Arabic UI (chrome decoupled)', () {
+    testWidgets(
+        'keeps Arabic content but renders chrome in the UI language (English)',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        lecture: _arabicLectures[0],
+        queue: _arabicLectures,
+        series: _arabicSeries,
+        catalog: _arabicCatalog(),
+        locale: const Locale('en'),
+      );
+
+      // Chrome follows the en UI locale — NOT forced to Arabic by the edition.
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('يُشغَّل الآن'), findsNothing);
+
+      // Content stays per-edition (resolveForSeries) — still Arabic.
+      expect(find.text('الدرس 1'), findsOneWidget);
+      expect(find.text('كتاب التوحيد'), findsOneWidget);
     });
   });
 }

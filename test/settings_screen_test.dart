@@ -52,8 +52,12 @@ const _seriesArabic = SeriesConfig(
 Widget _wrap({
   required SeriesProvider series,
   LanguageProvider? language,
-  bool seriesSwitcher = true,
+  bool multiSeries = true,
   bool appLinks = false,
+  // The app-language picker (default ON in prod) is turned OFF here so tests can
+  // isolate the content-edition switcher — both render اردو/العربية rows, so a
+  // test keying on those text finders would otherwise be ambiguous.
+  bool languageFlag = false,
 }) {
   return MultiProvider(
     providers: [
@@ -61,10 +65,10 @@ Widget _wrap({
       ChangeNotifierProvider(create: (_) => CatalogProvider()),
       ChangeNotifierProvider(
         create: (_) => FeatureFlagsProvider()
-          ..setExperimentalJsonForTest({'multiSeries': true})
+          ..setExperimentalJsonForTest({'multiSeries': multiSeries})
           ..setFeaturesJsonForTest({
-            'seriesSwitcher': seriesSwitcher,
             'appLinks': appLinks,
+            'language': languageFlag,
           }),
       ),
       ChangeNotifierProvider.value(value: series),
@@ -153,14 +157,14 @@ void main() {
     });
   });
 
-  group('SettingsScreen — content language feature flag', () {
-    testWidgets('language section is hidden when seriesSwitcher flag is off',
+  group('SettingsScreen — edition switcher visibility', () {
+    testWidgets('edition switcher is hidden when multi-series is off',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
         ..setCurrentSeriesForTest(_seriesUrdu);
 
-      await tester.pumpWidget(_wrap(series: series, seriesSwitcher: false));
+      await tester.pumpWidget(_wrap(series: series, multiSeries: false));
       await tester.pumpAndSettle();
 
       // No edition rows (and the manual Language picker is off by default too).
@@ -168,17 +172,54 @@ void main() {
       expect(find.text('العربية'), findsNothing);
     });
 
-    testWidgets('language section is shown when seriesSwitcher flag is on',
-        (tester) async {
+    testWidgets(
+        'edition switcher is shown when multi-series is on with >1 edition '
+        '(no separate opt-in flag)', (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
         ..setCurrentSeriesForTest(_seriesUrdu);
 
-      await tester.pumpWidget(_wrap(series: series, seriesSwitcher: true));
+      await tester.pumpWidget(_wrap(series: series, multiSeries: true));
       await tester.pumpAndSettle();
 
       expect(find.text('اردو'), findsOneWidget);
       expect(find.text('العربية'), findsOneWidget);
+    });
+
+    testWidgets('edition switcher is hidden when only one edition is available',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(_wrap(series: series, multiSeries: true));
+      await tester.pumpAndSettle();
+
+      expect(find.text('اردو'), findsNothing);
+      expect(find.text('العربية'), findsNothing);
+    });
+  });
+
+  group('SettingsScreen — app-language picker (independent of edition)', () {
+    testWidgets(
+        'renders under its own "App language" header, separate from the '
+        'content-edition switcher', (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(
+        _wrap(series: series, multiSeries: true, languageFlag: true),
+      );
+      await tester.pumpAndSettle();
+
+      // Two distinct section headers (uppercased by _SectionHeader): the content
+      // edition switcher ("Language") and the app/chrome language picker
+      // ("App language") — proving they read as separate, independent axes.
+      expect(find.text('LANGUAGE'), findsOneWidget);
+      expect(find.text('APP LANGUAGE'), findsOneWidget);
+      // The UI picker offers English, which the edition switcher never does.
+      expect(find.text('English'), findsWidgets);
     });
   });
 

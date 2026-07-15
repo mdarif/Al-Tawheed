@@ -70,6 +70,7 @@
   "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",
 
   "settingsLanguage": "Zabaan",
+  "settingsAppLanguage": "App ki Zabaan",
   "settingsAppearance": "Zahiri shakl",
   "settingsSeries": "Silsila",
   "settingsDarkMode": "Dark mode",

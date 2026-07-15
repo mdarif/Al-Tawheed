@@ -108,6 +108,7 @@
   "catalogConnectToLoadMessage": "افتح التطبيق مرة واحدة مع الإنترنت لتنزيل عناوين الدروس وروابط الصوت. ستعمل الدروس التي حفظتها على جهازك دون اتصال.",
 
   "settingsLanguage": "اللغة",
+  "settingsAppLanguage": "لغة التطبيق",
   "settingsAppearance": "المظهر",
   "settingsSeries": "السلسلة",
   "settingsDarkMode": "الوضع الداكن",
