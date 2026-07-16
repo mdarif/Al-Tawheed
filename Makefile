@@ -32,7 +32,7 @@ help:
 	@echo "  make test            - Run tests (mirrors CI)"
 	@echo "  make test-verbose    - Run tests with verbose output"
 	@echo "  make analyze         - Analyze code (--fatal-warnings, mirrors CI)"
-	@echo "  make format          - Format all code"
+	@echo "  make format          - Format all code (dart format)"
 	@echo "  make coverage        - Generate test coverage report"
 	@echo "  make lint            - Run linter"
 	@echo ""
@@ -105,15 +105,12 @@ test:
 test-verbose:
 	flutter test --reporter=expanded --verbose
 
-test-units:
-	flutter test test/unit_tests.dart --reporter=expanded
-
 # Analysis & Quality
 analyze:
 	flutter analyze --fatal-warnings
 
 format:
-	flutter format .
+	dart format .
 
 coverage:
 	flutter test --coverage

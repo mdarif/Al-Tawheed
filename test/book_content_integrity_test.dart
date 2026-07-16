@@ -199,6 +199,48 @@ void main() {
       expect(truncated, isEmpty, reason: truncated.join('\n'));
     });
 
+    // The reader closes every chapter with a masāʾil section, detected by a
+    // heading line. The rule lives in book_reader_screen._isMasailHeading and is
+    // deliberately loose — `مسائل` present, `مسئلہ` (the singular, used only by
+    // numbered items) absent — so a chapter whose numbered items say `مسئلہ`
+    // can't be mistaken for the heading. Reimplemented here (two lines, like the
+    // markup parsing above) to run it against the REAL book, which is the one
+    // thing the widget test with synthetic fixtures can't do. The web repo's
+    // regex already miscounts ch-06 and ch-36; ours must give exactly one
+    // heading in every Urdu chapter and none in the matn-only Arabic.
+    bool isMasailHeading(String line) =>
+        line.contains('مسائل') && !line.contains('مسئلہ');
+
+    test('the Urdu edition has exactly one masāʾil heading per chapter',
+        () async {
+      final urdu = await BookService.instance.loadBook(_urduSeries);
+      final wrong = <String>[];
+      for (final chapter in urdu.chapters) {
+        final headings =
+            chapter.text.split('\n').where(isMasailHeading).toList();
+        if (headings.length != 1) {
+          wrong.add('${chapter.id}: ${headings.length} headings '
+              '${headings.map((h) => '"${h.trim()}"').toList()}');
+        }
+      }
+      expect(wrong, isEmpty,
+          reason: 'each chapter must have exactly one masāʾil heading; the '
+              "reader's section split keys off it:\n${wrong.join('\n')}",);
+    });
+
+    test('the Arabic matn has no masāʾil heading', () async {
+      // The Arabic edition is matn-only — the print carries no masāʾil section.
+      // If a heading appears here the reader would draw an empty masāʾil block,
+      // and it likely means Urdu content leaked into the Arabic asset.
+      final arabic = await BookService.instance.loadBook(_arabicSeries);
+      final leaked = [
+        for (final c in arabic.chapters)
+          if (c.text.split('\n').any(isMasailHeading)) c.id,
+      ];
+      expect(leaked, isEmpty,
+          reason: 'unexpected masāʾil heading in the Arabic matn: $leaked',);
+    });
+
     // The reader paints ANY [ ... ] cyan, as a surah:ayah reference. Two
     // chapters had the translator's own clarifying words in square brackets,
     // so his gloss rendered as though it were a Qur'anic citation — in

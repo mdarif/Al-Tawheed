@@ -48,17 +48,27 @@ cold-start, the mirrored brackets) and both would otherwise have been vacuous.
 
 ### 1. Book content integrity ⭐ the single highest-value gap
 
-**Status today:** `test/book_service_test.dart` asserts the **Arabic** book
-strictly (67 chapters, `ch-01`…`ch-67`, non-empty title+text for every chapter).
-For **Urdu** it asserts exactly two things: `chapters` is non-empty, and
-`chapters.first.text` is non-empty.
+**Status (updated 2026-07-16): mostly closed.** `test/book_content_integrity_test.dart`
+now guards **both** editions: 67 contiguous `ch-01`…`ch-67`, non-empty title+text,
+`number` matches position (1.1/1.7); ornate parens matched+ordered and guillemets
+balanced per chapter (1.2); every `[bracketed]` run carries a number, so a
+translator's gloss can't render as a citation (part of 1.3); no injected Urdu āyah
+is a silent truncation of the Arabic edition's (the substance of 1.5); and — new —
+exactly one masāʾil heading per Urdu chapter and none in the Arabic matn (1.6). The
+tashkeel strip has its own guard-the-guard test. `book_service_test.dart`'s false
+"placeholder" comment is fixed.
 
-> If `book_tawheed-ur.json` silently lost 60 of its 67 chapters, or every chapter
-> after the first went blank, **the suite stays green.**
+**Deliberately NOT asserted (verified false against the shipped content):**
+- *Strict `{āyah}`→`[citation]` adjacency* — ch-01, ch-02 and ch-33 legitimately
+  place a verse without an immediately following citation (shared or hadith-bounded).
+- *Exact ar/ur citation-set parity* — six chapters (ch-15, 36, 40, 48, 59, 62)
+  carry more citations in Urdu by design. The truncation guard covers the real
+  regression this was meant to catch.
 
-Its comment still reads *"a placeholder copy of the Arabic matn until the clean
-Urdu text lands"* — false since `bb33dc3`. The weak assertions were a temporary
-concession; the content swap happened and nobody tightened them.
+**Still open:** re-home a runnable content validator. The Dart integrity test now
+*is* that guard for the invariants above and runs in `make test`; the āyah-pairing
+QA harness that produced the 168 corrections still lives out-of-repo and cannot be
+re-run.
 
 **Why this is P0 and not P2:** this file is scripture, it is 339 KB of *hand*
 transcription (the source PDF's Nastaliq text layer is corrupted — see gotchas —
@@ -76,35 +86,29 @@ repo (`~/kat-urdu-work/`); the commits cite a `urdu_qa.md` policy log that was
 never committed. Same pattern as the builder script gotchas admits lives in
 `/tmp`. Today the āyah-pairing/citation QA **cannot be re-run**.
 
-| # | Test | Guards |
+| # | Test | Status |
 |---|---|---|
-| 1.1 | Port the Arabic strictness to Urdu verbatim: 67 chapters, ids `ch-01`…`ch-67` contiguous, no dupes, non-empty `title`+`text` | The vacuous-assertion hole. Verified the file passes this today |
-| 1.2 | Markup well-formedness per chapter: `﴾`/`﴿` balanced and correctly ordered, `[`/`]` balanced, `«`/`»` balanced | `73ca16b` (dropped citations); the reader's parser silently renders unbalanced runs as plain text |
-| 1.3 | Every `﴾verse﴿` run is followed by a `[citation]` run | `73ca16b` — the exact defect |
-| 1.4 | **Homoglyph guard**: citations normalise `ک`→`ك`, `ی`→`ي` before comparison; ranges split on `،` as well as `,` | `73ca16b` root cause #2 and #3 |
-| 1.5 | **Cross-edition parity**: both books 67 chapters; per-chapter āyah citation sets match between `ar` and `ur` | The *whole* reason the ch-18/al-Qasas omission was found. Nothing checks it now |
-| 1.6 | `_isMasailHeading` run against **real** content: exactly one heading per chapter, never matching a numbered `مسئلہ` item | Shipped rule with only synthetic fixtures. The web repo's regex already misses ch-06 and ch-36 |
-| 1.7 | Chapter-count + id-list snapshot, so a bad regen is loud rather than silent | The assembler has corrupted this file once already (the tashkeel regex) |
+| 1.1 | 67 chapters `ch-01`…`ch-67` contiguous, no dupes, non-empty `title`+`text`, `number`=position — **both** editions | ✅ done |
+| 1.2 | Per chapter: `﴾`/`﴿` matched+ordered, `«`/`»` balanced | ✅ done (ornate + guillemets) |
+| 1.3 | Every `[bracketed]` run carries a number (a gloss can't render as a citation) | ✅ done. *Strict `{verse}`→`[cite]` adjacency: dropped — false for ch-01/02/33* |
+| 1.4 | Homoglyph-normalised citation compare / split on `،` | ⏸️ moot — only needed for the citation-set parity that 1.5 dropped |
+| 1.5 | Cross-edition: both 67 chapters; no injected āyah truncates the Arabic | ✅ done (truncation guard). *Exact citation-set parity: dropped — 6 chapters differ by design* |
+| 1.6 | `_isMasailHeading` on real content: exactly 1 heading per Urdu chapter, 0 in Arabic | ✅ done |
+| 1.7 | Chapter-count + id-list, so a bad regen is loud | ✅ done (folded into 1.1) |
 
-**Also: re-home the validator into the repo** as `tool/validate_book.py` (or Dart,
-so it runs in `flutter test`), wired to `make test`. An out-of-repo QA harness is
-not a guard — it is a memory of one. This is the one place in the app where
-"error free" is not hyperbole: a dropped particle changes what the text *says*.
+**Still open — re-home a runnable validator.** The Dart integrity test is now that
+guard for the invariants above and runs in `make test`. The out-of-repo
+āyah-pairing QA harness (`~/kat-urdu-work/`, `urdu_qa.md`) that produced the 168
+corrections still can't be re-run — that is the remaining memory-not-a-guard.
 
-### 2. ARB 4-locale parity
+### 2. ARB 4-locale parity — ✅ done
 
-All four locales are at **154/154** today — by discipline alone. `AGENTS.md` rule
-#1 calls an English-only addition "a bug", `l10n.yaml` sets no
-`untranslated-messages-file`, and **no test reads the ARB files**.
-
-| # | Test | Guards |
-|---|---|---|
-| 2.1 | All 4 locales have identical key sets | Rule #1, mechanically |
-| 2.2 | Per key, the **placeholder set matches** across locales | A locale missing `{duration}` silently drops data at runtime, and gen-l10n won't complain |
-| 2.3 | No key has an empty string value | Silent blank labels |
-| 2.4 | ICU plural/select syntax parses in every locale | `partsCount` uses `Intl.pluralLogic` in `ar` only |
-
-Pure Dart, no device, milliseconds. Should gate every PR.
+`test/arb_parity_test.dart` (pure Dart, milliseconds) guards all four locales:
+identical key sets (2.1), no empty/whitespace value (2.3), every placeholder
+declared in the `en` template present in all four (2.2). Brace-balance stands in
+for 2.4 — **not** ICU-construct parity, because `ur`/`ur_roman` legitimately use
+flat forms (`{count} حصے`) where `en`/`ar` pluralise, so requiring plural
+everywhere would be a false failure. Wire it into the PR gate.
 
 ### 3. Delete the tests that lie
 
@@ -114,15 +118,15 @@ repo's characteristic failure.
 - **`test/unit_test.dart` — delete it.** Zero `package:myapp` imports. Its 5
   tests assert on a "Channel model", a "Video model", a YouTube URL, and
   `https://api.example.com` — none of which exist in this app. It is scaffolding
-  from a template and contributes 5 of the 418.
-- **`test/book_service_test.dart`** — fix the false comment as part of 1.1.
-- **`make test-units`** runs `flutter test test/unit_tests.dart` (plural). That
-  file does not exist; the target always fails.
-- **`make format`** runs `flutter format .`, removed from the Flutter CLI.
-- **`codecov.yml`** ignores `app_localizations_ur_roman.dart` and
-  `generated_plugin_registrant.dart` — **neither exists** — and does *not* ignore
-  `app_localizations_ar.dart`, which does. Arabic l10n boilerplate is dragging
-  the number down.
+  from a template. Deleted. ✅
+- **`test/book_service_test.dart`** — false "placeholder" comment fixed. ✅
+- **`make test-units`** ran `flutter test test/unit_tests.dart` (a file that never
+  existed) — target removed. ✅
+- **`make format`** ran `flutter format .`, removed from the Flutter CLI — now
+  `dart format .` (and the doc references with it). ✅
+- **`codecov.yml`** ignored `app_localizations_ur_roman.dart` and
+  `generated_plugin_registrant.dart` (**neither exists**) and failed to ignore
+  `app_localizations_ar.dart` (which does) — ignore list corrected. ✅
 
 ---
 

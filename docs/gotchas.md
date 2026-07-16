@@ -236,9 +236,13 @@ is portable memory: any LLM working the repo should read and extend it.
   Arabic placeholder.** `assets/content/book_tawheed-ur.json` is built by
   `/tmp/build_urdu_book.py` (kept out of the repo): it pulls each clean Arabic
   āyah from `book_tawheed-ar.json` and pairs it with the Urdu **transcribed
-  verbatim from the print PDF**, then the masāʾil/hadith in Urdu. Only ch-00 and
-  ch-01 are done so far (a proofed sample); the rest of the ~156-page book is
-  pending.
+  verbatim from the print PDF**, then the masāʾil/hadith in Urdu. **All 67
+  chapters are transcribed and shipped** (through `876abed`); the mechanical
+  invariants are now guarded by `test/book_content_integrity_test.dart` (67
+  contiguous chapters, matched markup, one masāʾil heading per chapter, no āyah
+  truncated against the Arabic edition). The remaining work is *scholarly* QA of
+  the translation, not transcription. Do NOT reintroduce a "placeholder"
+  framing — it was true only through `bb33dc3`.
 - **The Urdu source text is UN-EXTRACTABLE — transcribe from rendered images.**
   Both the print PDF *and* its `.docx` carry a corrupted text layer (the CID
   *Jameel Noori Nastaleeq* font's char mapping drops/reorders letters), so every

@@ -19,7 +19,7 @@ fi
 
 # Format code
 echo "Formatting code..."
-flutter format .
+dart format .
 
 # Run tests
 echo "Running tests..."
@@ -220,7 +220,7 @@ Before creating a PR:
 - [ ] All changes are committed
 - [ ] `flutter analyze` passes
 - [ ] `flutter test` passes all tests
-- [ ] Code is formatted: `flutter format .`
+- [ ] Code is formatted: `dart format .`
 - [ ] No merge conflicts
 - [ ] Meaningful commit messages
 - [ ] Updated documentation if needed

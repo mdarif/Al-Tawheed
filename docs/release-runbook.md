@@ -18,9 +18,10 @@ looks like, and what to do if it doesn't go to plan.
 > `series.json` change is needed** (and adding `hasBook:true` there would break
 > not-yet-updated installs — don't). See [gotchas.md → Book](gotchas.md).
 >
-> The only open item is **content**: `assets/content/book_tawheed-ur.json` is
-> the Arabic matn as a placeholder until clean Urdu text is sourced — swapping
-> it is just replacing that one file (no code, no release gymnastics).
+> Content is **done**: `assets/content/book_tawheed-ur.json` now ships the real
+> bilingual Urdu content (all 67 chapters, through `876abed`), guarded by
+> `test/book_content_integrity_test.dart`. The only residual item is *scholarly*
+> QA of the translation — not a release blocker.
 
 ## Pre-flight checklist
 

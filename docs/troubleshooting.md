@@ -251,7 +251,7 @@ flutter test --verbose
 
 **Solution 3: Run Single Test**
 ```bash
-flutter test test/unit_tests.dart -v
+flutter test test/book_content_integrity_test.dart -v
 ```
 
 **Solution 4: Check for Errors**

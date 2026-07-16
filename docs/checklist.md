@@ -17,13 +17,13 @@
 - [ ] Follow Dart style guide
 - [ ] Add unit tests for new code
 - [ ] Update documentation as needed
-- [ ] Format code: `flutter format .`
+- [ ] Format code: `dart format .`
 - [ ] Test on both Android and iOS
 
 ## Before Committing
 - [ ] Run full test suite: `flutter test`
 - [ ] Check code quality: `flutter analyze`
-- [ ] Format code: `flutter format .`
+- [ ] Format code: `dart format .`
 - [ ] Verify no console errors: `flutter run -v`
 - [ ] Update CHANGELOG if applicable
 
