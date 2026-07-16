@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/navigation/route_guards.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
@@ -49,13 +50,10 @@ final _router = GoRouter(
     // even a single frame of WelcomeScreen.
     GoRoute(
       path: '/',
-      redirect: (context, state) {
-        final s = context.read<SeriesProvider>();
-        if (!s.shouldShowWelcomeForCurrentSeries) {
-          return '/lectures';
-        }
-        return null;
-      },
+      redirect: (context, state) => RouteGuards.welcome(
+        shouldShowWelcome:
+            context.read<SeriesProvider>().shouldShowWelcomeForCurrentSeries,
+      ),
       builder: (context, state) => const WelcomeScreen(),
     ),
 
@@ -71,17 +69,13 @@ final _router = GoRouter(
         GoRoute(
           path: '/book',
           redirect: (context, state) =>
-              context.read<SeriesProvider>().currentSeries.hasBook
-                  ? null
-                  : '/lectures',
+              RouteGuards.book(context.read<SeriesProvider>().currentSeries),
           builder: (context, state) => const BookChapterListScreen(),
         ),
         GoRoute(
           path: '/study',
           redirect: (context, state) =>
-              context.read<SeriesProvider>().currentSeries.hasStudyMode
-                  ? null
-                  : '/lectures',
+              RouteGuards.study(context.read<SeriesProvider>().currentSeries),
           builder: (context, state) => const StudyScreen(),
         ),
         // Settings is a bottom-nav tab (always last), so it lives inside the
