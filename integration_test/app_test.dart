@@ -39,7 +39,12 @@ void main() {
       }
 
       // ── Shell bottom navigation ─────────────────────────────────────────
-      await AppFlow.navigateToTab(tester, 'Home');
+      // Tabs are lectures · book · study · settings — the Home tab was retired
+      // (f793a78). Exercise the Book tab (this release's headline surface) and
+      // Settings, then return to Lectures.
+      if (tester.any(find.widgetWithText(NavigationBar, 'Book'))) {
+        await AppFlow.navigateToTab(tester, 'Book');
+      }
       await AppFlow.navigateToTab(tester, 'Settings');
       await AppFlow.scrollToSettingsDownloads(tester);
       expect(find.text('DOWNLOADS'), findsWidgets);
