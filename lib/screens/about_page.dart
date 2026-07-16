@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/app_config_model.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
@@ -80,13 +81,21 @@ class _BrandingFooterState extends State<_BrandingFooter> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         children: [
+          // Branding is chrome, so it resolves via `resolve` (app language),
+          // not `resolveForSeries` — and the app language already follows the
+          // edition by default, so the Arabic edition gets Arabic branding
+          // once the content repo supplies it.
           _BrandLink(
-            label: widget.branding.appBrand,
+            label: context.watch<LanguageProvider>().resolve(
+                  widget.branding.appBrand,
+                ),
             url: widget.branding.appBrandUrl,
           ),
           const SizedBox(height: 2),
           _BrandLink(
-            label: widget.branding.poweredByLabel,
+            label: context.watch<LanguageProvider>().resolve(
+                  widget.branding.poweredByLabel,
+                ),
             url: widget.branding.publisherUrl,
             muted: true,
           ),

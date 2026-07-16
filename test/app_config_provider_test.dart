@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/models/app_config_model.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 Map<String, dynamic> _configJson({
@@ -33,6 +34,63 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+  });
+
+  // Branding labels moved from plain strings to i18n maps. Every published
+  // app_config.json still sends plain strings, so the legacy shape has to keep
+  // working indefinitely — an app that blanks its own footer on old config is
+  // worse than one that never translated it.
+  group('AppConfigBranding — localizable labels', () {
+    test('reads the legacy plain-string shape', () {
+      final b = AppConfigBranding.fromJson({
+        'appBrand': 'Al Marfa Duroos',
+        'poweredByLabel': 'Powered by Al Marfa Technologies',
+      });
+
+      expect(b.appBrand['en'], 'Al Marfa Duroos');
+      expect(b.poweredByLabel['en'], 'Powered by Al Marfa Technologies');
+    });
+
+    test('reads an i18n map', () {
+      final b = AppConfigBranding.fromJson({
+        'poweredByLabel': {'en': 'Powered by X', 'ar': 'بدعم من س'},
+      });
+
+      expect(b.poweredByLabel['en'], 'Powered by X');
+      expect(b.poweredByLabel['ar'], 'بدعم من س');
+    });
+
+    test('an absent field keeps the bundled default, not a blank label', () {
+      final b = AppConfigBranding.fromJson({});
+
+      expect(b.appBrand, AppConfigBranding.defaults.appBrand);
+      expect(b.poweredByLabel, AppConfigBranding.defaults.poweredByLabel);
+      expect(b.poweredByLabel['en'], isNotEmpty);
+    });
+
+    // toI18nMap yields {'en': ''} for a malformed value — merging over the
+    // default rather than replacing it is what stops that blanking the footer.
+    test('a malformed field cannot blank the label', () {
+      final b = AppConfigBranding.fromJson({'poweredByLabel': 42});
+
+      expect(b.poweredByLabel['en'], isNotEmpty);
+    });
+
+    test('a remote map without `en` still resolves through the default',
+        () async {
+      final b = AppConfigBranding.fromJson({
+        'poweredByLabel': {'ar': 'بدعم من المرفأ'},
+      });
+      SharedPreferences.setMockInitialValues({});
+      PreferencesService.instance.resetForTest();
+      await PreferencesService.instance.init();
+
+      expect(b.poweredByLabel['ar'], 'بدعم من المرفأ');
+      // English readers fall back to the bundled label rather than an empty
+      // string, because the remote map is merged over the default.
+      expect(LanguageProvider().resolve(b.poweredByLabel),
+          AppConfigBranding.defaults.poweredByLabel['en'],);
+    });
   });
 
   group('AppConfigProvider — initial state', () {

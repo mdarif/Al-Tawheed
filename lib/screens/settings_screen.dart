@@ -164,7 +164,11 @@ class SettingsScreen extends StatelessWidget {
                   if (config.links.youtube != null)
                     ListTile(
                       leading: const Icon(Icons.play_circle_outline_rounded),
-                      title: Text(config.branding.appBrand),
+                      title: Text(
+                        context
+                            .watch<LanguageProvider>()
+                            .resolve(config.branding.appBrand),
+                      ),
                       subtitle: Text(l10n.settingsYouTubeChannel),
                       onTap: () => _launchOrNotify(
                         context,
