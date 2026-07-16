@@ -21,6 +21,10 @@ class SeriesProvider extends ChangeNotifier {
   List<SeriesConfig> _available = const [SeriesConfig.legacyUrduFallback];
   String? _currentId;
 
+  /// True once [loadManifest] has applied a fetched manifest — after which
+  /// [load] must not re-hydrate from the cache and clobber it.
+  bool _manifestApplied = false;
+
   /// Device system language at startup — used by [loadManifest] to silently
   /// default a fresh install to the Arabic series when the device itself is
   /// set to Arabic. Overridable in tests via [setDeviceLanguageCodeForTest].
@@ -117,6 +121,17 @@ class SeriesProvider extends ChangeNotifier {
       return;
     }
 
+    // Hydrate from the cached manifest before resolving the saved id, so
+    // currentSeries can actually find it. Without this, a returning Arabic
+    // reader resolves through `orElse` to the Urdu fallback until the async
+    // fetch lands — with _isLoading already false, so nothing waits for it —
+    // and paints Urdu chrome, tabs and avatar for a frame. Only inside the
+    // multi-series branch: the flag-off path is contractually identical to the
+    // pre-v3 app and must keep using the bundled fallback verbatim.
+    if (!_manifestApplied) {
+      _available = SeriesManifestService.instance.cachedManifest() ?? _available;
+    }
+
     final saved = _prefs.selectedSeriesId;
     if (saved != null) {
       _currentId = saved;
@@ -144,6 +159,7 @@ class SeriesProvider extends ChangeNotifier {
   /// onboarding on the network.
   Future<void> loadManifest() async {
     _available = await SeriesManifestService.instance.fetchManifest();
+    _manifestApplied = true;
     _maybeDefaultToArabic();
     _isLoading = false;
     notifyListeners();

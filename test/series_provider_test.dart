@@ -17,6 +17,28 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
+/// Seeds the same cache entry `SeriesManifestService.fetchManifest` writes, so
+/// `load()` sees what a returning user's device would have on disk.
+Future<void> _cacheManifest(List<SeriesConfig> series) =>
+    PreferencesService.instance.saveRemoteJson(
+      'series_manifest',
+      jsonEncode({
+        'series': [
+          for (final s in series)
+            {
+              'id': s.id,
+              'catalogUrl': s.catalogUrl,
+              'storagePrefix': s.storagePrefix,
+              'hasStudyMode': s.hasStudyMode,
+              'hasBook': s.hasBook,
+              'language': s.language,
+              'displayName': s.displayName,
+              'speakerName': s.speakerName,
+            },
+        ],
+      }),
+    );
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -36,6 +58,18 @@ void main() {
       expect(provider.currentSeries.id, SeriesConfig.legacyId);
       expect(provider.hasSelectedSeries, isTrue);
     });
+
+    // This path is contractually byte-identical to the pre-v3 app, so it must
+    // keep using the bundled fallback verbatim rather than a cached manifest.
+    test('ignores a cached manifest entirely', () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await _cacheManifest([_arabicSeries, SeriesConfig.legacyUrduFallback]);
+
+      final provider = SeriesProvider()..load(false);
+
+      expect(provider.availableSeries, [SeriesConfig.legacyUrduFallback]);
+      expect(provider.currentSeries.id, SeriesConfig.legacyId);
+    });
   });
 
   group('load — multiSeries enabled', () {
@@ -53,6 +87,41 @@ void main() {
       expect(provider.hasSelectedSeries, isTrue);
     });
 
+    // load() marks the series ready the moment it finds a saved id, so nothing
+    // downstream waits for the async manifest — currentSeries must therefore be
+    // right on the very first frame, or a returning Arabic reader gets a frame
+    // of Urdu chrome, tabs and avatar before it flips.
+    test('resolves the saved series from cache before the manifest lands',
+        () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await _cacheManifest([_arabicSeries, SeriesConfig.legacyUrduFallback]);
+
+      final provider = SeriesProvider()..load(true);
+
+      expect(provider.isSeriesReady, isTrue);
+      expect(provider.currentSeries.id, 'tawheed-ar');
+      expect(provider.currentSeries.language, 'ar');
+    });
+
+    test('falls back to Urdu when no manifest is cached yet (fresh install)',
+        () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+
+      final provider = SeriesProvider()..load(true);
+
+      expect(provider.currentSeries.id, SeriesConfig.legacyId);
+    });
+
+    test('a corrupt cached manifest is ignored, not fatal', () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await PreferencesService.instance
+          .saveRemoteJson('series_manifest', 'not json {{{');
+
+      final provider = SeriesProvider()..load(true);
+
+      expect(provider.currentSeries.id, SeriesConfig.legacyId);
+      expect(provider.availableSeries, [SeriesConfig.legacyUrduFallback]);
+    });
     test('existing progress silently pins to Urdu and persists it', () async {
       await PreferencesService.instance.saveProgress('lec-001', 30);
 
@@ -116,6 +185,20 @@ void main() {
   });
 
   group('loadManifest', () {
+    // load() re-runs on every flags update; once a manifest has been applied it
+    // is at least as fresh as the cache, so re-hydrating would be pure churn.
+    test('a later load() does not re-hydrate over an applied manifest',
+        () async {
+      await _cacheManifest([_arabicSeries]);
+      final provider = SeriesProvider();
+      await provider.loadManifest();
+      final applied = provider.availableSeries;
+
+      provider.load(true);
+
+      expect(provider.availableSeries, same(applied));
+    });
+
     test('parses series.json into availableSeries', () async {
       await PreferencesService.instance.saveRemoteJson(
         'series_manifest',
