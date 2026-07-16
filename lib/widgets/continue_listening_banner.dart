@@ -35,7 +35,7 @@ class ContinueListeningBanner extends StatelessWidget {
     final remaining = lecture.durationSeconds - savedSeconds;
     final series = context.read<SeriesProvider>().currentSeries;
     final isArabic = series.isRtl;
-    final l10n = context.l10nForSeries(series);
+    final l10n = context.l10n;
     // Watch the language so the resolved title refreshes on a UI-language change.
     final lectureTitle = context
         .watch<LanguageProvider>()

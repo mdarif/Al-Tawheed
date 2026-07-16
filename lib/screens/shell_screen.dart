@@ -19,8 +19,6 @@ extension on _Tab {
         _Tab.settings => '/settings',
       };
 
-  // [l10n] is series-aware (Arabic for the Arabic series, else the app UI
-  // language) — see [BuildContext.l10nForSeries].
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
         _Tab.lectures => NavigationDestination(
             icon: const Icon(Icons.headphones_outlined),
@@ -62,7 +60,7 @@ class ShellScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final series = context.watch<SeriesProvider>().currentSeries;
     final tabs = _tabsFor(series);
-    final l10n = context.l10nForSeries(series);
+    final l10n = context.l10n;
 
     return AllLecturesCompleteListener(
       child: Scaffold(

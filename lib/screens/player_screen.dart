@@ -27,8 +27,7 @@ class PlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     return _NextBlockedListener(
       child: _StudyCompletionListener(
         child: Scaffold(
@@ -310,8 +309,7 @@ class _OfflineStatusStrip extends StatelessWidget {
     BuildContext context,
     OfflineStripResolution resolution,
   ) {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
@@ -544,8 +542,7 @@ class _BookmarkButton extends StatelessWidget {
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
     );
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     return IconButton(
       tooltip: isBookmarked ? l10n.removeBookmark : l10n.bookmark,
       icon: Icon(

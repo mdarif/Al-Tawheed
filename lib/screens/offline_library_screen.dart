@@ -301,7 +301,7 @@ class _LectureTile extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
 
-    final removeLabel = context.l10nForSeries(series).offlineRemoveDownload;
+    final removeLabel = context.l10n.offlineRemoveDownload;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -344,8 +344,7 @@ class _LectureTile extends StatelessWidget {
     String title,
     String removeLabel,
   ) async {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
       title: removeLabel,

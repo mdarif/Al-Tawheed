@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 enum _MenuRoute { bookmarks, about }
@@ -10,14 +8,13 @@ enum _MenuRoute { bookmarks, about }
 /// shell tab. Add future routes here rather than as new bottom-nav tabs or
 /// standalone app-bar icons. Settings is the exception: it has its own
 /// bottom-nav tab (last), so it is deliberately NOT duplicated here. Labels
-/// follow the app UI language via [BuildContext.l10nForSeries], like the nav bar.
+/// follow the app UI language, like the nav bar.
 class AppOverflowMenu extends StatelessWidget {
   const AppOverflowMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final series = context.watch<SeriesProvider>().currentSeries;
-    final l10n = context.l10nForSeries(series);
+    final l10n = context.l10n;
 
     return PopupMenuButton<_MenuRoute>(
       icon: const Icon(Icons.more_vert_rounded),
