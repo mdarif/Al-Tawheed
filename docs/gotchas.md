@@ -30,6 +30,22 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **Never do global setup in `test/flutter_test_config.dart` that forces the
+  widget binding.** That file wraps the ENTIRE `test/` tree. Calling
+  `TestWidgetsFlutterBinding.ensureInitialized()` there (e.g. to `FontLoader`
+  fonts for goldens) forces every pure `test()` file onto the widget binding —
+  whose HTTP stub returns **400** for real requests — which broke every download
+  test that talks to a localhost server (`Download failed — HTTP 400`,
+  `init() must be called first`). Scope such setup to the suite that needs it: the
+  golden config lives in `test/golden/golden_config.dart` and is called from the
+  golden suite's `setUpAll`, never globally.
+- **Goldens are macOS-only and skipped by default.** Tagged `golden` in
+  `dart_test.yaml`; a normal `flutter test` / `make test` skips them.
+  `make test-goldens` verifies, `make goldens-update` re-bakes the masters — do
+  the latter only after a *reviewed* intentional UI change and eyeball the diff.
+  A **tolerant** comparator (0.5% pixels) absorbs Mac-to-Mac AA drift so CI
+  doesn't flap; a real glyph/RTL/layout regression moves whole blocks and still
+  fails. Fonts must be loaded in-test or every glyph is a blank Ahem box.
 - **An unawaited future that rejects before its matcher is attached = an
   unhandled async error, i.e. a flake.** `download_service_test › "delete
   cancels an active download"` starts a download, does NOT await it, deletes,

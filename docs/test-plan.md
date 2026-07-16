@@ -132,9 +132,25 @@ repo's characteristic failure.
 
 ## P1 — recurring classes, partial guards
 
-### 4. Golden tests for the multi-script UI
+### 4. Golden tests for the multi-script UI — 🟡 foundation landed
 
-**Zero today**, in an app whose bugs are overwhelmingly *visual*:
+**Infrastructure + first slice done.** `test/golden/` now has a working golden
+layer: fonts loaded from the bundled assets (or every glyph is a blank Ahem
+box), a **tolerant** comparator (`test/golden/golden_config.dart`, 0.5% pixel
+budget) so cross-machine AA drift doesn't flap while real glyph/layout shifts
+still fail, tagged `golden` + skipped by default (`dart_test.yaml`), generated
+AND verified on **macOS only** (`flutter-golden.yml`; `make goldens-update` /
+`make test-goldens`). First goldens: the book chapter list across
+{Urdu edition/English chrome, Arabic edition/Arabic chrome} × {light, dark} —
+the exact surface of the Persian-digit and RTL-mirroring bugs below.
+
+**Still open:** extend the matrix to the remaining surfaces (lecture header +
+tile, book reader with verse+citation+hadith+masāʾil together, the colour key
+with `﴾…﴿`, player, About strip, study dashboard). The harness pattern is
+established; each is another `test/golden/*_golden_test.dart` reusing the screen
+test's mount.
+
+Historical context for why this layer matters:
 
 - Chapter badges drew **Persian-shaped** 4/5/6/7 (`194f7ef`). The codepoints were
   right; the **font** was wrong. Every codepoint assertion passed. Only rendering
@@ -150,21 +166,21 @@ tile, book chapter list, **book reader** (a chapter exercising verse + citation 
 hadith + masāʾil heading together), the colour key, player, About stats strip,
 study dashboard.
 
-Caveats, or this becomes a maintenance tax: pin goldens to **one** CI platform
-(font rasterisation differs across OSes), commit the fonts, and treat
-`--update-goldens` as a reviewed change, never a reflex.
+The caveats that keep this from becoming a maintenance tax — pin to **one** CI
+platform (macOS), commit the fonts, load them in-test, tolerant compare, and
+treat `--update-goldens` as reviewed — are all now implemented above.
 
-### 5. Cold-start & first-frame ordering
+### 5. Cold-start & first-frame ordering — ✅ done
 
 `deea15a` is the cautionary tale: `currentSeries` resolved to the Urdu fallback
 for the first frames while `_isLoading` was already `false`, so nothing waited.
 
-| # | Test | Guards |
+| # | Test | Status |
 |---|---|---|
-| 5.1 | Returning Arabic reader: correct edition on frame **one** | done (`series_provider_test`) |
-| 5.2 | **No-flash**: pump exactly one frame (not `pumpAndSettle`) and assert Arabic chrome | `pumpAndSettle` hides precisely this class — it waits for the flash to finish |
-| 5.3 | Fresh install, Arabic device → Arabic edition **and** Arabic chrome, picker never shown | The Middle East first-run promise. Half-covered (`series_provider_test` checks the edition, nothing checks chrome + picker together) |
-| 5.4 | **`lib/app.dart`'s router graph** — 282 lines, **no test imports it**. Redirect matrix: onboarding vs `/choose-series` vs `/lectures`, deep links, `/bookmarks` | Every routing regression ships blind |
+| 5.1 | Returning Arabic reader: correct **edition** on frame one | ✅ `series_provider_test` |
+| 5.2 | **No-flash** Arabic **chrome** on frame one (synchronous, no settle) | ✅ `cold_start_chrome_test` |
+| 5.3 | Fresh Arabic-device install → Arabic edition **and** chrome, picker never shown | ✅ `cold_start_chrome_test` (chrome + picker together) |
+| 5.4 | Router redirect matrix (`/book`, `/study`, welcome-skip) | ✅ `route_guards_test` — predicates extracted to `lib/navigation/route_guards.dart`, since `MyApp` is unmountable (AudioService singleton) |
 
 ### 6. Remote-config contract tests (against the live CDN) — ✅ done
 

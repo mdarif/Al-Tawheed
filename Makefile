@@ -105,6 +105,16 @@ test:
 test-verbose:
 	flutter test --reporter=expanded --verbose
 
+# Golden (pixel-snapshot) tests — tagged `golden`, skipped by every run above
+# (see dart_test.yaml). Platform-sensitive, so generated AND verified on macOS
+# only. `test-goldens` verifies; `goldens-update` re-bakes the masters after a
+# REVIEWED intentional UI change — eyeball the diff before committing.
+test-goldens:
+	flutter test test/golden --run-skipped --reporter=expanded
+
+goldens-update:
+	flutter test test/golden --run-skipped --update-goldens
+
 # Analysis & Quality
 analyze:
 	flutter analyze --fatal-warnings
