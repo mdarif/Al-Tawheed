@@ -93,6 +93,25 @@ is portable memory: any LLM working the repo should read and extend it.
 - Play caps phone screenshots at **8** and **2:1 max aspect**. The iPhone raw is
   ~2.17:1, so the framer composites onto a 2:1 canvas (1290×2580).
 
+## Patrol (native device tests)
+
+- **Version dead-end + Android 16 (as of 2026-07).** The repo pins
+  `patrol 4.6.1`, whose ONLY compatible CLI is `patrol_cli 4.4.0` (Patrol's own
+  version check rejects everything else). But 4.4.0 discovers **0 tests**
+  (`Total: 0`, nothing runs) on an **Android 16 / API 36** device — the build
+  and instrumentation succeed, but the PatrolJUnitRunner ↔ PatrolAppService
+  discovery handshake finds no cases, most likely because that Patrol generation
+  predates API 36's test orchestrator. The newer CLI `4.5.1` **hard-refuses**
+  package 4.6.1, and 4.5.1 is the latest CLI — so there is no released CLI that
+  runs patrol 4.6.1 on Android 16. To actually run the native suite you must
+  either (a) drop the `patrol` pin to a 4.5.x that CLI 4.5.1 supports (may need
+  native_test API tweaks), or (b) run CLI 4.4.0 against an **older-Android
+  emulator** (an API level 4.4.0 supports). `flutter test` unit/widget + the
+  `integration_test/` suite are unaffected — this is Patrol-only.
+- **Airplane-mode scenarios fail on heavily-skinned OEM Android** (the physical
+  test device is an Oppo/ColorOS) — moot until discovery works, but it means a
+  fully-green native run needs a stock-Android emulator anyway.
+
 ## Book reader gestures
 
 - **Pinch-to-zoom uses a passive `Listener`, not a scale gesture recognizer.**
