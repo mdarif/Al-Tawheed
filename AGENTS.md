@@ -105,6 +105,7 @@ first. That is what makes this a second brain rather than a static readme.
 **Start here for a task:**
 - [setup.md](docs/setup.md) — environment, signing, platform notes
 - [testing.md](docs/testing.md) — test layers and how to run them
+- [test-plan.md](docs/test-plan.md) — ranked backlog of the gaps that matter
 - [troubleshooting.md](docs/troubleshooting.md) — common failures + fixes
 - [ci-cd.md](docs/ci-cd.md) — pipeline, one-time secret setup, branch model
 - [release-runbook.md](docs/release-runbook.md) — step-by-step to cut a release
