@@ -143,8 +143,9 @@ void main() {
 
     expect(find.text('Continue Listening'), findsOneWidget);
     expect(find.text('Lecture 1'), findsOneWidget);
-    expect(find.text('1:00 listened · 9:00 left'), findsOneWidget);
-    expect(find.text('10% complete'), findsOneWidget);
+    // Digits follow the edition (Urdu fallback here), words follow chrome.
+    expect(find.text('۱:۰۰ listened · ۹:۰۰ left'), findsOneWidget);
+    expect(find.text('۱۰% complete'), findsOneWidget);
   });
 
   testWidgets('tapping resumes into the player', (tester) async {
@@ -184,7 +185,7 @@ void main() {
     // Arabic because the UI locale is Arabic.
     expect(find.text('الدرس 1'), findsOneWidget);
     expect(find.text('متابعة الاستماع'), findsOneWidget);
-    expect(find.text('1:00 مستمَع · 9:00 متبقٍّ'), findsOneWidget);
-    expect(find.text('10% مكتمل'), findsOneWidget);
+    expect(find.text('١:٠٠ مستمَع · ٩:٠٠ متبقٍّ'), findsOneWidget);
+    expect(find.text('١٠% مكتمل'), findsOneWidget);
   });
 }

@@ -7,7 +7,6 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
@@ -314,16 +313,19 @@ class _LectureTile extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          lecture.number.toString().padLeft(2, '0'),
-          style:
-              context.textTheme.labelSmall?.copyWith(color: context.brandColor),
+          context.digitsForSeries(lecture.number.toString().padLeft(2, '0')),
+          style: context.textTheme.labelSmall?.copyWith(
+            color: context.brandColor,
+            fontFamily: series.bookFontFamily,
+          ),
         ),
       ),
       title: series.isRtl
           ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
           : titleWidget,
       subtitle: Text(
-        '${DurationFormatter.fromSeconds(lecture.durationSeconds)}  ·  $sizeMb',
+        '${context.timeForSeries(lecture.durationSeconds)}'
+        '  ·  ${context.digitsForSeries(sizeMb)}',
         style: context.textTheme.bodySmall
             ?.copyWith(color: context.secondaryTextColor),
       ),

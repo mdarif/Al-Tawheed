@@ -129,7 +129,8 @@ class SeriesProvider extends ChangeNotifier {
     // multi-series branch: the flag-off path is contractually identical to the
     // pre-v3 app and must keep using the bundled fallback verbatim.
     if (!_manifestApplied) {
-      _available = SeriesManifestService.instance.cachedManifest() ?? _available;
+      _available =
+          SeriesManifestService.instance.cachedManifest() ?? _available;
     }
 
     final saved = _prefs.selectedSeriesId;

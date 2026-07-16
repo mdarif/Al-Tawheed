@@ -133,6 +133,8 @@
 
   "partsCount": "{count} حصے",
   "lecturesCount": "{count} دروس · {duration}",
+  "durationHoursMinutes": "{hours} گھنٹے {minutes} منٹ",
+  "durationMinutes": "{minutes} منٹ",
 
   "offlineSourceSaved": "آف لائن محفوظ",
   "offlineSourceStreaming": "اسٹریمنگ",

@@ -7,7 +7,6 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 /// A slim "Continue Listening" resume banner for the top of the Lectures tab —
@@ -92,8 +91,8 @@ class ContinueListeningBanner extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         l10n.listenedDuration(
-                          DurationFormatter.fromSeconds(savedSeconds),
-                          DurationFormatter.fromSeconds(remaining),
+                          context.timeForSeries(savedSeconds),
+                          context.timeForSeries(remaining),
                         ),
                         style: context.textTheme.bodySmall,
                       ),
@@ -127,7 +126,9 @@ class ContinueListeningBanner extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              l10n.percentComplete((fraction * 100).round()),
+              context.digitsForSeries(
+                l10n.percentComplete((fraction * 100).round()),
+              ),
               style: context.textTheme.bodySmall,
             ),
           ],

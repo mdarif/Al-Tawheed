@@ -8,7 +8,6 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/announcements_bell.dart';
 import 'package:myapp/widgets/app_overflow_menu.dart';
@@ -231,13 +230,18 @@ class _LectureListScreenState extends State<LectureListScreen> {
     final speaker = catalog != null
         ? lang.resolveForSeries(catalog.book.speaker, series)
         : '';
+    // No Arabic/English fork here: isRtl is `language == 'ar'`, so the Urdu
+    // edition took the English branch and read "45 lectures · 23h 19m" directly
+    // above badges numbered ۰۱. Wording comes from the ARB (canonical), digits
+    // from the edition.
     final countLine = catalog == null
         ? ''
-        : isArabicContent
-            ? '${toArabicDigits(catalog.book.lectureCount)} محاضرة · '
-                '${DurationFormatter.toArabicHoursMinutes(catalog.book.totalDurationSeconds)}'
-            : '${catalog.book.lectureCount} lectures · '
-                '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}';
+        : context.digitsForSeries(
+            context.l10n.lecturesCount(
+              catalog.book.lectureCount,
+              context.hoursMinutesForSeries(catalog.book.totalDurationSeconds),
+            ),
+          );
 
     Widget maybeRtl(Widget child) => isArabicContent
         ? Directionality(textDirection: TextDirection.rtl, child: child)

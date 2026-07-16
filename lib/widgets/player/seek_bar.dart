@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 class PlayerSeekBar extends StatefulWidget {
   const PlayerSeekBar({super.key});
@@ -32,8 +32,7 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape:
-                    const RoundSliderOverlayShape(overlayRadius: 14),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
                 value: sliderValue.clamp(0.0, 1.0),
@@ -56,11 +55,11 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    DurationFormatter.fromSeconds(snapshot.positionSeconds),
+                    context.timeForSeries(snapshot.positionSeconds),
                     style: context.textTheme.bodySmall,
                   ),
                   Text(
-                    DurationFormatter.fromSeconds(snapshot.durationSeconds),
+                    context.timeForSeries(snapshot.durationSeconds),
                     style: context.textTheme.bodySmall,
                   ),
                 ],

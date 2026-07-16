@@ -83,7 +83,7 @@ Map<String, dynamic> _catalogJson({
       'dailyBenefits': <Map<String, dynamic>>[],
     };
 
-Widget _wrap({required SeriesProvider series}) {
+Widget _wrap({required SeriesProvider series, Locale? locale}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
@@ -105,6 +105,7 @@ Widget _wrap({required SeriesProvider series}) {
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -222,11 +223,43 @@ void main() {
 
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الشيخ صالح الفوزان حفظه الله'), findsOneWidget);
-    expect(find.textContaining('محاضرة'), findsOneWidget);
+    // Chrome here is English (this harness pins no locale), which is what an
+    // Arabic-edition reader who explicitly picked English would see: the words
+    // follow the chrome, the digits follow the edition. Two 60s lectures.
+    expect(find.text('٢ lectures · ٢m'), findsOneWidget);
     // The redesigned hero shows the Arabic series teacher (Shaikh al-Fawzan).
     expect(_avatarFinder('assets/images/sheikh_fawzan.png'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
+  });
+
+  // The production default for the Arabic edition: chrome follows the series,
+  // so the header reads entirely in Arabic — words from the ARB, digits from
+  // the edition. The old code hardcoded 'محاضرة' here; the ARB says 'درس',
+  // and the ARB is canonical (it also matches the الدروس nav tab).
+  testWidgets('heads the Arabic edition with an all-Arabic count line',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        lectures: [
+          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+        ],
+      ),),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('٢ درس · ٢ د'), findsOneWidget);
+    expect(find.textContaining('lectures'), findsNothing);
   });
 
   testWidgets('numbers the Arabic duroos in Arabic-Indic numerals',

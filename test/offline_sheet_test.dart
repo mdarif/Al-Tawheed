@@ -434,7 +434,7 @@ void main() {
       ),);
       await tester.pumpAndSettle();
 
-      expect(find.text('جارٍ التنزيل… 50%'), findsOneWidget);
+      expect(find.text('جارٍ التنزيل… ٥٠%'), findsOneWidget);
       expect(find.textContaining('Downloading'), findsNothing);
       expect(find.text('إلغاء التنزيل'), findsOneWidget);
       expect(find.text('Cancel download'), findsNothing);

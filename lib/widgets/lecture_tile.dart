@@ -92,7 +92,7 @@ class _TileContent extends StatelessWidget {
                 _buildTitle(context),
                 const SizedBox(height: 3),
                 Text(
-                  DurationFormatter.fromSeconds(lecture.durationSeconds),
+                  context.timeForSeries(lecture.durationSeconds),
                   style: context.textTheme.bodySmall?.copyWith(fontSize: 12),
                 ),
               ],
@@ -171,21 +171,23 @@ class _ProgressBadge extends StatelessWidget {
               // 4/5/6/7 differently, and the UI font has neither set, so
               // without the series face the platform falls back to a
               // Persian-style rendering.
-              Builder(builder: (context) {
-                final series = context.watch<SeriesProvider>().currentSeries;
-                return Text(
-                  localizedDigitsInString(
-                    lecture.number.toString().padLeft(2, '0'),
-                    series.language,
-                  ),
-                  style: context.textTheme.labelMedium?.copyWith(
-                    color: context.brandColor,
-                    fontFamily: series.bookFontFamily,
-                    height: 1.0,
-                    letterSpacing: 0.5,
-                  ),
-                );
-              },),
+              Builder(
+                builder: (context) {
+                  final series = context.watch<SeriesProvider>().currentSeries;
+                  return Text(
+                    localizedDigitsInString(
+                      lecture.number.toString().padLeft(2, '0'),
+                      series.language,
+                    ),
+                    style: context.textTheme.labelMedium?.copyWith(
+                      color: context.brandColor,
+                      fontFamily: series.bookFontFamily,
+                      height: 1.0,
+                      letterSpacing: 0.5,
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         );

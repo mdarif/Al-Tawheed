@@ -225,7 +225,7 @@ void main() {
         seedAfterLoad: (d) => d.seedDownloadingForTest('l1'),
       );
 
-      expect(find.text('Downloading… 50%'), findsOneWidget);
+      expect(find.text('Downloading… ۵۰%'), findsOneWidget);
       // One in the offline strip, one in the app bar download button.
       expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
     });
@@ -363,14 +363,14 @@ void main() {
     });
   });
 
-  // Chrome/UI language is independent of the content edition (see
-  // l10nForSeries). These represent an Arabic-UI user on the Arabic edition
-  // (locale: ar) → Arabic chrome AND Arabic content. The decouple test below
-  // proves an English-UI user on the Arabic edition still gets Arabic content
-  // with English chrome.
+  // An Arabic-UI user on the Arabic edition (locale: ar) → Arabic chrome AND
+  // Arabic content. This is also the production default now that the edition
+  // supplies the chrome language; the test below pins the other side of the
+  // precedence rule — an explicit English pick still wins, keeping Arabic
+  // content under English chrome.
   group('PlayerScreen — Arabic series, Arabic UI', () {
     testWidgets(
-        'shows Arabic chrome, track title, speaker, and cover art while seek-bar times stay in Western numerals',
+        'shows Arabic chrome, track title, speaker, cover art, and seek-bar times',
         (tester) async {
       await _pumpPlayer(
         tester,
@@ -395,9 +395,13 @@ void main() {
       // Offline strip label in Arabic — not downloaded, offline by default.
       expect(find.text('غير متاح بلا إنترنت'), findsOneWidget);
 
-      // Numeric seek-bar times stay in Western numerals.
-      expect(find.text('0:00'), findsOneWidget);
-      expect(find.text('10:00'), findsOneWidget);
+      // Seek-bar times follow the edition's numerals, like every other number
+      // in the app. (This reverses an earlier decision to keep them Western:
+      // Western digits next to Arabic chrome read as an untranslated string,
+      // not as a deliberate choice.)
+      expect(find.text('٠:٠٠'), findsOneWidget);
+      expect(find.text('١٠:٠٠'), findsOneWidget);
+      expect(find.text('0:00'), findsNothing);
     });
 
     testWidgets('shows "Streaming" offline-strip label in Arabic when playing online',
@@ -449,9 +453,13 @@ void main() {
         locale: const Locale('en'),
       );
 
-      // Chrome follows the en UI locale — NOT forced to Arabic by the edition.
+      // Chrome follows the explicit en pick — the edition supplies only the
+      // default, so it must not override a choice the user made.
       expect(find.text('Now Playing'), findsOneWidget);
       expect(find.text('يُشغَّل الآن'), findsNothing);
+
+      // ...but the numbers still belong to the content, not the chrome.
+      expect(find.text('٠:٠٠'), findsOneWidget);
 
       // Content stays per-edition (resolveForSeries) — still Arabic.
       expect(find.text('الدرس 1'), findsOneWidget);

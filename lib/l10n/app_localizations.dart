@@ -815,6 +815,18 @@ abstract class AppLocalizations {
   /// **'{count} lectures · {duration}'**
   String lecturesCount(int count, String duration);
 
+  /// A total listening time. Placeholders arrive ALREADY rendered in the active edition's numerals (Arabic-Indic, Urdu, or Western) — keep them String and never add a number format, which would key off the UI locale instead. Translators own the spacing and word order: English is '23h 19m', Arabic is '٢٣ س ١٩ د'.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String durationHoursMinutes(String hours, String minutes);
+
+  /// A total listening time under one hour. See durationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String durationMinutes(String minutes);
+
   /// No description provided for @offlineSourceSaved.
   ///
   /// In en, this message translates to:

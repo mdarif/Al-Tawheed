@@ -433,6 +433,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '${minutes}m';
+  }
+
+  @override
   String get offlineSourceSaved => 'Saved for offline';
 
   @override

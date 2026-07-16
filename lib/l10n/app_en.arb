@@ -220,6 +220,23 @@
     }
   },
 
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "description": "A total listening time. Placeholders arrive ALREADY rendered in the active edition's numerals (Arabic-Indic, Urdu, or Western) — keep them String and never add a number format, which would key off the UI locale instead. Translators own the spacing and word order: English is '23h 19m', Arabic is '٢٣ س ١٩ د'.",
+    "placeholders": {
+      "hours":   { "type": "String" },
+      "minutes": { "type": "String" }
+    }
+  },
+
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "description": "A total listening time under one hour. See durationHoursMinutes.",
+    "placeholders": {
+      "minutes": { "type": "String" }
+    }
+  },
+
   "offlineSourceSaved": "Saved for offline",
   "offlineSourceStreaming": "Streaming",
   "offlineNotAvailableOffline": "Not available offline",

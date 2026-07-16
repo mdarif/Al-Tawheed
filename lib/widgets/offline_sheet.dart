@@ -283,7 +283,7 @@ class _ProgressRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.offlineDownloading(percent),
+            context.digitsForSeries(l10n.offlineDownloading(percent)),
             style: context.textTheme.bodySmall
                 ?.copyWith(color: context.secondaryTextColor),
           ),

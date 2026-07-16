@@ -429,6 +429,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '$hours س $minutes د';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '$minutes د';
+  }
+
+  @override
   String get offlineSourceSaved => 'محفوظ بلا إنترنت';
 
   @override

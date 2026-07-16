@@ -12,21 +12,13 @@ class DurationFormatter {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
-  /// 97617 → "27h 6m"
-  static String toHoursMinutes(int totalSeconds) {
-    final h = totalSeconds ~/ 3600;
-    final m = (totalSeconds % 3600) ~/ 60;
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
-
-  /// 83940 → "٢٣ س ١٩ د"
-  static String toArabicHoursMinutes(int totalSeconds) {
-    final h = totalSeconds ~/ 3600;
-    final m = (totalSeconds % 3600) ~/ 60;
-    if (h > 0) return '${toArabicDigits(h)} س ${toArabicDigits(m)} د';
-    return '${toArabicDigits(m)} د';
-  }
+  /// 97617 → (27, 6)
+  ///
+  /// Numbers only — the hour/minute *words* differ per language ("27h 6m" vs
+  /// "٢٧ س ٦ د"), so they come from the ARB. See
+  /// `BuildContext.hoursMinutesForSeries`, which is what widgets should call.
+  static (int hours, int minutes) toHoursAndMinutes(int totalSeconds) =>
+      (totalSeconds ~/ 3600, (totalSeconds % 3600) ~/ 60);
 }
 
 const _easternArabicDigits = [

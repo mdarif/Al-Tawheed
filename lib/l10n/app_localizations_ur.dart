@@ -415,6 +415,16 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '$hours گھنٹے $minutes منٹ';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '$minutes منٹ';
+  }
+
+  @override
   String get offlineSourceSaved => 'آف لائن محفوظ';
 
   @override
@@ -944,6 +954,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String lecturesCount(int count, String duration) {
     return '$count dars · $duration';
+  }
+
+  @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '${minutes}m';
   }
 
   @override

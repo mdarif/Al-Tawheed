@@ -216,6 +216,21 @@
     }
   },
 
+  "durationHoursMinutes": "{hours} س {minutes} د",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours":   { "type": "String" },
+      "minutes": { "type": "String" }
+    }
+  },
+
+  "durationMinutes": "{minutes} د",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": { "type": "String" }
+    }
+  },
+
   "offlineSourceSaved": "محفوظ بلا إنترنت",
   "offlineSourceStreaming": "يُبثّ مباشرةً",
   "offlineNotAvailableOffline": "غير متاح بلا إنترنت",

@@ -8,6 +8,7 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -20,6 +21,8 @@ Widget _wrap() {
       ChangeNotifierProvider(create: (_) => AppConfigProvider()),
       ChangeNotifierProvider(create: (_) => CatalogProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      // The About stats render their numbers in the active edition's numerals.
+      ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
     ],
     child: MaterialApp(
       theme: AppTheme.light,

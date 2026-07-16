@@ -17,6 +17,19 @@ void main() {
     });
   });
 
+  group('toHoursAndMinutes', () {
+    test('splits seconds into whole hours and remaining minutes', () {
+      expect(DurationFormatter.toHoursAndMinutes(97617), (27, 6));
+      expect(DurationFormatter.toHoursAndMinutes(83940), (23, 19));
+      expect(DurationFormatter.toHoursAndMinutes(0), (0, 0));
+    });
+
+    test('drops seconds rather than rounding up', () {
+      // 59:59 is "0h 59m", never "1h 0m" — a total must not overstate itself.
+      expect(DurationFormatter.toHoursAndMinutes(3599), (0, 59));
+    });
+  });
+
   group('toArabicDigits', () {
     test('converts an int to Eastern Arabic-Indic numerals', () {
       expect(toArabicDigits(91), '٩١');

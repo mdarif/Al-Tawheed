@@ -131,6 +131,8 @@
 
   "partsCount": "{count} hisse",
   "lecturesCount": "{count} dars · {duration}",
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "durationMinutes": "{minutes}m",
 
   "offlineSourceSaved": "Offline محفوظ",
   "offlineSourceStreaming": "Streaming",
