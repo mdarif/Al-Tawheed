@@ -27,7 +27,11 @@ Catalog _catalog({int totalDurationSeconds = 83940}) => Catalog.fromJson({
       'lectures': <Map<String, dynamic>>[],
     });
 
-Widget _wrap({required Catalog catalog, Locale? locale}) {
+Widget _wrap({
+  required Catalog catalog,
+  Locale? locale,
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
@@ -37,8 +41,22 @@ Widget _wrap({required Catalog catalog, Locale? locale}) {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: AboutCard(about: AppConfigModel.defaults.about, catalog: catalog),
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          // The real About page hosts the card in a ListView, so vertical
+          // growth scrolls — a scroll view here keeps the test faithful and
+          // isolates the actual §8 risk: HORIZONTAL overflow of the fixed
+          // three-column stats Row.
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: AboutCard(
+                about: AppConfigModel.defaults.about,
+                catalog: catalog,
+              ),
+            ),
+          ),
+        ),
       ),
     ),
   );
@@ -132,5 +150,29 @@ void main() {
 
       expect(find.text('٤٠ د'), findsOneWidget);
     });
+  });
+
+  // test-plan §8 — dynamic type. The existing tests pin the narrow WIDTH but
+  // not the text scale; a user at the OS accessibility max (~2.0) is where the
+  // three fixed columns of spelled-out Urdu units are most likely to overflow.
+  // A RenderFlex overflow throws and fails the test on its own — no explicit
+  // assertion needed beyond "it rendered".
+  group('About stats strip — scales without overflow', () {
+    for (final scale in [1.5, 2.0]) {
+      testWidgets('Urdu, widest duration, textScaler $scale', (tester) async {
+        useNarrowPhone(tester);
+        await tester.pumpWidget(
+          _wrap(
+            catalog: _catalog(totalDurationSeconds: 999 * 3600 + 59 * 60),
+            locale: const Locale('ur'),
+            textScaler: TextScaler.linear(scale),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('۹۹۹ گھنٹے ۵۹ منٹ'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

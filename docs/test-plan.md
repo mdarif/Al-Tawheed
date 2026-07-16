@@ -212,44 +212,43 @@ Run **nightly, not on PR** — network flake must not block merges.
 
 Ranked by size × reachability, not by principle:
 
-| Surface | Why it matters |
+| Surface | Status |
 |---|---|
-| `lib/screens/bookmarks_screen.dart` | **Never constructed in any test.** Live route (`app.dart:118`), reachable from the overflow menu |
-| `lib/services/catalog_service.dart` | **0%.** The real catalog HTTP path — `catalog_provider_test` injects `_SpyCatalog` and bypasses it entirely. This is the same shape as the 2.3.0 outage: the pure logic was tested, the I/O wasn't |
-| `lib/services/series_manifest_service.dart` | No direct test — and it just grew `cachedManifest()`, which now runs on **every** cold start |
-| `lib/audio/player_notifier.dart` | 221 lines, ~50%, incidental only. The app's most stateful class |
-| `lib/utils/study_session.dart` | 45 lines of pure business logic, zero tests |
-| `lib/data/content_i18n_overlay.dart` | 167 lines, no test imports it |
-| `lib/widgets/study/study_dashboard_card.dart` | 288 lines — the largest widget — reachable only through `study_screen_test.dart`'s 3 tests |
-| `lib/services/download_notification_service.dart` | ~12%. Notification surface = user-visible |
+| `lib/services/catalog_service.dart` | ✅ `catalog_service_test` — cache-key namespacing + version guard (the 2.3.0-shape gap) |
+| `lib/services/series_manifest_service.dart` | ✅ `series_manifest_service_test` — `cachedManifest()` parse/skip/fallback (runs every cold start) |
+| `lib/screens/bookmarks_screen.dart` | ✅ `bookmarks_screen_test` — empty / filter+count / live removal / tap-through |
+| `lib/audio/player_notifier.dart` | ⬜ 221 lines, ~50%, incidental only. The app's most stateful class — still the biggest P2 gap |
+| `lib/utils/study_session.dart` | ⬜ NOTE: not "pure logic" as first thought — it's context/provider/nav-coupled, so it needs a widget harness (guards: catalog-null, lecture-null, chapter-not-in-catalog early returns) |
+| `lib/data/content_i18n_overlay.dart` | ⬜ 167 lines, no test imports it |
+| `lib/widgets/study/study_dashboard_card.dart` | ⬜ 288 lines — the largest widget — reachable only through `study_screen_test.dart`'s 3 tests |
+| `lib/services/download_notification_service.dart` | ⬜ ~12%. Notification surface = user-visible |
 
 ---
 
 ## P3 — the "best UX in the industry" bar
 
-### 7. Accessibility — **zero coverage, biggest gap against that bar**
+### 7. Accessibility — 🟡 the marquee gap is closed; contrast is a live finding
 
-Only **two** files in all of `lib/` even mention `Semantics`. No test uses
-`meetsGuideline`, `bySemanticsLabel`, or any tap-target/contrast guideline.
+| # | Test | Status |
+|---|---|---|
+| 7.1 | `textContrastGuideline`, light + dark | ⚠️ **FINDING (owner call):** the muted/secondary text colour (~`#8E8E93`) gives **4.27:1** at 14px — below WCAG AA (4.5:1) — in **both** themes. Not the brand gold; the stat-label grey. Fixing means darkening the secondary text colour **app-wide** (a theme decision), so it's surfaced here rather than changed unilaterally. Re-run `meetsGuideline(textContrastGuideline)` once the colour is chosen. |
+| 7.2 | `android`/`iOSTapTargetGuideline` | ✅ `player_screen_test` — and fixed the 28px offline strip to a 48px hit area |
+| 7.3 | `labeledTapTargetGuideline` + per-control labels | ✅ `player_screen_test` — the five transport controls + the collapse button were unlabelled; now tooltipped (which carries the screen-reader label). 6 ARB strings ×4 locales. |
+| 7.4 | Screen-reader pass: seek bar announces position/duration; `«»`/`﴾﴿` not read as punctuation soup | ⬜ open — needs a semantics-tree assertion on the reader + seek bar |
 
-| # | Test |
-|---|---|
-| 7.1 | `meetsGuideline(textContrastGuideline)` on every screen, **light and dark** — the brand gold on dark is the risk |
-| 7.2 | `androidTapTargetGuideline` + `iOSTapTargetGuideline` — transport controls, download button, the 40×40 badges |
-| 7.3 | `labeledTapTargetGuideline` — icon-only buttons (play/pause, ±10s, download, bookmark, overflow) are unlabelled today |
-| 7.4 | Screen-reader pass: the seek bar must announce position/duration; `«»`/`﴾﴿` markup must not be read aloud as punctuation soup |
+The most defensible "not industry-best" claim — unlabelled transport controls on
+an audio app — is **fixed**. Contrast (7.1) is the remaining accessibility item
+and it needs a design decision, not just a test.
 
-An audio app for a partially-sighted or elderly audience with unlabelled
-transport controls is the most defensible "not industry-best" claim on this list.
+### 8. Dynamic type / text scaling — 🟡 About strip guarded
 
-### 8. Dynamic type / text scaling
-
-No test varies `textScaler`. Nastaliq already has a tall line-box, and Urdu spells
-units out (`۲۳ گھنٹے ۱۹ منٹ` vs `23h 19m`).
-
-- 8.1 Key screens at `textScaler` 1.0 → 2.0, asserting no overflow. The About-strip
-  test pins **width** at 320pt but not scale — half the risk.
-- 8.2 Book reader at max scale + Nastaliq: no clipped diacritics.
+- 8.1 ✅ **About stats strip** at `textScaler` 1.5 and 2.0 on a 320pt phone —
+  the three fixed columns of spelled-out Urdu units fit without horizontal
+  overflow (`about_card_stats_test`). NOTE: host the card in a scroll view in
+  the test as the real About page does, or a *vertical* overflow (harmless in
+  the app, which scrolls) masquerades as a failure.
+- 8.1 ⬜ other key screens (lecture list, settings, player) at 2.0 still open.
+- 8.2 ⬜ Book reader at max scale + Nastaliq: no clipped diacritics.
 
 ### 9. Performance — zero today
 
