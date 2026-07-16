@@ -44,7 +44,9 @@ class AppOverflowMenu extends StatelessWidget {
         children: [
           Icon(icon, size: 22),
           const SizedBox(width: 12),
-          Text(label),
+          // Flexible so a long localized label ellipsizes rather than
+          // overflowing the row.
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

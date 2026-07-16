@@ -252,13 +252,16 @@ void main() {
     expect(find.text('نص الباب الثاني'), findsOneWidget);
   });
 
-  testWidgets('color key button opens the legend sheet', (tester) async {
+  testWidgets('color key opens from the overflow menu', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-01'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.palette_outlined));
+    // Color key, Share and Report now live behind the app-bar ⋮.
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Color key').last);
     await tester.pumpAndSettle();
 
     // English chrome (test wrap uses default/en locale) — legend labels show.
@@ -280,7 +283,8 @@ void main() {
     expect(verseSample.textDirection, TextDirection.rtl);
   });
 
-  testWidgets('share action shares the chapter title and text', (tester) async {
+  testWidgets('share, from the overflow menu, shares the chapter title and text',
+      (tester) async {
     final sharePlatform = _FakeSharePlatform();
     SharePlatform.instance = sharePlatform;
     final book = BookProvider()..setBookForTest(_testBook);
@@ -288,10 +292,26 @@ void main() {
     await tester.pumpWidget(_wrap(book, 'ch-01'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.share_rounded));
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Share chapter').last);
     await tester.pumpAndSettle();
 
     expect(sharePlatform.lastParams?.text, 'الباب الأول\n\nنص الباب الأول');
+  });
+
+  testWidgets('the overflow menu offers Report a mistake', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+
+    // AppConfigProvider defaults carry a contact email, so the row shows.
+    expect(find.text('Report a mistake'), findsOneWidget);
+    expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
   });
 }
 

@@ -8,7 +8,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
-import 'package:myapp/widgets/book/report_mistake_footer.dart';
+import 'package:myapp/widgets/book/report_mistake.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
@@ -18,6 +18,9 @@ typedef _HighlightColors = ({
   Color hadith,
   Color masailHeading,
 });
+
+/// The reader's secondary actions, gathered behind the app-bar ⋮.
+enum _ReaderAction { colorKey, share, report }
 
 class BookReaderScreen extends StatefulWidget {
   final String chapterId;
@@ -74,6 +77,25 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     final next =
         (reading.bookFontSize + delta).clamp(_minFontSize, _maxFontSize);
     reading.setBookFontSize(next);
+  }
+
+  PopupMenuItem<_ReaderAction> _readerMenuItem(
+    _ReaderAction action,
+    IconData icon,
+    String label,
+  ) {
+    return PopupMenuItem<_ReaderAction>(
+      value: action,
+      child: Row(
+        children: [
+          Icon(icon, size: 22),
+          const SizedBox(width: 12),
+          // Flexible so a long label (or a long translation) ellipsizes within
+          // the menu instead of overflowing the row.
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
   }
 
   void _showColorKey(BuildContext context) {
@@ -150,17 +172,47 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                     ? () => _adjustFont(_fontStep)
                     : null,
           ),
-          IconButton(
-            icon: const Icon(Icons.palette_outlined),
-            tooltip: context.l10n.bookColorKey,
-            onPressed: () => _showColorKey(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.share_rounded),
-            tooltip: context.l10n.bookShareChapter,
-            onPressed: () => SharePlus.instance.share(
-              ShareParams(text: '${chapter.title}\n\n${chapter.text}'),
-            ),
+          // Secondary actions live behind one ⋮ so the bar stays A−, A+, ⋮
+          // rather than four loose icons beside a two-line title. This is also
+          // where "Report a mistake" is now discoverable — a muted link at the
+          // foot of a long chapter went unseen.
+          PopupMenuButton<_ReaderAction>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (action) {
+              switch (action) {
+                case _ReaderAction.colorKey:
+                  _showColorKey(context);
+                case _ReaderAction.share:
+                  SharePlus.instance.share(
+                    ShareParams(text: '${chapter.title}\n\n${chapter.text}'),
+                  );
+                case _ReaderAction.report:
+                  reportBookMistake(
+                    context,
+                    chapterNumber: chapter.number,
+                    chapterTitle: chapter.title,
+                  );
+              }
+            },
+            itemBuilder: (context) => [
+              _readerMenuItem(
+                _ReaderAction.colorKey,
+                Icons.palette_outlined,
+                context.l10n.bookColorKey,
+              ),
+              _readerMenuItem(
+                _ReaderAction.share,
+                Icons.share_rounded,
+                context.l10n.bookShareChapter,
+              ),
+              // Only when a report has somewhere to go.
+              if (hasBookContact(context))
+                _readerMenuItem(
+                  _ReaderAction.report,
+                  Icons.flag_outlined,
+                  context.l10n.bookReportIssue,
+                ),
+            ],
           ),
         ],
       ),
@@ -373,10 +425,10 @@ class _BookBodyState extends State<_BookBody> {
           Padding(
             padding: const EdgeInsets.only(top: 12, bottom: 20),
             child: Divider(
-                height: 1,
-                thickness: 1,
-                color: colors.masailHeading.withValues(alpha: 0.35),
-              ),
+              height: 1,
+              thickness: 1,
+              color: colors.masailHeading.withValues(alpha: 0.35),
+            ),
           ),
         );
       }
@@ -490,33 +542,24 @@ class _BookBodyState extends State<_BookBody> {
     return SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // RTL wraps the scripture only. The footer below is chrome and
-          // follows the app locale, so it must not inherit this.
-          Directionality(
-            textDirection: TextDirection.rtl,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _renderLines(
-                template,
-                fontSize,
-                (
-                  verse: context.bookVerseColor,
-                  citation: context.bookCitationColor,
-                  hadith: context.bookHadithColor,
-                  // Brand gold, deliberately NOT one of the three scripture
-                  // colours: the masāʾil heading is structural, not a fourth
-                  // category of quoted text.
-                  masailHeading: context.brandColor,
-                ),
-              ),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _renderLines(
+            template,
+            fontSize,
+            (
+              verse: context.bookVerseColor,
+              citation: context.bookCitationColor,
+              hadith: context.bookHadithColor,
+              // Brand gold, deliberately NOT one of the three scripture
+              // colours: the masāʾil heading is structural, not a fourth
+              // category of quoted text.
+              masailHeading: context.brandColor,
             ),
           ),
-          const SizedBox(height: 32),
-          ReportMistakeFooter(chapterId: widget.chapterId),
-        ],
+        ),
       ),
     );
   }

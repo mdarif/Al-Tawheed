@@ -11,13 +11,11 @@ import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import 'package:myapp/l10n/app_localizations.dart';
-import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/app_config_provider.dart';
-import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
-import 'package:myapp/widgets/book/report_mistake_footer.dart';
+import 'package:myapp/widgets/book/report_mistake.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -102,17 +100,34 @@ void main() {
     });
   });
 
-  testWidgets('shows the report link when a contact address is configured',
-      (tester) async {
-    // AppConfigProvider defaults carry a contact email.
-    await tester.pumpWidget(_wrap(AppConfigProvider()));
-    await tester.pumpAndSettle();
+  group('hasBookContact — gates whether the report action is offered', () {
+    testWidgets('true when a contact address is configured', (tester) async {
+      // AppConfigProvider defaults carry a contact email.
+      await tester.pumpWidget(_harness(AppConfigProvider()));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(TextButton), findsOneWidget);
-    expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+      expect(find.text('HAS'), findsOneWidget);
+    });
+
+    testWidgets('false when the address is blank', (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+        'app_config',
+        jsonEncode({
+          'contact': {'email': '', 'subject': 'x'},
+        }),
+      );
+      final config = AppConfigProvider();
+      await config.load();
+
+      await tester.pumpWidget(_harness(config));
+      await tester.pumpAndSettle();
+
+      // The reader hides the ⋮ "Report a mistake" row in this case.
+      expect(find.text('NONE'), findsOneWidget);
+    });
   });
 
-  testWidgets('falls back to the clipboard when no mail app can open',
+  testWidgets('reportBookMistake copies to the clipboard when no mail app opens',
       (tester) async {
     // Stand in for a device with no email account: the launch declines.
     final original = UrlLauncherPlatform.instance;
@@ -134,35 +149,17 @@ void main() {
           .setMockMethodCallHandler(SystemChannels.platform, null),
     );
 
-    await tester.pumpWidget(_wrap(AppConfigProvider()));
+    await tester.pumpWidget(_harness(AppConfigProvider()));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(TextButton));
+    await tester.tap(find.text('report'));
     await tester.pumpAndSettle();
 
     // The report is preserved, address and all, rather than lost to a snackbar.
     expect(copied, isNotNull);
     expect(copied, contains('To: '));
     expect(copied, contains('Edition: tawheed-ur'));
+    expect(copied, contains('9 — باب'));
     expect(find.byType(SnackBar), findsOneWidget);
-  });
-
-  testWidgets('renders nothing when no address is configured', (tester) async {
-    // Seed a cached config whose contact email is blank, then load it.
-    await PreferencesService.instance.saveRemoteJson(
-      'app_config',
-      jsonEncode({
-        'contact': {'email': '', 'subject': 'x'},
-      }),
-    );
-    final config = AppConfigProvider();
-    await config.load();
-
-    await tester.pumpWidget(_wrap(config));
-    await tester.pumpAndSettle();
-
-    // A button that cannot send anywhere is worse than no button.
-    expect(find.byType(TextButton), findsNothing);
-    expect(find.byKey(const Key('book-report-mistake-footer')), findsNothing);
   });
 }
 
@@ -181,17 +178,10 @@ class _DecliningLauncher extends UrlLauncherPlatform
   Future<bool> launchUrl(String url, LaunchOptions options) async => false;
 }
 
-const _book = BookContent(
-  title: 'کتاب',
-  author: 'مصنف',
-  chapters: [BookChapter(id: 'ch-01', number: 1, title: 'باب', text: 'متن')],
-);
-
-Widget _wrap(AppConfigProvider config) => MultiProvider(
+/// Exercises the report helpers the way the reader's ⋮ menu does: a marker that
+/// reflects [hasBookContact], and a button that calls [reportBookMistake].
+Widget _harness(AppConfigProvider config) => MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => BookProvider()..setBookForTest(_book),
-        ),
         ChangeNotifierProvider(create: (_) => SeriesProvider()),
         ChangeNotifierProvider.value(value: config),
       ],
@@ -199,6 +189,22 @@ Widget _wrap(AppConfigProvider config) => MultiProvider(
         theme: AppTheme.light,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: ReportMistakeFooter(chapterId: 'ch-01')),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Column(
+              children: [
+                Text(hasBookContact(context) ? 'HAS' : 'NONE'),
+                ElevatedButton(
+                  onPressed: () => reportBookMistake(
+                    context,
+                    chapterNumber: 9,
+                    chapterTitle: 'باب',
+                  ),
+                  child: const Text('report'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );

@@ -10,7 +10,6 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/announcements_bell.dart';
-import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/chapter_header.dart';
@@ -318,9 +317,17 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return SliverAppBar(
       pinned: true,
       centerTitle: false,
-      expandedHeight: catalog != null ? 172 : 80,
+      // Sized to the hero (avatar + title + speaker + stats), which is bottom-
+      // aligned. The old 172 left a band of empty space between the status bar
+      // and the hero, since the title moves into the hero when expanded and the
+      // toolbar row above it carries nothing but the bell. What remains above
+      // the hero now is the device's status bar / Dynamic Island, which is
+      // system-reserved.
+      expandedHeight: catalog != null ? 150 : 80,
       automaticallyImplyLeading: false,
-      actions: const [AnnouncementsBell(), AppOverflowMenu()],
+      // No ⋮ here — the lecture list is the busiest screen and the bell is
+      // enough. Bookmarks/About stay reachable from the Book and Study tabs.
+      actions: const [AnnouncementsBell()],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           // The bar is collapsed once its height shrinks to the pinned toolbar.
