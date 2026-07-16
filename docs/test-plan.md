@@ -169,16 +169,17 @@ for the first frames while `_isLoading` was already `false`, so nothing waited.
 ### 6. Remote-config contract tests (against the live CDN)
 
 The app must survive content-repo mistakes; it has failed to twice already
-(a malformed row killing a whole feed, `f51e6cd`). Live config *right now*
-carries `publisherUrl: http://almarfa.co`, which `safe_url_launcher` refuses —
-so the About "Powered by" link is **broken in production today**, and no test
-noticed.
+(a malformed row killing a whole feed, `f51e6cd`). Motivating example, now
+fixed: the live `branding.publisherUrl` was `http://almarfa.co`, which
+`safe_url_launcher` refuses, so the About "Powered by" link was silently dead
+in production (Al-Tawheed-Content `d5bf05f` switched it to `https`). **No test
+noticed** — which is exactly why 6.3 below is worth adding.
 
 | # | Test | Guards |
 |---|---|---|
 | 6.1 | Live `series.json` parses; every entry declares `language`; `tawheed-ur` never sets `hasBook: true` | The `hasBook` client-default is doc-only; a manifest setting it strands older installs |
 | 6.2 | Live `app_config.json` branding resolves non-empty for `en` and `ar` | The blank-label bug (caught in review, not by CI) |
-| 6.3 | Every live URL is `https` (or `mailto`) per the allowlist | The live `http://` link, today |
+| 6.3 | Every live URL is `https` (or `mailto`) per the allowlist | The `http://` publisher link that shipped dead (fixed in `d5bf05f`) |
 | 6.4 | `AppConfig.contentBaseUrl` matches the manifest's `catalogUrl` hosts | ADR-0001: the base URL is **compiled in**; a CDN move needs an app release |
 
 Run **nightly, not on PR** — network flake must not block merges.
@@ -258,7 +259,9 @@ Today a PR into `develop` gets **only** analyze + unit/widget + debug build.
 Integration runs on PRs into `master` and nightly; the Android emulator workflow
 is explicitly non-blocking.
 
-- **Add to every PR:** Book content validation (P0.1) and ARB parity (P0.2). Both
-  are pure Dart, no device, ~instant.
+- **Already on every PR:** Book content validation (P0.1) and ARB parity (P0.2)
+  gate automatically — `flutter-ci.yml` runs the unqualified `flutter test` on
+  every PR into `develop`/`master`, so both new pure-Dart suites are in the gate.
+  No extra wiring needed.
 - **Add nightly:** remote-config contract tests (P1.6).
 - Leave integration on `master`/nightly. That split is sound.

@@ -410,3 +410,11 @@ is portable memory: any LLM working the repo should read and extend it.
   (`lib/utils/safe_url_launcher.dart`) — never pass a raw remote URL to
   `launchUrl`. Download ids from remote JSON are validated with
   `isSafePathSegment()` before use in file paths (path-traversal defence).
+- **A remote-config URL that isn't `https`/`mailto` fails *silently*** — the
+  allowlist above makes `launchExternalUrl` return `false` and the link does
+  nothing, with no error surfaced. `app-config.json`'s `branding.publisherUrl`
+  shipped as `http://almarfa.co` and the About "Powered by" link was dead in
+  production until Al-Tawheed-Content `d5bf05f`. When editing any URL in the
+  content repo, use `https://` (the site served https the whole time). A nightly
+  contract test that asserts every live URL is https/mailto is filed as
+  test-plan §6.3.
