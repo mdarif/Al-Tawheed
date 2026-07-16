@@ -10,6 +10,7 @@ import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
+import 'package:myapp/theme/app_semantic_colors.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 const _testBook = BookContent(
@@ -50,8 +51,102 @@ Widget _wrap(BookProvider book, String chapterId) {
   );
 }
 
+// Finds the styled span for [text] inside the reader's rendered Text.rich runs.
+TextSpan? _spanFor(WidgetTester tester, String text) {
+  TextSpan? found;
+  for (final w in tester.widgetList<Text>(find.byType(Text))) {
+    final span = w.textSpan;
+    if (span == null) continue;
+    span.visitChildren((s) {
+      if (s is TextSpan && s.text == text) found = s;
+      return true;
+    });
+    if (found != null) return found;
+  }
+  return null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('masāʾil heading', () {
+    // The masail section is the author's own summary, distinct from the quoted
+    // matn above it — it gets a rule + the brand colour.
+    const masailBook = BookContent(
+      title: 'کتاب التوحید',
+      author: 'مصنف',
+      chapters: [
+        BookChapter(
+          id: 'ch-01',
+          number: 1,
+          title: 'باب',
+          text: 'متن کی سطر\n\n'
+              'اس باب کے کچھ اہم مسائل:\n'
+              'پہلا مسئلہ: پہلی بات۔',
+        ),
+        // Guard: a numbered ITEM that itself uses the plural مسائل mid-sentence
+        // (this really happens in ch-01/ch-11 of the Urdu book). It must NOT be
+        // mistaken for a heading, or a rule would land in the middle of the list.
+        BookChapter(
+          id: 'ch-02',
+          number: 2,
+          title: 'باب',
+          text: 'اس باب کے کچھ اہم مسائل:\n'
+              'نواں مسئلہ: مذکورہ آیتوں میں کئی مسائل بیان کیے گئے ہیں۔',
+        ),
+        // The print's longer heading variant (ch-06) must still be recognised.
+        BookChapter(
+          id: 'ch-03',
+          number: 3,
+          title: 'باب',
+          text: 'متن\n\n'
+              'اس باب میں کئی اہم ترین اور عظیم مسائل ہیں، جن میں سب سے اہم مندرجہ ذیل ہیں:\n'
+              'پہلی بات۔',
+        ),
+      ],
+    );
+
+    testWidgets('is set off by a rule and rendered in the brand colour',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsOneWidget);
+
+      final span = _spanFor(tester, 'اس باب کے کچھ اہم مسائل:');
+      expect(span, isNotNull);
+      expect(span!.style?.color, AppTheme.light.extension<AppSemanticColors>()!.brand);
+      expect(span.style?.fontWeight, FontWeight.w700);
+    });
+
+    testWidgets('a masʾala item using the word مسائل is NOT treated as one',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-02'));
+      await tester.pumpAndSettle();
+
+      // Only the real heading gets a rule — not the item that mentions مسائل.
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('recognises the print\'s longer heading variant',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-03'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('a chapter with no masāʾil gets no rule', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook); // Arabic, matn-only
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsNothing);
+    });
+  });
 
   testWidgets('renders the chapter title and text', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);

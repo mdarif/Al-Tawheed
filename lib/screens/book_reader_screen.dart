@@ -11,7 +11,12 @@ import 'package:myapp/utils/l10n_extensions.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
-typedef _HighlightColors = ({Color verse, Color citation, Color hadith});
+typedef _HighlightColors = ({
+  Color verse,
+  Color citation,
+  Color hadith,
+  Color masailHeading,
+});
 
 class BookReaderScreen extends StatefulWidget {
   final String chapterId;
@@ -200,6 +205,22 @@ class _BookBodyState extends State<_BookBody> {
   static final _citationRe = RegExp(r'\[[^\[\]]+\]');
   static final _hadithRe = RegExp(r'\(\([^)]+(?:\)[^)]+)*\)\)');
 
+  // The masāʾil heading ("اس باب کے کچھ اہم مسائل:") opens the closing section
+  // of every Urdu chapter — the author's own summary points, as opposed to the
+  // quoted āyāt and hadith of the matn above it. It gets a rule + its own
+  // colour so the seam is obvious.
+  //
+  // Matching on the plural مسائل alone is not enough: a few numbered items use
+  // the word mid-sentence (ch-01, ch-11). Those always carry the singular
+  // مسئلہ, which no heading does — so requiring مسائل WITHOUT مسئلہ isolates
+  // exactly one heading in all 67 chapters. That also absorbs the print's own
+  // heading variants (missing colon, a space before it, and ch-06's much longer
+  // "…عظیم مسائل ہیں، جن میں سب سے اہم مندرجہ ذیل ہیں:"), which a stricter
+  // "ends with مسائل:" rule would miss. The Arabic book is matn-only and has no
+  // such line, so this is inert there.
+  static bool _isMasailHeading(String line) =>
+      line.contains('مسائل') && !line.contains('مسئلہ');
+
   // Quranic verse ornaments — replace the source's ASCII { } so verses render
   // like a printed mushaf: ﴾ at the verse start (rightmost in RTL) and ﴿ at the
   // end (leftmost). These ornate parens are bidi-mirrored inside the RTL run,
@@ -229,9 +250,16 @@ class _BookBodyState extends State<_BookBody> {
     ];
   }
 
-  // Run types: 0 = plain, 1 = verse, 2 = citation, 3 = hadith. Colours are
-  // resolved from the active theme at render time (see [_renderLines]).
+  // Run types: 0 = plain, 1 = verse, 2 = citation, 3 = hadith,
+  // 4 = masāʾil heading. Colours are resolved from the active theme at render
+  // time (see [_renderLines]).
   List<(String, int)> _parseLine(String line) {
+    // The masāʾil heading is a whole-line unit carrying no inline markup, so it
+    // short-circuits the interval parse below.
+    if (_isMasailHeading(line)) {
+      return [(line, 4)];
+    }
+
     // Digits are localised per-run at render time (by the run's script), so
     // keep the raw text here.
     final text = line;
@@ -277,6 +305,7 @@ class _BookBodyState extends State<_BookBody> {
   Color _colorFor(int type, _HighlightColors colors) => switch (type) {
         1 => colors.verse,
         2 => colors.citation,
+        4 => colors.masailHeading,
         _ => colors.hadith,
       };
 
@@ -313,6 +342,18 @@ class _BookBodyState extends State<_BookBody> {
       // so a mixed Urdu-intro + Arabic-āyah line still breathes.
       final height =
           runs.any((r) => _urduLetters.hasMatch(r.$1)) ? _urduHeight : _arabicHeight;
+
+      // The masāʾil heading closes the matn and opens the author's summary
+      // points — mark the seam with a rule and extra space above it.
+      if (runs.length == 1 && runs.first.$2 == 4) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 20),
+            child: Divider(height: 1, thickness: 1, color: colors.masailHeading.withValues(alpha: 0.35)),
+          ),
+        );
+      }
+
       widgets.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -352,6 +393,9 @@ class _BookBodyState extends State<_BookBody> {
       height: height,
     );
     if (type != 0) style = style.copyWith(color: _colorFor(type, colors));
+    // The masāʾil heading also carries weight — it is a section header, not
+    // just another coloured run.
+    if (type == 4) style = style.copyWith(fontWeight: FontWeight.w700);
     return TextSpan(
       text: localizedDigitsInString(text, widget.language),
       style: style,
@@ -430,6 +474,10 @@ class _BookBodyState extends State<_BookBody> {
               verse: context.bookVerseColor,
               citation: context.bookCitationColor,
               hadith: context.bookHadithColor,
+              // Brand gold, deliberately NOT one of the three scripture
+              // colours: the masāʾil heading is structural, not a fourth
+              // category of quoted text.
+              masailHeading: context.brandColor,
             ),
           ),
         ),
