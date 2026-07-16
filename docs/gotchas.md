@@ -30,6 +30,14 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **An unawaited future that rejects before its matcher is attached = an
+  unhandled async error, i.e. a flake.** `download_service_test › "delete
+  cancels an active download"` starts a download, does NOT await it, deletes,
+  and only then calls `expectLater(done, throwsA(...))`. The delete is what
+  makes `done` reject, so under parallel load (`--concurrency=8`) the rejection
+  lands before anything is listening and the test fails with a bare `Instance of
+  'DownloadCancelled'` — production behaving exactly as designed. Attach the
+  matcher **before** the action that triggers the rejection, and await it after.
 - **A flaky test is not always the test's fault — it can catch a real race.**
   `download_service_test.dart › "delete cancels an active download"` failed only
   on CI (passed locally) with a `PathNotFoundException`. Root cause was a genuine
