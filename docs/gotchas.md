@@ -85,6 +85,40 @@ is portable memory: any LLM working the repo should read and extend it.
 - Play caps phone screenshots at **8** and **2:1 max aspect**. The iPhone raw is
   ~2.17:1, so the framer composites onto a 2:1 canvas (1290×2580).
 
+## Book content (hand-transcribed scripture)
+
+- **The Urdu source is un-extractable — every chapter was read by eye.** The
+  print PDF *and* .docx carry a corrupted CID Nastaliq text layer, so
+  `pdftotext`/`textutil`/raw `<w:t>` all return scrambled garbage. Only
+  `pdftoppm -r 220 -png` + visual transcription works. **This is why
+  transcription defects recur, and will keep recurring.**
+- **Word-level QA does not catch markup defects.** The all-67-chapter print
+  re-verification compared *wording* (168 corrections, two of them
+  meaning-inverting) and still left 8 markup bugs shipping: ch-59 had six stray
+  closers dumped mid-sentence; ch-21/ch-48/ch-50 had *reversed* ornate pairs;
+  ch-38/ch-46/ch-48 had hadith quotes that never closed; ch-44/ch-60 had the
+  translator's own words in `[…]`, which the reader paints cyan **as a Qur'an
+  citation** — a misattribution, not just a cosmetic slip.
+  `test/book_content_integrity_test.dart` now guards all of it. Do not weaken
+  those assertions to make a content change pass.
+- **The ornate parens are general brackets, not just verse markers.** The print
+  uses `﴿…﴾` around translator's glosses too (`﴿شرک سے﴾`, `﴿کڑا﴾`) — ~200 of
+  them are correct and must not be "fixed". What is never correct is an
+  unmatched or **reversed** pair: U+FD3E/U+FD3F are mirror glyphs, so a reversed
+  pair renders as backwards brackets. Convention is `﴿` = U+FD3F (open), `﴾` =
+  U+FD3E (close); a naive regex like `﴾[^﴿]*﴿` matches the *gap between* two
+  adjacent pairs and invents hundreds of phantom defects — walk the string with
+  a depth counter instead.
+- **A citation always carries a number; a gloss never does.** That is the only
+  reliable way to tell `[النَّحْل:120]` from `[محض اتنا کہا کہو کہ]`, because the
+  reader's `_citationRe` matches any `[…]`.
+- **The cross-validation tooling is NOT in the repo.** It lives in
+  `~/kat-urdu-work/` (`urdu_qa.md`, `apply_verify.py`, `assemble_urdu.py`,
+  `pagemap.json` — chapter→print-page map). The commits citing "0 integrity
+  mismatches" refer to it. Anything that must survive belongs in `tool/` or a
+  test, not there.
+- **The book remains a transcribed draft — no scholar has proofed it.**
+
 ## i18n & multi-series
 
 - **The edition supplies the *default* chrome language; an explicit pick wins.**

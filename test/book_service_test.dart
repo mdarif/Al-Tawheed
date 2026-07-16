@@ -16,30 +16,27 @@ const _arabicSeries = SeriesConfig(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('loadBook parses the bundled asset', () async {
+  // What each asset must *contain* is pinned in book_content_integrity_test —
+  // these cover only the service's own job: resolving `series.id` to the right
+  // asset and parsing it.
+  test('loadBook resolves and parses the Arabic series asset', () async {
     final book = await BookService.instance.loadBook(_arabicSeries);
 
     expect(book.title, 'كتاب التوحيد');
-    expect(book.author, isNotEmpty);
-    expect(book.chapters, hasLength(67));
-    expect(book.chapters.first.id, 'ch-01');
-    expect(book.chapters.first.number, 1);
-    expect(book.chapters.last.id, 'ch-67');
-    expect(book.chapters.last.number, 67);
-    for (final chapter in book.chapters) {
-      expect(chapter.title, isNotEmpty);
-      expect(chapter.text, isNotEmpty);
-    }
+    expect(book.chapters, isNotEmpty);
   });
 
-  test('loadBook resolves the Urdu series book asset', () async {
-    // The Urdu series now has a Book tab; its asset is a placeholder copy of
-    // the Arabic matn until the clean Urdu text lands. Assert only that the
-    // asset is wired and parses, so this survives the content swap.
-    final book =
+  test('loadBook resolves a different asset for the Urdu series', () async {
+    final arabic = await BookService.instance.loadBook(_arabicSeries);
+    final urdu =
         await BookService.instance.loadBook(SeriesConfig.legacyUrduFallback);
 
-    expect(book.chapters, isNotEmpty);
-    expect(book.chapters.first.text, isNotEmpty);
+    expect(urdu.chapters, isNotEmpty);
+    // The Urdu asset was once a placeholder copy of the Arabic matn. It has
+    // been the real Urdu translation since bb33dc3 — assert they are actually
+    // different books, so a botched build that ships the wrong asset (or
+    // re-introduces the placeholder) fails here rather than in front of a
+    // reader.
+    expect(urdu.chapters.first.text, isNot(arabic.chapters.first.text));
   });
 }
