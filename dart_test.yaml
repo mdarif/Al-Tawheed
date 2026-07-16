@@ -1,0 +1,13 @@
+# Test tags for this package.
+#
+# `live` — tests that hit the live CDN (content.kitabattawheed.com). They are
+# network-dependent and MUST NOT gate PRs: a dropped packet must never block a
+# merge. Marking the tag `skip` here means EVERY bare `flutter test` invocation
+# (the Makefile targets, the CI/release workflows, the pre-push hook, and a
+# local run) skips them automatically — no per-command flag to remember. They
+# run nightly on their own cheap ubuntu job,
+# .github/workflows/flutter-live-contract.yml, which opts back in with
+# `--run-skipped`.
+tags:
+  live:
+    skip: "hits the live CDN — nightly only (run with --run-skipped)"

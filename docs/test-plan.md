@@ -166,7 +166,13 @@ for the first frames while `_isLoading` was already `false`, so nothing waited.
 | 5.3 | Fresh install, Arabic device → Arabic edition **and** Arabic chrome, picker never shown | The Middle East first-run promise. Half-covered (`series_provider_test` checks the edition, nothing checks chrome + picker together) |
 | 5.4 | **`lib/app.dart`'s router graph** — 282 lines, **no test imports it**. Redirect matrix: onboarding vs `/choose-series` vs `/lectures`, deep links, `/bookmarks` | Every routing regression ships blind |
 
-### 6. Remote-config contract tests (against the live CDN)
+### 6. Remote-config contract tests (against the live CDN) — ✅ done
+
+Implemented in `test/live_config_contract_test.dart` (tagged `live`, skipped by
+default via `dart_test.yaml`, run nightly by
+`.github/workflows/flutter-live-contract.yml` at 03:00 UTC). Covers 6.1–6.4
+below. Kept off PRs on purpose — network flake must not block a merge.
+
 
 The app must survive content-repo mistakes; it has failed to twice already
 (a malformed row killing a whole feed, `f51e6cd`). Motivating example, now
@@ -263,5 +269,7 @@ is explicitly non-blocking.
   gate automatically — `flutter-ci.yml` runs the unqualified `flutter test` on
   every PR into `develop`/`master`, so both new pure-Dart suites are in the gate.
   No extra wiring needed.
-- **Add nightly:** remote-config contract tests (P1.6).
+- **Nightly:** remote-config contract tests (§6) run on their own ubuntu job
+  (`flutter-live-contract.yml`, 03:00 UTC), tagged `live` and skipped by every
+  PR/pre-push run. ✅ done.
 - Leave integration on `master`/nightly. That split is sound.
