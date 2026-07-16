@@ -107,6 +107,25 @@ void main() {
     expect(find.text('۰۲'), findsOneWidget);
   });
 
+  testWidgets('badge numerals render in the Urdu font, not the UI font',
+      (tester) async {
+    // Urdu and Persian share the numeral codepoints (U+06F0–06F9) but draw
+    // 4/5/6/7 differently. Getting the codepoints right is not enough — the
+    // digits must be laid out in the Urdu face or the UI font's fallback
+    // renders Persian-shaped numerals.
+    final book = BookProvider()..setBookForTest(_testBook);
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(SeriesConfig.legacyUrduFallback);
+
+    await tester.pumpWidget(_wrap(book: book, series: series));
+    await tester.pumpAndSettle();
+
+    final badge = tester.widget<Text>(find.text('۰۱'));
+    expect(badge.style?.fontFamily, SeriesConfig.legacyUrduFallback.bookFontFamily);
+    expect(badge.style?.fontFamily, 'NotoNastaliqUrdu');
+  });
+
   testWidgets('tapping a chapter navigates to the reader', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
     final series = SeriesProvider()

@@ -137,7 +137,11 @@ class _ChapterTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _NumberBadge(number: displayNumber, language: language),
+            _NumberBadge(
+              number: displayNumber,
+              language: language,
+              fontFamily: fontFamily,
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Directionality(
@@ -164,7 +168,17 @@ class _NumberBadge extends StatelessWidget {
   final int number;
   final String language;
 
-  const _NumberBadge({required this.number, required this.language});
+  /// The series' book font. Urdu and Persian share the numeral codepoints
+  /// (U+06F0–06F9) but draw 4/5/6/7 differently, so the digits must render in
+  /// the Urdu face (Noto Nastaliq Urdu) to get the shapes an Urdu reader
+  /// expects — the default UI font falls back to a Persian-style face.
+  final String fontFamily;
+
+  const _NumberBadge({
+    required this.number,
+    required this.language,
+    required this.fontFamily,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +194,10 @@ class _NumberBadge extends StatelessWidget {
         localizedDigitsInString(number.toString().padLeft(2, '0'), language),
         style: context.textTheme.labelMedium?.copyWith(
           color: context.brandColor,
+          fontFamily: fontFamily,
+          // Nastaliq numerals sit taller than the UI font's; a neutral height
+          // keeps them optically centred in the 40×40 badge.
+          height: 1.0,
           letterSpacing: 0.5,
         ),
       ),

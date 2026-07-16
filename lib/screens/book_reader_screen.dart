@@ -101,14 +101,35 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
       appBar: AppBar(
         title: Directionality(
           textDirection: TextDirection.rtl,
-          child: Text(
-            chapter.title,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: context.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              fontFamily: fontFamily,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                chapter.title,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                style: context.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFamily: fontFamily,
+                ),
+              ),
+              // Long bab titles ellipsize, so the title alone never says WHERE
+              // you are. Digits only ("۲ / ۶۷"): unambiguous in every locale and
+              // needs no new strings. Rendered in the book font so the numerals
+              // take the series' own shapes (Urdu vs Persian differ at 4/5/6/7).
+              Text(
+                '${localizedDigitsInString('${_currentIndex + 1}', language)}'
+                ' / '
+                '${localizedDigitsInString('${_chapters.length}', language)}',
+                textAlign: TextAlign.right,
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: context.secondaryTextColor,
+                  fontFamily: fontFamily,
+                  height: 1.0,
+                ),
+              ),
+            ],
           ),
         ),
         actions: [

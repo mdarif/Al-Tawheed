@@ -148,6 +148,33 @@ void main() {
     });
   });
 
+  group('chapter position indicator', () {
+    // Long bab titles ellipsize in the app bar, so the title alone never tells
+    // you where you are in the book.
+    testWidgets('shows the current chapter and total', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      await tester.pumpWidget(_wrap(book, 'ch-01')); // 2nd of 3 chapters
+      await tester.pumpAndSettle();
+
+      // SeriesProvider defaults to the Urdu series here, so Urdu numerals.
+      expect(find.text('۲ / ۳'), findsOneWidget);
+    });
+
+    testWidgets('tracks position as you move through the book',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      await tester.pumpWidget(_wrap(book, 'intro')); // 1st of 3
+      await tester.pumpAndSettle();
+
+      expect(find.text('۱ / ۳'), findsOneWidget);
+
+      await tester.tap(find.widgetWithIcon(IconButton, Icons.chevron_left_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('۲ / ۳'), findsOneWidget);
+    });
+  });
+
   testWidgets('renders the chapter title and text', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
