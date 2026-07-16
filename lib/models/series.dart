@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/i18n_field.dart';
 
@@ -62,7 +63,23 @@ class SeriesConfig {
       // so they stay unaffected) instead of a coordinated series.json deploy.
       // An explicit `hasBook: false` in the manifest still wins.
       hasBook: json['hasBook'] as bool? ?? (id == legacyId),
-      language: json['language'] as String? ?? 'en',
+      // `language` drives the default chrome language and the Book font, so a
+      // manifest omitting it is a content bug — but deliberately neither fatal
+      // nor an assert. Throwing makes the manifest parser skip the whole entry
+      // (see SeriesManifestService), which would demote a returning Arabic
+      // reader into the Urdu edition with their downloads orphaned: losing an
+      // edition is far worse than this fallback, which merely degrades to
+      // device-detected chrome — today's behaviour — rather than to anything
+      // wrong. An assert would additionally make this branch unreachable from
+      // tests, which run in debug. Complain in the log and stay visible in the
+      // UI instead: 'en' yields Western digits, which read as obviously-unset
+      // rather than as a deliberate script. `language` is documented required.
+      language: () {
+        final language = json['language'];
+        if (language is String && language.isNotEmpty) return language;
+        debugPrint('series "$id": manifest omits "language" — assuming "en"');
+        return 'en';
+      }(),
       displayName: toI18nMap(json['displayName']),
       speakerName: toI18nMap(json['speakerName']),
     );
