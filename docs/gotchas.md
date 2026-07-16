@@ -72,6 +72,10 @@ is portable memory: any LLM working the repo should read and extend it.
   picks Arabic first (for the Arabic welcome + Book), then switches to Urdu via
   Settings → language row (`اردو`/`العربية` endonyms) to capture the English
   screens. Switching routes through the new series' welcome if unseen.
+  Since [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)
+  the *edition* switch is what flips the chrome (the harness switches editions,
+  not UI language) — so this now holds without touching the language picker,
+  which is flag-gated off in production anyway.
 - **iOS `takeScreenshot` captures the Flutter surface only — no native status
   bar** (clean, good for framing). Android needs
   `binding.convertFlutterSurfaceToImage()` first; iOS must NOT call it.
@@ -83,10 +87,33 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## i18n & multi-series
 
-- **Content language ≠ UI language.** The app does NOT force the locale to Arabic
-  when the Arabic series is active. Use `context.l10nForSeries(series)` to get
-  Arabic *chrome* for an Arabic-content series while the UI locale stays as the
-  user set it. `arabicL10n` is a shared stateless `lookupAppLocalizations(Locale('ar'))`.
+- **The edition supplies the *default* chrome language; an explicit pick wins.**
+  `LanguageProvider.language` resolves `explicit ?? seriesDefault ?? device`
+  (see [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)).
+  So the Arabic edition renders Arabic chrome out of the box, but never
+  overrides a language the user chose in Settings. **There is exactly one chrome
+  locale — `context.l10n`. Never fork chrome on the series.** `l10nForSeries` is
+  gone: it was reverted once already for discarding the user's pick, and forking
+  is now redundant anyway since the edition steers chrome upstream. `arabicL10n`
+  survives only for the Welcome screen, which renders before the edition is
+  definitive.
+- **`setLanguage` compares against the saved pick, not the effective language.**
+  An Arabic-edition user tapping "العربية" is already seeing Arabic via the
+  series default; guarding on the effective value early-returns, persists
+  nothing, and lets their chrome flip to English on the next edition switch.
+- **Digits follow the edition; words follow the chrome locale.** `۰۱` badges
+  under English chrome are correct — numerals belong to the text beside them.
+  Use `context.digitsForSeries` / `timeForSeries` / `hoursMinutesForSeries`.
+  They post-process the *finished* l10n string (idempotent, `[0-9]` only) rather
+  than retyping ARB placeholders, because `partsCount` needs its `int` for
+  `Intl.pluralLogic`. **Never use `NumberFormat`/`decimalPattern` for this:** it
+  keys off the *l10n* locale, and CLDR's default numbering system for `ur` is
+  `latn`, so it silently renders `45` — discarding the U+06F0–06F9 set the Urdu
+  book deliberately uses. And never blanket-apply: `settingsAboutVersion` would
+  render `٣٫٤٫١` while the clipboard kept `3.4.1`.
+- **The `language` feature flag gates the Settings switcher only** — never the
+  effective language. It is `false` in live remote config, so the series default
+  is what everyone actually gets today.
 - **Every user-facing string must exist in all 4 ARB locales** (`en`, `ar`, `ur`,
   `ur_roman`). English-only additions are a bug. ARB wording is canonical (it won
   over shipped `_ar*` constants during the i18n cleanup).

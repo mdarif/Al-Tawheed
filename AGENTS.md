@@ -64,10 +64,14 @@ lib/screens (13)  providers (13)  services (8)  models (8)
 
 1. **i18n: every user-facing string goes in ALL 4 ARB locales** (`en`, `ar`,
    `ur`, `ur_roman`) — never English-only. The ARB is the canonical wording.
-2. **Series-aware chrome:** use `context.l10nForSeries(series)` (in
-   [lib/utils/l10n_extensions.dart](lib/utils/l10n_extensions.dart)), never an
-   `isArabic ? _arXxx : l10n.xxx` ternary. Arabic-content series gets Arabic
-   chrome regardless of UI language.
+2. **One chrome locale:** use `context.l10n` — never fork chrome on the series
+   (no `isArabic ? _arXxx : l10n.xxx`, no reviving `l10nForSeries`). The edition
+   steers chrome upstream, by supplying the default app language; forking at the
+   call site would override the user's explicit pick. Numbers are the *other*
+   axis: digits follow the edition (`context.digitsForSeries` and friends in
+   [lib/utils/l10n_extensions.dart](lib/utils/l10n_extensions.dart)), words
+   follow the chrome locale. See
+   [ADR-0002](docs/decisions/0002-chrome-language-follows-the-content-edition.md).
 3. **State flows through providers.** New shared state → a `ChangeNotifier`
    provider wired in `lib/app.dart`, not ad-hoc in a widget.
 4. **Commits:** Conventional Commits (`type(scope): subject`). **Never** add a
