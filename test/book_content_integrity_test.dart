@@ -53,6 +53,30 @@ List<String> _malformedOrnateParens(BookChapter chapter) {
   return problems;
 }
 
+/// The Arabic inside each `{āyah}` run, normalised for comparison across
+/// editions: tashkeel and tatweel stripped, whitespace removed. The two books
+/// vocalise the same passage slightly differently, and that must not read as a
+/// difference in the text itself.
+///
+/// The strip range is deliberately narrow — U+064B–U+0652 (the harakat),
+/// U+0670 (superscript alef) and U+06D6–U+06ED (Qur'anic annotation). An
+/// earlier, wider version of this regex reached back to U+0610 and silently ate
+/// most of the Arabic alphabet, wiping surah names out of the assembler's
+/// pairing keys. See gotchas.
+List<String> _ayat(BookChapter chapter) => [
+      for (final m in RegExp(r'\{([^{}]*)\}').allMatches(chapter.text))
+        m.group(1)!.replaceAll(_tashkeel, '').replaceAll(RegExp(r'\s'), ''),
+    ];
+
+/// Harakat + superscript alef + Qur'anic annotation marks + tatweel.
+///
+/// Spelled in explicit codepoints, never as literal glyphs: the literal form is
+/// unreadable in an editor and is exactly how the original range grew to eat the
+/// alphabet.
+final _tashkeel = RegExp(
+  '[\u{064B}-\u{0652}\u{0670}\u{06D6}-\u{06ED}\u{0640}]',
+);
+
 Future<void> _forEachBook(
   Future<void> Function(String name, BookContent book) body,
 ) async {
@@ -72,6 +96,18 @@ void main() {
   //
   // Do NOT weaken these to make a content change pass. That is how the previous
   // Urdu assertions ("chapters is not empty") ended up guarding nothing.
+  // Guards the guard. A tashkeel range that reaches back to U+0610 covers most
+  // of the Arabic alphabet; when the assembler's did, it wiped surah names out
+  // of its pairing keys and silently mispaired āyāt across the whole book. Any
+  // future edit to _tashkeel that repeats that mistake fails here.
+  test('the tashkeel strip removes diacritics, never letters', () {
+    expect('كِتَابُ التَّوْحِيدِ'.replaceAll(_tashkeel, ''), 'كتاب التوحيد');
+    expect('الْعَنْكَبُوتُ'.replaceAll(_tashkeel, ''), 'العنكبوت');
+    expect('النَّجْم'.replaceAll(_tashkeel, ''), 'النجم');
+    // Letters that live inside the naive-but-wrong U+0610–U+064B range.
+    expect('غزت فريا مين'.replaceAll(_tashkeel, ''), 'غزت فريا مين');
+  });
+
   group('bundled Book assets', () {
     test('both editions have 67 contiguous, non-empty chapters', () async {
       await _forEachBook((name, book) async {
@@ -121,6 +157,46 @@ void main() {
           );
         }
       });
+    });
+
+    // The Urdu edition is bilingual by assembly: its Arabic āyāt are INJECTED
+    // from book_tawheed-ar.json (the print sets no Arabic at all — it goes
+    // straight to the Urdu translation), while the Urdu around them is
+    // transcribed from the page. When the injector paired an āyah wrongly it
+    // truncated silently: ch-09 got only an-Najm:19 where the print cites
+    // 19-23 and its Urdu renders all five verses; ch-40 got the first clause of
+    // ar-Ra'd:30 under a translation of the whole verse. 73ca16b fixed three
+    // more of these. Nothing caught any of them — a truncated āyah is still
+    // well-formed, and ch-40's citation even still matched.
+    test('no injected āyah is a truncation of the Arabic edition\'s', () async {
+      final arabic = await BookService.instance.loadBook(_arabicSeries);
+      final urdu = await BookService.instance.loadBook(_urduSeries);
+      final arabicById = {for (final c in arabic.chapters) c.id: c};
+
+      final truncated = <String>[];
+      for (final chapter in urdu.chapters) {
+        final counterpart = arabicById[chapter.id];
+        if (counterpart == null) continue;
+        for (final ours in _ayat(chapter)) {
+          // Match on a decent prefix so two different āyāt sharing an opening
+          // word don't look like a truncation of one another.
+          var prefix = ours.length ~/ 2;
+          if (prefix < 15) prefix = 15;
+          if (prefix > ours.length) prefix = ours.length;
+
+          for (final theirs in _ayat(counterpart)) {
+            // A prefix that is materially shorter is a dropped tail, not a
+            // different (legitimately shorter) quotation of the same passage.
+            if (theirs.length > ours.length + 20 &&
+                theirs.startsWith(ours.substring(0, prefix)) &&
+                ours != theirs) {
+              truncated.add('${chapter.id}: Urdu carries ${ours.length} chars '
+                  'of a ${theirs.length}-char āyah — "${ours.substring(0, ours.length.clamp(0, 40))}…"');
+            }
+          }
+        }
+      }
+      expect(truncated, isEmpty, reason: truncated.join('\n'));
     });
 
     // The reader paints ANY [ ... ] cyan, as a surah:ayah reference. Two

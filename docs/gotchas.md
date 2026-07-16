@@ -117,6 +117,16 @@ is portable memory: any LLM working the repo should read and extend it.
   U+FD3E (close); a naive regex like `﴾[^﴿]*﴿` matches the *gap between* two
   adjacent pairs and invents hundreds of phantom defects — walk the string with
   a depth counter instead.
+- **A truncated āyah injection is silent — and recurs.** The Urdu edition is
+  bilingual by assembly: the print sets **no Arabic at all** (straight to the
+  Urdu translation), so every `{āyah}` is injected from `book_tawheed-ar.json`.
+  When the injector mispairs, it drops the tail and leaves something still
+  well-formed: ch-09 carried 18 chars of a 184-char passage (an-Najm:19 under a
+  translation of 19-23, citation truncated to match), ch-40 carried the first
+  clause of ar-Ra'd:30 under a translation of the whole verse — and ch-40's
+  citation still matched, so a citation-parity check could never see it.
+  73ca16b fixed three more. Compare *lengths* against ar.json, not just
+  citations; `book_content_integrity_test` now does.
 - **A citation always carries a number; a gloss never does.** That is the only
   reliable way to tell `[النَّحْل:120]` from `[محض اتنا کہا کہو کہ]`, because the
   reader's `_citationRe` matches any `[…]`.
