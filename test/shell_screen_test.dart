@@ -160,18 +160,31 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    // The Urdu series has a Book tab and Study mode. Home was retired; Settings
-    // is not a tab — both live behind the ⋯ overflow menu.
+    // The Urdu series has a Book tab and Study mode, plus Settings last. Home
+    // was retired; Bookmarks and About live behind the ⋯ overflow menu.
     // "Lectures" appears twice: the page body and the nav destination label.
     expect(find.text('Lectures'), findsNWidgets(2));
     expect(find.text('Book'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
     expect(find.text('Study'), findsOneWidget);
-    expect(find.text('Settings'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.text('Settings'), findsOneWidget); // nav destination label
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
   });
 
-  testWidgets('shows 2 tabs (Lectures, Book) for the Arabic series',
+  testWidgets('Settings is the LAST tab', (tester) async {
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    final labels = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((d) => d.label)
+        .toList();
+    expect(labels, ['Lectures', 'Book', 'Study', 'Settings']);
+  });
+
+  testWidgets('shows 3 tabs (Lectures, Book, Settings) for the Arabic series',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
@@ -182,8 +195,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lectures'), findsOneWidget); // page body only
-    expect(find.text('Study'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(2));
+    expect(find.text('Study'), findsNothing); // no Study for the Arabic series
+    // Lectures + Book + Settings — Settings is series-independent.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
   testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI',
@@ -197,10 +211,9 @@ void main() {
 
     expect(find.text('الدروس'), findsOneWidget);
     expect(find.text('الكتاب'), findsOneWidget);
-    // Home retired; Settings lives behind the ⋯ overflow menu — neither is a
-    // nav label.
+    expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
+    // Home retired; only Bookmarks/About live behind the ⋯ overflow menu.
     expect(find.text('الرئيسية'), findsNothing);
-    expect(find.text('الإعدادات'), findsNothing);
   });
 
   group('ShellScreen — mini player', () {
@@ -243,7 +256,7 @@ void main() {
       // Bottom nav is Arabic because the UI locale is Arabic.
       expect(find.text('Lectures'), findsOneWidget); // page body only
       expect(find.text('الدروس'), findsOneWidget);
-      expect(find.text('الإعدادات'), findsNothing); // Settings is not a tab
+      expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
     });
   });
 }

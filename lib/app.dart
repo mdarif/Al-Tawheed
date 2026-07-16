@@ -84,15 +84,14 @@ final _router = GoRouter(
                   : '/lectures',
           builder: (context, state) => const StudyScreen(),
         ),
+        // Settings is a bottom-nav tab (always last), so it lives inside the
+        // shell and keeps the nav bar visible. Bookmarks and About remain
+        // full-screen pushes from the ⋯ overflow menu below.
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
       ],
-    ),
-
-    // Settings — root navigator so it opens full-screen (with a back button)
-    // from the ⋯ overflow menu, rather than occupying a bottom tab.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
     ),
 
     // About — its own full-screen page, split out of Settings and pushed from

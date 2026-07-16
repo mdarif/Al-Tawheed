@@ -4,12 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
-enum _MenuRoute { bookmarks, settings, about }
+enum _MenuRoute { bookmarks, about }
 
 /// App-bar overflow (⋯) — the hub for secondary destinations, shown on every
 /// shell tab. Add future routes here rather than as new bottom-nav tabs or
-/// standalone app-bar icons. Labels follow the active series' chrome (Arabic
-/// for the Arabic series) via [BuildContext.l10nForSeries], like the nav bar.
+/// standalone app-bar icons. Settings is the exception: it has its own
+/// bottom-nav tab (last), so it is deliberately NOT duplicated here. Labels
+/// follow the app UI language via [BuildContext.l10nForSeries], like the nav bar.
 class AppOverflowMenu extends StatelessWidget {
   const AppOverflowMenu({super.key});
 
@@ -24,15 +25,12 @@ class AppOverflowMenu extends StatelessWidget {
         switch (route) {
           case _MenuRoute.bookmarks:
             context.push('/bookmarks');
-          case _MenuRoute.settings:
-            context.push('/settings');
           case _MenuRoute.about:
             context.push('/about');
         }
       },
       itemBuilder: (context) => [
         _item(_MenuRoute.bookmarks, Icons.bookmark_outline_rounded, l10n.saved),
-        _item(_MenuRoute.settings, Icons.settings_outlined, l10n.tabSettings),
         _item(_MenuRoute.about, Icons.info_outline_rounded, l10n.settingsAbout),
       ],
     );

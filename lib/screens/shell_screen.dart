@@ -9,13 +9,14 @@ import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
-enum _Tab { lectures, book, study }
+enum _Tab { lectures, book, study, settings }
 
 extension on _Tab {
   String get path => switch (this) {
         _Tab.lectures => '/lectures',
         _Tab.book => '/book',
         _Tab.study => '/study',
+        _Tab.settings => '/settings',
       };
 
   // [l10n] is series-aware (Arabic for the Arabic series, else the app UI
@@ -36,13 +37,21 @@ extension on _Tab {
             selectedIcon: const Icon(Icons.school_rounded),
             label: l10n.tabStudyMode,
           ),
+        _Tab.settings => NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings_rounded),
+            label: l10n.tabSettings,
+          ),
       };
 }
 
+// Settings is always last, after the series-dependent tabs; Bookmarks and About
+// stay in the ⋯ overflow menu.
 List<_Tab> _tabsFor(SeriesConfig series) => [
       _Tab.lectures,
       if (series.hasBook) _Tab.book,
       if (series.hasStudyMode) _Tab.study,
+      _Tab.settings,
     ];
 
 class ShellScreen extends StatelessWidget {

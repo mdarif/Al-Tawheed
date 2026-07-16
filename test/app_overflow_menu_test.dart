@@ -65,14 +65,15 @@ Future<void> _openMenu(WidgetTester tester) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('opens with Bookmarks, Settings and About entries',
-      (tester) async {
+  testWidgets('opens with Bookmarks and About entries', (tester) async {
     await tester.pumpWidget(_wrap(SeriesProvider()));
     await _openMenu(tester);
 
     expect(find.text('Bookmarks'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
+    // Settings has its own bottom-nav tab (last) and is deliberately NOT
+    // duplicated in the overflow menu.
+    expect(find.text('Settings'), findsNothing);
   });
 
   testWidgets('selecting Bookmarks pushes /bookmarks', (tester) async {
@@ -82,15 +83,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('BOOKMARKS PAGE'), findsOneWidget);
-  });
-
-  testWidgets('selecting Settings pushes /settings', (tester) async {
-    await tester.pumpWidget(_wrap(SeriesProvider()));
-    await _openMenu(tester);
-    await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('SETTINGS PAGE'), findsOneWidget);
   });
 
   testWidgets('selecting About pushes /about', (tester) async {
@@ -110,7 +102,6 @@ void main() {
 
     // Chrome follows the UI locale (ar) — independent of the content edition.
     expect(find.text(arabicL10n.saved), findsOneWidget);
-    expect(find.text(arabicL10n.tabSettings), findsOneWidget);
     expect(find.text(arabicL10n.settingsAbout), findsOneWidget);
   });
 }
