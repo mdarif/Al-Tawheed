@@ -164,13 +164,28 @@ class _ProgressBadge extends StatelessWidget {
                     strokeCap: StrokeCap.round,
                   ),
                 ),
-              Text(
-                lecture.number.toString().padLeft(2, '0'),
-                style: context.textTheme.labelMedium?.copyWith(
-                  color: context.brandColor,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              // Lecture numbers follow the series' script, like the Book's
+              // chapter badges: Arabic-Indic for the Arabic duroos, Urdu
+              // numerals for the Urdu ones. The font matters as much as the
+              // codepoints — Urdu and Persian share U+06F0–06F9 but draw
+              // 4/5/6/7 differently, and the UI font has neither set, so
+              // without the series face the platform falls back to a
+              // Persian-style rendering.
+              Builder(builder: (context) {
+                final series = context.watch<SeriesProvider>().currentSeries;
+                return Text(
+                  localizedDigitsInString(
+                    lecture.number.toString().padLeft(2, '0'),
+                    series.language,
+                  ),
+                  style: context.textTheme.labelMedium?.copyWith(
+                    color: context.brandColor,
+                    fontFamily: series.bookFontFamily,
+                    height: 1.0,
+                    letterSpacing: 0.5,
+                  ),
+                );
+              },),
             ],
           ),
         );

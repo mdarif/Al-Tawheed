@@ -73,10 +73,23 @@ String urduDigitsInString(String s) => s.replaceAllMapped(
     );
 
 /// Localises digits in [s] for [language]: Urdu numerals for `'ur'`,
-/// Eastern Arabic-Indic otherwise (Arabic content).
-String localizedDigitsInString(String s, String language) =>
-    language == 'ur' ? urduDigitsInString(s) : arabicDigitsInString(s);
+/// Eastern Arabic-Indic for `'ar'`, Western digits for anything else.
+///
+/// The unknown-language case deliberately returns [s] untouched rather than
+/// defaulting to Arabic-Indic. `SeriesConfig.fromJson` falls back to `'en'`
+/// when a manifest omits `language`, and an English series silently rendering
+/// Arabic numerals is a bug you have to *notice* — Western digits are the
+/// honest answer for a language we have no numerals for.
+String localizedDigitsInString(String s, String language) => switch (language) {
+      'ur' => urduDigitsInString(s),
+      'ar' => arabicDigitsInString(s),
+      _ => s,
+    };
 
-/// Localises the digits of [n] for [language] (Urdu vs Arabic-Indic).
-String toLocalizedDigits(int n, String language) =>
-    language == 'ur' ? toUrduDigits(n) : toArabicDigits(n);
+/// Localises the digits of [n] for [language] — see [localizedDigitsInString]
+/// for why an unknown language yields Western digits rather than Arabic.
+String toLocalizedDigits(int n, String language) => switch (language) {
+      'ur' => toUrduDigits(n),
+      'ar' => toArabicDigits(n),
+      _ => n.toString(),
+    };

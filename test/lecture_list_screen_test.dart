@@ -229,6 +229,58 @@ void main() {
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
 
+  testWidgets('numbers the Arabic duroos in Arabic-Indic numerals',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        lectures: [
+          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+        ],
+      ),),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    // Arabic-Indic (U+066x), not Western — and not the Urdu set either.
+    expect(find.text('٠١'), findsOneWidget);
+    expect(find.text('٠٢'), findsOneWidget);
+    expect(find.text('01'), findsNothing);
+    expect(find.text('۰۱'), findsNothing);
+  });
+
+  testWidgets('numbers the Urdu duroos in Urdu numerals, in the Urdu face',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+      ),),
+    );
+
+    final series = SeriesProvider()..load(false); // Urdu fallback
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('۰۱'), findsOneWidget);
+    expect(find.text('٠١'), findsNothing);
+    // The codepoints alone are not enough: Urdu and Persian share U+06F0–06F9
+    // and draw 4/5/6/7 differently, so the badge must use the Urdu face.
+    final badge = tester.widget<Text>(find.text('۰۱'));
+    expect(badge.style?.fontFamily, 'NotoNastaliqUrdu');
+  });
+
   testWidgets('shows an empty-state message when the catalog has no lectures',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
