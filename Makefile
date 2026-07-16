@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test orientation-test screenshots run ci ci-logs
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test perf-test patrol-test orientation-test screenshots run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -137,6 +137,22 @@ integration-test: pub-get
 		exit 1; \
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+
+# On-device frame-timing benchmarks (lecture list + book reader scroll/paging).
+# MUST be a real device in --profile mode: debug build times are inflated and a
+# simulator's raster times are meaningless. Prints PERF[...] lines with build/
+# raster frame times and asserts a generous jank ceiling.
+perf-test: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required (a real device, not a simulator)."; \
+		echo "  flutter devices"; \
+		echo "  make perf-test DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter drive \
+		--driver=test_driver/perf_driver.dart \
+		--target=integration_test/performance_test.dart \
+		--profile -d $(DEVICE)
 
 # Capture + frame the Play Store screenshot set (v3, Arabic-led). Runs the
 # on-device capture harness, then composites clean device frames on the brand
