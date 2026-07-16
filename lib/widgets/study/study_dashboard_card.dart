@@ -68,7 +68,7 @@ class StudyDashboardCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      context.digitsForSeries('$percent%'),
+                      context.localizedDigits('$percent%'),
                       style: context.textTheme.titleLarge?.copyWith(
                         fontSize: 19,
                         fontWeight: FontWeight.w800,
@@ -94,7 +94,7 @@ class StudyDashboardCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      context.digitsForSeries(
+                      context.localizedDigits(
                         l10n.studyModeSubtitle(studiedCount, totalChapterCount),
                       ),
                       style: context.textTheme.titleMedium?.copyWith(
@@ -127,7 +127,7 @@ class StudyDashboardCard extends StatelessWidget {
                   child: _DashboardStat(
                     icon: Icons.headphones_rounded,
                     value: context
-                        .digitsForSeries('$completedLectures / $totalLectures'),
+                        .localizedDigits('$completedLectures / $totalLectures'),
                     label: l10n.statLectures,
                   ),
                 ),
@@ -136,7 +136,7 @@ class StudyDashboardCard extends StatelessWidget {
                   child: _DashboardStat(
                     icon: Icons.menu_book_rounded,
                     value: context
-                        .digitsForSeries('$studiedCount / $totalChapterCount'),
+                        .localizedDigits('$studiedCount / $totalChapterCount'),
                     label: l10n.statClasses,
                   ),
                 ),
@@ -149,8 +149,8 @@ class StudyDashboardCard extends StatelessWidget {
           ),
           _DurationRow(
             label: l10n.statDuration,
-            completed: context.hoursMinutesForSeries(completedSeconds),
-            total: context.hoursMinutesForSeries(totalSeconds),
+            completed: context.localizedHoursMinutes(completedSeconds),
+            total: context.localizedHoursMinutes(totalSeconds),
           ),
           const SizedBox(height: 8),
           _DurationProgressBar(fraction: durationFraction),

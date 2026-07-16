@@ -55,11 +55,11 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    context.timeForSeries(snapshot.positionSeconds),
+                    context.localizedTime(snapshot.positionSeconds),
                     style: context.textTheme.bodySmall,
                   ),
                   Text(
-                    context.timeForSeries(snapshot.durationSeconds),
+                    context.localizedTime(snapshot.durationSeconds),
                     style: context.textTheme.bodySmall,
                   ),
                 ],

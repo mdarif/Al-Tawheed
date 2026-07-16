@@ -91,8 +91,8 @@ class ContinueListeningBanner extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         l10n.listenedDuration(
-                          context.timeForSeries(savedSeconds),
-                          context.timeForSeries(remaining),
+                          context.localizedTime(savedSeconds),
+                          context.localizedTime(remaining),
                         ),
                         style: context.textTheme.bodySmall,
                       ),
@@ -126,7 +126,7 @@ class ContinueListeningBanner extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              context.digitsForSeries(
+              context.localizedDigits(
                 l10n.percentComplete((fraction * 100).round()),
               ),
               style: context.textTheme.bodySmall,

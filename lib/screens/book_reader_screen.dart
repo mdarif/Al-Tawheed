@@ -571,13 +571,21 @@ class _ColorKeyRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 56,
-          child: Text(
-            sample,
-            textAlign: TextAlign.center,
-            style: context.textTheme.titleMedium?.copyWith(
-              color: color,
-              fontFamily: 'NotoNaskhArabic',
-              fontWeight: FontWeight.w700,
+          // RTL regardless of the chrome locale: these are samples of Arabic
+          // typography, and the ornate parentheses are bidi-neutral, so in an
+          // LTR sheet U+FD3F lands on the left — where its glyph reads as a
+          // *closing* brace and the key showed ﴾…﴿ mirrored. Matching the
+          // reader body's direction is what makes the sample match the page.
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Text(
+              sample,
+              textAlign: TextAlign.center,
+              style: context.textTheme.titleMedium?.copyWith(
+                color: color,
+                fontFamily: 'NotoNaskhArabic',
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),

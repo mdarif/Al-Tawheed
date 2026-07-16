@@ -262,6 +262,18 @@ void main() {
     expect(find.text("Qur'an verse"), findsOneWidget);
     expect(find.text('Reference (surah:ayah)'), findsOneWidget);
     expect(find.text('Hadith'), findsOneWidget);
+
+    // The ornate parentheses are bidi-neutral, so in this LTR sheet they took
+    // the sheet's direction and rendered mirrored — ﴾…﴿ instead of ﴿…﴾. They
+    // are Arabic typography and must be laid out RTL like the reader body,
+    // whatever language the chrome happens to be in.
+    final verseSample = tester.widget<Directionality>(
+      find.ancestor(
+        of: find.text('\u{FD3F}\u{2026}\u{FD3E}'),
+        matching: find.byType(Directionality),
+      ).first,
+    );
+    expect(verseSample.textDirection, TextDirection.rtl);
   });
 
   testWidgets('share action shares the chapter title and text', (tester) async {

@@ -313,10 +313,10 @@ class _LectureTile extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          context.digitsForSeries(lecture.number.toString().padLeft(2, '0')),
+          context.localizedDigits(lecture.number.toString().padLeft(2, '0')),
           style: context.textTheme.labelSmall?.copyWith(
             color: context.brandColor,
-            fontFamily: series.bookFontFamily,
+            fontFamily: context.numeralFontFamily,
           ),
         ),
       ),
@@ -324,8 +324,8 @@ class _LectureTile extends StatelessWidget {
           ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
           : titleWidget,
       subtitle: Text(
-        '${context.timeForSeries(lecture.durationSeconds)}'
-        '  ·  ${context.digitsForSeries(sizeMb)}',
+        '${context.localizedTime(lecture.durationSeconds)}'
+        '  ·  ${context.localizedDigits(sizeMb)}',
         style: context.textTheme.bodySmall
             ?.copyWith(color: context.secondaryTextColor),
       ),

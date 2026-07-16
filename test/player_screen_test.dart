@@ -225,7 +225,7 @@ void main() {
         seedAfterLoad: (d) => d.seedDownloadingForTest('l1'),
       );
 
-      expect(find.text('Downloading… ۵۰%'), findsOneWidget);
+      expect(find.text('Downloading… 50%'), findsOneWidget);
       // One in the offline strip, one in the app bar download button.
       expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
     });
@@ -458,8 +458,9 @@ void main() {
       expect(find.text('Now Playing'), findsOneWidget);
       expect(find.text('يُشغَّل الآن'), findsNothing);
 
-      // ...but the numbers still belong to the content, not the chrome.
-      expect(find.text('٠:٠٠'), findsOneWidget);
+      // ...and the numbers follow the chrome too — an explicit English pick
+      // means Western digits, not Arabic ones under English words.
+      expect(find.text('0:00'), findsOneWidget);
 
       // Content stays per-edition (resolveForSeries) — still Arabic.
       expect(find.text('الدرس 1'), findsOneWidget);

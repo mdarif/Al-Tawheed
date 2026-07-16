@@ -47,7 +47,7 @@ class ChapterHeader extends StatelessWidget {
             ),
           ),
           Text(
-            context.digitsForSeries(l10n.partsCount(chapter.lectureCount)),
+            context.localizedDigits(l10n.partsCount(chapter.lectureCount)),
             style: context.textTheme.bodySmall,
           ),
           if (downloadsEnabled && chapterLectures.length > 1) ...[

@@ -48,9 +48,23 @@ the helper, leaving About, Settings, and Flutter's own `MaterialLocalizations`
   `MyApp` is never pumped in tests (`test/widget_test.dart:2-3`), so logic there
   would be untestable. `MaterialApp.locale` and `Directionality` already read
   the provider, so they needed no change at all.
-- Numbers are a **separate axis**: *digits follow the edition, words follow the
-  chrome locale*. An Urdu reader with English chrome still reads `۰۱`, because
-  numerals belong to the text beside them, not to the app's furniture.
+- **Numbers in chrome follow the chrome locale**, exactly like the words beside
+  them — a number is not more "content" than its label. Arabic chrome counts
+  ٠١، ٠٢ (and writes ١٫٥, separator included); English chrome counts 01, 02.
+  Since the Urdu edition ships English chrome, **it keeps Western digits and is
+  untouched by all of this** — which is the whole point of the asymmetry above.
+  The helpers read `Localizations.localeOf`, not `LanguageProvider`: that is the
+  locale the surrounding words actually resolved from, so digits and words agree
+  by construction even in a test that pins `MaterialApp.locale` directly.
+- **The Book is the one exception.** Its chapter badges, position indicator and
+  inline āyah numbers follow the *edition's* script via `series.language`, so
+  the Urdu book reads ۰۱ under English chrome. Book numerals are set the way the
+  print sets them; they are typography, not UI furniture.
+
+  *(An earlier revision of this ADR had chrome numbers follow the edition too.
+  That shipped Urdu numerals into the Urdu edition's English UI — a regression
+  the owner caught immediately. "Follow the chrome" is both simpler and what was
+  actually wanted.)*
 
 Not gated on the `language` feature flag. That flag governs the manual switcher
 only (the provider's own doc comment has always said so), and it is **`false` in

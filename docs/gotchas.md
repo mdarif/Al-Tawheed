@@ -101,16 +101,34 @@ is portable memory: any LLM working the repo should read and extend it.
   An Arabic-edition user tapping "العربية" is already seeing Arabic via the
   series default; guarding on the effective value early-returns, persists
   nothing, and lets their chrome flip to English on the next edition switch.
-- **Digits follow the edition; words follow the chrome locale.** `۰۱` badges
-  under English chrome are correct — numerals belong to the text beside them.
-  Use `context.digitsForSeries` / `timeForSeries` / `hoursMinutesForSeries`.
-  They post-process the *finished* l10n string (idempotent, `[0-9]` only) rather
-  than retyping ARB placeholders, because `partsCount` needs its `int` for
-  `Intl.pluralLogic`. **Never use `NumberFormat`/`decimalPattern` for this:** it
-  keys off the *l10n* locale, and CLDR's default numbering system for `ur` is
-  `latn`, so it silently renders `45` — discarding the U+06F0–06F9 set the Urdu
-  book deliberately uses. And never blanket-apply: `settingsAboutVersion` would
-  render `٣٫٤٫١` while the clipboard kept `3.4.1`.
+- **Chrome numbers follow the chrome locale — the Book follows the edition.**
+  Two different rules, on purpose:
+  - **Chrome** (durations, counts, %, seek bar, lecture/class badges, speed
+    chips): `context.localizedDigits` / `localizedTime` /
+    `localizedHoursMinutes` / `localizedDecimal` / `numeralFontFamily`. They key
+    off `Localizations.localeOf`, **not** `LanguageProvider` — that is the
+    locale the surrounding words actually resolved from, so digits and words
+    agree by construction. English chrome ⇒ `01`, `23h 19m`. The Urdu edition
+    ships English chrome, so **it must keep Western digits** — localizing it was
+    a regression once already.
+  - **Book** (chapter badges, position indicator, inline āyah numbers):
+    `localizedDigitsInString(s, series.language)` + `series.bookFontFamily`. The
+    Urdu book reads ۰۱ even under English chrome, because it is set the way the
+    print sets it.
+  The helpers post-process the *finished* l10n string (idempotent, `[0-9]` only)
+  rather than retyping ARB placeholders, because `partsCount` needs its `int`
+  for `Intl.pluralLogic`. **Never use `NumberFormat`/`decimalPattern`:** it keys
+  off the l10n locale and CLDR's default numbering system for `ur` is `latn`, so
+  it silently renders `45` — discarding the U+06F0–06F9 set the Urdu book
+  deliberately uses. Never blanket-apply: `settingsAboutVersion` would render
+  `٣٫٤٫١` while the clipboard kept `3.4.1`.
+- **Arabic needs the decimal separator too** — `١٫٥` (U+066B), not `١.٥`. See
+  `localizedDecimal`; the speed chips are the only user of it today.
+- **The Book's colour-key samples are forced RTL.** The ornate parentheses
+  (U+FD3E/U+FD3F) are bidi-neutral, so in an LTR sheet U+FD3F lands on the left
+  where its glyph reads as a *closing* brace — the key rendered ﴾…﴿ mirrored.
+  They are Arabic typography; lay them out like the reader body, not like the
+  chrome around them.
 - **The `language` feature flag gates the Settings switcher only** — never the
   effective language. It is `false` in live remote config, so the series default
   is what everyone actually gets today.

@@ -223,19 +223,19 @@ void main() {
 
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الشيخ صالح الفوزان حفظه الله'), findsOneWidget);
-    // Chrome here is English (this harness pins no locale), which is what an
-    // Arabic-edition reader who explicitly picked English would see: the words
-    // follow the chrome, the digits follow the edition. Two 60s lectures.
-    expect(find.text('٢ lectures · ٢m'), findsOneWidget);
+    // Chrome here is English (this harness pins no locale) — what an
+    // Arabic-edition reader who explicitly picked English would see: the
+    // content stays Arabic, the chrome (words AND numbers) stays English.
+    expect(find.text('2 lectures · 2m'), findsOneWidget);
     // The redesigned hero shows the Arabic series teacher (Shaikh al-Fawzan).
     expect(_avatarFinder('assets/images/sheikh_fawzan.png'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
 
-  // The production default for the Arabic edition: chrome follows the series,
-  // so the header reads entirely in Arabic — words from the ARB, digits from
-  // the edition. The old code hardcoded 'محاضرة' here; the ARB says 'درس',
+  // The production default for the Arabic edition: the edition defaults the
+  // chrome language to Arabic, so the header reads entirely in Arabic — words
+  // and numbers alike. The old code hardcoded 'محاضرة'; the ARB says 'درس',
   // and the ARB is canonical (it also matches the الدروس nav tab).
   testWidgets('heads the Arabic edition with an all-Arabic count line',
       (tester) async {
@@ -280,7 +280,7 @@ void main() {
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     // Arabic-Indic (U+066x), not Western — and not the Urdu set either.
@@ -290,7 +290,11 @@ void main() {
     expect(find.text('۰۱'), findsNothing);
   });
 
-  testWidgets('numbers the Urdu duroos in Urdu numerals, in the Urdu face',
+  // The Urdu edition is deliberately untouched by the Arabic-chrome work: its
+  // audience reads English chrome, so its lecture list counts 01, 02 exactly as
+  // it always has. (Its *Book* is the exception — that renders ۰۱, in the
+  // book's own script. Different rule, see book_chapter_list_screen_test.)
+  testWidgets('leaves the Urdu duroos numbered in Western digits',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
@@ -304,6 +308,28 @@ void main() {
     final series = SeriesProvider()..load(false); // Urdu fallback
 
     await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('01'), findsOneWidget);
+    expect(find.text('02'), findsOneWidget);
+    expect(find.text('۰۱'), findsNothing);
+  });
+
+  // ...but an explicit اردو pick is honoured, numerals included.
+  testWidgets('numbers the duroos in Urdu when the chrome is Urdu',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+      ),),
+    );
+
+    final series = SeriesProvider()..load(false); // Urdu fallback
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ur')));
     await tester.pumpAndSettle();
 
     expect(find.text('۰۱'), findsOneWidget);

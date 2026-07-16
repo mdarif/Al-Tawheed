@@ -143,9 +143,9 @@ void main() {
 
     expect(find.text('Continue Listening'), findsOneWidget);
     expect(find.text('Lecture 1'), findsOneWidget);
-    // Digits follow the edition (Urdu fallback here), words follow chrome.
-    expect(find.text('۱:۰۰ listened · ۹:۰۰ left'), findsOneWidget);
-    expect(find.text('۱۰% complete'), findsOneWidget);
+    // English chrome ⇒ Western numbers, exactly as before the Arabic work.
+    expect(find.text('1:00 listened · 9:00 left'), findsOneWidget);
+    expect(find.text('10% complete'), findsOneWidget);
   });
 
   testWidgets('tapping resumes into the player', (tester) async {

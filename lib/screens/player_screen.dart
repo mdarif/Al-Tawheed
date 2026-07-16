@@ -314,7 +314,7 @@ class _OfflineStatusStrip extends StatelessWidget {
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
           icon: Icons.download_rounded,
-          label: context.digitsForSeries(
+          label: context.localizedDigits(
             l10n.offlineDownloading(resolution.downloadPercent),
           ),
           fgColor: context.brandColor,

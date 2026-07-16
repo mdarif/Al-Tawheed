@@ -141,16 +141,17 @@ void main() {
       expect(find.text('Class 04 Completed'), findsOneWidget);
 
       // Studied count and overall progress include class-04.
-      // Numbers follow the content edition (Urdu here), words follow chrome.
-      expect(find.text('۴ of ۵ classes studied'), findsOneWidget);
-      expect(find.text('۸۰%'), findsNWidgets(2));
+      // English chrome ⇒ Western numbers. The Urdu edition is untouched by
+      // the Arabic-chrome work.
+      expect(find.text('4 of 5 classes studied'), findsOneWidget);
+      expect(find.text('80%'), findsNWidgets(2));
 
       // "Next Up" recommends class-05, not the just-completed class-04.
       expect(find.text('Next Up'), findsOneWidget);
       expect(find.text('Class 05'), findsOneWidget);
       expect(find.text('RECOMMENDED NEXT'), findsOneWidget);
       expect(find.text('Start'), findsOneWidget);
-      expect(find.text('۱ part'), findsOneWidget);
+      expect(find.text('1 part'), findsOneWidget);
       expect(find.text('Continue to Class 05'), findsOneWidget);
 
       // Old buggy state — class-04 recommending itself as "in progress" —
@@ -181,8 +182,8 @@ void main() {
           find.text('You have studied every class in the series.'
               ' May Allah make it a source of lasting benefit for you.'),
           findsOneWidget,);
-      expect(find.text('۵ of ۵ classes studied'), findsOneWidget);
-      expect(find.text('۱۰۰%'), findsNWidgets(2));
+      expect(find.text('5 of 5 classes studied'), findsOneWidget);
+      expect(find.text('100%'), findsNWidgets(2));
       expect(find.text('You have completed the full series.'), findsOneWidget);
 
       expect(find.text('Next Up'), findsNothing);

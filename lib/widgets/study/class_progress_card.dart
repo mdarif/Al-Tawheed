@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/providers/language_provider.dart';
-import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_progress_label.dart';
 import 'package:myapp/widgets/study/parts_progress_bar.dart';
@@ -133,7 +132,7 @@ class ClassProgressCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           context
-                              .digitsForSeries(studyProgressLabel(info, l10n)),
+                              .localizedDigits(studyProgressLabel(info, l10n)),
                           style: context.textTheme.bodySmall?.copyWith(
                             color: context.secondaryTextColor,
                             fontSize: 11.5,
@@ -195,16 +194,12 @@ class _ChapterBadge extends StatelessWidget {
       child: status == ChapterStudyStatus.studied
           ? Icon(Icons.check_rounded, color: foreground, size: 22)
           : Text(
-              context.digitsForSeries(number.toString().padLeft(2, '0')),
+              context.localizedDigits(number.toString().padLeft(2, '0')),
               style: context.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: foreground,
-                // Same reason as the lecture badge: the codepoints are only
-                // half the job, the face draws them.
-                fontFamily: context
-                    .watch<SeriesProvider>()
-                    .currentSeries
-                    .bookFontFamily,
+                // The codepoints are only half the job — the face draws them.
+                fontFamily: context.numeralFontFamily,
               ),
             ),
     );

@@ -116,7 +116,7 @@ class AboutCard extends StatelessWidget {
                 child: Row(
                   children: [
                     _StatColumn(
-                      value: context.digitsForSeries('$lectureCount'),
+                      value: context.localizedDigits('$lectureCount'),
                       label: l10n.statLectures,
                     ),
                     VerticalDivider(
@@ -126,14 +126,14 @@ class AboutCard extends StatelessWidget {
                     ),
                     if (hasClasses)
                       _StatColumn(
-                        value: context.digitsForSeries(
+                        value: context.localizedDigits(
                           '${catalog?.chapters.length ?? about.classCount}',
                         ),
                         label: l10n.statClasses,
                       )
                     else
                       _StatColumn(
-                        value: context.hoursMinutesForSeries(
+                        value: context.localizedHoursMinutes(
                           catalog!.book.totalDurationSeconds,
                         ),
                         label: l10n.statDuration,

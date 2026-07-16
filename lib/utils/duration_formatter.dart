@@ -16,7 +16,7 @@ class DurationFormatter {
   ///
   /// Numbers only — the hour/minute *words* differ per language ("27h 6m" vs
   /// "٢٧ س ٦ د"), so they come from the ARB. See
-  /// `BuildContext.hoursMinutesForSeries`, which is what widgets should call.
+  /// `BuildContext.localizedHoursMinutes`, which is what widgets should call.
   static (int hours, int minutes) toHoursAndMinutes(int totalSeconds) =>
       (totalSeconds ~/ 3600, (totalSeconds % 3600) ~/ 60);
 }

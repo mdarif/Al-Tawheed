@@ -8,7 +8,6 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/download_button.dart';
 
@@ -92,7 +91,7 @@ class _TileContent extends StatelessWidget {
                 _buildTitle(context),
                 const SizedBox(height: 3),
                 Text(
-                  context.timeForSeries(lecture.durationSeconds),
+                  context.localizedTime(lecture.durationSeconds),
                   style: context.textTheme.bodySmall?.copyWith(fontSize: 12),
                 ),
               ],
@@ -164,29 +163,20 @@ class _ProgressBadge extends StatelessWidget {
                     strokeCap: StrokeCap.round,
                   ),
                 ),
-              // Lecture numbers follow the series' script, like the Book's
-              // chapter badges: Arabic-Indic for the Arabic duroos, Urdu
-              // numerals for the Urdu ones. The font matters as much as the
-              // codepoints — Urdu and Persian share U+06F0–06F9 but draw
-              // 4/5/6/7 differently, and the UI font has neither set, so
-              // without the series face the platform falls back to a
-              // Persian-style rendering.
-              Builder(
-                builder: (context) {
-                  final series = context.watch<SeriesProvider>().currentSeries;
-                  return Text(
-                    localizedDigitsInString(
-                      lecture.number.toString().padLeft(2, '0'),
-                      series.language,
-                    ),
-                    style: context.textTheme.labelMedium?.copyWith(
-                      color: context.brandColor,
-                      fontFamily: series.bookFontFamily,
-                      height: 1.0,
-                      letterSpacing: 0.5,
-                    ),
-                  );
-                },
+              // Lecture numbers count in the chrome's script, like every other
+              // number in the UI — ٠١ under Arabic chrome, 01 under English.
+              // (Not the Book's rule: its chapter badges follow the *edition*,
+              // because they are set the way the print sets them.)
+              Text(
+                context.localizedDigits(
+                  lecture.number.toString().padLeft(2, '0'),
+                ),
+                style: context.textTheme.labelMedium?.copyWith(
+                  color: context.brandColor,
+                  fontFamily: context.numeralFontFamily,
+                  height: 1.0,
+                  letterSpacing: 0.5,
+                ),
               ),
             ],
           ),

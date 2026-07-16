@@ -236,10 +236,10 @@ class _LectureListScreenState extends State<LectureListScreen> {
     // from the edition.
     final countLine = catalog == null
         ? ''
-        : context.digitsForSeries(
+        : context.localizedDigits(
             context.l10n.lecturesCount(
               catalog.book.lectureCount,
-              context.hoursMinutesForSeries(catalog.book.totalDurationSeconds),
+              context.localizedHoursMinutes(catalog.book.totalDurationSeconds),
             ),
           );
 

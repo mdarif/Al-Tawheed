@@ -253,9 +253,15 @@ edition deliberately has no opinion (its Indian audience reads English more
 comfortably than Nastaliq) and falls through to device detection. Full
 precedence and rationale: [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md).
 
-**Numbers are a separate axis:** *digits follow the content edition, words follow
-the chrome locale.* `۰۱` under English chrome is correct — numerals belong to the
-text beside them. See `context.digitsForSeries` in `lib/utils/l10n_extensions.dart`.
+**Numbers follow the chrome locale**, exactly like the words beside them — a
+number is not more "content" than its label. Arabic chrome counts ٠١، ٠٢; English
+chrome counts 01, 02, which is what the Urdu edition ships. See
+`context.localizedDigits` in `lib/utils/l10n_extensions.dart`.
+
+**The Book is the exception**: its chapter badges, position indicator and inline
+āyah numbers follow the *edition's* script (`series.language`), because they are
+set the way the print sets them — the Urdu book reads ۰۱ even under English
+chrome.
 
 `language` is **required** on every entry in `series.json`. Omitting it is a
 content bug: the client logs and falls back to `'en'`, which yields Western
