@@ -36,6 +36,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get removeBookmark => 'بک مارک ہٹائیں';
 
   @override
+  String get playbackPrevious => 'پچھلا درس';
+
+  @override
+  String get playbackRewind => '۱۰ سیکنڈ پیچھے جائیں';
+
+  @override
+  String get playbackPlay => 'چلائیں';
+
+  @override
+  String get playbackPause => 'روکیں';
+
+  @override
+  String get playbackForward => '۱۰ سیکنڈ آگے جائیں';
+
+  @override
+  String get playbackNext => 'اگلا درس';
+
+  @override
   String get allLecturesComplete => 'تمام دروس مکمل';
 
   @override
@@ -581,6 +599,24 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get removeBookmark => 'Bookmark hataayein';
+
+  @override
+  String get playbackPrevious => 'Pichhla dars';
+
+  @override
+  String get playbackRewind => '10 second peeche jayein';
+
+  @override
+  String get playbackPlay => 'Chalayein';
+
+  @override
+  String get playbackPause => 'Rokein';
+
+  @override
+  String get playbackForward => '10 second aage jayein';
+
+  @override
+  String get playbackNext => 'Agla dars';
 
   @override
   String get allLecturesComplete => 'Tamam Daras Mukammal';

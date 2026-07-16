@@ -155,6 +155,42 @@ abstract class AppLocalizations {
   /// **'Remove bookmark'**
   String get removeBookmark;
 
+  /// No description provided for @playbackPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous lecture'**
+  String get playbackPrevious;
+
+  /// No description provided for @playbackRewind.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewind 10 seconds'**
+  String get playbackRewind;
+
+  /// No description provided for @playbackPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get playbackPlay;
+
+  /// No description provided for @playbackPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get playbackPause;
+
+  /// No description provided for @playbackForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward 10 seconds'**
+  String get playbackForward;
+
+  /// No description provided for @playbackNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next lecture'**
+  String get playbackNext;
+
   /// No description provided for @allLecturesComplete.
   ///
   /// In en, this message translates to:

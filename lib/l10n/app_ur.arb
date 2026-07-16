@@ -11,6 +11,12 @@
   "nowPlaying": "ابھی چل رہا ہے",
   "bookmark": "بک مارک کریں",
   "removeBookmark": "بک مارک ہٹائیں",
+  "playbackPrevious": "پچھلا درس",
+  "playbackRewind": "۱۰ سیکنڈ پیچھے جائیں",
+  "playbackPlay": "چلائیں",
+  "playbackPause": "روکیں",
+  "playbackForward": "۱۰ سیکنڈ آگے جائیں",
+  "playbackNext": "اگلا درس",
 
   "allLecturesComplete": "تمام دروس مکمل",
   "allLecturesCompleteMessage": "آپ نے تمام دروس سن لیے ہیں۔ اللہ تعالیٰ آپ کو علمِ نافع سے نوازے۔",

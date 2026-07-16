@@ -36,6 +36,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeBookmark => 'Remove bookmark';
 
   @override
+  String get playbackPrevious => 'Previous lecture';
+
+  @override
+  String get playbackRewind => 'Rewind 10 seconds';
+
+  @override
+  String get playbackPlay => 'Play';
+
+  @override
+  String get playbackPause => 'Pause';
+
+  @override
+  String get playbackForward => 'Forward 10 seconds';
+
+  @override
+  String get playbackNext => 'Next lecture';
+
+  @override
   String get allLecturesComplete => 'All Lectures Complete';
 
   @override

@@ -36,6 +36,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removeBookmark => 'إزالة الإشارة المرجعية';
 
   @override
+  String get playbackPrevious => 'الدرس السابق';
+
+  @override
+  String get playbackRewind => 'إرجاع ١٠ ثوانٍ';
+
+  @override
+  String get playbackPlay => 'تشغيل';
+
+  @override
+  String get playbackPause => 'إيقاف مؤقت';
+
+  @override
+  String get playbackForward => 'تقديم ١٠ ثوانٍ';
+
+  @override
+  String get playbackNext => 'الدرس التالي';
+
+  @override
   String get allLecturesComplete => 'اكتملت جميع الدروس';
 
   @override

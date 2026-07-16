@@ -9,6 +9,12 @@
   "nowPlaying": "Abhi chal raha hai",
   "bookmark": "Bookmark karein",
   "removeBookmark": "Bookmark hataayein",
+  "playbackPrevious": "Pichhla dars",
+  "playbackRewind": "10 second peeche jayein",
+  "playbackPlay": "Chalayein",
+  "playbackPause": "Rokein",
+  "playbackForward": "10 second aage jayein",
+  "playbackNext": "Agla dars",
 
   "allLecturesComplete": "Tamam Daras Mukammal",
   "allLecturesCompleteMessage": "Aap ne tamam daras sun liye hain. Allah Ta'ala aap ko ilm-e-nafe se nawaze.",

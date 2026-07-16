@@ -11,6 +11,12 @@
   "nowPlaying": "يُشغَّل الآن",
   "bookmark": "إضافة إشارة مرجعية",
   "removeBookmark": "إزالة الإشارة المرجعية",
+  "playbackPrevious": "الدرس السابق",
+  "playbackRewind": "إرجاع ١٠ ثوانٍ",
+  "playbackPlay": "تشغيل",
+  "playbackPause": "إيقاف مؤقت",
+  "playbackForward": "تقديم ١٠ ثوانٍ",
+  "playbackNext": "الدرس التالي",
 
   "allLecturesComplete": "اكتملت جميع الدروس",
   "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",

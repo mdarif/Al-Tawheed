@@ -11,6 +11,12 @@
   "nowPlaying": "Now Playing",
   "bookmark": "Bookmark",
   "removeBookmark": "Remove bookmark",
+  "playbackPrevious": "Previous lecture",
+  "playbackRewind": "Rewind 10 seconds",
+  "playbackPlay": "Play",
+  "playbackPause": "Pause",
+  "playbackForward": "Forward 10 seconds",
+  "playbackNext": "Next lecture",
 
   "allLecturesComplete": "All Lectures Complete",
   "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",

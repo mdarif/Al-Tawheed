@@ -467,4 +467,47 @@ void main() {
       expect(find.text('كتاب التوحيد'), findsOneWidget);
     });
   });
+
+  // test-plan §7 — accessibility. An audio app whose primary controls announce
+  // as a bare "button" to a screen reader is the most defensible "not
+  // industry-best" claim on the backlog. These guard that every tappable
+  // control on the player is both LABELLED and large enough to hit.
+  group('PlayerScreen — accessibility', () {
+    testWidgets('every tap target is labelled (screen-reader names)',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      // labeledTapTargetGuideline fails if ANY tappable node has no label —
+      // it caught the five unlabelled transport controls and the collapse
+      // button that this change fixed.
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('transport controls carry their specific labels',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      // The play/pause button is showing "play" here (offline load never
+      // starts playback), so pause is absent — that's correct. Matched by
+      // tooltip (which is what carries the label into the semantics tree).
+      for (final label in ['Previous lecture', 'Rewind 10 seconds', 'Play',
+        'Forward 10 seconds', 'Next lecture',]) {
+        expect(find.byTooltip(label), findsOneWidget,
+            reason: 'transport control "$label" is unlabelled',);
+      }
+      handle.dispose();
+    });
+
+    testWidgets('tap targets meet the platform minimum size', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
+    });
+  });
 }

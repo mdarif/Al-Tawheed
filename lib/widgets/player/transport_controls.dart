@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 
 class PlayerTransportControls extends StatelessWidget {
   const PlayerTransportControls({super.key});
@@ -20,12 +21,16 @@ class PlayerTransportControls extends StatelessWidget {
         final enabledColor = context.primaryTextColor;
         final disabledColor = context.mutedIconColor;
         final player = context.read<PlayerNotifier>();
+        final l10n = context.l10n;
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             IconButton(
               iconSize: 32,
+              // tooltip doubles as the screen-reader label — these transport
+              // controls were icon-only and announced as a bare "button".
+              tooltip: l10n.playbackPrevious,
               icon: Icon(
                 Icons.skip_previous_rounded,
                 color: snapshot.hasPrevious ? enabledColor : disabledColor,
@@ -34,6 +39,7 @@ class PlayerTransportControls extends StatelessWidget {
             ),
             IconButton(
               iconSize: 28,
+              tooltip: l10n.playbackRewind,
               icon: Icon(Icons.replay_10_rounded, color: enabledColor),
               onPressed: player.skipBackward,
             ),
@@ -64,6 +70,9 @@ class PlayerTransportControls extends StatelessWidget {
                     )
                   : IconButton(
                       iconSize: 36,
+                      tooltip: snapshot.isPlaying
+                          ? l10n.playbackPause
+                          : l10n.playbackPlay,
                       icon: Icon(
                         snapshot.isPlaying
                             ? Icons.pause_rounded
@@ -75,11 +84,13 @@ class PlayerTransportControls extends StatelessWidget {
             ),
             IconButton(
               iconSize: 28,
+              tooltip: l10n.playbackForward,
               icon: Icon(Icons.forward_10_rounded, color: enabledColor),
               onPressed: player.skipForward,
             ),
             IconButton(
               iconSize: 32,
+              tooltip: l10n.playbackNext,
               icon: Icon(
                 Icons.skip_next_rounded,
                 color: snapshot.hasNext ? enabledColor : disabledColor,

@@ -33,6 +33,9 @@ class PlayerScreen extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
+              // Collapses the full-screen player. Labelled for screen readers
+              // via the framework's already-localised "Close" string.
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
               onPressed: () => Navigator.pop(context),
             ),
@@ -259,46 +262,55 @@ class _OfflineStatusStrip extends StatelessWidget {
         onTap: snapshot.lecture != null
             ? () => showOfflineSheet(context, snapshot.lecture!)
             : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: strip.bgColor.withValues(
-              alpha: context.isDarkTheme ? 0.25 : 0.18,
-            ),
-            borderRadius: BorderRadius.circular(20),
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          // When tappable, expand the hit area to the 48px minimum tap target
+          // (androidTapTargetGuideline) WITHOUT growing the visible pill — the
+          // 28px chip stays 28px, only its touch region grows.
+          padding: EdgeInsets.symmetric(
+            vertical: snapshot.lecture != null ? 11 : 0,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (strip.showProgress) ...[
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    value: dlProgress,
-                    strokeWidth: 1.5,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: strip.bgColor.withValues(
+                alpha: context.isDarkTheme ? 0.25 : 0.18,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (strip.showProgress) ...[
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      value: dlProgress,
+                      strokeWidth: 1.5,
+                      color: strip.fgColor,
+                    ),
+                  ),
+                ] else
+                  Icon(strip.icon, size: 14, color: strip.fgColor),
+                const SizedBox(width: 6),
+                Text(
+                  strip.label,
+                  style: context.textTheme.labelSmall?.copyWith(
                     color: strip.fgColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ] else
-                Icon(strip.icon, size: 14, color: strip.fgColor),
-              const SizedBox(width: 6),
-              Text(
-                strip.label,
-                style: context.textTheme.labelSmall?.copyWith(
-                  color: strip.fgColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (strip.tappable) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 14,
-                  color: strip.fgColor.withValues(alpha: 0.7),
-                ),
+                if (strip.tappable) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 14,
+                    color: strip.fgColor.withValues(alpha: 0.7),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
