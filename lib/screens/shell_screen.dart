@@ -9,19 +9,16 @@ import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
-enum _Tab { lectures, book, home, study, settings }
+enum _Tab { lectures, book, study, settings }
 
 extension on _Tab {
   String get path => switch (this) {
         _Tab.lectures => '/lectures',
         _Tab.book => '/book',
-        _Tab.home => '/home',
         _Tab.study => '/study',
         _Tab.settings => '/settings',
       };
 
-  // [l10n] is series-aware (Arabic for the Arabic series, else the app UI
-  // language) — see [BuildContext.l10nForSeries].
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
         _Tab.lectures => NavigationDestination(
             icon: const Icon(Icons.headphones_outlined),
@@ -32,11 +29,6 @@ extension on _Tab {
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
             label: l10n.tabBook,
-          ),
-        _Tab.home => NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: l10n.tabHome,
           ),
         _Tab.study => NavigationDestination(
             icon: const Icon(Icons.school_outlined),
@@ -51,10 +43,11 @@ extension on _Tab {
       };
 }
 
+// Settings is always last, after the series-dependent tabs; Bookmarks and About
+// stay in the ⋯ overflow menu.
 List<_Tab> _tabsFor(SeriesConfig series) => [
       _Tab.lectures,
       if (series.hasBook) _Tab.book,
-      _Tab.home,
       if (series.hasStudyMode) _Tab.study,
       _Tab.settings,
     ];
@@ -67,7 +60,7 @@ class ShellScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final series = context.watch<SeriesProvider>().currentSeries;
     final tabs = _tabsFor(series);
-    final l10n = context.l10nForSeries(series);
+    final l10n = context.l10n;
 
     return AllLecturesCompleteListener(
       child: Scaffold(

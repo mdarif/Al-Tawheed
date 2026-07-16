@@ -9,6 +9,7 @@ import 'package:myapp/models/study_progress.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
@@ -79,6 +80,8 @@ void main() {
         ChangeNotifierProvider.value(value: progress),
         ChangeNotifierProvider.value(value: study),
         ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+        // Progress percentages render in the active edition's numerals.
+        ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
       ],
       child: MaterialApp.router(
         theme: AppTheme.dark,
@@ -138,6 +141,8 @@ void main() {
       expect(find.text('Class 04 Completed'), findsOneWidget);
 
       // Studied count and overall progress include class-04.
+      // English chrome ⇒ Western numbers. The Urdu edition is untouched by
+      // the Arabic-chrome work.
       expect(find.text('4 of 5 classes studied'), findsOneWidget);
       expect(find.text('80%'), findsNWidgets(2));
 

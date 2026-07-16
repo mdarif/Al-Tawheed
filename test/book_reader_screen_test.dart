@@ -6,9 +6,15 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
+import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/widgets/book/scroll_to_top_button.dart';
+import 'package:myapp/theme/app_semantic_colors.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 const _testBook = BookContent(
@@ -23,11 +29,15 @@ const _testBook = BookContent(
   ],
 );
 
-Widget _wrap(BookProvider book, String chapterId) {
+Widget _wrap(BookProvider book, String chapterId, {ReadingProvider? reading}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: book),
-      ChangeNotifierProvider(create: (_) => ReadingProvider()),
+      ChangeNotifierProvider.value(value: reading ?? ReadingProvider()),
+      ChangeNotifierProvider(create: (_) => SeriesProvider()),
+      // The reader ⋮ "report a mistake" reads the contact address from here.
+      // Defaults carry one, so the row renders in these tests.
+      ChangeNotifierProvider(create: (_) => AppConfigProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
@@ -48,8 +58,135 @@ Widget _wrap(BookProvider book, String chapterId) {
   );
 }
 
+// Finds the styled span for [text] inside the reader's rendered Text.rich runs.
+TextSpan? _spanFor(WidgetTester tester, String text) {
+  TextSpan? found;
+  for (final w in tester.widgetList<Text>(find.byType(Text))) {
+    final span = w.textSpan;
+    if (span == null) continue;
+    span.visitChildren((s) {
+      if (s is TextSpan && s.text == text) found = s;
+      return true;
+    });
+    if (found != null) return found;
+  }
+  return null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    PreferencesService.instance.resetForTest();
+    await PreferencesService.instance.init();
+  });
+
+  group('masāʾil heading', () {
+    // The masail section is the author's own summary, distinct from the quoted
+    // matn above it — it gets a rule + the brand colour.
+    const masailBook = BookContent(
+      title: 'کتاب التوحید',
+      author: 'مصنف',
+      chapters: [
+        BookChapter(
+          id: 'ch-01',
+          number: 1,
+          title: 'باب',
+          text: 'متن کی سطر\n\n'
+              'اس باب کے کچھ اہم مسائل:\n'
+              'پہلا مسئلہ: پہلی بات۔',
+        ),
+        // Guard: a numbered ITEM that itself uses the plural مسائل mid-sentence
+        // (this really happens in ch-01/ch-11 of the Urdu book). It must NOT be
+        // mistaken for a heading, or a rule would land in the middle of the list.
+        BookChapter(
+          id: 'ch-02',
+          number: 2,
+          title: 'باب',
+          text: 'اس باب کے کچھ اہم مسائل:\n'
+              'نواں مسئلہ: مذکورہ آیتوں میں کئی مسائل بیان کیے گئے ہیں۔',
+        ),
+        // The print's longer heading variant (ch-06) must still be recognised.
+        BookChapter(
+          id: 'ch-03',
+          number: 3,
+          title: 'باب',
+          text: 'متن\n\n'
+              'اس باب میں کئی اہم ترین اور عظیم مسائل ہیں، جن میں سب سے اہم مندرجہ ذیل ہیں:\n'
+              'پہلی بات۔',
+        ),
+      ],
+    );
+
+    testWidgets('is set off by a rule and rendered in the brand colour',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsOneWidget);
+
+      final span = _spanFor(tester, 'اس باب کے کچھ اہم مسائل:');
+      expect(span, isNotNull);
+      expect(span!.style?.color, AppTheme.light.extension<AppSemanticColors>()!.brand);
+      expect(span.style?.fontWeight, FontWeight.w700);
+    });
+
+    testWidgets('a masʾala item using the word مسائل is NOT treated as one',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-02'));
+      await tester.pumpAndSettle();
+
+      // Only the real heading gets a rule — not the item that mentions مسائل.
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('recognises the print\'s longer heading variant',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(masailBook);
+      await tester.pumpWidget(_wrap(book, 'ch-03'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('a chapter with no masāʾil gets no rule', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook); // Arabic, matn-only
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Divider), findsNothing);
+    });
+  });
+
+  group('chapter position indicator', () {
+    // Long bab titles ellipsize in the app bar, so the title alone never tells
+    // you where you are in the book.
+    testWidgets('shows the current chapter and total', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      await tester.pumpWidget(_wrap(book, 'ch-01')); // 2nd of 3 chapters
+      await tester.pumpAndSettle();
+
+      // SeriesProvider defaults to the Urdu series here, so Urdu numerals.
+      expect(find.text('۲ / ۳'), findsOneWidget);
+    });
+
+    testWidgets('tracks position as you move through the book',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      await tester.pumpWidget(_wrap(book, 'intro')); // 1st of 3
+      await tester.pumpAndSettle();
+
+      expect(find.text('۱ / ۳'), findsOneWidget);
+
+      await tester.tap(find.widgetWithIcon(IconButton, Icons.chevron_left_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('۲ / ۳'), findsOneWidget);
+    });
+  });
 
   testWidgets('renders the chapter title and text', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
@@ -124,13 +261,16 @@ void main() {
     expect(find.text('نص الباب الثاني'), findsOneWidget);
   });
 
-  testWidgets('color key button opens the legend sheet', (tester) async {
+  testWidgets('color key opens from the overflow menu', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-01'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.palette_outlined));
+    // Color key, Share and Report now live behind the app-bar ⋮.
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Color key').last);
     await tester.pumpAndSettle();
 
     // English chrome (test wrap uses default/en locale) — legend labels show.
@@ -138,9 +278,22 @@ void main() {
     expect(find.text("Qur'an verse"), findsOneWidget);
     expect(find.text('Reference (surah:ayah)'), findsOneWidget);
     expect(find.text('Hadith'), findsOneWidget);
+
+    // The ornate parentheses are bidi-neutral, so in this LTR sheet they took
+    // the sheet's direction and rendered mirrored — ﴾…﴿ instead of ﴿…﴾. They
+    // are Arabic typography and must be laid out RTL like the reader body,
+    // whatever language the chrome happens to be in.
+    final verseSample = tester.widget<Directionality>(
+      find.ancestor(
+        of: find.text('\u{FD3F}\u{2026}\u{FD3E}'),
+        matching: find.byType(Directionality),
+      ).first,
+    );
+    expect(verseSample.textDirection, TextDirection.rtl);
   });
 
-  testWidgets('share action shares the chapter title and text', (tester) async {
+  testWidgets('share, from the overflow menu, shares the chapter title and text',
+      (tester) async {
     final sharePlatform = _FakeSharePlatform();
     SharePlatform.instance = sharePlatform;
     final book = BookProvider()..setBookForTest(_testBook);
@@ -148,10 +301,70 @@ void main() {
     await tester.pumpWidget(_wrap(book, 'ch-01'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.share_rounded));
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Share chapter').last);
     await tester.pumpAndSettle();
 
     expect(sharePlatform.lastParams?.text, 'الباب الأول\n\nنص الباب الأول');
+  });
+
+  testWidgets('the overflow menu offers Report a mistake', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+
+    // AppConfigProvider defaults carry a contact email, so the row shows.
+    expect(find.text('Report a mistake'), findsOneWidget);
+    expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+  });
+
+  testWidgets('a two-finger pinch-out enlarges the book text', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+    final reading = ReadingProvider()..load(); // starts at 20
+
+    await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+    await tester.pumpAndSettle();
+
+    // Two fingers, 100px apart, spreading to 200px → a ~2× target, clamped to
+    // the 32pt max. A passive Listener drives this, so no gesture-arena setup.
+    final center = tester.getCenter(find.byType(PageView));
+    final g1 = await tester.createGesture(pointer: 1);
+    final g2 = await tester.createGesture(pointer: 2);
+    await g1.down(center - const Offset(50, 0));
+    await g2.down(center + const Offset(50, 0));
+    await tester.pump();
+    await g1.moveBy(const Offset(-50, 0));
+    await g2.moveBy(const Offset(50, 0));
+    await tester.pump();
+
+    expect(reading.bookFontSize, greaterThan(20.0));
+
+    await g1.up();
+    await g2.up();
+    await tester.pumpAndSettle();
+
+    // The enlarged size persisted on lift-off.
+    expect((ReadingProvider()..load()).bookFontSize, reading.bookFontSize);
+  });
+
+  testWidgets('the scroll-to-top button is present but hidden at the top',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    // Always in the tree so it can animate; hidden (transparent, ignoring) at
+    // the top of a chapter.
+    final button = tester.widget<ScrollToTopButton>(
+      find.byType(ScrollToTopButton).first,
+    );
+    expect(button.visible, isFalse);
   });
 }
 

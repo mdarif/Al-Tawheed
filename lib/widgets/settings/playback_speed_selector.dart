@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/selection_chip.dart';
 
 class PlaybackSpeedSelector extends StatelessWidget {
@@ -84,7 +85,9 @@ class _SpeedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SelectionChip(
-      label: '${speed}x',
+      // Arabic writes 1.5 as ١٫٥ — separator included, or it reads
+      // half-translated. English/Urdu chrome keeps "1.5x" as-is.
+      label: '${context.localizedDecimal('$speed')}x',
       selected: selected,
       expand: true,
       padding: padding,

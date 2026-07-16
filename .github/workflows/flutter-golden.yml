@@ -1,0 +1,72 @@
+# Golden (pixel-snapshot) tests — Al-Tawheed
+#
+# Verifies the multi-script UI hasn't shifted visually: chapter-badge numerals
+# (the Persian-shape bug, 194f7ef), RTL mirroring, theming. See
+# test/golden/ and test/flutter_test_config.dart.
+#
+# macOS ONLY, on purpose. Golden rasterisation is platform-sensitive, so the
+# masters are generated (`make goldens-update`) and verified on the same OS
+# family. A tolerant comparator (test/flutter_test_config.dart) absorbs the
+# residual sub-pixel drift between a dev's Mac and this runner; real glyph or
+# layout regressions move whole blocks and still fail.
+#
+# Runs on:
+#   • PRs into master that touch UI, theme, fonts, or the goldens — a release
+#     gate for visual regressions.
+#   • Nightly — catches drift on develop.
+#   • Manual dispatch.
+#
+# NOT on every develop push (macOS runners are ~10× ubuntu; the fast ubuntu
+# gate in flutter-ci.yml covers those). Tagged `golden` + skipped by default,
+# so this is the only job that runs them (via --run-skipped).
+
+name: Flutter Golden
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'lib/**'
+      - 'assets/fonts/**'
+      - 'test/golden/**'
+      - 'test/flutter_test_config.dart'
+      - '.github/workflows/flutter-golden.yml'
+  schedule:
+    - cron: '0 2 * * *'   # 02:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden:
+    name: Golden tests — macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter (pinned)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.1
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Verify goldens
+        run: flutter test test/golden --run-skipped --reporter=expanded
+
+      # On failure, surface the pixel diffs the comparator wrote next to each
+      # golden so a reviewer can see WHAT moved without reproducing locally.
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: 'test/golden/**/failures/*.png'
+          if-no-files-found: ignore

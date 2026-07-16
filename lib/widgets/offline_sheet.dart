@@ -55,8 +55,7 @@ class _OfflineSheetContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final downloads = context.watch<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     final status = downloads.statusFor(lecture.id);
     final isDownloaded = status == DownloadStatus.downloaded;
     final isDownloading = status == DownloadStatus.downloading;
@@ -178,8 +177,7 @@ class _OfflineSheetContent extends StatelessWidget {
     ConnectivityProvider connectivity,
   ) {
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      final l10n =
-          context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+      final l10n = context.l10n;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.wifiOnlyBlocked),
@@ -241,7 +239,7 @@ class _OfflineSheetContent extends StatelessWidget {
     DownloadsProvider downloads,
   ) {
     final series = context.read<SeriesProvider>().currentSeries;
-    final l10n = context.l10nForSeries(series);
+    final l10n = context.l10n;
     final title = context
         .read<LanguageProvider>()
         .resolveForSeries(lecture.title, series);
@@ -276,8 +274,7 @@ class _ProgressRow extends StatelessWidget {
     final progress = context.select<DownloadsProvider, double>(
       (d) => d.progressFor(lectureId),
     );
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     final percent = (progress * 100).round();
 
     return Padding(
@@ -286,7 +283,7 @@ class _ProgressRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.offlineDownloading(percent),
+            context.localizedDigits(l10n.offlineDownloading(percent)),
             style: context.textTheme.bodySmall
                 ?.copyWith(color: context.secondaryTextColor),
           ),

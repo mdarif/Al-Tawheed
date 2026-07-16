@@ -363,9 +363,14 @@ void main() {
     });
   });
 
-  group('PlayerScreen — Arabic series', () {
+  // An Arabic-UI user on the Arabic edition (locale: ar) → Arabic chrome AND
+  // Arabic content. This is also the production default now that the edition
+  // supplies the chrome language; the test below pins the other side of the
+  // precedence rule — an explicit English pick still wins, keeping Arabic
+  // content under English chrome.
+  group('PlayerScreen — Arabic series, Arabic UI', () {
     testWidgets(
-        'shows Arabic chrome, track title, speaker, and cover art while seek-bar times stay in Western numerals',
+        'shows Arabic chrome, track title, speaker, cover art, and seek-bar times',
         (tester) async {
       await _pumpPlayer(
         tester,
@@ -373,9 +378,10 @@ void main() {
         queue: _arabicLectures,
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
       );
 
-      // App bar title
+      // App bar title (chrome — follows the ar UI locale)
       expect(find.text('يُشغَّل الآن'), findsOneWidget);
       expect(find.text('Now Playing'), findsNothing);
 
@@ -389,9 +395,13 @@ void main() {
       // Offline strip label in Arabic — not downloaded, offline by default.
       expect(find.text('غير متاح بلا إنترنت'), findsOneWidget);
 
-      // Numeric seek-bar times stay in Western numerals.
-      expect(find.text('0:00'), findsOneWidget);
-      expect(find.text('10:00'), findsOneWidget);
+      // Seek-bar times follow the edition's numerals, like every other number
+      // in the app. (This reverses an earlier decision to keep them Western:
+      // Western digits next to Arabic chrome read as an untranslated string,
+      // not as a deliberate choice.)
+      expect(find.text('٠:٠٠'), findsOneWidget);
+      expect(find.text('١٠:٠٠'), findsOneWidget);
+      expect(find.text('0:00'), findsNothing);
     });
 
     testWidgets('shows "Streaming" offline-strip label in Arabic when playing online',
@@ -401,6 +411,7 @@ void main() {
         connectivity: ConnectivityProvider.testOnline(),
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
         configurePlayer: (p) => p.setPlaybackStateForTest(
           _arabicLectures[0],
           source: PlaybackSource.stream,
@@ -417,6 +428,7 @@ void main() {
         queue: _arabicLectures,
         series: _arabicSeries,
         catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
       );
 
       expect(find.byTooltip('إضافة إشارة مرجعية'), findsOneWidget);
@@ -425,6 +437,77 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('إزالة الإشارة المرجعية'), findsOneWidget);
+    });
+  });
+
+  group('PlayerScreen — Arabic series, non-Arabic UI (chrome decoupled)', () {
+    testWidgets(
+        'keeps Arabic content but renders chrome in the UI language (English)',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        lecture: _arabicLectures[0],
+        queue: _arabicLectures,
+        series: _arabicSeries,
+        catalog: _arabicCatalog(),
+        locale: const Locale('en'),
+      );
+
+      // Chrome follows the explicit en pick — the edition supplies only the
+      // default, so it must not override a choice the user made.
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('يُشغَّل الآن'), findsNothing);
+
+      // ...and the numbers follow the chrome too — an explicit English pick
+      // means Western digits, not Arabic ones under English words.
+      expect(find.text('0:00'), findsOneWidget);
+
+      // Content stays per-edition (resolveForSeries) — still Arabic.
+      expect(find.text('الدرس 1'), findsOneWidget);
+      expect(find.text('كتاب التوحيد'), findsOneWidget);
+    });
+  });
+
+  // test-plan §7 — accessibility. An audio app whose primary controls announce
+  // as a bare "button" to a screen reader is the most defensible "not
+  // industry-best" claim on the backlog. These guard that every tappable
+  // control on the player is both LABELLED and large enough to hit.
+  group('PlayerScreen — accessibility', () {
+    testWidgets('every tap target is labelled (screen-reader names)',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      // labeledTapTargetGuideline fails if ANY tappable node has no label —
+      // it caught the five unlabelled transport controls and the collapse
+      // button that this change fixed.
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('transport controls carry their specific labels',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      // The play/pause button is showing "play" here (offline load never
+      // starts playback), so pause is absent — that's correct. Matched by
+      // tooltip (which is what carries the label into the semantics tree).
+      for (final label in ['Previous lecture', 'Rewind 10 seconds', 'Play',
+        'Forward 10 seconds', 'Next lecture',]) {
+        expect(find.byTooltip(label), findsOneWidget,
+            reason: 'transport control "$label" is unlabelled',);
+      }
+      handle.dispose();
+    });
+
+    testWidgets('tap targets meet the platform minimum size', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
     });
   });
 }

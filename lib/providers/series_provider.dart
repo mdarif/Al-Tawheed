@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
-import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -20,6 +20,10 @@ class SeriesProvider extends ChangeNotifier {
 
   List<SeriesConfig> _available = const [SeriesConfig.legacyUrduFallback];
   String? _currentId;
+
+  /// True once [loadManifest] has applied a fetched manifest — after which
+  /// [load] must not re-hydrate from the cache and clobber it.
+  bool _manifestApplied = false;
 
   /// Device system language at startup — used by [loadManifest] to silently
   /// default a fresh install to the Arabic series when the device itself is
@@ -117,6 +121,18 @@ class SeriesProvider extends ChangeNotifier {
       return;
     }
 
+    // Hydrate from the cached manifest before resolving the saved id, so
+    // currentSeries can actually find it. Without this, a returning Arabic
+    // reader resolves through `orElse` to the Urdu fallback until the async
+    // fetch lands — with _isLoading already false, so nothing waits for it —
+    // and paints Urdu chrome, tabs and avatar for a frame. Only inside the
+    // multi-series branch: the flag-off path is contractually identical to the
+    // pre-v3 app and must keep using the bundled fallback verbatim.
+    if (!_manifestApplied) {
+      _available =
+          SeriesManifestService.instance.cachedManifest() ?? _available;
+    }
+
     final saved = _prefs.selectedSeriesId;
     if (saved != null) {
       _currentId = saved;
@@ -144,6 +160,7 @@ class SeriesProvider extends ChangeNotifier {
   /// onboarding on the network.
   Future<void> loadManifest() async {
     _available = await SeriesManifestService.instance.fetchManifest();
+    _manifestApplied = true;
     _maybeDefaultToArabic();
     _isLoading = false;
     notifyListeners();
@@ -219,7 +236,7 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   final progress = context.read<ProgressProvider>();
   final study = context.read<StudyProgressProvider>();
   final downloads = context.read<DownloadsProvider>();
-  final lang = context.read<LanguageProvider>();
+  final book = context.read<BookProvider>();
 
   await player.stop();
   await series.selectSeries(newSeries);
@@ -227,5 +244,8 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   progress.reload();
   study.reload();
   await downloads.reload();
-  await lang.applySeriesLanguage(newSeries.language);
+  book.reload(); // clears the stale book; Book tab lazy-loads the new series'
+  // The app UI language is intentionally NOT changed here — content-edition and
+  // UI/chrome language are independent, so switching editions preserves the
+  // user's chosen (or device-detected) UI language instead of forcing it.
 }

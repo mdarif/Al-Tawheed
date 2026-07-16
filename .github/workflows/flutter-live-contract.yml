@@ -1,0 +1,58 @@
+# Live CDN contract tests — Al-Tawheed
+#
+# Asserts the invariants the app silently depends on in the remote content
+# (content.kitabattawheed.com): the series manifest, app-config branding, the
+# https-only URL rule (the class of bug that shipped a dead "Powered by" link),
+# and that every catalogUrl stays on the compiled-in base host.
+#
+# Runs on:
+#   • Nightly at 03:00 UTC — 1h after the integration regression, so a bad
+#     content deploy is caught within a day without an app release.
+#   • Manual dispatch — to re-check on demand after a content-repo change.
+#
+# Deliberately NOT on PRs: these hit the network, and a CDN/DNS flake must never
+# block a code merge. The suite is tagged `live` and skipped by every ordinary
+# `flutter test` run (see dart_test.yaml); this job opts back in with
+# `--run-skipped`, scoped to the one file so nothing else's skips are disturbed.
+#
+# Pure-Dart tests on the Dart VM — no Android toolchain, so no Java/Gradle here.
+
+name: Flutter Live Contract
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 UTC daily
+  workflow_dispatch:       # manual trigger from the Actions tab
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  live-contract:
+    name: Live CDN contract tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter (pinned)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.1
+          cache: true
+
+      - name: Cache pub packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-cache-${{ runner.os }}-
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Run live CDN contract tests
+        run: flutter test test/live_config_contract_test.dart --run-skipped --reporter=expanded

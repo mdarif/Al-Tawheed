@@ -36,6 +36,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get removeBookmark => 'بک مارک ہٹائیں';
 
   @override
+  String get playbackPrevious => 'پچھلا درس';
+
+  @override
+  String get playbackRewind => '۱۰ سیکنڈ پیچھے جائیں';
+
+  @override
+  String get playbackPlay => 'چلائیں';
+
+  @override
+  String get playbackPause => 'روکیں';
+
+  @override
+  String get playbackForward => '۱۰ سیکنڈ آگے جائیں';
+
+  @override
+  String get playbackNext => 'اگلا درس';
+
+  @override
   String get allLecturesComplete => 'تمام دروس مکمل';
 
   @override
@@ -199,10 +217,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get bookShareChapter => 'باب شیئر کریں';
 
   @override
-  String get bookDecreaseText => 'متن چھوٹا کریں';
+  String get bookReportIssue => 'غلطی کی اطلاع دیں';
 
   @override
-  String get bookIncreaseText => 'متن بڑا کریں';
+  String get bookReportIssueSubject => 'کتاب التوحید — کتاب میں تصحیح';
+
+  @override
+  String get bookReportIssueIntro =>
+      'براہِ کرم نیچے غلطی کی وضاحت کریں، اور اگر ممکن ہو تو اُس کے آس پاس کے الفاظ بھی نقل کر دیں۔ نیچے دی گئی تفصیلات رہنے دیں — اُنہی سے ہمیں معلوم ہوتا ہے کہ کون سا صفحہ دیکھنا ہے۔';
+
+  @override
+  String bookReportIssueCopied(String email) {
+    return 'میل ایپ دستیاب نہیں — رپورٹ کاپی ہو گئی ہے۔ اسے $email پر بھیجیں۔';
+  }
 
   @override
   String get bookColorKey => 'رنگوں کی کنجی';
@@ -229,6 +256,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsLanguage => 'زبان';
+
+  @override
+  String get settingsAppLanguage => 'ایپ کی زبان';
 
   @override
   String get settingsAppearance => 'ظاہری شکل';
@@ -412,6 +442,16 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '$hours گھنٹے $minutes منٹ';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '$minutes منٹ';
+  }
+
+  @override
   String get offlineSourceSaved => 'آف لائن محفوظ';
 
   @override
@@ -559,6 +599,24 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get removeBookmark => 'Bookmark hataayein';
+
+  @override
+  String get playbackPrevious => 'Pichhla dars';
+
+  @override
+  String get playbackRewind => '10 second peeche jayein';
+
+  @override
+  String get playbackPlay => 'Chalayein';
+
+  @override
+  String get playbackPause => 'Rokein';
+
+  @override
+  String get playbackForward => '10 second aage jayein';
+
+  @override
+  String get playbackNext => 'Agla dars';
 
   @override
   String get allLecturesComplete => 'Tamam Daras Mukammal';
@@ -726,10 +784,19 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get bookShareChapter => 'Baab share karein';
 
   @override
-  String get bookDecreaseText => 'Text chhota karein';
+  String get bookReportIssue => 'Ghalti ki ittila dein';
 
   @override
-  String get bookIncreaseText => 'Text bada karein';
+  String get bookReportIssueSubject => 'Kitab at-Tawheed — kitab mein tasheeh';
+
+  @override
+  String get bookReportIssueIntro =>
+      'Baraye meherbani neeche ghalti ki wazahat karein, aur agar mumkin ho to us ke aas paas ke alfaz bhi naqal kar dein. Neeche di gayi tafseelat rehne dein — unhi se humein maloom hota hai ke kaun sa safha dekhna hai.';
+
+  @override
+  String bookReportIssueCopied(String email) {
+    return 'Mail app dastiyab nahi — report copy ho gayi hai. Ise $email par bhejein.';
+  }
 
   @override
   String get bookColorKey => 'Rangon ki kunji';
@@ -756,6 +823,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsLanguage => 'Zabaan';
+
+  @override
+  String get settingsAppLanguage => 'App ki Zabaan';
 
   @override
   String get settingsAppearance => 'Zahiri shakl';
@@ -938,6 +1008,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String lecturesCount(int count, String duration) {
     return '$count dars · $duration';
+  }
+
+  @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '${minutes}m';
   }
 
   @override

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/navigation/route_guards.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/announcements_provider.dart';
@@ -20,10 +21,10 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
-import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
@@ -49,17 +50,15 @@ final _router = GoRouter(
     // even a single frame of WelcomeScreen.
     GoRoute(
       path: '/',
-      redirect: (context, state) {
-        final s = context.read<SeriesProvider>();
-        if (!s.shouldShowWelcomeForCurrentSeries) {
-          return '/lectures';
-        }
-        return null;
-      },
+      redirect: (context, state) => RouteGuards.welcome(
+        shouldShowWelcome:
+            context.read<SeriesProvider>().shouldShowWelcomeForCurrentSeries,
+      ),
       builder: (context, state) => const WelcomeScreen(),
     ),
 
-    // Shell: bottom navigation wraps these four tabs
+    // Shell: bottom navigation wraps these tabs (series-aware: Book and Study
+    // appear only for series that have them).
     ShellRoute(
       builder: (context, state, child) => ShellScreen(child: child),
       routes: [
@@ -70,28 +69,31 @@ final _router = GoRouter(
         GoRoute(
           path: '/book',
           redirect: (context, state) =>
-              context.read<SeriesProvider>().currentSeries.hasBook
-                  ? null
-                  : '/home',
+              RouteGuards.book(context.read<SeriesProvider>().currentSeries),
           builder: (context, state) => const BookChapterListScreen(),
-        ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/study',
           redirect: (context, state) =>
-              context.read<SeriesProvider>().currentSeries.hasStudyMode
-                  ? null
-                  : '/home',
+              RouteGuards.study(context.read<SeriesProvider>().currentSeries),
           builder: (context, state) => const StudyScreen(),
         ),
+        // Settings is a bottom-nav tab (always last), so it lives inside the
+        // shell and keeps the nav bar visible. Bookmarks and About remain
+        // full-screen pushes from the ⋯ overflow menu below.
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+    ),
+
+    // About — its own full-screen page, split out of Settings and pushed from
+    // the About row there (mirrors the al-Quran app).
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/about',
+      builder: (context, state) => const AboutPage(),
     ),
 
     // Series picker — root navigator, full-screen (no bottom nav), shown
@@ -234,11 +236,16 @@ class MyApp extends StatelessWidget {
           create: (_) => ReadingProvider()..load(),
           lazy: false,
         ),
-        ChangeNotifierProxyProvider<FeatureFlagsProvider, LanguageProvider>(
+        // Depends on SeriesProvider so the active edition can supply the
+        // default chrome language (Arabic edition ⇒ Arabic UI). An explicit
+        // pick still wins — see LanguageProvider.language / ADR-0002.
+        ChangeNotifierProxyProvider2<FeatureFlagsProvider, SeriesProvider,
+            LanguageProvider>(
           create: (_) => LanguageProvider()..load(),
-          update: (_, flags, lang) {
+          update: (_, flags, series, lang) {
             lang ??= LanguageProvider()..load();
             lang.applyLanguageFeatureFlag(flags.features.language);
+            lang.applySeriesDefault(series.currentSeries);
             return lang;
           },
         ),

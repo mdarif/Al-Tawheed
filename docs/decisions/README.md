@@ -28,6 +28,5 @@ Keep them short. A quick landmine or convention belongs in
 [../gotchas.md](../gotchas.md); an ADR is for a *decision with trade-offs*.
 
 Candidate decisions worth back-filling here (not yet written):
-Java 21 requirement · series-aware l10n (`l10nForSeries`) · per-entry JSON
-parsing for remote lists · main-isolate JSON decode (not `compute`) ·
-auto-deploy to Play internal track only.
+Java 21 requirement · per-entry JSON parsing for remote lists · main-isolate
+JSON decode (not `compute`) · auto-deploy to Play internal track only.

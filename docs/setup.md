@@ -162,7 +162,7 @@ flutter drive --target=test_driver/app.dart
 flutter analyze
 
 # Format code
-flutter format .
+dart format .
 
 # Run linter
 dart analyze
@@ -345,7 +345,7 @@ firebase emulators:start
 | `flutter run` | Run on connected device |
 | `flutter test` | Run unit tests |
 | `flutter analyze` | Check code quality |
-| `flutter format .` | Format code |
+| `dart format .` | Format code |
 | `flutter clean` | Clean build artifacts |
 | `flutter build apk` | Build Android release |
 | `flutter build ios` | Build iOS release |

@@ -9,6 +9,12 @@
   "nowPlaying": "Abhi chal raha hai",
   "bookmark": "Bookmark karein",
   "removeBookmark": "Bookmark hataayein",
+  "playbackPrevious": "Pichhla dars",
+  "playbackRewind": "10 second peeche jayein",
+  "playbackPlay": "Chalayein",
+  "playbackPause": "Rokein",
+  "playbackForward": "10 second aage jayein",
+  "playbackNext": "Agla dars",
 
   "allLecturesComplete": "Tamam Daras Mukammal",
   "allLecturesCompleteMessage": "Aap ne tamam daras sun liye hain. Allah Ta'ala aap ko ilm-e-nafe se nawaze.",
@@ -59,8 +65,10 @@
   "lecturesEmpty": "Abhi koi dars dastiyab nahin",
   "bookCouldNotLoad": "Kitab load nahin ho saki",
   "bookShareChapter": "Baab share karein",
-  "bookDecreaseText": "Text chhota karein",
-  "bookIncreaseText": "Text bada karein",
+  "bookReportIssue": "Ghalti ki ittila dein",
+  "bookReportIssueSubject": "Kitab at-Tawheed — kitab mein tasheeh",
+  "bookReportIssueIntro": "Baraye meherbani neeche ghalti ki wazahat karein, aur agar mumkin ho to us ke aas paas ke alfaz bhi naqal kar dein. Neeche di gayi tafseelat rehne dein — unhi se humein maloom hota hai ke kaun sa safha dekhna hai.",
+  "bookReportIssueCopied": "Mail app dastiyab nahi — report copy ho gayi hai. Ise {email} par bhejein.",
   "bookColorKey": "Rangon ki kunji",
   "bookLegendVerse": "Qurani ayat",
   "bookLegendCitation": "Hawala (surat:ayat)",
@@ -70,6 +78,7 @@
   "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",
 
   "settingsLanguage": "Zabaan",
+  "settingsAppLanguage": "App ki Zabaan",
   "settingsAppearance": "Zahiri shakl",
   "settingsSeries": "Silsila",
   "settingsDarkMode": "Dark mode",
@@ -130,6 +139,8 @@
 
   "partsCount": "{count} hisse",
   "lecturesCount": "{count} dars · {duration}",
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "durationMinutes": "{minutes}m",
 
   "offlineSourceSaved": "Offline محفوظ",
   "offlineSourceStreaming": "Streaming",

@@ -36,6 +36,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeBookmark => 'Remove bookmark';
 
   @override
+  String get playbackPrevious => 'Previous lecture';
+
+  @override
+  String get playbackRewind => 'Rewind 10 seconds';
+
+  @override
+  String get playbackPlay => 'Play';
+
+  @override
+  String get playbackPause => 'Pause';
+
+  @override
+  String get playbackForward => 'Forward 10 seconds';
+
+  @override
+  String get playbackNext => 'Next lecture';
+
+  @override
   String get allLecturesComplete => 'All Lectures Complete';
 
   @override
@@ -171,15 +189,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get saved => 'Saved';
+  String get saved => 'Bookmarks';
 
   @override
   String savedCount(int count) {
-    return 'Saved ($count)';
+    return 'Bookmarks ($count)';
   }
 
   @override
-  String get noSavedLectures => 'No saved lectures yet';
+  String get noSavedLectures => 'No bookmarked lectures yet';
 
   @override
   String get noSavedHint =>
@@ -198,10 +216,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookShareChapter => 'Share chapter';
 
   @override
-  String get bookDecreaseText => 'Decrease text size';
+  String get bookReportIssue => 'Report a mistake';
 
   @override
-  String get bookIncreaseText => 'Increase text size';
+  String get bookReportIssueSubject => 'Kitab at-Tawheed — book correction';
+
+  @override
+  String get bookReportIssueIntro =>
+      'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.';
+
+  @override
+  String bookReportIssueCopied(String email) {
+    return 'Mail app unavailable — the report is copied. Send it to $email.';
+  }
 
   @override
   String get bookColorKey => 'Color key';
@@ -227,6 +254,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsAppLanguage => 'App language';
 
   @override
   String get settingsAppearance => 'Appearance';
@@ -427,6 +457,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String lecturesCount(int count, String duration) {
     return '$count lectures · $duration';
+  }
+
+  @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '${minutes}m';
   }
 
   @override

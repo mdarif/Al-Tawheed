@@ -1,0 +1,20 @@
+# Test tags for this package.
+#
+# `live` — tests that hit the live CDN (content.kitabattawheed.com). They are
+# network-dependent and MUST NOT gate PRs: a dropped packet must never block a
+# merge. Marking the tag `skip` here means EVERY bare `flutter test` invocation
+# (the Makefile targets, the CI/release workflows, the pre-push hook, and a
+# local run) skips them automatically — no per-command flag to remember. They
+# run nightly on their own cheap ubuntu job,
+# .github/workflows/flutter-live-contract.yml, which opts back in with
+# `--run-skipped`.
+tags:
+  live:
+    skip: "hits the live CDN — nightly only (run with --run-skipped)"
+  # `golden` — pixel-snapshot tests (test/golden/). Kept off the PR gate because
+  # golden rasterisation is platform-sensitive: they are generated AND verified
+  # on macOS only (flutter-golden.yml). Every ordinary `flutter test` skips
+  # them; the golden job opts in with `--run-skipped`. Regenerate with
+  # `make goldens-update` on macOS after a reviewed intentional UI change.
+  golden:
+    skip: "platform-sensitive pixel snapshots — macOS golden job only (--run-skipped)"

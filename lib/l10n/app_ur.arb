@@ -11,6 +11,12 @@
   "nowPlaying": "ابھی چل رہا ہے",
   "bookmark": "بک مارک کریں",
   "removeBookmark": "بک مارک ہٹائیں",
+  "playbackPrevious": "پچھلا درس",
+  "playbackRewind": "۱۰ سیکنڈ پیچھے جائیں",
+  "playbackPlay": "چلائیں",
+  "playbackPause": "روکیں",
+  "playbackForward": "۱۰ سیکنڈ آگے جائیں",
+  "playbackNext": "اگلا درس",
 
   "allLecturesComplete": "تمام دروس مکمل",
   "allLecturesCompleteMessage": "آپ نے تمام دروس سن لیے ہیں۔ اللہ تعالیٰ آپ کو علمِ نافع سے نوازے۔",
@@ -61,8 +67,10 @@
   "lecturesEmpty": "ابھی کوئی درس دستیاب نہیں",
   "bookCouldNotLoad": "کتاب لوڈ نہیں ہو سکی",
   "bookShareChapter": "باب شیئر کریں",
-  "bookDecreaseText": "متن چھوٹا کریں",
-  "bookIncreaseText": "متن بڑا کریں",
+  "bookReportIssue": "غلطی کی اطلاع دیں",
+  "bookReportIssueSubject": "کتاب التوحید — کتاب میں تصحیح",
+  "bookReportIssueIntro": "براہِ کرم نیچے غلطی کی وضاحت کریں، اور اگر ممکن ہو تو اُس کے آس پاس کے الفاظ بھی نقل کر دیں۔ نیچے دی گئی تفصیلات رہنے دیں — اُنہی سے ہمیں معلوم ہوتا ہے کہ کون سا صفحہ دیکھنا ہے۔",
+  "bookReportIssueCopied": "میل ایپ دستیاب نہیں — رپورٹ کاپی ہو گئی ہے۔ اسے {email} پر بھیجیں۔",
   "bookColorKey": "رنگوں کی کنجی",
   "bookLegendVerse": "قرآنی آیت",
   "bookLegendCitation": "حوالہ (سورت:آیت)",
@@ -72,6 +80,7 @@
   "catalogConnectToLoadMessage": "ایک بار انٹرنیٹ سے جڑ کر ایپ کھولیں تاکہ درسوں کے عنوانات اور آڈیو لنکس لوڈ ہو سکیں۔ پہلے سے محفوظ آڈیو آف لائن چلے گی۔",
 
   "settingsLanguage": "زبان",
+  "settingsAppLanguage": "ایپ کی زبان",
   "settingsAppearance": "ظاہری شکل",
   "settingsSeries": "سلسلہ",
   "settingsDarkMode": "ڈارک موڈ",
@@ -132,6 +141,8 @@
 
   "partsCount": "{count} حصے",
   "lecturesCount": "{count} دروس · {duration}",
+  "durationHoursMinutes": "{hours} گھنٹے {minutes} منٹ",
+  "durationMinutes": "{minutes} منٹ",
 
   "offlineSourceSaved": "آف لائن محفوظ",
   "offlineSourceStreaming": "اسٹریمنگ",

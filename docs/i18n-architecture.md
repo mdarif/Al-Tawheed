@@ -241,9 +241,31 @@ function resolve(field, locale):
 
 ## App-Wide vs Per-Content Language
 
-**Decision: App-wide language.**
+**Decision: App-wide language, defaulted by the content edition.**
 
 The user selects one language and everything follows — UI labels, lecture titles, benefits, announcements.
+
+There is exactly **one chrome locale** (`context.l10n`); chrome is never forked
+on the active edition. But the edition supplies that locale's *default* when the
+user has not chosen one: the Arabic edition ⇒ Arabic chrome, since it targets an
+Arabic-reading audience. An explicit pick in Settings always wins. The Urdu
+edition deliberately has no opinion (its Indian audience reads English more
+comfortably than Nastaliq) and falls through to device detection. Full
+precedence and rationale: [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md).
+
+**Numbers follow the chrome locale**, exactly like the words beside them — a
+number is not more "content" than its label. Arabic chrome counts ٠١، ٠٢; English
+chrome counts 01, 02, which is what the Urdu edition ships. See
+`context.localizedDigits` in `lib/utils/l10n_extensions.dart`.
+
+**The Book is the exception**: its chapter badges, position indicator and inline
+āyah numbers follow the *edition's* script (`series.language`), because they are
+set the way the print sets them — the Urdu book reads ۰۱ even under English
+chrome.
+
+`language` is **required** on every entry in `series.json`. Omitting it is a
+content bug: the client logs and falls back to `'en'`, which yields Western
+digits and device-detected chrome — visibly unset rather than silently wrong.
 
 The one hardcoded exception: **Arabic Quranic and hadith text is always shown in Arabic script** regardless of app language. This is not a language setting — it is a display requirement for sacred text. The benefits card renders the `ar` (Arabic) field unconditionally when present.
 

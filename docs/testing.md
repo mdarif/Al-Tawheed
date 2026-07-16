@@ -2,6 +2,10 @@
 
 Three layers: **unit/widget** (CI, fast), **integration_test** (Flutter UI on device), **Patrol** (native OS interactions on device).
 
+For *what is missing* rather than how to run what exists, see
+**[test-plan.md](test-plan.md)** — a ranked gap backlog grounded in the bugs that
+have actually shipped here.
+
 ---
 
 ## Quick reference

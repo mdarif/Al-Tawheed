@@ -27,13 +27,15 @@ class PlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     return _NextBlockedListener(
       child: _StudyCompletionListener(
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
+              // Collapses the full-screen player. Labelled for screen readers
+              // via the framework's already-localised "Close" string.
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
               onPressed: () => Navigator.pop(context),
             ),
@@ -260,46 +262,55 @@ class _OfflineStatusStrip extends StatelessWidget {
         onTap: snapshot.lecture != null
             ? () => showOfflineSheet(context, snapshot.lecture!)
             : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: strip.bgColor.withValues(
-              alpha: context.isDarkTheme ? 0.25 : 0.18,
-            ),
-            borderRadius: BorderRadius.circular(20),
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          // When tappable, expand the hit area to the 48px minimum tap target
+          // (androidTapTargetGuideline) WITHOUT growing the visible pill — the
+          // 28px chip stays 28px, only its touch region grows.
+          padding: EdgeInsets.symmetric(
+            vertical: snapshot.lecture != null ? 11 : 0,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (strip.showProgress) ...[
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    value: dlProgress,
-                    strokeWidth: 1.5,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: strip.bgColor.withValues(
+                alpha: context.isDarkTheme ? 0.25 : 0.18,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (strip.showProgress) ...[
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      value: dlProgress,
+                      strokeWidth: 1.5,
+                      color: strip.fgColor,
+                    ),
+                  ),
+                ] else
+                  Icon(strip.icon, size: 14, color: strip.fgColor),
+                const SizedBox(width: 6),
+                Text(
+                  strip.label,
+                  style: context.textTheme.labelSmall?.copyWith(
                     color: strip.fgColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ] else
-                Icon(strip.icon, size: 14, color: strip.fgColor),
-              const SizedBox(width: 6),
-              Text(
-                strip.label,
-                style: context.textTheme.labelSmall?.copyWith(
-                  color: strip.fgColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (strip.tappable) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 14,
-                  color: strip.fgColor.withValues(alpha: 0.7),
-                ),
+                if (strip.tappable) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 14,
+                    color: strip.fgColor.withValues(alpha: 0.7),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -310,13 +321,14 @@ class _OfflineStatusStrip extends StatelessWidget {
     BuildContext context,
     OfflineStripResolution resolution,
   ) {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
           icon: Icons.download_rounded,
-          label: l10n.offlineDownloading(resolution.downloadPercent),
+          label: context.localizedDigits(
+            l10n.offlineDownloading(resolution.downloadPercent),
+          ),
           fgColor: context.brandColor,
           bgColor: context.brandColor,
           showProgress: true,
@@ -544,8 +556,7 @@ class _BookmarkButton extends StatelessWidget {
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
     );
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     return IconButton(
       tooltip: isBookmarked ? l10n.removeBookmark : l10n.bookmark,
       icon: Icon(

@@ -19,9 +19,41 @@ is portable memory: any LLM working the repo should read and extend it.
   first, not just this repo. CI pins Java 21 explicitly, so it's a local-only trap.
 - **Flutter is pinned to 3.41.1 in CI** (`.github/workflows/*.yml`). Match it
   locally when reproducing a CI-only failure.
+- **A newly-added file in a directory-declared asset folder needs a build-cache
+  bust before `flutter test`/`flutter run` sees it.** `pubspec.yaml` lists
+  `assets/images/` (the *directory*), so the asset build cache keys off pubspec
+  and does NOT re-scan the folder when you drop a new file in — pre-existing
+  files in the same dir load fine, but the new one throws `Unable to load asset:
+  "assets/images/…"` at runtime/in tests. `flutter pub get` does **not** fix it;
+  `rm -rf .dart_tool/flutter_build build` (or `flutter clean`) does. Cost us two
+  green-looking runs before we spotted it.
 
 ## Testing
 
+- **Never do global setup in `test/flutter_test_config.dart` that forces the
+  widget binding.** That file wraps the ENTIRE `test/` tree. Calling
+  `TestWidgetsFlutterBinding.ensureInitialized()` there (e.g. to `FontLoader`
+  fonts for goldens) forces every pure `test()` file onto the widget binding —
+  whose HTTP stub returns **400** for real requests — which broke every download
+  test that talks to a localhost server (`Download failed — HTTP 400`,
+  `init() must be called first`). Scope such setup to the suite that needs it: the
+  golden config lives in `test/golden/golden_config.dart` and is called from the
+  golden suite's `setUpAll`, never globally.
+- **Goldens are macOS-only and skipped by default.** Tagged `golden` in
+  `dart_test.yaml`; a normal `flutter test` / `make test` skips them.
+  `make test-goldens` verifies, `make goldens-update` re-bakes the masters — do
+  the latter only after a *reviewed* intentional UI change and eyeball the diff.
+  A **tolerant** comparator (0.5% pixels) absorbs Mac-to-Mac AA drift so CI
+  doesn't flap; a real glyph/RTL/layout regression moves whole blocks and still
+  fails. Fonts must be loaded in-test or every glyph is a blank Ahem box.
+- **An unawaited future that rejects before its matcher is attached = an
+  unhandled async error, i.e. a flake.** `download_service_test › "delete
+  cancels an active download"` starts a download, does NOT await it, deletes,
+  and only then calls `expectLater(done, throwsA(...))`. The delete is what
+  makes `done` reject, so under parallel load (`--concurrency=8`) the rejection
+  lands before anything is listening and the test fails with a bare `Instance of
+  'DownloadCancelled'` — production behaving exactly as designed. Attach the
+  matcher **before** the action that triggers the rejection, and await it after.
 - **A flaky test is not always the test's fault — it can catch a real race.**
   `download_service_test.dart › "delete cancels an active download"` failed only
   on CI (passed locally) with a `PathNotFoundException`. Root cause was a genuine
@@ -64,6 +96,10 @@ is portable memory: any LLM working the repo should read and extend it.
   picks Arabic first (for the Arabic welcome + Book), then switches to Urdu via
   Settings → language row (`اردو`/`العربية` endonyms) to capture the English
   screens. Switching routes through the new series' welcome if unseen.
+  Since [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)
+  the *edition* switch is what flips the chrome (the harness switches editions,
+  not UI language) — so this now holds without touching the language picker,
+  which is flag-gated off in production anyway.
 - **iOS `takeScreenshot` captures the Flutter surface only — no native status
   bar** (clean, good for framing). Android needs
   `binding.convertFlutterSurfaceToImage()` first; iOS must NOT call it.
@@ -73,12 +109,135 @@ is portable memory: any LLM working the repo should read and extend it.
 - Play caps phone screenshots at **8** and **2:1 max aspect**. The iPhone raw is
   ~2.17:1, so the framer composites onto a 2:1 canvas (1290×2580).
 
+## Patrol (native device tests)
+
+- **Version dead-end + Android 16 (as of 2026-07).** The repo pins
+  `patrol 4.6.1`, whose ONLY compatible CLI is `patrol_cli 4.4.0` (Patrol's own
+  version check rejects everything else). But 4.4.0 discovers **0 tests**
+  (`Total: 0`, nothing runs) on an **Android 16 / API 36** device — the build
+  and instrumentation succeed, but the PatrolJUnitRunner ↔ PatrolAppService
+  discovery handshake finds no cases, most likely because that Patrol generation
+  predates API 36's test orchestrator. The newer CLI `4.5.1` **hard-refuses**
+  package 4.6.1, and 4.5.1 is the latest CLI — so there is no released CLI that
+  runs patrol 4.6.1 on Android 16. To actually run the native suite you must
+  either (a) drop the `patrol` pin to a 4.5.x that CLI 4.5.1 supports (may need
+  native_test API tweaks), or (b) run CLI 4.4.0 against an **older-Android
+  emulator** (an API level 4.4.0 supports). `flutter test` unit/widget + the
+  `integration_test/` suite are unaffected — this is Patrol-only.
+- **Airplane-mode scenarios fail on heavily-skinned OEM Android** (the physical
+  test device is an Oppo/ColorOS) — moot until discovery works, but it means a
+  fully-green native run needs a stock-Android emulator anyway.
+
+## Book reader gestures
+
+- **Pinch-to-zoom uses a passive `Listener`, not a scale gesture recognizer.**
+  A `ScaleGestureRecognizer` competes in the gesture arena and steals
+  single-finger scroll / the horizontal page-swipe / text selection. Instead,
+  track raw pointers in a `Map<int, Offset>` via `Listener.onPointerDown/Move/Up`,
+  compute the two-finger spread ratio, and only resize when exactly two pointers
+  are down. A `_pageLocked` flag flips the `PageView` to
+  `NeverScrollableScrollPhysics` during a pinch so it can't turn the page. This
+  is lifted straight from the Quran app (`alquran-app`), which fought the arena
+  problem first — match it rather than reinventing.
+- **Snap the pinch font size to whole points.** Pinch feeds a *continuous* value
+  on every pointer-move; reshaping a whole chapter on each fractional change
+  stutters hard (the Quran app measured build frames up to ~390ms). `roundToDouble()`
+  collapses it to one reshape per 1pt crossing — imperceptible.
+- **Live vs commit for the font size.** Pinch calls `setBookFontSizeLive`
+  (notify, no disk) on every move and `commitBookFontSize` once on lift-off.
+  Persisting on every move is dozens of prefs writes per pinch.
+
+## Book content (hand-transcribed scripture)
+
+- **The Urdu source is un-extractable — every chapter was read by eye.** The
+  print PDF *and* .docx carry a corrupted CID Nastaliq text layer, so
+  `pdftotext`/`textutil`/raw `<w:t>` all return scrambled garbage. Only
+  `pdftoppm -r 220 -png` + visual transcription works. **This is why
+  transcription defects recur, and will keep recurring.**
+- **Word-level QA does not catch markup defects.** The all-67-chapter print
+  re-verification compared *wording* (168 corrections, two of them
+  meaning-inverting) and still left 8 markup bugs shipping: ch-59 had six stray
+  closers dumped mid-sentence; ch-21/ch-48/ch-50 had *reversed* ornate pairs;
+  ch-38/ch-46/ch-48 had hadith quotes that never closed; ch-44/ch-60 had the
+  translator's own words in `[…]`, which the reader paints cyan **as a Qur'an
+  citation** — a misattribution, not just a cosmetic slip.
+  `test/book_content_integrity_test.dart` now guards all of it. Do not weaken
+  those assertions to make a content change pass.
+- **The ornate parens are general brackets, not just verse markers.** The print
+  uses `﴿…﴾` around translator's glosses too (`﴿شرک سے﴾`, `﴿کڑا﴾`) — ~200 of
+  them are correct and must not be "fixed". What is never correct is an
+  unmatched or **reversed** pair: U+FD3E/U+FD3F are mirror glyphs, so a reversed
+  pair renders as backwards brackets. Convention is `﴿` = U+FD3F (open), `﴾` =
+  U+FD3E (close); a naive regex like `﴾[^﴿]*﴿` matches the *gap between* two
+  adjacent pairs and invents hundreds of phantom defects — walk the string with
+  a depth counter instead.
+- **A truncated āyah injection is silent — and recurs.** The Urdu edition is
+  bilingual by assembly: the print sets **no Arabic at all** (straight to the
+  Urdu translation), so every `{āyah}` is injected from `book_tawheed-ar.json`.
+  When the injector mispairs, it drops the tail and leaves something still
+  well-formed: ch-09 carried 18 chars of a 184-char passage (an-Najm:19 under a
+  translation of 19-23, citation truncated to match), ch-40 carried the first
+  clause of ar-Ra'd:30 under a translation of the whole verse — and ch-40's
+  citation still matched, so a citation-parity check could never see it.
+  73ca16b fixed three more. Compare *lengths* against ar.json, not just
+  citations; `book_content_integrity_test` now does.
+- **A citation always carries a number; a gloss never does.** That is the only
+  reliable way to tell `[النَّحْل:120]` from `[محض اتنا کہا کہو کہ]`, because the
+  reader's `_citationRe` matches any `[…]`.
+- **The cross-validation tooling is NOT in the repo.** It lives in
+  `~/kat-urdu-work/` (`urdu_qa.md`, `apply_verify.py`, `assemble_urdu.py`,
+  `pagemap.json` — chapter→print-page map). The commits citing "0 integrity
+  mismatches" refer to it. Anything that must survive belongs in `tool/` or a
+  test, not there.
+- **The book remains a transcribed draft — no scholar has proofed it.**
+
 ## i18n & multi-series
 
-- **Content language ≠ UI language.** The app does NOT force the locale to Arabic
-  when the Arabic series is active. Use `context.l10nForSeries(series)` to get
-  Arabic *chrome* for an Arabic-content series while the UI locale stays as the
-  user set it. `arabicL10n` is a shared stateless `lookupAppLocalizations(Locale('ar'))`.
+- **The edition supplies the *default* chrome language; an explicit pick wins.**
+  `LanguageProvider.language` resolves `explicit ?? seriesDefault ?? device`
+  (see [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)).
+  So the Arabic edition renders Arabic chrome out of the box, but never
+  overrides a language the user chose in Settings. **There is exactly one chrome
+  locale — `context.l10n`. Never fork chrome on the series.** `l10nForSeries` is
+  gone: it was reverted once already for discarding the user's pick, and forking
+  is now redundant anyway since the edition steers chrome upstream. `arabicL10n`
+  survives only for the Welcome screen, which renders before the edition is
+  definitive.
+- **`setLanguage` compares against the saved pick, not the effective language.**
+  An Arabic-edition user tapping "العربية" is already seeing Arabic via the
+  series default; guarding on the effective value early-returns, persists
+  nothing, and lets their chrome flip to English on the next edition switch.
+- **Chrome numbers follow the chrome locale — the Book follows the edition.**
+  Two different rules, on purpose:
+  - **Chrome** (durations, counts, %, seek bar, lecture/class badges, speed
+    chips): `context.localizedDigits` / `localizedTime` /
+    `localizedHoursMinutes` / `localizedDecimal` / `numeralFontFamily`. They key
+    off `Localizations.localeOf`, **not** `LanguageProvider` — that is the
+    locale the surrounding words actually resolved from, so digits and words
+    agree by construction. English chrome ⇒ `01`, `23h 19m`. The Urdu edition
+    ships English chrome, so **it must keep Western digits** — localizing it was
+    a regression once already.
+  - **Book** (chapter badges, position indicator, inline āyah numbers):
+    `localizedDigitsInString(s, series.language)` + `series.bookFontFamily`. The
+    Urdu book reads ۰۱ even under English chrome, because it is set the way the
+    print sets it.
+  The helpers post-process the *finished* l10n string (idempotent, `[0-9]` only)
+  rather than retyping ARB placeholders, because `partsCount` needs its `int`
+  for `Intl.pluralLogic`. **Never use `NumberFormat`/`decimalPattern`:** it keys
+  off the l10n locale and CLDR's default numbering system for `ur` is `latn`, so
+  it silently renders `45` — discarding the U+06F0–06F9 set the Urdu book
+  deliberately uses. Never blanket-apply: `settingsAboutVersion` would render
+  `٣٫٤٫١` while the clipboard kept `3.4.1`.
+- **Arabic needs the decimal separator too** — `١٫٥` (U+066B), not `١.٥`. See
+  `localizedDecimal`; the speed chips are the only user of it today.
+- **The Book's colour-key samples are forced RTL.** The ornate parentheses
+  (U+FD3E/U+FD3F) are bidi-neutral, so in an LTR sheet U+FD3F lands on the left
+  where its glyph reads as a *closing* brace — the key rendered ﴾…﴿ mirrored.
+  They are Arabic typography; lay them out like the reader body, not like the
+  chrome around them.
+- **The `language` feature flag gates the Settings switcher only** — never the
+  effective language. It is `false` in live remote config, so the series default
+  is what everyone actually gets today.
 - **Every user-facing string must exist in all 4 ARB locales** (`en`, `ar`, `ur`,
   `ur_roman`). English-only additions are a bug. ARB wording is canonical (it won
   over shipped `_ar*` constants during the i18n cleanup).
@@ -86,6 +245,75 @@ is portable memory: any LLM working the repo should read and extend it.
   the choose-series card subtitles are screen-specific branding with no ARB key —
   leave them as constants. A *new series* still needs its native title/tagline
   wired there, not via ARB.
+
+## Book (bundled reader)
+
+- **The Urdu Book ships real *bilingual* content (Arabic āyah + Urdu), NOT the
+  Arabic placeholder.** `assets/content/book_tawheed-ur.json` is built by
+  `/tmp/build_urdu_book.py` (kept out of the repo): it pulls each clean Arabic
+  āyah from `book_tawheed-ar.json` and pairs it with the Urdu **transcribed
+  verbatim from the print PDF**, then the masāʾil/hadith in Urdu. **All 67
+  chapters are transcribed and shipped** (through `876abed`); the mechanical
+  invariants are now guarded by `test/book_content_integrity_test.dart` (67
+  contiguous chapters, matched markup, one masāʾil heading per chapter, no āyah
+  truncated against the Arabic edition). The remaining work is *scholarly* QA of
+  the translation, not transcription. Do NOT reintroduce a "placeholder"
+  framing — it was true only through `bb33dc3`.
+- **The Urdu source text is UN-EXTRACTABLE — transcribe from rendered images.**
+  Both the print PDF *and* its `.docx` carry a corrupted text layer (the CID
+  *Jameel Noori Nastaleeq* font's char mapping drops/reorders letters), so every
+  extractor lies: `pdftotext`, `textutil`, and even reading the docx
+  `word/document.xml` `<w:t>` runs directly all return scrambled/letters-missing
+  garbage (`اتكباوتلیح` for `کتاب التوحید`; `ار شد ت ریتعا یلٰہ` for `ارشادِ باری
+  تعالیٰ ہے`). The **only** reliable path is `pdftoppm -r 220 -png` → read the
+  page image visually and transcribe. Nastaliq OCR tools aren't accurate enough
+  for scripture; don't trust any *text* extraction of this source.
+- **Faithfulness beats a "cleaner" paraphrase.** The first Urdu pass was a
+  fluent paraphrase; proofing against the PDF showed the print edition's exact
+  wording differs throughout (intros `ارشادِ باری تعالیٰ ہے` / `مزید ارشاد ہے`,
+  every long āyah translation, both hadith sets, and all masāʾil — which also
+  embed āyah translations the paraphrase dropped). Match the PDF verbatim; flag
+  edition quirks for a scholar rather than "correcting" them (e.g. the Muʿādh
+  hadith *question* in this edition names only Allah's right over the servants,
+  not both directions — the Arabic matn has both).
+- **Prophet's name is spelled out (`صلی اللہ علیہ وسلم`), not the `ﷺ` glyph**,
+  in the bundled Urdu JSON — the glyph didn't render reliably in the Nastaliq
+  font. Digits in the JSON stay Western (`56`, `151`) and are localised **at
+  render time** to the *book's* language (Urdu numerals everywhere in an Urdu
+  book, even inside Arabic āyāt), via `localizedDigitsInString(text,
+  widget.language)` in the reader.
+- **The Urdu series renders 3 bottom-nav tabs** (Lectures · Book · Study) — it
+  has both `hasBook` and `hasStudyMode`. Settings / Bookmarks / About are **not**
+  tabs; they live in the `⋯` overflow menu
+  ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)) shown on
+  every shell tab.
+- **There is no Home tab, and Lectures is the landing screen** (`/` →
+  `/lectures`). The old Home tab was retired: its **only** keeper, the resume
+  card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)
+  atop the Lectures list, and **announcements** moved from the space-eating
+  inline banner to a bell+badge ([announcements_bell.dart](../lib/widgets/announcements_bell.dart))
+  in the Lectures app bar (tap → bottom sheet of `AnnouncementCard`s). Daily
+  Benefit + the offline-prep nudge were dropped. `/book` and `/study` redirect to
+  `/lectures` (not `/home`) for series lacking those features.
+- **The Urdu Book tab is enabled client-side, not via `series.json`.**
+  `SeriesConfig.fromJson` defaults `hasBook` to `true` for the legacy Urdu
+  series (`id == legacyId`) because this app version bundles
+  `book_tawheed-ur.json`. This deliberately **decouples** the tab from a
+  coordinated `series.json` deploy: older app versions have neither the default
+  nor the asset, so a shared `series.json` can never strand them with a Book
+  tab whose asset is missing. **Do not** add `hasBook:true` to `series.json`
+  for `tawheed-ur` — it's unnecessary and would break not-yet-updated installs.
+  An explicit `hasBook:false` in the manifest still disables it.
+- **Switching series must clear the book, not keep it.** `BookProvider.load`
+  short-circuits once loaded, so `switchSeries` calls `BookProvider.reload()`
+  (clear to idle); the Book tab lazy-loads the current series' book on open.
+  Eager-loading inside `switchSeries` blocks the switch on `rootBundle` I/O and
+  hangs `pumpAndSettle` in tests (the load future doesn't resolve under fake
+  async) — clear-only avoids both.
+- **The Book reader font is per-series** via `SeriesConfig.bookFontFamily`
+  (default `NotoNaskhArabic`). To render the Urdu book in Nastaliq later, bundle
+  a Nastaliq face and return it from that getter — the reader/chapter-list never
+  hardcode the family.
 
 ## CI / release
 
@@ -198,3 +426,11 @@ is portable memory: any LLM working the repo should read and extend it.
   (`lib/utils/safe_url_launcher.dart`) — never pass a raw remote URL to
   `launchUrl`. Download ids from remote JSON are validated with
   `isSafePathSegment()` before use in file paths (path-traversal defence).
+- **A remote-config URL that isn't `https`/`mailto` fails *silently*** — the
+  allowlist above makes `launchExternalUrl` return `false` and the link does
+  nothing, with no error surfaced. `app-config.json`'s `branding.publisherUrl`
+  shipped as `http://almarfa.co` and the About "Powered by" link was dead in
+  production until Al-Tawheed-Content `d5bf05f`. When editing any URL in the
+  content repo, use `https://` (the site served https the whole time). A nightly
+  contract test that asserts every live URL is https/mailto is filed as
+  test-plan §6.3.

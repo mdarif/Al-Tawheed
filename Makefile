@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test patrol-test orientation-test screenshots run ci ci-logs
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test perf-test patrol-test orientation-test screenshots run ci ci-logs
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -32,7 +32,7 @@ help:
 	@echo "  make test            - Run tests (mirrors CI)"
 	@echo "  make test-verbose    - Run tests with verbose output"
 	@echo "  make analyze         - Analyze code (--fatal-warnings, mirrors CI)"
-	@echo "  make format          - Format all code"
+	@echo "  make format          - Format all code (dart format)"
 	@echo "  make coverage        - Generate test coverage report"
 	@echo "  make lint            - Run linter"
 	@echo ""
@@ -105,15 +105,22 @@ test:
 test-verbose:
 	flutter test --reporter=expanded --verbose
 
-test-units:
-	flutter test test/unit_tests.dart --reporter=expanded
+# Golden (pixel-snapshot) tests — tagged `golden`, skipped by every run above
+# (see dart_test.yaml). Platform-sensitive, so generated AND verified on macOS
+# only. `test-goldens` verifies; `goldens-update` re-bakes the masters after a
+# REVIEWED intentional UI change — eyeball the diff before committing.
+test-goldens:
+	flutter test test/golden --run-skipped --reporter=expanded
+
+goldens-update:
+	flutter test test/golden --run-skipped --update-goldens
 
 # Analysis & Quality
 analyze:
 	flutter analyze --fatal-warnings
 
 format:
-	flutter format .
+	dart format .
 
 coverage:
 	flutter test --coverage
@@ -137,6 +144,22 @@ integration-test: pub-get
 		exit 1; \
 	fi
 	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+
+# On-device frame-timing benchmarks (lecture list + book reader scroll/paging).
+# MUST be a real device in --profile mode: debug build times are inflated and a
+# simulator's raster times are meaningless. Prints PERF[...] lines with build/
+# raster frame times and asserts a generous jank ceiling.
+perf-test: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required (a real device, not a simulator)."; \
+		echo "  flutter devices"; \
+		echo "  make perf-test DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter drive \
+		--driver=test_driver/perf_driver.dart \
+		--target=integration_test/performance_test.dart \
+		--profile -d $(DEVICE)
 
 # Capture + frame the Play Store screenshot set (v3, Arabic-led). Runs the
 # on-device capture harness, then composites clean device frames on the brand

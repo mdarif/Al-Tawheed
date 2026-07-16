@@ -68,6 +68,9 @@ Widget _wrap({
   ProgressProvider? progress,
   DownloadsProvider? downloads,
   ConnectivityProvider? connectivity,
+  // UI/chrome locale. Chrome now follows the UI language independently of the
+  // content edition, so Arabic-chrome expectations require an Arabic UI locale.
+  Locale? locale,
 }) {
   final catalogProvider = CatalogProvider();
   if (catalog != null) {
@@ -103,6 +106,7 @@ Widget _wrap({
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -120,11 +124,6 @@ Widget _wrap({
                 path: '/book',
                 builder: (_, __) =>
                     const Scaffold(body: Center(child: Text('Book'))),
-              ),
-              GoRoute(
-                path: '/home',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Home'))),
               ),
               GoRoute(
                 path: '/study',
@@ -153,64 +152,68 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('shows 4 tabs including Study for the Urdu (study-mode) series',
+  testWidgets(
+      'shows 3 tabs (Lectures, Book, Study) for the Urdu series',
       (tester) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
+    // The Urdu series has a Book tab and Study mode, plus Settings last. Home
+    // was retired; Bookmarks and About live behind the ⋯ overflow menu.
     // "Lectures" appears twice: the page body and the nav destination label.
     expect(find.text('Lectures'), findsNWidgets(2));
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Book'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
     expect(find.text('Study'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget); // nav destination label
     expect(find.byType(NavigationDestination), findsNWidgets(4));
   });
 
-  testWidgets('shows 4 tabs with Book instead of Study for the Arabic series',
+  testWidgets('Settings is the LAST tab', (tester) async {
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    final labels = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((d) => d.label)
+        .toList();
+    expect(labels, ['Lectures', 'Book', 'Study', 'Settings']);
+  });
+
+  testWidgets('shows 3 tabs (Lectures, Book, Settings) for the Arabic series',
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(series: series));
+    // Arabic UI locale → Arabic nav labels, so the page-body 'Lectures' is unique.
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     expect(find.text('Lectures'), findsOneWidget); // page body only
-    expect(find.text('Study'), findsNothing);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.text('Study'), findsNothing); // no Study for the Arabic series
+    // Lectures + Book + Settings — Settings is series-independent.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
-  testWidgets('shows Arabic nav labels for the Arabic series', (tester) async {
+  testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI',
+      (tester) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     expect(find.text('الدروس'), findsOneWidget);
     expect(find.text('الكتاب'), findsOneWidget);
-    expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
-  });
-
-  testWidgets('tapping Settings navigates correctly in the 4-tab layout',
-      (tester) async {
-    final series = SeriesProvider()
-      ..load(false)
-      ..setCurrentSeriesForTest(_arabicSeries);
-
-    await tester.pumpWidget(_wrap(series: series));
-    await tester.pumpAndSettle();
-
-    await tester
-        .tap(find.widgetWithText(NavigationDestination, 'الإعدادات'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Settings'), findsOneWidget); // page body
-    expect(find.text('الإعدادات'), findsOneWidget); // nav label
+    expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
+    // Home retired; only Bookmarks/About live behind the ⋯ overflow menu.
+    expect(find.text('الرئيسية'), findsNothing);
   });
 
   group('ShellScreen — mini player', () {
@@ -242,17 +245,18 @@ void main() {
         progress: progress,
         downloads: downloads,
         connectivity: connectivity,
+        locale: const Locale('ar'),
       ),);
       await tester.pumpAndSettle();
 
+      // Content (mini-player track title) is Arabic per edition, regardless of UI.
       expect(find.text('الدرس 2'), findsOneWidget);
       expect(find.text('Dars 02'), findsNothing);
 
-      // Bottom nav is Arabic for the Arabic series.
+      // Bottom nav is Arabic because the UI locale is Arabic.
       expect(find.text('Lectures'), findsOneWidget); // page body only
       expect(find.text('الدروس'), findsOneWidget);
-      expect(find.text('الرئيسية'), findsOneWidget);
-      expect(find.text('الإعدادات'), findsOneWidget);
+      expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
     });
   });
 }

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:myapp/models/app_config_model.dart';
 import 'package:myapp/models/series.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:myapp/providers/app_config_provider.dart';
-import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
@@ -17,7 +13,6 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
-import 'package:myapp/widgets/settings/about_card.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
@@ -81,19 +76,22 @@ class SettingsScreen extends StatelessWidget {
           const _SettingsCard(child: ThemeModeSwitch()),
           const Divider(height: 32),
 
-          // The series switcher is gated behind its own feature flag (default
-          // off) so it can be hidden remotely, on top of requiring multi-series
-          // to be active and more than one series to actually be available.
-          if (flags.features.seriesSwitcher &&
-              flags.multiSeriesEnabled &&
+          // The edition switcher is always reachable whenever multi-series is
+          // active with more than one series available — there is no separate
+          // opt-in flag, so users can never get locked into whichever edition
+          // launched.
+          if (flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
             _SectionHeader(l10n.settingsLanguage),
             const _SettingsCard(child: _SeriesLanguageSelector()),
             const Divider(height: 32),
           ],
 
+          // The UI-language picker is headed "App language" (distinct from the
+          // content-edition switcher above, which is headed "Language"): the two
+          // are independent axes — content edition vs app/chrome language.
           if (flags.features.language) ...[
-            _SectionHeader(l10n.settingsLanguage),
+            _SectionHeader(l10n.settingsAppLanguage),
             const _SettingsCard(child: _LanguageSelector()),
             const Divider(height: 32),
           ],
@@ -166,7 +164,11 @@ class SettingsScreen extends StatelessWidget {
                   if (config.links.youtube != null)
                     ListTile(
                       leading: const Icon(Icons.play_circle_outline_rounded),
-                      title: Text(config.branding.appBrand),
+                      title: Text(
+                        context
+                            .watch<LanguageProvider>()
+                            .resolve(config.branding.appBrand),
+                      ),
                       subtitle: Text(l10n.settingsYouTubeChannel),
                       onTap: () => _launchOrNotify(
                         context,
@@ -182,121 +184,10 @@ class SettingsScreen extends StatelessWidget {
 
           if (flags.features.downloads) const _DownloadsSection(),
 
-          _SectionHeader(l10n.settingsAbout),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: AboutCard(
-              about: config.about,
-              catalog: context.watch<CatalogProvider>().catalog,
-              website: config.links.website,
-            ),
-          ),
-          _BrandingFooter(branding: config.branding),
+          // Settings is pure config — Bookmarks / About / Settings are reached
+          // from the ⋯ overflow menu (see AppOverflowMenu), not from here.
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-}
-
-class _BrandingFooter extends StatefulWidget {
-  final AppConfigBranding branding;
-  const _BrandingFooter({required this.branding});
-
-  @override
-  State<_BrandingFooter> createState() => _BrandingFooterState();
-}
-
-class _BrandingFooterState extends State<_BrandingFooter> {
-  String? _version;
-
-  @override
-  void initState() {
-    super.initState();
-    PackageInfo.fromPlatform().then((PackageInfo info) {
-      if (mounted) setState(() => _version = info.version);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Column(
-        children: [
-          _BrandLink(
-            label: widget.branding.appBrand,
-            url: widget.branding.appBrandUrl,
-          ),
-          const SizedBox(height: 2),
-          _BrandLink(
-            label: widget.branding.poweredByLabel,
-            url: widget.branding.publisherUrl,
-            muted: true,
-          ),
-          if (_version != null) ...[
-            const SizedBox(height: 4),
-            Semantics(
-              button: true,
-              label: context.l10n.settingsAboutVersion(_version!),
-              child: GestureDetector(
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: _version!));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(context.l10n.settingsVersionCopied),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: Text(
-                  context.l10n.settingsAboutVersion(_version!),
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: context.mutedIconColor,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _BrandLink extends StatelessWidget {
-  final String label;
-  final String url;
-  final bool muted;
-
-  const _BrandLink({
-    required this.label,
-    required this.url,
-    this.muted = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = muted ? context.mutedIconColor : context.brandColor;
-    return InkWell(
-      borderRadius: BorderRadius.circular(4),
-      onTap: () => _launchOrNotify(context, url, fallbackMessage: url),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: context.textTheme.labelSmall?.copyWith(
-                color: color,
-                fontWeight: muted ? FontWeight.w400 : FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 2),
-            Icon(Icons.open_in_new_rounded, size: 10, color: color),
-          ],
-        ),
       ),
     );
   }

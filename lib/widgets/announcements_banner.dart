@@ -3,40 +3,20 @@ import 'package:provider/provider.dart';
 
 import 'package:myapp/models/announcement_model.dart';
 import 'package:myapp/providers/announcements_provider.dart';
-import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
 
-class AnnouncementsBanner extends StatelessWidget {
-  static const _iconForType = {
-    'info': Icons.info_outline_rounded,
-    'warning': Icons.warning_amber_rounded,
-    'success': Icons.check_circle_outline_rounded,
-  };
+const _iconForType = {
+  'info': Icons.info_outline_rounded,
+  'warning': Icons.warning_amber_rounded,
+  'success': Icons.check_circle_outline_rounded,
+};
 
-  const AnnouncementsBanner({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    if (!context.watch<FeatureFlagsProvider>().features.announcements) {
-      return const SizedBox.shrink();
-    }
-
-    final announcements = context.watch<AnnouncementsProvider>().visible;
-    if (announcements.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: [
-        for (final a in announcements) ...[
-          AnnouncementCard(announcement: a),
-          const SizedBox(height: 12),
-        ],
-      ],
-    );
-  }
-}
-
+/// A single announcement: a gold-accented card with icon, title, body, an
+/// optional CTA link, and a dismiss button. Shown in the announcements bottom
+/// sheet opened from [AnnouncementsBell]; dismissal persists via
+/// [AnnouncementsProvider.dismiss].
 class AnnouncementCard extends StatelessWidget {
   final Announcement announcement;
   const AnnouncementCard({super.key, required this.announcement});
@@ -44,8 +24,7 @@ class AnnouncementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = context.read<LanguageProvider>();
-    final icon = AnnouncementsBanner._iconForType[announcement.type] ??
-        Icons.info_outline_rounded;
+    final icon = _iconForType[announcement.type] ?? Icons.info_outline_rounded;
 
     return Container(
       decoration: BoxDecoration(

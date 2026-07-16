@@ -11,6 +11,12 @@
   "nowPlaying": "Now Playing",
   "bookmark": "Bookmark",
   "removeBookmark": "Remove bookmark",
+  "playbackPrevious": "Previous lecture",
+  "playbackRewind": "Rewind 10 seconds",
+  "playbackPlay": "Play",
+  "playbackPause": "Pause",
+  "playbackForward": "Forward 10 seconds",
+  "playbackNext": "Next lecture",
 
   "allLecturesComplete": "All Lectures Complete",
   "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",
@@ -87,20 +93,33 @@
     }
   },
 
-  "saved": "Saved",
-  "savedCount": "Saved ({count})",
+  "saved": "Bookmarks",
+  "savedCount": "Bookmarks ({count})",
   "@savedCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "noSavedLectures": "No saved lectures yet",
+  "noSavedLectures": "No bookmarked lectures yet",
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 
   "couldNotLoadLectures": "Could not load lectures",
   "lecturesEmpty": "No lectures available yet",
   "bookCouldNotLoad": "Could not load the book",
   "bookShareChapter": "Share chapter",
-  "bookDecreaseText": "Decrease text size",
-  "bookIncreaseText": "Increase text size",
+  "bookReportIssue": "Report a mistake",
+  "bookReportIssueSubject": "Kitab at-Tawheed — book correction",
+  "@bookReportIssueSubject": {
+    "description": "Subject line of the prefilled correction email sent from the Book reader. The chapter reference is appended to the body, not here — a subject the reader might edit is not a reliable place for it."
+  },
+  "bookReportIssueIntro": "Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.",
+  "@bookReportIssueIntro": {
+    "description": "Body text prefilled above the diagnostic block in the correction email. The diagnostic block itself (edition, chapter, version) is deliberately NOT translated — only the maintainer reads it."
+  },
+  "bookReportIssueCopied": "Mail app unavailable — the report is copied. Send it to {email}.",
+  "@bookReportIssueCopied": {
+    "description": "Snackbar shown when no mail app can be opened: the full report has been copied to the clipboard and the reader is told where to send it.",
+    "placeholders": { "email": { "type": "String" } }
+  },
+
   "bookColorKey": "Color key",
   "bookLegendVerse": "Qur'an verse",
   "bookLegendCitation": "Reference (surah:ayah)",
@@ -110,6 +129,7 @@
   "catalogConnectToLoadMessage": "Open the app once with internet so lecture titles and audio links can download. Lectures you already saved on this device will still play offline.",
 
   "settingsLanguage": "Language",
+  "settingsAppLanguage": "App language",
   "settingsAppearance": "Appearance",
   "settingsSeries": "Series",
   "settingsDarkMode": "Dark mode",
@@ -216,6 +236,23 @@
     "placeholders": {
       "count":    { "type": "int" },
       "duration": { "type": "String" }
+    }
+  },
+
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "description": "A total listening time. Placeholders arrive ALREADY rendered in the active edition's numerals (Arabic-Indic, Urdu, or Western) — keep them String and never add a number format, which would key off the UI locale instead. Translators own the spacing and word order: English is '23h 19m', Arabic is '٢٣ س ١٩ د'.",
+    "placeholders": {
+      "hours":   { "type": "String" },
+      "minutes": { "type": "String" }
+    }
+  },
+
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "description": "A total listening time under one hour. See durationHoursMinutes.",
+    "placeholders": {
+      "minutes": { "type": "String" }
     }
   },
 

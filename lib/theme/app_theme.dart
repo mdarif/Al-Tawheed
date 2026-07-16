@@ -117,6 +117,18 @@ class AppTheme {
         iconColor: semantic.brand,
         textColor: colorScheme.onSurface,
       ),
+      // Without this, Material 3 styles menu items with textTheme.labelLarge,
+      // which this app sets to w700 — so overflow-menu rows render bold and
+      // heavier than everything around them. Menu items should read like list
+      // rows: normal-weight bodyLarge.
+      popupMenuTheme: PopupMenuThemeData(
+        color: colorScheme.surface,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        labelTextStyle: WidgetStatePropertyAll(
+          textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+        ),
+      ),
       dividerTheme: DividerThemeData(
         color: semantic.groupedBorder,
         thickness: 1,

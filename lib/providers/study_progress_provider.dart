@@ -42,7 +42,9 @@ class StudyProgressProvider extends ChangeNotifier {
 
   int get studiedCount => _studiedChapterIds.length;
 
-  int get totalChapterCount => _catalog.catalog?.chapters.length ?? 15;
+  // Derived from the active series' catalog; 0 (not a series-specific guess)
+  // until the catalog loads — all consumers guard the zero case.
+  int get totalChapterCount => _catalog.catalog?.chapters.length ?? 0;
 
   bool isChapterStudied(String chapterId) =>
       _studiedChapterIds.contains(chapterId);

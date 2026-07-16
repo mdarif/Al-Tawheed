@@ -8,11 +8,12 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/announcements_bell.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/chapter_header.dart';
+import 'package:myapp/widgets/continue_listening_banner.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 class LectureListScreen extends StatefulWidget {
@@ -158,6 +159,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return CustomScrollView(
       slivers: [
         _buildAppBar(catalog),
+        // Resume-where-you-left-off, atop the list. Self-hides when there's
+        // nothing to resume (the retired Home tab's only keeper).
+        const SliverToBoxAdapter(child: ContinueListeningBanner()),
         SliverToBoxAdapter(
           child: Selector<ProgressProvider, bool>(
             selector: (_, p) => p.allComplete(lectures),
@@ -225,86 +229,141 @@ class _LectureListScreenState extends State<LectureListScreen> {
     final speaker = catalog != null
         ? lang.resolveForSeries(catalog.book.speaker, series)
         : '';
+    // No Arabic/English fork here: isRtl is `language == 'ar'`, so the Urdu
+    // edition took the English branch and read "45 lectures · 23h 19m" directly
+    // above badges numbered ۰۱. Wording comes from the ARB (canonical), digits
+    // from the edition.
     final countLine = catalog == null
         ? ''
-        : isArabicContent
-            ? '${toArabicDigits(catalog.book.lectureCount)} محاضرة · '
-                '${DurationFormatter.toArabicHoursMinutes(catalog.book.totalDurationSeconds)}'
-            : '${catalog.book.lectureCount} lectures · '
-                '${DurationFormatter.toHoursMinutes(catalog.book.totalDurationSeconds)}';
+        : context.localizedDigits(
+            context.l10n.lecturesCount(
+              catalog.book.lectureCount,
+              context.localizedHoursMinutes(catalog.book.totalDurationSeconds),
+            ),
+          );
 
-    final titleWidget = Text(
-      title,
-      style: context.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-      ),
-    );
+    Widget maybeRtl(Widget child) => isArabicContent
+        ? Directionality(textDirection: TextDirection.rtl, child: child)
+        : child;
 
-    final subInfo = (speaker.isNotEmpty || countLine.isNotEmpty)
-        ? SafeArea(
+    // Each series shows its own teacher's portrait (Urdu → Shaikh Abdullah
+    // Nasir Rahmani, Arabic → Shaikh Salih al-Fawzan).
+    final teacherAsset = series.isRtl
+        ? 'assets/images/sheikh_fawzan.png'
+        : 'assets/images/sheikh-abdullah-nasir-rahmani.jpg';
+
+    // Teacher-led hero: the portrait anchors a title · speaker · stats stack.
+    // Bottom-aligned so it sits clear of the ⋮ that floats top-right, and it
+    // collapses away on scroll (a compact title fades into the pinned bar).
+    final hero = catalog == null
+        ? null
+        : SafeArea(
+            bottom: false,
             child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(
-                16,
-                0,
-                16,
-                isArabicContent ? 50 : 48,
-              ),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 14),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: isArabicContent
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
                 children: [
-                  if (speaker.isNotEmpty)
-                    Text(
-                      speaker,
-                      textAlign: isArabicContent ? TextAlign.right : null,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                          ),
-                    ),
-                  if (countLine.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      countLine,
-                      textAlign: isArabicContent ? TextAlign.right : null,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                          ),
-                    ),
-                  ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _TeacherAvatar(asset: teacherAsset),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: isArabicContent
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              textAlign:
+                                  isArabicContent ? TextAlign.right : null,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                            ),
+                            if (speaker.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                speaker,
+                                textAlign:
+                                    isArabicContent ? TextAlign.right : null,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                            if (countLine.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              _StatsChip(label: countLine),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-          )
-        : null;
+          );
 
     return SliverAppBar(
       pinned: true,
       centerTitle: false,
-      expandedHeight: catalog != null ? 130 : 80,
+      // Sized to the hero (avatar + title + speaker + stats), which is bottom-
+      // aligned. The old 172 left a band of empty space between the status bar
+      // and the hero, since the title moves into the hero when expanded and the
+      // toolbar row above it carries nothing but the bell. What remains above
+      // the hero now is the device's status bar / Dynamic Island, which is
+      // system-reserved.
+      expandedHeight: catalog != null ? 150 : 80,
       automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        centerTitle: false,
-        titlePadding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
-        title: isArabicContent
-            ? Directionality(
-                textDirection: TextDirection.rtl,
-                child: titleWidget,
-              )
-            : titleWidget,
-        background: subInfo != null
-            ? isArabicContent
-                ? Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: subInfo,
-                  )
-                : subInfo
-            : null,
+      // No ⋮ here — the lecture list is the busiest screen and the bell is
+      // enough. Bookmarks/About stay reachable from the Book and Study tabs.
+      actions: const [AnnouncementsBell()],
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          // The bar is collapsed once its height shrinks to the pinned toolbar.
+          // Read the live extent from the sliver's own settings (no MediaQuery).
+          final settings = context
+              .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+          final collapsed = constraints.maxHeight <=
+              (settings?.minExtent ?? kToolbarHeight) + 12;
+
+          // No catalog yet → keep the plain docked app title (loading state).
+          // With a catalog, the title lives in the hero; only dock a compact
+          // title once collapsed so it survives scrolling the list.
+          final Widget? flexTitle = catalog == null
+              ? Text(
+                  title,
+                  style: context.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                )
+              : collapsed
+                  ? Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    )
+                  : null;
+
+          return FlexibleSpaceBar(
+            centerTitle: false,
+            titlePadding:
+                const EdgeInsetsDirectional.only(start: 16, bottom: 14),
+            title: flexTitle == null ? null : maybeRtl(flexTitle),
+            background: hero == null ? null : maybeRtl(hero),
+          );
+        },
       ),
     );
   }
@@ -312,6 +371,73 @@ class _LectureListScreenState extends State<LectureListScreen> {
   void _onLectureTap(Lecture lecture, List<Lecture> queue) {
     context.read<PlayerNotifier>().loadAndPlay(lecture, queue);
     context.push('/player');
+  }
+}
+
+/// A circular portrait of the series' teacher, shown in the Lectures hero —
+/// Shaikh Abdullah Nasir Rahmani for the Urdu duroos, Shaikh Salih al-Fawzan
+/// for the Arabic. The asset is chosen per series by [_buildAppBar].
+class _TeacherAvatar extends StatelessWidget {
+  final String asset;
+
+  const _TeacherAvatar({required this.asset});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: context.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Image.asset(asset, fit: BoxFit.cover),
+    );
+  }
+}
+
+/// A subtle pill for the "N lectures · Hh Mm" line, set off from the title and
+/// speaker. The wrapping [Directionality] mirrors the icon/label for Arabic.
+class _StatsChip extends StatelessWidget {
+  final String label;
+
+  const _StatsChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: context.elevatedSurface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.menu_book_rounded, size: 13, color: context.brandColor),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.secondaryTextColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

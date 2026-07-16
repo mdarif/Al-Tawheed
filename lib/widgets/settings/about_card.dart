@@ -4,7 +4,6 @@ import 'package:myapp/models/app_config_model.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
 
@@ -117,7 +116,7 @@ class AboutCard extends StatelessWidget {
                 child: Row(
                   children: [
                     _StatColumn(
-                      value: '$lectureCount',
+                      value: context.localizedDigits('$lectureCount'),
                       label: l10n.statLectures,
                     ),
                     VerticalDivider(
@@ -127,13 +126,14 @@ class AboutCard extends StatelessWidget {
                     ),
                     if (hasClasses)
                       _StatColumn(
-                        value:
-                            '${catalog?.chapters.length ?? about.classCount}',
+                        value: context.localizedDigits(
+                          '${catalog?.chapters.length ?? about.classCount}',
+                        ),
                         label: l10n.statClasses,
                       )
                     else
                       _StatColumn(
-                        value: DurationFormatter.toHoursMinutes(
+                        value: context.localizedHoursMinutes(
                           catalog!.book.totalDurationSeconds,
                         ),
                         label: l10n.statDuration,

@@ -12,21 +12,13 @@ class DurationFormatter {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
-  /// 97617 → "27h 6m"
-  static String toHoursMinutes(int totalSeconds) {
-    final h = totalSeconds ~/ 3600;
-    final m = (totalSeconds % 3600) ~/ 60;
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
-
-  /// 83940 → "٢٣ س ١٩ د"
-  static String toArabicHoursMinutes(int totalSeconds) {
-    final h = totalSeconds ~/ 3600;
-    final m = (totalSeconds % 3600) ~/ 60;
-    if (h > 0) return '${toArabicDigits(h)} س ${toArabicDigits(m)} د';
-    return '${toArabicDigits(m)} د';
-  }
+  /// 97617 → (27, 6)
+  ///
+  /// Numbers only — the hour/minute *words* differ per language ("27h 6m" vs
+  /// "٢٧ س ٦ د"), so they come from the ARB. See
+  /// `BuildContext.localizedHoursMinutes`, which is what widgets should call.
+  static (int hours, int minutes) toHoursAndMinutes(int totalSeconds) =>
+      (totalSeconds ~/ 3600, (totalSeconds % 3600) ~/ 60);
 }
 
 const _easternArabicDigits = [
@@ -57,3 +49,39 @@ String arabicDigitsInString(String s) => s.replaceAllMapped(
       RegExp(r'[0-9]'),
       (m) => _easternArabicDigits[int.parse(m[0]!)],
     );
+
+// Urdu uses a distinct set of Perso-Arabic numerals (U+06F0-06F9) that differ
+// from the Arabic-Indic ones above — e.g. Urdu ۴ vs Arabic ٤.
+const _urduDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+/// Converts the Western digits of [n] to Urdu numerals. 91 → "۹۱"
+String toUrduDigits(int n) =>
+    n.toString().split('').map((d) => _urduDigits[int.parse(d)]).join();
+
+/// Converts every Western digit (0-9) inside [s] to Urdu numerals.
+String urduDigitsInString(String s) => s.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (m) => _urduDigits[int.parse(m[0]!)],
+    );
+
+/// Localises digits in [s] for [language]: Urdu numerals for `'ur'`,
+/// Eastern Arabic-Indic for `'ar'`, Western digits for anything else.
+///
+/// The unknown-language case deliberately returns [s] untouched rather than
+/// defaulting to Arabic-Indic. `SeriesConfig.fromJson` falls back to `'en'`
+/// when a manifest omits `language`, and an English series silently rendering
+/// Arabic numerals is a bug you have to *notice* — Western digits are the
+/// honest answer for a language we have no numerals for.
+String localizedDigitsInString(String s, String language) => switch (language) {
+      'ur' => urduDigitsInString(s),
+      'ar' => arabicDigitsInString(s),
+      _ => s,
+    };
+
+/// Localises the digits of [n] for [language] — see [localizedDigitsInString]
+/// for why an unknown language yields Western digits rather than Arabic.
+String toLocalizedDigits(int n, String language) => switch (language) {
+      'ur' => toUrduDigits(n),
+      'ar' => toArabicDigits(n),
+      _ => n.toString(),
+    };

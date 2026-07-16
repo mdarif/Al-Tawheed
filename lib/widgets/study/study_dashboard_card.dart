@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 /// Study Mode dashboard card — progress ring, headline, and a
@@ -69,7 +68,7 @@ class StudyDashboardCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$percent%',
+                      context.localizedDigits('$percent%'),
                       style: context.textTheme.titleLarge?.copyWith(
                         fontSize: 19,
                         fontWeight: FontWeight.w800,
@@ -95,7 +94,9 @@ class StudyDashboardCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      l10n.studyModeSubtitle(studiedCount, totalChapterCount),
+                      context.localizedDigits(
+                        l10n.studyModeSubtitle(studiedCount, totalChapterCount),
+                      ),
                       style: context.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -125,7 +126,8 @@ class StudyDashboardCard extends StatelessWidget {
                 Expanded(
                   child: _DashboardStat(
                     icon: Icons.headphones_rounded,
-                    value: '$completedLectures / $totalLectures',
+                    value: context
+                        .localizedDigits('$completedLectures / $totalLectures'),
                     label: l10n.statLectures,
                   ),
                 ),
@@ -133,7 +135,8 @@ class StudyDashboardCard extends StatelessWidget {
                 Expanded(
                   child: _DashboardStat(
                     icon: Icons.menu_book_rounded,
-                    value: '$studiedCount / $totalChapterCount',
+                    value: context
+                        .localizedDigits('$studiedCount / $totalChapterCount'),
                     label: l10n.statClasses,
                   ),
                 ),
@@ -146,8 +149,8 @@ class StudyDashboardCard extends StatelessWidget {
           ),
           _DurationRow(
             label: l10n.statDuration,
-            completed: DurationFormatter.toHoursMinutes(completedSeconds),
-            total: DurationFormatter.toHoursMinutes(totalSeconds),
+            completed: context.localizedHoursMinutes(completedSeconds),
+            total: context.localizedHoursMinutes(totalSeconds),
           ),
           const SizedBox(height: 8),
           _DurationProgressBar(fraction: durationFraction),

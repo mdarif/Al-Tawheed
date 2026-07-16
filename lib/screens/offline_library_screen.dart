@@ -7,7 +7,6 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
-import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
@@ -301,7 +300,7 @@ class _LectureTile extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
 
-    final removeLabel = context.l10nForSeries(series).offlineRemoveDownload;
+    final removeLabel = context.l10n.offlineRemoveDownload;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -314,16 +313,19 @@ class _LectureTile extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          lecture.number.toString().padLeft(2, '0'),
-          style:
-              context.textTheme.labelSmall?.copyWith(color: context.brandColor),
+          context.localizedDigits(lecture.number.toString().padLeft(2, '0')),
+          style: context.textTheme.labelSmall?.copyWith(
+            color: context.brandColor,
+            fontFamily: context.numeralFontFamily,
+          ),
         ),
       ),
       title: series.isRtl
           ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
           : titleWidget,
       subtitle: Text(
-        '${DurationFormatter.fromSeconds(lecture.durationSeconds)}  ·  $sizeMb',
+        '${context.localizedTime(lecture.durationSeconds)}'
+        '  ·  ${context.localizedDigits(sizeMb)}',
         style: context.textTheme.bodySmall
             ?.copyWith(color: context.secondaryTextColor),
       ),
@@ -344,8 +346,7 @@ class _LectureTile extends StatelessWidget {
     String title,
     String removeLabel,
   ) async {
-    final l10n =
-        context.l10nForSeries(context.read<SeriesProvider>().currentSeries);
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
       title: removeLabel,

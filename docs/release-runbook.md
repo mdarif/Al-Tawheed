@@ -10,6 +10,19 @@ commands, see [deployment.md](deployment.md).
 Follow these steps **in order** — each one says what to run, what success
 looks like, and what to do if it doesn't go to plan.
 
+> ### Note — Urdu Book tab (raised 2026-07-12, resolved on `feature/urdu-book`)
+>
+> The Urdu Book tab is enabled **client-side** and ships automatically with the
+> `feature/urdu-book` release — `SeriesConfig.fromJson` defaults `hasBook` to
+> `true` for the Urdu series because the app bundles the book asset. **No
+> `series.json` change is needed** (and adding `hasBook:true` there would break
+> not-yet-updated installs — don't). See [gotchas.md → Book](gotchas.md).
+>
+> Content is **done**: `assets/content/book_tawheed-ur.json` now ships the real
+> bilingual Urdu content (all 67 chapters, through `876abed`), guarded by
+> `test/book_content_integrity_test.dart`. The only residual item is *scholarly*
+> QA of the translation — not a release blocker.
+
 ## Pre-flight checklist
 
 - [ ] `develop` has everything you want to ship, pushed, and CI is green:

@@ -49,7 +49,7 @@ class OverallProgressSummary extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$percent%',
+                      context.localizedDigits('$percent%'),
                       style: context.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -63,7 +63,9 @@ class OverallProgressSummary extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.studyModeSubtitle(studiedCount, totalCount),
+                      context.localizedDigits(
+                        l10n.studyModeSubtitle(studiedCount, totalCount),
+                      ),
                       style: context.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -123,7 +125,7 @@ class OverallProgressSummary extends StatelessWidget {
                 ],
               ),
               Text(
-                '$percent%',
+                context.localizedDigits('$percent%'),
                 style: context.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),

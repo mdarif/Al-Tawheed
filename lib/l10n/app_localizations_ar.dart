@@ -36,6 +36,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removeBookmark => 'إزالة الإشارة المرجعية';
 
   @override
+  String get playbackPrevious => 'الدرس السابق';
+
+  @override
+  String get playbackRewind => 'إرجاع ١٠ ثوانٍ';
+
+  @override
+  String get playbackPlay => 'تشغيل';
+
+  @override
+  String get playbackPause => 'إيقاف مؤقت';
+
+  @override
+  String get playbackForward => 'تقديم ١٠ ثوانٍ';
+
+  @override
+  String get playbackNext => 'الدرس التالي';
+
+  @override
   String get allLecturesComplete => 'اكتملت جميع الدروس';
 
   @override
@@ -195,10 +213,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookShareChapter => 'مشاركة الباب';
 
   @override
-  String get bookDecreaseText => 'تصغير حجم الخط';
+  String get bookReportIssue => 'الإبلاغ عن خطأ';
 
   @override
-  String get bookIncreaseText => 'تكبير حجم الخط';
+  String get bookReportIssueSubject => 'كتاب التوحيد — تصويب في الكتاب';
+
+  @override
+  String get bookReportIssueIntro =>
+      'يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.';
+
+  @override
+  String bookReportIssueCopied(String email) {
+    return 'تطبيق البريد غير متاح — تم نسخ التقرير. أرسله إلى $email.';
+  }
 
   @override
   String get bookColorKey => 'مفتاح الألوان';
@@ -224,6 +251,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsLanguage => 'اللغة';
+
+  @override
+  String get settingsAppLanguage => 'لغة التطبيق';
 
   @override
   String get settingsAppearance => 'المظهر';
@@ -423,6 +453,16 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String lecturesCount(int count, String duration) {
     return '$count درس · $duration';
+  }
+
+  @override
+  String durationHoursMinutes(String hours, String minutes) {
+    return '$hours س $minutes د';
+  }
+
+  @override
+  String durationMinutes(String minutes) {
+    return '$minutes د';
   }
 
   @override

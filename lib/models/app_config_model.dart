@@ -1,4 +1,5 @@
 import 'package:myapp/app_config.dart';
+import 'package:myapp/models/i18n_field.dart';
 
 class AppConfigLinks {
   final String? playStore;
@@ -43,11 +44,16 @@ class AppConfigShare {
 }
 
 class AppConfigBranding {
-  final String appBrand;
+  /// Multilingual (`{en, ar, ur, roman}`) — resolve via
+  /// [LanguageProvider.resolve]. Branding is chrome, so it follows the app
+  /// language rather than the content edition.
+  final Map<String, dynamic> appBrand;
   final String appBrandUrl;
   final String publisher;
   final String publisherUrl;
-  final String poweredByLabel;
+
+  /// Multilingual — see [appBrand].
+  final Map<String, dynamic> poweredByLabel;
 
   const AppConfigBranding({
     required this.appBrand,
@@ -59,21 +65,47 @@ class AppConfigBranding {
 
   factory AppConfigBranding.fromJson(Map<String, dynamic> j) =>
       AppConfigBranding(
-        appBrand: j['appBrand'] as String? ?? 'Al Marfa Duroos',
-        appBrandUrl: j['appBrandUrl'] as String? ??
-            'https://www.youtube.com/@almarfaduroos',
-        publisher: j['publisher'] as String? ?? 'Al Marfa Technologies',
-        publisherUrl: j['publisherUrl'] as String? ?? 'https://almarfa.co',
-        poweredByLabel: j['poweredByLabel'] as String? ??
-            'Powered by Al Marfa Technologies',
+        appBrand: _localizable(j['appBrand'], defaults.appBrand),
+        appBrandUrl: j['appBrandUrl'] as String? ?? defaults.appBrandUrl,
+        publisher: j['publisher'] as String? ?? defaults.publisher,
+        publisherUrl: j['publisherUrl'] as String? ?? defaults.publisherUrl,
+        poweredByLabel:
+            _localizable(j['poweredByLabel'], defaults.poweredByLabel),
       );
 
+  /// Reads a branding label that may be a plain String (what every published
+  /// app_config.json still sends) or an i18n map.
+  ///
+  /// Merged **over** the bundled default rather than replacing it, so a remote
+  /// config sending only the legacy English string still picks up any bundled
+  /// translations — wording can then ship from the content repo alone, with no
+  /// app release, which is the whole point of keeping branding in Layer 2
+  /// (remote JSON) rather than the ARBs.
+  ///
+  /// Blank entries are dropped before merging. `toI18nMap` renders anything it
+  /// can't read as `{'en': ''}`, which would otherwise merge *over* the default
+  /// and blank the label — the one failure this fallback exists to prevent.
+  static Map<String, dynamic> _localizable(
+    dynamic value,
+    Map<String, dynamic> fallback,
+  ) {
+    if (value == null) return fallback;
+    final overlay = toI18nMap(value)
+      ..removeWhere((_, v) => v is! String || v.isEmpty);
+    return overlay.isEmpty ? fallback : {...fallback, ...overlay};
+  }
+
+  // NOTE: these carry `en` only. "Al Marfa Duroos" and "Al Marfa Technologies"
+  // are a real company's marks; their Arabic/Urdu wording is the owner's to
+  // decide, not something to guess at here. Until they add one, `resolve`
+  // falls back to `en` — the same text as today. Adding `ar`/`ur` keys to
+  // app_config.json is a content deploy, not a release.
   static const AppConfigBranding defaults = AppConfigBranding(
-    appBrand: 'Al Marfa Duroos',
+    appBrand: {'en': 'Al Marfa Duroos'},
     appBrandUrl: 'https://www.youtube.com/@almarfaduroos',
     publisher: 'Al Marfa Technologies',
     publisherUrl: 'https://almarfa.co',
-    poweredByLabel: 'Powered by Al Marfa Technologies',
+    poweredByLabel: {'en': 'Powered by Al Marfa Technologies'},
   );
 }
 
@@ -96,7 +128,7 @@ class AppConfigAbout {
         appName: j['appName'] as String? ?? '',
         lecturer: j['lecturer'] as String? ?? '',
         lectureCount: j['lectureCount'] as int? ?? 0,
-        classCount: j['classCount'] as int? ?? 15,
+        classCount: j['classCount'] as int? ?? 0,
         totalDuration: j['totalDuration'] as String? ?? '',
       );
 }

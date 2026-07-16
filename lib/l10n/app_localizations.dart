@@ -155,6 +155,42 @@ abstract class AppLocalizations {
   /// **'Remove bookmark'**
   String get removeBookmark;
 
+  /// No description provided for @playbackPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous lecture'**
+  String get playbackPrevious;
+
+  /// No description provided for @playbackRewind.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewind 10 seconds'**
+  String get playbackRewind;
+
+  /// No description provided for @playbackPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get playbackPlay;
+
+  /// No description provided for @playbackPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get playbackPause;
+
+  /// No description provided for @playbackForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward 10 seconds'**
+  String get playbackForward;
+
+  /// No description provided for @playbackNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next lecture'**
+  String get playbackNext;
+
   /// No description provided for @allLecturesComplete.
   ///
   /// In en, this message translates to:
@@ -386,19 +422,19 @@ abstract class AppLocalizations {
   /// No description provided for @saved.
   ///
   /// In en, this message translates to:
-  /// **'Saved'**
+  /// **'Bookmarks'**
   String get saved;
 
   /// No description provided for @savedCount.
   ///
   /// In en, this message translates to:
-  /// **'Saved ({count})'**
+  /// **'Bookmarks ({count})'**
   String savedCount(int count);
 
   /// No description provided for @noSavedLectures.
   ///
   /// In en, this message translates to:
-  /// **'No saved lectures yet'**
+  /// **'No bookmarked lectures yet'**
   String get noSavedLectures;
 
   /// No description provided for @noSavedHint.
@@ -431,17 +467,29 @@ abstract class AppLocalizations {
   /// **'Share chapter'**
   String get bookShareChapter;
 
-  /// No description provided for @bookDecreaseText.
+  /// No description provided for @bookReportIssue.
   ///
   /// In en, this message translates to:
-  /// **'Decrease text size'**
-  String get bookDecreaseText;
+  /// **'Report a mistake'**
+  String get bookReportIssue;
 
-  /// No description provided for @bookIncreaseText.
+  /// Subject line of the prefilled correction email sent from the Book reader. The chapter reference is appended to the body, not here — a subject the reader might edit is not a reliable place for it.
   ///
   /// In en, this message translates to:
-  /// **'Increase text size'**
-  String get bookIncreaseText;
+  /// **'Kitab at-Tawheed — book correction'**
+  String get bookReportIssueSubject;
+
+  /// Body text prefilled above the diagnostic block in the correction email. The diagnostic block itself (edition, chapter, version) is deliberately NOT translated — only the maintainer reads it.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.'**
+  String get bookReportIssueIntro;
+
+  /// Snackbar shown when no mail app can be opened: the full report has been copied to the clipboard and the reader is told where to send it.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail app unavailable — the report is copied. Send it to {email}.'**
+  String bookReportIssueCopied(String email);
 
   /// No description provided for @bookColorKey.
   ///
@@ -490,6 +538,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get settingsLanguage;
+
+  /// No description provided for @settingsAppLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'App language'**
+  String get settingsAppLanguage;
 
   /// No description provided for @settingsAppearance.
   ///
@@ -808,6 +862,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} lectures · {duration}'**
   String lecturesCount(int count, String duration);
+
+  /// A total listening time. Placeholders arrive ALREADY rendered in the active edition's numerals (Arabic-Indic, Urdu, or Western) — keep them String and never add a number format, which would key off the UI locale instead. Translators own the spacing and word order: English is '23h 19m', Arabic is '٢٣ س ١٩ د'.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String durationHoursMinutes(String hours, String minutes);
+
+  /// A total listening time under one hour. See durationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String durationMinutes(String minutes);
 
   /// No description provided for @offlineSourceSaved.
   ///

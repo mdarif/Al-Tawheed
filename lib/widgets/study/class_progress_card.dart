@@ -131,7 +131,8 @@ class ClassProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          studyProgressLabel(info, l10n),
+                          context
+                              .localizedDigits(studyProgressLabel(info, l10n)),
                           style: context.textTheme.bodySmall?.copyWith(
                             color: context.secondaryTextColor,
                             fontSize: 11.5,
@@ -193,10 +194,12 @@ class _ChapterBadge extends StatelessWidget {
       child: status == ChapterStudyStatus.studied
           ? Icon(Icons.check_rounded, color: foreground, size: 22)
           : Text(
-              number.toString().padLeft(2, '0'),
+              context.localizedDigits(number.toString().padLeft(2, '0')),
               style: context.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: foreground,
+                // The codepoints are only half the job — the face draws them.
+                fontFamily: context.numeralFontFamily,
               ),
             ),
     );

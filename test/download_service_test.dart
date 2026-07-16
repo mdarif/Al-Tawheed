@@ -102,10 +102,18 @@ void main() {
       onProgress: (_) {},
     );
 
+    // Attach the matcher NOW, not after the delete. `done` is deliberately not
+    // awaited while we let the download start and then cancel it — and it is
+    // the delete that makes it reject. With the expectation attached after the
+    // delete, the rejection lands in a window where nothing is listening, and
+    // Dart reports it as an unhandled async error: a flake that only shows up
+    // under parallel load, where the window is wide enough to lose the race.
+    final cancelled = expectLater(done, throwsA(isA<DownloadCancelled>()));
+
     await Future<void>.delayed(const Duration(milliseconds: 30));
     await DownloadService.delete('lec-3');
 
-    await expectLater(done, throwsA(isA<DownloadCancelled>()));
+    await cancelled;
     expect(await File(savePath).exists(), isFalse);
   });
 

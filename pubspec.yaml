@@ -47,6 +47,8 @@ dev_dependencies:
   plugin_platform_interface: ^2.1.8
   # Faking SharePlatform in book_reader_screen_test.dart
   share_plus_platform_interface: ^7.1.0
+  # Faking UrlLauncherPlatform in report_mistake_footer_test.dart
+  url_launcher_platform_interface: ^2.3.2
 
 patrol:
   app_name: At-Tawheed
@@ -66,3 +68,6 @@ flutter:
     - family: NotoNaskhArabic
       fonts:
         - asset: assets/fonts/NotoNaskhArabic-Regular.ttf
+    - family: NotoNastaliqUrdu
+      fonts:
+        - asset: assets/fonts/NotoNastaliqUrdu-Regular.ttf

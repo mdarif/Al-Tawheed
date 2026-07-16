@@ -11,6 +11,12 @@
   "nowPlaying": "يُشغَّل الآن",
   "bookmark": "إضافة إشارة مرجعية",
   "removeBookmark": "إزالة الإشارة المرجعية",
+  "playbackPrevious": "الدرس السابق",
+  "playbackRewind": "إرجاع ١٠ ثوانٍ",
+  "playbackPlay": "تشغيل",
+  "playbackPause": "إيقاف مؤقت",
+  "playbackForward": "تقديم ١٠ ثوانٍ",
+  "playbackNext": "الدرس التالي",
 
   "allLecturesComplete": "اكتملت جميع الدروس",
   "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",
@@ -97,8 +103,11 @@
   "lecturesEmpty": "لا توجد دروس متاحة بعد",
   "bookCouldNotLoad": "تعذّر تحميل الكتاب",
   "bookShareChapter": "مشاركة الباب",
-  "bookDecreaseText": "تصغير حجم الخط",
-  "bookIncreaseText": "تكبير حجم الخط",
+  "bookReportIssue": "الإبلاغ عن خطأ",
+  "bookReportIssueSubject": "كتاب التوحيد — تصويب في الكتاب",
+  "bookReportIssueIntro": "يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.",
+  "bookReportIssueCopied": "تطبيق البريد غير متاح — تم نسخ التقرير. أرسله إلى {email}.",
+
   "bookColorKey": "مفتاح الألوان",
   "bookLegendVerse": "آية قرآنية",
   "bookLegendCitation": "مرجع (سورة:آية)",
@@ -108,6 +117,7 @@
   "catalogConnectToLoadMessage": "افتح التطبيق مرة واحدة مع الإنترنت لتنزيل عناوين الدروس وروابط الصوت. ستعمل الدروس التي حفظتها على جهازك دون اتصال.",
 
   "settingsLanguage": "اللغة",
+  "settingsAppLanguage": "لغة التطبيق",
   "settingsAppearance": "المظهر",
   "settingsSeries": "السلسلة",
   "settingsDarkMode": "الوضع الداكن",
@@ -212,6 +222,21 @@
     "placeholders": {
       "count":    { "type": "int" },
       "duration": { "type": "String" }
+    }
+  },
+
+  "durationHoursMinutes": "{hours} س {minutes} د",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours":   { "type": "String" },
+      "minutes": { "type": "String" }
+    }
+  },
+
+  "durationMinutes": "{minutes} د",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": { "type": "String" }
     }
   },
 

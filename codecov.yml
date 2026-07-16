@@ -9,10 +9,10 @@ coverage:
         target: 50%         # new code in a PR should be at least 50% covered
 
 ignore:
-  # Generated l10n files — no point covering boilerplate
+  # Generated l10n files — no point covering boilerplate. gen-l10n emits one
+  # file per language subtag: en, ar, ur (ur_roman is a scriptCode variant that
+  # lands inside app_localizations_ur.dart, so there is no _ur_roman.dart).
   - "lib/l10n/app_localizations.dart"
   - "lib/l10n/app_localizations_en.dart"
+  - "lib/l10n/app_localizations_ar.dart"
   - "lib/l10n/app_localizations_ur.dart"
-  - "lib/l10n/app_localizations_ur_roman.dart"
-  # Generated plugin registrant
-  - "lib/generated_plugin_registrant.dart"

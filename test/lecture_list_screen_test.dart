@@ -13,6 +13,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -33,6 +34,15 @@ const _arabicSeries = SeriesConfig(
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
+
+/// The series teacher's portrait the redesigned Lectures hero shows beside the
+/// title — a different asset per series (Rahmani for Urdu, Fawzan for Arabic).
+Finder _avatarFinder(String asset) => find.byWidgetPredicate(
+      (w) =>
+          w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == asset,
+    );
 
 Map<String, dynamic> _lectureJson(String id, int number, {String? titleAr}) =>
     {
@@ -73,7 +83,7 @@ Map<String, dynamic> _catalogJson({
       'dailyBenefits': <Map<String, dynamic>>[],
     };
 
-Widget _wrap({required SeriesProvider series}) {
+Widget _wrap({required SeriesProvider series, Locale? locale}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
@@ -82,6 +92,7 @@ Widget _wrap({required SeriesProvider series}) {
       ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      ChangeNotifierProvider(create: (_) => AnnouncementsProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider(
         create: (ctx) => PlayerNotifier(
@@ -94,6 +105,7 @@ Widget _wrap({required SeriesProvider series}) {
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
@@ -211,9 +223,121 @@ void main() {
 
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الشيخ صالح الفوزان حفظه الله'), findsOneWidget);
-    expect(find.textContaining('محاضرة'), findsOneWidget);
+    // Chrome here is English (this harness pins no locale) — what an
+    // Arabic-edition reader who explicitly picked English would see: the
+    // content stays Arabic, the chrome (words AND numbers) stays English.
+    expect(find.text('2 lectures · 2m'), findsOneWidget);
+    // The redesigned hero shows the Arabic series teacher (Shaikh al-Fawzan).
+    expect(_avatarFinder('assets/images/sheikh_fawzan.png'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
+  });
+
+  // The production default for the Arabic edition: the edition defaults the
+  // chrome language to Arabic, so the header reads entirely in Arabic — words
+  // and numbers alike. The old code hardcoded 'محاضرة'; the ARB says 'درس',
+  // and the ARB is canonical (it also matches the الدروس nav tab).
+  testWidgets('heads the Arabic edition with an all-Arabic count line',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        lectures: [
+          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+        ],
+      ),),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('٢ درس · ٢ د'), findsOneWidget);
+    expect(find.textContaining('lectures'), findsNothing);
+  });
+
+  testWidgets('numbers the Arabic duroos in Arabic-Indic numerals',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(_catalogJson(
+        bookId: 'arabic-book',
+        chapters: const [],
+        lectures: [
+          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+        ],
+      ),),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    // Arabic-Indic (U+066x), not Western — and not the Urdu set either.
+    expect(find.text('٠١'), findsOneWidget);
+    expect(find.text('٠٢'), findsOneWidget);
+    expect(find.text('01'), findsNothing);
+    expect(find.text('۰۱'), findsNothing);
+  });
+
+  // The Urdu edition is deliberately untouched by the Arabic-chrome work: its
+  // audience reads English chrome, so its lecture list counts 01, 02 exactly as
+  // it always has. (Its *Book* is the exception — that renders ۰۱, in the
+  // book's own script. Different rule, see book_chapter_list_screen_test.)
+  testWidgets('leaves the Urdu duroos numbered in Western digits',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+      ),),
+    );
+
+    final series = SeriesProvider()..load(false); // Urdu fallback
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('01'), findsOneWidget);
+    expect(find.text('02'), findsOneWidget);
+    expect(find.text('۰۱'), findsNothing);
+  });
+
+  // ...but an explicit اردو pick is honoured, numerals included.
+  testWidgets('numbers the duroos in Urdu when the chrome is Urdu',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(_catalogJson(
+        bookId: 'legacy-book',
+        chapters: const [],
+        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+      ),),
+    );
+
+    final series = SeriesProvider()..load(false); // Urdu fallback
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ur')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('۰۱'), findsOneWidget);
+    expect(find.text('٠١'), findsNothing);
+    // The codepoints alone are not enough: Urdu and Persian share U+06F0–06F9
+    // and draw 4/5/6/7 differently, so the badge must use the Urdu face.
+    final badge = tester.widget<Text>(find.text('۰۱'));
+    expect(badge.style?.fontFamily, 'NotoNastaliqUrdu');
   });
 
   testWidgets('shows an empty-state message when the catalog has no lectures',
@@ -272,6 +396,11 @@ void main() {
 
     expect(find.text('Sharah Kitab at-Tawheed'), findsOneWidget);
     expect(find.text('كتاب التوحيد'), findsNothing);
+    // The Urdu series shows its teacher (Shaikh Abdullah Nasir Rahmani).
+    expect(
+      _avatarFinder('assets/images/sheikh-abdullah-nasir-rahmani.jpg'),
+      findsOneWidget,
+    );
 
     // The active series flips to Arabic (restored from prefs / device default).
     series.setCurrentSeriesForTest(_arabicSeries);
