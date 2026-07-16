@@ -204,6 +204,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookIncreaseText => 'Increase text size';
 
   @override
+  String get bookReportIssue => 'Report a mistake';
+
+  @override
+  String get bookReportIssueSubject => 'Kitab at-Tawheed — book correction';
+
+  @override
+  String get bookReportIssueIntro =>
+      'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.';
+
+  @override
+  String get bookReportIssueUnavailable => 'No contact address is configured';
+
+  @override
   String get bookColorKey => 'Color key';
 
   @override

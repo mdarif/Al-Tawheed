@@ -443,6 +443,30 @@ abstract class AppLocalizations {
   /// **'Increase text size'**
   String get bookIncreaseText;
 
+  /// No description provided for @bookReportIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a mistake'**
+  String get bookReportIssue;
+
+  /// Subject line of the prefilled correction email sent from the Book reader. The chapter reference is appended to the body, not here — a subject the reader might edit is not a reliable place for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Kitab at-Tawheed — book correction'**
+  String get bookReportIssueSubject;
+
+  /// Body text prefilled above the diagnostic block in the correction email. The diagnostic block itself (edition, chapter, version) is deliberately NOT translated — only the maintainer reads it.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.'**
+  String get bookReportIssueIntro;
+
+  /// Snackbar shown when the mail app cannot be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact address is configured'**
+  String get bookReportIssueUnavailable;
+
   /// No description provided for @bookColorKey.
   ///
   /// In en, this message translates to:

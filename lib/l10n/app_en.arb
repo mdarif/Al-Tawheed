@@ -101,6 +101,20 @@
   "bookShareChapter": "Share chapter",
   "bookDecreaseText": "Decrease text size",
   "bookIncreaseText": "Increase text size",
+  "bookReportIssue": "Report a mistake",
+  "bookReportIssueSubject": "Kitab at-Tawheed — book correction",
+  "@bookReportIssueSubject": {
+    "description": "Subject line of the prefilled correction email sent from the Book reader. The chapter reference is appended to the body, not here — a subject the reader might edit is not a reliable place for it."
+  },
+  "bookReportIssueIntro": "Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.",
+  "@bookReportIssueIntro": {
+    "description": "Body text prefilled above the diagnostic block in the correction email. The diagnostic block itself (edition, chapter, version) is deliberately NOT translated — only the maintainer reads it."
+  },
+  "bookReportIssueUnavailable": "No contact address is configured",
+  "@bookReportIssueUnavailable": {
+    "description": "Snackbar shown when the mail app cannot be opened."
+  },
+
   "bookColorKey": "Color key",
   "bookLegendVerse": "Qur'an verse",
   "bookLegendCitation": "Reference (surah:ayah)",

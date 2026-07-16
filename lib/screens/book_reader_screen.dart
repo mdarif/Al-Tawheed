@@ -8,6 +8,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/book/report_mistake_footer.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
@@ -136,18 +137,18 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
           IconButton(
             icon: const Icon(Icons.text_decrease_rounded),
             tooltip: context.l10n.bookDecreaseText,
-            onPressed: context.watch<ReadingProvider>().bookFontSize >
-                    _minFontSize
-                ? () => _adjustFont(-_fontStep)
-                : null,
+            onPressed:
+                context.watch<ReadingProvider>().bookFontSize > _minFontSize
+                    ? () => _adjustFont(-_fontStep)
+                    : null,
           ),
           IconButton(
             icon: const Icon(Icons.text_increase_rounded),
             tooltip: context.l10n.bookIncreaseText,
-            onPressed: context.watch<ReadingProvider>().bookFontSize <
-                    _maxFontSize
-                ? () => _adjustFont(_fontStep)
-                : null,
+            onPressed:
+                context.watch<ReadingProvider>().bookFontSize < _maxFontSize
+                    ? () => _adjustFont(_fontStep)
+                    : null,
           ),
           IconButton(
             icon: const Icon(Icons.palette_outlined),
@@ -361,8 +362,9 @@ class _BookBodyState extends State<_BookBody> {
       }
       // Line leading follows the taller script present (Nastaliq needs more),
       // so a mixed Urdu-intro + Arabic-āyah line still breathes.
-      final height =
-          runs.any((r) => _urduLetters.hasMatch(r.$1)) ? _urduHeight : _arabicHeight;
+      final height = runs.any((r) => _urduLetters.hasMatch(r.$1))
+          ? _urduHeight
+          : _arabicHeight;
 
       // The masāʾil heading closes the matn and opens the author's summary
       // points — mark the seam with a rule and extra space above it.
@@ -370,7 +372,11 @@ class _BookBodyState extends State<_BookBody> {
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(top: 12, bottom: 20),
-            child: Divider(height: 1, thickness: 1, color: colors.masailHeading.withValues(alpha: 0.35)),
+            child: Divider(
+                height: 1,
+                thickness: 1,
+                color: colors.masailHeading.withValues(alpha: 0.35),
+              ),
           ),
         );
       }
@@ -484,24 +490,33 @@ class _BookBodyState extends State<_BookBody> {
     return SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.all(20),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _renderLines(
-            template,
-            fontSize,
-            (
-              verse: context.bookVerseColor,
-              citation: context.bookCitationColor,
-              hadith: context.bookHadithColor,
-              // Brand gold, deliberately NOT one of the three scripture
-              // colours: the masāʾil heading is structural, not a fourth
-              // category of quoted text.
-              masailHeading: context.brandColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // RTL wraps the scripture only. The footer below is chrome and
+          // follows the app locale, so it must not inherit this.
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _renderLines(
+                template,
+                fontSize,
+                (
+                  verse: context.bookVerseColor,
+                  citation: context.bookCitationColor,
+                  hadith: context.bookHadithColor,
+                  // Brand gold, deliberately NOT one of the three scripture
+                  // colours: the masāʾil heading is structural, not a fourth
+                  // category of quoted text.
+                  masailHeading: context.brandColor,
+                ),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 32),
+          ReportMistakeFooter(chapterId: widget.chapterId),
+        ],
       ),
     );
   }

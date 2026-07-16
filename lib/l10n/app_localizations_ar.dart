@@ -201,6 +201,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookIncreaseText => 'تكبير حجم الخط';
 
   @override
+  String get bookReportIssue => 'الإبلاغ عن خطأ';
+
+  @override
+  String get bookReportIssueSubject => 'كتاب التوحيد — تصويب في الكتاب';
+
+  @override
+  String get bookReportIssueIntro =>
+      'يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.';
+
+  @override
+  String get bookReportIssueUnavailable => 'لا يوجد عنوان تواصل مُعدّ';
+
+  @override
   String get bookColorKey => 'مفتاح الألوان';
 
   @override

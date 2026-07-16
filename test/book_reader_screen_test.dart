@@ -6,6 +6,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
@@ -31,6 +32,9 @@ Widget _wrap(BookProvider book, String chapterId) {
       ChangeNotifierProvider.value(value: book),
       ChangeNotifierProvider(create: (_) => ReadingProvider()),
       ChangeNotifierProvider(create: (_) => SeriesProvider()),
+      // The chapter footer's "report a mistake" link reads the contact address
+      // from here. Defaults carry one, so the link renders in these tests.
+      ChangeNotifierProvider(create: (_) => AppConfigProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,

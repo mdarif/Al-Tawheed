@@ -99,6 +99,11 @@
   "bookShareChapter": "مشاركة الباب",
   "bookDecreaseText": "تصغير حجم الخط",
   "bookIncreaseText": "تكبير حجم الخط",
+  "bookReportIssue": "الإبلاغ عن خطأ",
+  "bookReportIssueSubject": "كتاب التوحيد — تصويب في الكتاب",
+  "bookReportIssueIntro": "يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.",
+  "bookReportIssueUnavailable": "لا يوجد عنوان تواصل مُعدّ",
+
   "bookColorKey": "مفتاح الألوان",
   "bookLegendVerse": "آية قرآنية",
   "bookLegendCitation": "مرجع (سورة:آية)",

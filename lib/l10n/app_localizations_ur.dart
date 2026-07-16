@@ -205,6 +205,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get bookIncreaseText => 'متن بڑا کریں';
 
   @override
+  String get bookReportIssue => 'غلطی کی اطلاع دیں';
+
+  @override
+  String get bookReportIssueSubject => 'کتاب التوحید — کتاب میں تصحیح';
+
+  @override
+  String get bookReportIssueIntro =>
+      'براہِ کرم نیچے غلطی کی وضاحت کریں، اور اگر ممکن ہو تو اُس کے آس پاس کے الفاظ بھی نقل کر دیں۔ نیچے دی گئی تفصیلات رہنے دیں — اُنہی سے ہمیں معلوم ہوتا ہے کہ کون سا صفحہ دیکھنا ہے۔';
+
+  @override
+  String get bookReportIssueUnavailable => 'کوئی رابطہ پتہ مقرر نہیں ہے';
+
+  @override
   String get bookColorKey => 'رنگوں کی کنجی';
 
   @override
@@ -743,6 +756,19 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get bookIncreaseText => 'Text bada karein';
+
+  @override
+  String get bookReportIssue => 'Ghalti ki ittila dein';
+
+  @override
+  String get bookReportIssueSubject => 'Kitab at-Tawheed — kitab mein tasheeh';
+
+  @override
+  String get bookReportIssueIntro =>
+      'Baraye meherbani neeche ghalti ki wazahat karein, aur agar mumkin ho to us ke aas paas ke alfaz bhi naqal kar dein. Neeche di gayi tafseelat rehne dein — unhi se humein maloom hota hai ke kaun sa safha dekhna hai.';
+
+  @override
+  String get bookReportIssueUnavailable => 'Koi raabta pata muqarrar nahi hai';
 
   @override
   String get bookColorKey => 'Rangon ki kunji';
