@@ -195,12 +195,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookShareChapter => 'مشاركة الباب';
 
   @override
-  String get bookDecreaseText => 'تصغير حجم الخط';
-
-  @override
-  String get bookIncreaseText => 'تكبير حجم الخط';
-
-  @override
   String get bookReportIssue => 'الإبلاغ عن خطأ';
 
   @override

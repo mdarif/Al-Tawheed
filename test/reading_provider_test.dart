@@ -50,6 +50,36 @@ void main() {
     });
   });
 
+  // Pinch-to-zoom fires continuously, so it updates live (notify, no disk) and
+  // persists once at the end. Without this split a single pinch is dozens of
+  // prefs writes.
+  group('ReadingProvider — live font size (pinch)', () {
+    test('setBookFontSizeLive updates and notifies but does NOT persist',
+        () async {
+      final p = ReadingProvider()..load();
+      int notifications = 0;
+      p.addListener(() => notifications++);
+
+      p.setBookFontSizeLive(28.0);
+
+      expect(p.bookFontSize, 28.0);
+      expect(notifications, 1);
+      // Nothing written yet — a fresh provider still sees the old size.
+      expect((ReadingProvider()..load()).bookFontSize, 20.0);
+    });
+
+    test('commitBookFontSize persists whatever the live updates left',
+        () async {
+      final p = ReadingProvider()..load();
+      p
+        ..setBookFontSizeLive(24.0)
+        ..setBookFontSizeLive(30.0); // as if mid-pinch
+      await p.commitBookFontSize();
+
+      expect((ReadingProvider()..load()).bookFontSize, 30.0);
+    });
+  });
+
   group('ReadingProvider — book scroll offset', () {
     test('defaults to 0 for an unseen chapter', () {
       expect(ReadingProvider().bookScrollOffsetFor('ch-01'), 0.0);

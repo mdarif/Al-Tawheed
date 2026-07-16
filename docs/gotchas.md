@@ -93,6 +93,25 @@ is portable memory: any LLM working the repo should read and extend it.
 - Play caps phone screenshots at **8** and **2:1 max aspect**. The iPhone raw is
   ~2.17:1, so the framer composites onto a 2:1 canvas (1290×2580).
 
+## Book reader gestures
+
+- **Pinch-to-zoom uses a passive `Listener`, not a scale gesture recognizer.**
+  A `ScaleGestureRecognizer` competes in the gesture arena and steals
+  single-finger scroll / the horizontal page-swipe / text selection. Instead,
+  track raw pointers in a `Map<int, Offset>` via `Listener.onPointerDown/Move/Up`,
+  compute the two-finger spread ratio, and only resize when exactly two pointers
+  are down. A `_pageLocked` flag flips the `PageView` to
+  `NeverScrollableScrollPhysics` during a pinch so it can't turn the page. This
+  is lifted straight from the Quran app (`alquran-app`), which fought the arena
+  problem first — match it rather than reinventing.
+- **Snap the pinch font size to whole points.** Pinch feeds a *continuous* value
+  on every pointer-move; reshaping a whole chapter on each fractional change
+  stutters hard (the Quran app measured build frames up to ~390ms). `roundToDouble()`
+  collapses it to one reshape per 1pt crossing — imperceptible.
+- **Live vs commit for the font size.** Pinch calls `setBookFontSizeLive`
+  (notify, no disk) on every move and `commitBookFontSize` once on lift-off.
+  Persisting on every move is dozens of prefs writes per pinch.
+
 ## Book content (hand-transcribed scripture)
 
 - **The Urdu source is un-extractable — every chapter was read by eye.** The

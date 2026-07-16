@@ -22,6 +22,20 @@ class ReadingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the font size for the live UI **without** persisting — for the
+  /// pinch-to-zoom gesture, which fires continuously. Rebuilds the reader but
+  /// leaves the disk alone until [commitBookFontSize] runs at the end of the
+  /// gesture. Without this split, a single pinch is dozens of prefs writes.
+  void setBookFontSizeLive(double size) {
+    if (_bookFontSize == size) return;
+    _bookFontSize = size;
+    notifyListeners();
+  }
+
+  /// Persists whatever [bookFontSize] the live updates left — call once when a
+  /// pinch ends.
+  Future<void> commitBookFontSize() => _prefs.saveBookFontSize(_bookFontSize);
+
   /// Saved scroll offset (pixels) for [chapterId], or 0 if none.
   double bookScrollOffsetFor(String chapterId) =>
       _scrollOffsets[chapterId] ?? 0;

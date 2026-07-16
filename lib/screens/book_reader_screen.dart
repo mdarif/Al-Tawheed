@@ -9,6 +9,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/book/report_mistake.dart';
+import 'package:myapp/widgets/book/scroll_to_top_button.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
@@ -70,13 +71,57 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
 
   static const _minFontSize = 14.0;
   static const _maxFontSize = 32.0;
-  static const _fontStep = 2.0;
 
-  void _adjustFont(double delta) {
-    final reading = context.read<ReadingProvider>();
-    final next =
-        (reading.bookFontSize + delta).clamp(_minFontSize, _maxFontSize);
-    reading.setBookFontSize(next);
+  // Pinch-to-zoom, done with a passive [Listener] rather than a scale gesture
+  // recognizer — the same approach as the Quran app. Tracking raw pointers
+  // keeps it out of the gesture arena entirely, so single-finger scroll, the
+  // page swipe, and text selection are never stolen. A pinch just locks the
+  // pager and resizes the text; there is no on-screen control.
+  final Map<int, Offset> _pointers = {};
+  double? _pinchBaseDistance;
+  double _fontAtPinchStart = 0;
+  bool _pageLocked = false;
+
+  double _pointerSpread() {
+    final pts = _pointers.values.toList(growable: false);
+    return (pts[0] - pts[1]).distance;
+  }
+
+  void _onPointerDown(PointerDownEvent e) {
+    _pointers[e.pointer] = e.position;
+    if (_pointers.length == 2) {
+      _pinchBaseDistance = _pointerSpread();
+      _fontAtPinchStart = context.read<ReadingProvider>().bookFontSize;
+      if (!_pageLocked) setState(() => _pageLocked = true);
+    }
+  }
+
+  void _onPointerMove(PointerMoveEvent e) {
+    if (!_pointers.containsKey(e.pointer)) return;
+    _pointers[e.pointer] = e.position;
+    final base = _pinchBaseDistance;
+    if (_pointers.length == 2 && base != null && base > 0) {
+      // Snap to whole points: pinch feeds a continuous value on every move, and
+      // reshaping a whole chapter on each fractional change stutters badly. One
+      // reshape per 1pt crossing is imperceptible. (Lesson from the Quran app.)
+      final next = (_fontAtPinchStart * (_pointerSpread() / base))
+          .clamp(_minFontSize, _maxFontSize)
+          .roundToDouble();
+      context.read<ReadingProvider>().setBookFontSizeLive(next);
+    }
+  }
+
+  void _onPointerEnd(PointerEvent e) {
+    final wasPinching = _pointers.length == 2;
+    _pointers.remove(e.pointer);
+    if (_pointers.length < 2) _pinchBaseDistance = null;
+    // A finger lifted out of a pinch — persist the size the live updates left.
+    if (wasPinching) {
+      context.read<ReadingProvider>().commitBookFontSize();
+    }
+    if (_pointers.isEmpty && _pageLocked) {
+      setState(() => _pageLocked = false);
+    }
   }
 
   PopupMenuItem<_ReaderAction> _readerMenuItem(
@@ -156,26 +201,9 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.text_decrease_rounded),
-            tooltip: context.l10n.bookDecreaseText,
-            onPressed:
-                context.watch<ReadingProvider>().bookFontSize > _minFontSize
-                    ? () => _adjustFont(-_fontStep)
-                    : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.text_increase_rounded),
-            tooltip: context.l10n.bookIncreaseText,
-            onPressed:
-                context.watch<ReadingProvider>().bookFontSize < _maxFontSize
-                    ? () => _adjustFont(_fontStep)
-                    : null,
-          ),
-          // Secondary actions live behind one ⋮ so the bar stays A−, A+, ⋮
-          // rather than four loose icons beside a two-line title. This is also
-          // where "Report a mistake" is now discoverable — a muted link at the
-          // foot of a long chapter went unseen.
+          // Just the ⋮ — text size is set by pinch-to-zoom (no on-screen
+          // control), so the chapter title gets the width the A−/A+ buttons
+          // used to take.
           PopupMenuButton<_ReaderAction>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (action) {
@@ -216,6 +244,10 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
           ),
         ],
       ),
+      // The Listener passively watches pointers for the pinch-to-zoom (see the
+      // _onPointer* handlers); it never enters the gesture arena, so it can't
+      // steal scroll/swipe/selection.
+      //
       // SelectionArea wraps the pager (ancestor) so passages stay
       // selectable/copyable via long-press, while the PageView — being the
       // deeper widget — wins horizontal swipes in the gesture arena. That lets
@@ -224,17 +256,26 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
       // Horizontal pager — swipe to turn the page like a printed book.
       // reverse:true matches RTL reading order: a left-to-right swipe advances
       // to the next chapter (which sits to the left), right-to-left goes back.
-      body: SelectionArea(
-        child: PageView.builder(
-          controller: controller,
-          reverse: true,
-          itemCount: _chapters.length,
-          onPageChanged: (i) => setState(() => _currentIndex = i),
-          itemBuilder: (context, i) => _BookBody(
-            text: _chapters[i].text,
-            chapterId: _chapters[i].id,
-            fontFamily: fontFamily,
-            language: language,
+      body: Listener(
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerEnd,
+        onPointerCancel: _onPointerEnd,
+        child: SelectionArea(
+          child: PageView.builder(
+            controller: controller,
+            reverse: true,
+            // Freeze paging while two fingers are down, so a pinch resizes the
+            // text instead of turning the page.
+            physics: _pageLocked ? const NeverScrollableScrollPhysics() : null,
+            itemCount: _chapters.length,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            itemBuilder: (context, i) => _BookBody(
+              text: _chapters[i].text,
+              chapterId: _chapters[i].id,
+              fontFamily: fontFamily,
+              language: language,
+            ),
           ),
         ),
       ),
@@ -269,6 +310,13 @@ class _BookBodyState extends State<_BookBody> {
   final _scrollController = ScrollController();
   double _lastOffset = 0;
   late ReadingProvider _reading;
+
+  // The "back to top" button shows once you're a screenful or so down. A little
+  // hysteresis (show past 400, hide before 240) stops it flickering while you
+  // scroll around the threshold.
+  bool _showScrollTop = false;
+  static const _showTopAbove = 400.0;
+  static const _hideTopBelow = 240.0;
 
   /// Style-independent parse of [_BookBody.text], computed once per chapter
   /// (see [_parseChapter]). Each entry is a line: null = blank spacer, else a
@@ -485,7 +533,23 @@ class _BookBodyState extends State<_BookBody> {
   void initState() {
     super.initState();
     _parsedLines = _parseChapter(widget.text);
-    _scrollController.addListener(() => _lastOffset = _scrollController.offset);
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    _lastOffset = _scrollController.offset;
+    final show = _showScrollTop
+        ? _lastOffset > _hideTopBelow
+        : _lastOffset > _showTopAbove;
+    if (show != _showScrollTop) setState(() => _showScrollTop = show);
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -530,37 +594,48 @@ class _BookBodyState extends State<_BookBody> {
   Widget build(BuildContext context) {
     // Font size is driven by the A−/A+ controls in the app bar (see
     // ReadingProvider). Watching here rebuilds the body when it changes.
+    // Driven by pinch-to-zoom (see the reader's _onPointer* handlers). Watching
+    // here rebuilds the body live as the size changes.
     final fontSize = context.watch<ReadingProvider>().bookFontSize;
     // The template carries theme + colour only; per-line font, size and leading
     // are chosen by script in _renderLines. letterSpacing stays 0 — any
     // positive value breaks Arabic cursive joins and the الله ligature.
     final template = context.textTheme.bodyLarge ?? const TextStyle();
 
-    // SelectionArea makes the passages selectable/copyable — essential for a
-    // study text. No pinch-zoom gesture here, so it never competes with the
-    // PageView's horizontal swipe.
-    return SingleChildScrollView(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(20),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _renderLines(
-            template,
-            fontSize,
-            (
-              verse: context.bookVerseColor,
-              citation: context.bookCitationColor,
-              hadith: context.bookHadithColor,
-              // Brand gold, deliberately NOT one of the three scripture
-              // colours: the masāʾil heading is structural, not a fourth
-              // category of quoted text.
-              masailHeading: context.brandColor,
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(20),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _renderLines(
+                template,
+                fontSize,
+                (
+                  verse: context.bookVerseColor,
+                  citation: context.bookCitationColor,
+                  hadith: context.bookHadithColor,
+                  // Brand gold, deliberately NOT one of the three scripture
+                  // colours: the masāʾil heading is structural, not a fourth
+                  // category of quoted text.
+                  masailHeading: context.brandColor,
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: ScrollToTopButton(
+            visible: _showScrollTop,
+            onPressed: _scrollToTop,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -198,12 +198,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookShareChapter => 'Share chapter';
 
   @override
-  String get bookDecreaseText => 'Decrease text size';
-
-  @override
-  String get bookIncreaseText => 'Increase text size';
-
-  @override
   String get bookReportIssue => 'Report a mistake';
 
   @override

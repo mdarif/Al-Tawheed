@@ -6,11 +6,14 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
+import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/widgets/book/scroll_to_top_button.dart';
 import 'package:myapp/theme/app_semantic_colors.dart';
 import 'package:myapp/theme/app_theme.dart';
 
@@ -26,14 +29,14 @@ const _testBook = BookContent(
   ],
 );
 
-Widget _wrap(BookProvider book, String chapterId) {
+Widget _wrap(BookProvider book, String chapterId, {ReadingProvider? reading}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: book),
-      ChangeNotifierProvider(create: (_) => ReadingProvider()),
+      ChangeNotifierProvider.value(value: reading ?? ReadingProvider()),
       ChangeNotifierProvider(create: (_) => SeriesProvider()),
-      // The chapter footer's "report a mistake" link reads the contact address
-      // from here. Defaults carry one, so the link renders in these tests.
+      // The reader ⋮ "report a mistake" reads the contact address from here.
+      // Defaults carry one, so the row renders in these tests.
       ChangeNotifierProvider(create: (_) => AppConfigProvider()),
     ],
     child: MaterialApp.router(
@@ -72,6 +75,12 @@ TextSpan? _spanFor(WidgetTester tester, String text) {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    PreferencesService.instance.resetForTest();
+    await PreferencesService.instance.init();
+  });
 
   group('masāʾil heading', () {
     // The masail section is the author's own summary, distinct from the quoted
@@ -312,6 +321,50 @@ void main() {
     // AppConfigProvider defaults carry a contact email, so the row shows.
     expect(find.text('Report a mistake'), findsOneWidget);
     expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+  });
+
+  testWidgets('a two-finger pinch-out enlarges the book text', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+    final reading = ReadingProvider()..load(); // starts at 20
+
+    await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+    await tester.pumpAndSettle();
+
+    // Two fingers, 100px apart, spreading to 200px → a ~2× target, clamped to
+    // the 32pt max. A passive Listener drives this, so no gesture-arena setup.
+    final center = tester.getCenter(find.byType(PageView));
+    final g1 = await tester.createGesture(pointer: 1);
+    final g2 = await tester.createGesture(pointer: 2);
+    await g1.down(center - const Offset(50, 0));
+    await g2.down(center + const Offset(50, 0));
+    await tester.pump();
+    await g1.moveBy(const Offset(-50, 0));
+    await g2.moveBy(const Offset(50, 0));
+    await tester.pump();
+
+    expect(reading.bookFontSize, greaterThan(20.0));
+
+    await g1.up();
+    await g2.up();
+    await tester.pumpAndSettle();
+
+    // The enlarged size persisted on lift-off.
+    expect((ReadingProvider()..load()).bookFontSize, reading.bookFontSize);
+  });
+
+  testWidgets('the scroll-to-top button is present but hidden at the top',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    // Always in the tree so it can animate; hidden (transparent, ignoring) at
+    // the top of a chapter.
+    final button = tester.widget<ScrollToTopButton>(
+      find.byType(ScrollToTopButton).first,
+    );
+    expect(button.visible, isFalse);
   });
 }
 

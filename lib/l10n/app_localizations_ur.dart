@@ -199,12 +199,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get bookShareChapter => 'باب شیئر کریں';
 
   @override
-  String get bookDecreaseText => 'متن چھوٹا کریں';
-
-  @override
-  String get bookIncreaseText => 'متن بڑا کریں';
-
-  @override
   String get bookReportIssue => 'غلطی کی اطلاع دیں';
 
   @override
@@ -752,12 +746,6 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get bookShareChapter => 'Baab share karein';
-
-  @override
-  String get bookDecreaseText => 'Text chhota karein';
-
-  @override
-  String get bookIncreaseText => 'Text bada karein';
 
   @override
   String get bookReportIssue => 'Ghalti ki ittila dein';

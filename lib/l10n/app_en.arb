@@ -99,8 +99,6 @@
   "lecturesEmpty": "No lectures available yet",
   "bookCouldNotLoad": "Could not load the book",
   "bookShareChapter": "Share chapter",
-  "bookDecreaseText": "Decrease text size",
-  "bookIncreaseText": "Increase text size",
   "bookReportIssue": "Report a mistake",
   "bookReportIssueSubject": "Kitab at-Tawheed — book correction",
   "@bookReportIssueSubject": {
