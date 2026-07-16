@@ -214,7 +214,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.';
 
   @override
-  String get bookReportIssueUnavailable => 'No contact address is configured';
+  String bookReportIssueCopied(String email) {
+    return 'Mail app unavailable — the report is copied. Send it to $email.';
+  }
 
   @override
   String get bookColorKey => 'Color key';

@@ -64,7 +64,7 @@
   "bookReportIssue": "Ghalti ki ittila dein",
   "bookReportIssueSubject": "Kitab at-Tawheed — kitab mein tasheeh",
   "bookReportIssueIntro": "Baraye meherbani neeche ghalti ki wazahat karein, aur agar mumkin ho to us ke aas paas ke alfaz bhi naqal kar dein. Neeche di gayi tafseelat rehne dein — unhi se humein maloom hota hai ke kaun sa safha dekhna hai.",
-  "bookReportIssueUnavailable": "Koi raabta pata muqarrar nahi hai",
+  "bookReportIssueCopied": "Mail app dastiyab nahi — report copy ho gayi hai. Ise {email} par bhejein.",
   "bookColorKey": "Rangon ki kunji",
   "bookLegendVerse": "Qurani ayat",
   "bookLegendCitation": "Hawala (surat:ayat)",

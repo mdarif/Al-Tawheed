@@ -110,9 +110,10 @@
   "@bookReportIssueIntro": {
     "description": "Body text prefilled above the diagnostic block in the correction email. The diagnostic block itself (edition, chapter, version) is deliberately NOT translated — only the maintainer reads it."
   },
-  "bookReportIssueUnavailable": "No contact address is configured",
-  "@bookReportIssueUnavailable": {
-    "description": "Snackbar shown when the mail app cannot be opened."
+  "bookReportIssueCopied": "Mail app unavailable — the report is copied. Send it to {email}.",
+  "@bookReportIssueCopied": {
+    "description": "Snackbar shown when no mail app can be opened: the full report has been copied to the clipboard and the reader is told where to send it.",
+    "placeholders": { "email": { "type": "String" } }
   },
 
   "bookColorKey": "Color key",

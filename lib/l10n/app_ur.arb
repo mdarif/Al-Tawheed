@@ -66,7 +66,7 @@
   "bookReportIssue": "غلطی کی اطلاع دیں",
   "bookReportIssueSubject": "کتاب التوحید — کتاب میں تصحیح",
   "bookReportIssueIntro": "براہِ کرم نیچے غلطی کی وضاحت کریں، اور اگر ممکن ہو تو اُس کے آس پاس کے الفاظ بھی نقل کر دیں۔ نیچے دی گئی تفصیلات رہنے دیں — اُنہی سے ہمیں معلوم ہوتا ہے کہ کون سا صفحہ دیکھنا ہے۔",
-  "bookReportIssueUnavailable": "کوئی رابطہ پتہ مقرر نہیں ہے",
+  "bookReportIssueCopied": "میل ایپ دستیاب نہیں — رپورٹ کاپی ہو گئی ہے۔ اسے {email} پر بھیجیں۔",
   "bookColorKey": "رنگوں کی کنجی",
   "bookLegendVerse": "قرآنی آیت",
   "bookLegendCitation": "حوالہ (سورت:آیت)",

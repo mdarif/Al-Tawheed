@@ -1,9 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
@@ -21,6 +26,13 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+    PackageInfo.setMockInitialValues(
+      appName: 'Al-Tawheed',
+      packageName: 'com.almarfa.tawheed',
+      version: '2.4.0',
+      buildNumber: '19',
+      buildSignature: '',
+    );
   });
 
   group('buildMistakeReportUri', () {
@@ -74,6 +86,22 @@ void main() {
     });
   });
 
+  group('mistakeReportPlaintext', () {
+    // The clipboard fallback must carry the address, or a report copied on a
+    // device with no mail app has nowhere to go.
+    test('carries the address and subject inline', () {
+      final text = mistakeReportPlaintext(
+        email: 'help@example.com',
+        subject: 'A subject',
+        body: 'the report body',
+      );
+
+      expect(text, contains('To: help@example.com'));
+      expect(text, contains('Subject: A subject'));
+      expect(text, contains('the report body'));
+    });
+  });
+
   testWidgets('shows the report link when a contact address is configured',
       (tester) async {
     // AppConfigProvider defaults carry a contact email.
@@ -82,6 +110,40 @@ void main() {
 
     expect(find.byType(TextButton), findsOneWidget);
     expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+  });
+
+  testWidgets('falls back to the clipboard when no mail app can open',
+      (tester) async {
+    // Stand in for a device with no email account: the launch declines.
+    final original = UrlLauncherPlatform.instance;
+    UrlLauncherPlatform.instance = _DecliningLauncher();
+    addTearDown(() => UrlLauncherPlatform.instance = original);
+
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await tester.pumpWidget(_wrap(AppConfigProvider()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextButton));
+    await tester.pumpAndSettle();
+
+    // The report is preserved, address and all, rather than lost to a snackbar.
+    expect(copied, isNotNull);
+    expect(copied, contains('To: '));
+    expect(copied, contains('Edition: tawheed-ur'));
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('renders nothing when no address is configured', (tester) async {
@@ -102,6 +164,21 @@ void main() {
     expect(find.byType(TextButton), findsNothing);
     expect(find.byKey(const Key('book-report-mistake-footer')), findsNothing);
   });
+}
+
+/// A url_launcher platform that declines every launch — the mail-app-missing
+/// case. Mixing in [MockPlatformInterfaceMixin] bypasses the platform-interface
+/// token check so it can be assigned to [UrlLauncherPlatform.instance].
+class _DecliningLauncher extends UrlLauncherPlatform
+    with MockPlatformInterfaceMixin {
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> canLaunch(String url) async => false;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async => false;
 }
 
 const _book = BookContent(

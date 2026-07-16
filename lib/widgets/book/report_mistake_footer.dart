@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -47,6 +48,18 @@ String mistakeReportDetails({
     'Chapter: $chapterNumber — $chapterTitle\n'
     'App: $version';
 
+/// The report as plain text for the clipboard fallback, when no mail app can be
+/// opened. Carries the address and subject inline so a report pasted into any
+/// app — chat, notes, a webmail tab — still says where it needs to go.
+String mistakeReportPlaintext({
+  required String email,
+  required String subject,
+  required String body,
+}) =>
+    'To: $email\n'
+    'Subject: $subject\n\n'
+    '$body';
+
 /// A quiet "report a mistake" link at the foot of every Book chapter.
 ///
 /// The Book is a hand-transcribed draft awaiting scholarly review, and its
@@ -91,17 +104,24 @@ class ReportMistakeFooter extends StatelessWidget {
       version: version,
     )}';
 
-    final uri = buildMistakeReportUri(
-      email: config.contact.email,
-      subject: l10n.bookReportIssueSubject,
-      body: body,
-    );
+    final email = config.contact.email;
+    final subject = l10n.bookReportIssueSubject;
 
-    if (uri == null || !await launchExternalUrl(uri)) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.bookReportIssueUnavailable)),
-      );
-    }
+    final uri =
+        buildMistakeReportUri(email: email, subject: subject, body: body);
+    if (uri != null && await launchExternalUrl(uri)) return;
+
+    // No mail app (common on devices with no email account). Don't lose the
+    // report — copy it, address and all, and tell the reader where to send it.
+    await Clipboard.setData(
+      ClipboardData(
+        text:
+            mistakeReportPlaintext(email: email, subject: subject, body: body),
+      ),
+    );
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.bookReportIssueCopied(email))),
+    );
   }
 
   @override

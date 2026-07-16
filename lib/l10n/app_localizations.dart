@@ -461,11 +461,11 @@ abstract class AppLocalizations {
   /// **'Please describe the mistake below, quoting the words around it if you can. Keep the details at the bottom — they tell us exactly which page to check.'**
   String get bookReportIssueIntro;
 
-  /// Snackbar shown when the mail app cannot be opened.
+  /// Snackbar shown when no mail app can be opened: the full report has been copied to the clipboard and the reader is told where to send it.
   ///
   /// In en, this message translates to:
-  /// **'No contact address is configured'**
-  String get bookReportIssueUnavailable;
+  /// **'Mail app unavailable — the report is copied. Send it to {email}.'**
+  String bookReportIssueCopied(String email);
 
   /// No description provided for @bookColorKey.
   ///

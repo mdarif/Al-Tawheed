@@ -102,7 +102,7 @@
   "bookReportIssue": "الإبلاغ عن خطأ",
   "bookReportIssueSubject": "كتاب التوحيد — تصويب في الكتاب",
   "bookReportIssueIntro": "يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.",
-  "bookReportIssueUnavailable": "لا يوجد عنوان تواصل مُعدّ",
+  "bookReportIssueCopied": "تطبيق البريد غير متاح — تم نسخ التقرير. أرسله إلى {email}.",
 
   "bookColorKey": "مفتاح الألوان",
   "bookLegendVerse": "آية قرآنية",

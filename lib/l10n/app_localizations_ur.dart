@@ -215,7 +215,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'براہِ کرم نیچے غلطی کی وضاحت کریں، اور اگر ممکن ہو تو اُس کے آس پاس کے الفاظ بھی نقل کر دیں۔ نیچے دی گئی تفصیلات رہنے دیں — اُنہی سے ہمیں معلوم ہوتا ہے کہ کون سا صفحہ دیکھنا ہے۔';
 
   @override
-  String get bookReportIssueUnavailable => 'کوئی رابطہ پتہ مقرر نہیں ہے';
+  String bookReportIssueCopied(String email) {
+    return 'میل ایپ دستیاب نہیں — رپورٹ کاپی ہو گئی ہے۔ اسے $email پر بھیجیں۔';
+  }
 
   @override
   String get bookColorKey => 'رنگوں کی کنجی';
@@ -768,7 +770,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
       'Baraye meherbani neeche ghalti ki wazahat karein, aur agar mumkin ho to us ke aas paas ke alfaz bhi naqal kar dein. Neeche di gayi tafseelat rehne dein — unhi se humein maloom hota hai ke kaun sa safha dekhna hai.';
 
   @override
-  String get bookReportIssueUnavailable => 'Koi raabta pata muqarrar nahi hai';
+  String bookReportIssueCopied(String email) {
+    return 'Mail app dastiyab nahi — report copy ho gayi hai. Ise $email par bhejein.';
+  }
 
   @override
   String get bookColorKey => 'Rangon ki kunji';

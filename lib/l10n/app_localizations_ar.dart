@@ -211,7 +211,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'يُرجى وصف الخطأ أدناه، مع نقل الكلمات المحيطة به إن أمكن. أبقِ التفاصيل في الأسفل — فهي تدلّنا على الصفحة المقصودة بالضبط.';
 
   @override
-  String get bookReportIssueUnavailable => 'لا يوجد عنوان تواصل مُعدّ';
+  String bookReportIssueCopied(String email) {
+    return 'تطبيق البريد غير متاح — تم نسخ التقرير. أرسله إلى $email.';
+  }
 
   @override
   String get bookColorKey => 'مفتاح الألوان';
