@@ -30,6 +30,16 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **`SharePlus.instance` caches the `SharePlatform` at first access — one shared
+  fake per test file, not one per test.** To assert what a widget shared, tests
+  swap `SharePlatform.instance` for a `_FakeSharePlatform` (with
+  `MockPlatformInterfaceMixin`) that records `lastParams`. But `SharePlus` grabs
+  the platform on its **first** `.share()` call and reuses it, so reassigning
+  `SharePlatform.instance` in a *second* share test has no effect — that test's
+  local fake stays `null` (`Actual: <null>`) while the first fake silently
+  captured the call. Symptom: the test passes alone, fails in the full file.
+  Fix: a single module-level fake, `SharePlatform.instance = _fake` +
+  `_fake.lastParams = null` in `setUp` (see `player_screen_test.dart`).
 - **`integration_test/app_test.dart` is the E2E gate and silently drifts when
   navigation changes — update it in the SAME change as any nav rework.** It
   navigates the shell by tab *label* (`AppFlow.navigateToTab(tester, 'Home')`),
@@ -439,6 +449,38 @@ is portable memory: any LLM working the repo should read and extend it.
   immediately but the **edge serves the old copy for up to ~1 h** before
   revalidating. Verify a deploy with a **cache-buster query** (`?cb=<ts>` bypasses
   the edge cache); purge in the Cloudflare dashboard for urgent changes.
+
+## Sharing
+
+- **Lecture share links are rebuilt app-side to mirror the *website's* slug
+  scheme — a hidden cross-repo coupling.** The player + lecture-row "Share
+  lecture" action (`lib/utils/lecture_share.dart`) does **not** share the raw R2
+  `.mp3`; it shares a link to the lecture's page on `kitabattawheed.com`, chosen
+  because that page plays in any browser (incl. desktop — a real listener use
+  case) and nudges an install. The URL is reconstructed from fields the app
+  already has, to match what `Al-Tawheed-Web/src/lib/catalog.ts` generates:
+  - Urdu series → `/lectures/{chapterId}/part-NN/`
+  - Arabic series → `/arabic/dars-NN/`
+- **`NN` is the GLOBAL lecture number (1–50), not a per-chapter part index.**
+  `lectureSlug` = `part-${pad(lecture.number)}`, and `lecture.number` runs
+  globally across the series — so **class-02's first lecture is `part-03`** and
+  **class-15 starts at `part-49`**, each under its own `chapterId`. Building a
+  URL by counting position within a chapter (part-01, part-02…) is wrong and
+  404s. Always pair the lecture's own `chapterId` with its own `number`.
+- **Slug digits must be ASCII** (`number.toString().padLeft(2,'0')`) — never run
+  them through the localized-numeral formatter (`localizedDigits`/Arabic-Indic),
+  or the URL breaks under Arabic/Urdu UI locales. (Contrast the row's number
+  *badge*, which is intentionally localized.)
+- **If the website changes its slug helpers, shared links silently 404.** There
+  is no incoming deep-link/universal-link infra (no Android intent-filters, iOS
+  associated-domains, or `/lecture/:id` route), so a shared link opens the web
+  page, never the app. Verify after slug/catalog changes by curling a real
+  `(chapterId, number)` pair from `catalog.json`.
+- **`shareButton` flag is the single kill-switch** for all three share
+  affordances (player app-bar, lecture rows, and the app-bar ⋯ "Share app",
+  which moved out of the `appLinks`-gated Settings section so it's actually
+  reachable). It defaults `true`; unknown keys parse safely, so no content
+  change is needed to ship it on.
 
 ## Security
 

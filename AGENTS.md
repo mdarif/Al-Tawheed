@@ -81,6 +81,15 @@ lib/screens (13)  providers (13)  services (8)  models (8)
    with `make release-auto` from `develop`; never hand-tag.
 6. **Before pushing:** `make analyze && make test` must be green (the pre-push
    hook enforces this).
+7. **Changes ship with tests — in the same change.** New or changed behaviour
+   gets coverage: pure logic → a unit test; UI → a widget test that fakes the
+   platform channel (`SharePlatform`, `url_launcher`, etc., as existing tests
+   do). Cover the **happy path *and*** the flag-gated / empty / edge branches
+   (e.g. a feature-flagged control: present when on, absent when off). When a
+   screen embeds shared chrome (`AppOverflowMenu`, mini-player), its test must
+   provide the same providers the app wires globally, or it throws
+   `ProviderNotFoundException`. A green `make test` is the floor, not the goal —
+   don't wait to be asked for tests.
 
 ---
 

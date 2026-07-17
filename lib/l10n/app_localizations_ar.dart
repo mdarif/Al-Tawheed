@@ -213,6 +213,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookShareChapter => 'مشاركة الباب';
 
   @override
+  String get shareLecture => 'مشاركة المحاضرة';
+
+  @override
   String get bookReportIssue => 'الإبلاغ عن خطأ';
 
   @override

@@ -467,6 +467,12 @@ abstract class AppLocalizations {
   /// **'Share chapter'**
   String get bookShareChapter;
 
+  /// Tooltip/label for the action that shares a link to the current lecture's page on the website. Shown on the player app bar and each lecture row.
+  ///
+  /// In en, this message translates to:
+  /// **'Share lecture'**
+  String get shareLecture;
+
   /// No description provided for @bookReportIssue.
   ///
   /// In en, this message translates to:

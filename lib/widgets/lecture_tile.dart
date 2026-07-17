@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
@@ -9,6 +11,7 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/lecture_share.dart';
 import 'package:myapp/widgets/download_button.dart';
 
 class LectureTile extends StatelessWidget {
@@ -186,10 +189,12 @@ class _ProgressBadge extends StatelessWidget {
   }
 }
 
-/// Trailing area of the tile — adapts based on the downloads feature flag.
+/// Trailing area of the tile — adapts based on the downloads feature flag, with
+/// a share button appended when the `shareButton` flag is on.
 ///
 /// Downloads ON:  bookmark indicator (if saved) + download button
 /// Downloads OFF: bookmark/play circle (current behaviour)
+/// Share ON:      + a share button (in either case)
 class _TileTrailing extends StatelessWidget {
   final Lecture lecture;
   const _TileTrailing({required this.lecture});
@@ -199,11 +204,14 @@ class _TileTrailing extends StatelessWidget {
     final downloadsEnabled = context.select<FeatureFlagsProvider, bool>(
       (p) => p.features.downloads,
     );
+    final shareEnabled = context.select<FeatureFlagsProvider, bool>(
+      (p) => p.features.shareButton,
+    );
 
-    if (downloadsEnabled) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (downloadsEnabled) ...[
           Selector<ProgressProvider, bool>(
             selector: (_, p) => p.isBookmarked(lecture.id),
             builder: (_, saved, __) => saved
@@ -218,19 +226,53 @@ class _TileTrailing extends StatelessWidget {
                 : const SizedBox.shrink(),
           ),
           DownloadButton(lecture: lecture, size: 20),
-        ],
-      );
-    }
+        ] else
+          Selector<ProgressProvider, bool>(
+            selector: (_, p) => p.isBookmarked(lecture.id),
+            builder: (_, isBookmarked, __) => Icon(
+              isBookmarked
+                  ? Icons.bookmark_rounded
+                  : Icons.play_circle_outline_rounded,
+              color: isBookmarked ? context.brandColor : context.mutedIconColor,
+              size: 22,
+            ),
+          ),
+        if (shareEnabled) _ShareTileButton(lecture: lecture),
+      ],
+    );
+  }
+}
 
-    return Selector<ProgressProvider, bool>(
-      selector: (_, p) => p.isBookmarked(lecture.id),
-      builder: (_, isBookmarked, __) => Icon(
-        isBookmarked
-            ? Icons.bookmark_rounded
-            : Icons.play_circle_outline_rounded,
-        color: isBookmarked ? context.brandColor : context.mutedIconColor,
-        size: 22,
-      ),
+/// Compact share affordance on a lecture row — shares a link to the lecture's
+/// page on the website. Sized to match [DownloadButton] so the trailing row
+/// stays tidy.
+class _ShareTileButton extends StatelessWidget {
+  final Lecture lecture;
+  const _ShareTileButton({required this.lecture});
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 20.0;
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: size + 8, minHeight: size + 8),
+      tooltip: context.l10n.shareLecture,
+      icon: Icon(Icons.share_rounded, size: size, color: context.mutedIconColor),
+      onPressed: () {
+        final series = context.read<SeriesProvider>().currentSeries;
+        final title = context.read<LanguageProvider>().resolveForSeries(
+              lecture.title,
+              series,
+            );
+        final url = lectureWebUrl(
+          lecture,
+          series,
+          websiteBase: context.read<AppConfigProvider>().config.links.website,
+        );
+        SharePlus.instance.share(
+          ShareParams(text: lectureShareText(title: title, url: url)),
+        );
+      },
     );
   }
 }

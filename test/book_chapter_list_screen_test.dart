@@ -7,6 +7,7 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/book_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -38,6 +39,9 @@ Widget _wrap({required BookProvider book, required SeriesProvider series}) {
     providers: [
       ChangeNotifierProvider.value(value: book),
       ChangeNotifierProvider.value(value: series),
+      // The screen's app bar hosts AppOverflowMenu, which reads the shareButton
+      // flag; the app provides this globally.
+      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,

@@ -216,6 +216,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookShareChapter => 'Share chapter';
 
   @override
+  String get shareLecture => 'Share lecture';
+
+  @override
   String get bookReportIssue => 'Report a mistake';
 
   @override

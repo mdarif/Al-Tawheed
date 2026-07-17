@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/audio/audio_handler.dart';
@@ -10,6 +12,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -129,6 +132,7 @@ Future<PlayerNotifier> _pumpPlayer(
       ChangeNotifierProvider.value(value: featureFlags ?? FeatureFlagsProvider()),
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider.value(value: seriesProvider),
+      ChangeNotifierProvider(create: (_) => AppConfigProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     child: MaterialApp.router(
@@ -156,6 +160,11 @@ Future<PlayerNotifier> _pumpPlayer(
   return player;
 }
 
+// One shared fake for the whole file: SharePlus.instance caches SharePlatform
+// at first access, so reassigning SharePlatform.instance per-test only affects
+// the first share test. A single instance (reset in setUp) sidesteps that.
+final _sharePlatform = _FakeSharePlatform();
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -163,6 +172,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+    SharePlatform.instance = _sharePlatform;
+    _sharePlatform.lastParams = null;
   });
 
   group('PlayerScreen — no lecture loaded', () {
@@ -174,6 +185,8 @@ void main() {
       expect(find.byIcon(Icons.bookmark_outline_rounded), findsNothing);
       expect(find.byIcon(Icons.bookmark_rounded), findsNothing);
       expect(find.byType(DownloadButton), findsNothing);
+      // The share button also collapses to nothing without a loaded lecture.
+      expect(find.byIcon(Icons.share_rounded), findsNothing);
 
       final skipPrev = tester.widget<IconButton>(
         find.widgetWithIcon(IconButton, Icons.skip_previous_rounded),
@@ -510,4 +523,63 @@ void main() {
       handle.dispose();
     });
   });
+
+  group('PlayerScreen — share', () {
+    testWidgets('shares the resolved title + a link to the lecture web page',
+        (tester) async {
+      await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
+
+      await tester.tap(find.byTooltip('Share lecture'));
+      await tester.pumpAndSettle();
+
+      // Urdu series (the offline default) → the chaptered /lectures/ path,
+      // built from the lecture's chapterId + number, preceded by the title.
+      expect(
+        _sharePlatform.lastParams?.text,
+        'Lecture 1\n\nhttps://kitabattawheed.com/lectures/ch-1/part-01/',
+      );
+    });
+
+    testWidgets('the share button is hidden when the shareButton flag is off',
+        (tester) async {
+      final flags = FeatureFlagsProvider()
+        ..setFeaturesJsonForTest({'shareButton': false});
+      await _pumpPlayer(tester, lecture: _lectures.first, featureFlags: flags);
+
+      expect(find.byTooltip('Share lecture'), findsNothing);
+    });
+
+    testWidgets('Arabic series shares the /arabic/dars-NN/ link + Arabic title',
+        (tester) async {
+      await _pumpPlayer(
+        tester,
+        lecture: _arabicLectures.first,
+        queue: _arabicLectures,
+        series: _arabicSeries,
+        catalog: _arabicCatalog(),
+        locale: const Locale('ar'),
+      );
+
+      // Under Arabic chrome the tooltip is localized, so match by icon.
+      await tester.tap(find.byIcon(Icons.share_rounded));
+      await tester.pumpAndSettle();
+
+      // Arabic series → the /arabic/dars-NN/ path, and the title resolves to the
+      // Arabic edition string (resolveForSeries), not the English fallback.
+      expect(
+        _sharePlatform.lastParams?.text,
+        'الدرس 1\n\nhttps://kitabattawheed.com/arabic/dars-01/',
+      );
+    });
+  });
+}
+
+class _FakeSharePlatform extends SharePlatform with MockPlatformInterfaceMixin {
+  ShareParams? lastParams;
+
+  @override
+  Future<ShareResult> share(ShareParams params) async {
+    lastParams = params;
+    return ShareResult('', ShareResultStatus.success);
+  }
 }

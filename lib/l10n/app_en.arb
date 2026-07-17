@@ -105,6 +105,10 @@
   "lecturesEmpty": "No lectures available yet",
   "bookCouldNotLoad": "Could not load the book",
   "bookShareChapter": "Share chapter",
+  "shareLecture": "Share lecture",
+  "@shareLecture": {
+    "description": "Tooltip/label for the action that shares a link to the current lecture's page on the website. Shown on the player app bar and each lecture row."
+  },
   "bookReportIssue": "Report a mistake",
   "bookReportIssueSubject": "Kitab at-Tawheed — book correction",
   "@bookReportIssueSubject": {

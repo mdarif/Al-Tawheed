@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
@@ -70,6 +71,9 @@ Widget _wrap({required SeriesProvider series, CatalogProvider? catalog}) {
     providers: [
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider.value(value: catalogProvider),
+      // The screen's app bar hosts AppOverflowMenu, which reads the shareButton
+      // flag; the app provides this globally.
+      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(

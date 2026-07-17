@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/audio/playback_source.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -14,6 +16,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/lecture_share.dart';
 import 'package:myapp/utils/offline_player_strip.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/download_button.dart';
@@ -52,6 +55,10 @@ class PlayerScreen extends StatelessWidget {
                 (p) => p.features.downloads,
               ))
                 const _PlayerDownloadButton(),
+              if (context.select<FeatureFlagsProvider, bool>(
+                (p) => p.features.shareButton,
+              ))
+                const _PlayerShareButton(),
               const SizedBox(width: 4),
             ],
           ),
@@ -579,5 +586,41 @@ class _PlayerDownloadButton extends StatelessWidget {
     );
     if (lecture == null) return const SizedBox.shrink();
     return DownloadButton(lecture: lecture, size: 22);
+  }
+}
+
+class _PlayerShareButton extends StatelessWidget {
+  const _PlayerShareButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final lecture = context.select<PlayerNotifier, Lecture?>(
+      (p) => p.current,
+    );
+    if (lecture == null) return const SizedBox.shrink();
+    final l10n = context.l10n;
+    return IconButton(
+      tooltip: l10n.shareLecture,
+      icon: Icon(Icons.share_rounded, color: context.primaryTextColor),
+      // Shares a link to the lecture's page on the website — chosen over the
+      // raw R2 audio URL because that page plays in any browser (incl. desktop)
+      // and nudges an install. URL is rebuilt from the series + lecture; see
+      // lecture_share.dart.
+      onPressed: () {
+        final series = context.read<SeriesProvider>().currentSeries;
+        final title = context.read<LanguageProvider>().resolveForSeries(
+              lecture.title,
+              series,
+            );
+        final url = lectureWebUrl(
+          lecture,
+          series,
+          websiteBase: context.read<AppConfigProvider>().config.links.website,
+        );
+        SharePlus.instance.share(
+          ShareParams(text: lectureShareText(title: title, url: url)),
+        );
+      },
+    );
   }
 }

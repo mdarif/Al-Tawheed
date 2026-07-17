@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -115,10 +114,12 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 32),
 
-          // The App section bundles promotional/outbound links (contact, share,
-          // rate, YouTube). Gated behind its own feature flag (default off) so it
-          // can be hidden now and re-enabled remotely. The official website is
-          // surfaced separately in the About card, so it is not duplicated here.
+          // The App section bundles promotional/outbound links (contact, rate,
+          // YouTube). Gated behind its own feature flag (default off) so it can
+          // be hidden now and re-enabled remotely. "Share app" used to live here
+          // too but moved to the app-bar overflow (⋯) menu so it stays reachable
+          // regardless of this flag. The official website is surfaced separately
+          // in the About card, so it is not duplicated here.
           if (flags.features.appLinks) ...[
             _SectionHeader(l10n.settingsApp),
             _SettingsCard(
@@ -143,13 +144,6 @@ class SettingsScreen extends StatelessWidget {
                         );
                       }
                     },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.share_rounded),
-                    title: Text(l10n.settingsShareApp),
-                    onTap: () => SharePlus.instance.share(
-                      ShareParams(text: config.share.message),
-                    ),
                   ),
                   if (config.links.playStore != null)
                     ListTile(

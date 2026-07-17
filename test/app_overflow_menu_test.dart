@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/app_overflow_menu.dart';
@@ -20,9 +24,17 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizahullah'},
 );
 
-Widget _wrap(SeriesProvider series, {Locale? locale}) {
+Widget _wrap(
+  SeriesProvider series, {
+  Locale? locale,
+  FeatureFlagsProvider? flags,
+}) {
   return MultiProvider(
-    providers: [ChangeNotifierProvider.value(value: series)],
+    providers: [
+      ChangeNotifierProvider.value(value: series),
+      ChangeNotifierProvider.value(value: flags ?? FeatureFlagsProvider()),
+      ChangeNotifierProvider(create: (_) => AppConfigProvider()),
+    ],
     child: MaterialApp.router(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -104,4 +116,53 @@ void main() {
     expect(find.text(arabicL10n.saved), findsOneWidget);
     expect(find.text(arabicL10n.settingsAbout), findsOneWidget);
   });
+
+  testWidgets('offers Share app when the shareButton flag is on',
+      (tester) async {
+    await tester.pumpWidget(_wrap(SeriesProvider()));
+    await _openMenu(tester);
+
+    expect(find.text('Share app'), findsOneWidget);
+  });
+
+  testWidgets('hides Share app when the shareButton flag is off',
+      (tester) async {
+    final flags = FeatureFlagsProvider()
+      ..setFeaturesJsonForTest({'shareButton': false});
+    await tester.pumpWidget(_wrap(SeriesProvider(), flags: flags));
+    await _openMenu(tester);
+
+    expect(find.text('Share app'), findsNothing);
+    // The other entries are unaffected by the share flag.
+    expect(find.text('Bookmarks'), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
+  });
+
+  testWidgets('selecting Share app shares the configured app message',
+      (tester) async {
+    final sharePlatform = _FakeSharePlatform();
+    SharePlatform.instance = sharePlatform;
+
+    await tester.pumpWidget(_wrap(SeriesProvider()));
+    await _openMenu(tester);
+    await tester.tap(find.text('Share app').last);
+    await tester.pumpAndSettle();
+
+    // The default app-config carries the promotional "share the app" blurb.
+    expect(
+      sharePlatform.lastParams?.text,
+      AppConfigProvider().config.share.message,
+    );
+    expect(sharePlatform.lastParams?.text, isNotEmpty);
+  });
+}
+
+class _FakeSharePlatform extends SharePlatform with MockPlatformInterfaceMixin {
+  ShareParams? lastParams;
+
+  @override
+  Future<ShareResult> share(ShareParams params) async {
+    lastParams = params;
+    return ShareResult('', ShareResultStatus.success);
+  }
 }
