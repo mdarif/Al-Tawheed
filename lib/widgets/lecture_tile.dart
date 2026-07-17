@@ -205,7 +205,7 @@ class _TileTrailing extends StatelessWidget {
       (p) => p.features.downloads,
     );
     final shareEnabled = context.select<FeatureFlagsProvider, bool>(
-      (p) => p.features.shareButton,
+      (p) => p.features.shareLectureRow,
     );
 
     return Row(

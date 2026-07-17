@@ -4,15 +4,27 @@ class FeatureFlags {
   final bool studyMode;
   final bool dailyBenefits;
   final bool announcements;
+
+  /// Governs the player's "Share lecture" app-bar button and the app-bar ⋯
+  /// "Share app" action. Defaults `true`. Note: the *lecture-row* share button
+  /// is governed separately by [shareLectureRow] so it can be turned off on its
+  /// own (see there).
   final bool shareButton;
+
+  /// Whether each lecture row (on the lectures list page) shows a share button.
+  /// Split out from [shareButton] so it can be flipped off remotely if the row
+  /// looks too crowded, without affecting the player or app-share. Defaults
+  /// `true`.
+  final bool shareLectureRow;
   final bool playbackSpeed;
   final bool continueListening;
   final bool language;
 
-  /// Whether the Settings "App" section (contact, share, rate, YouTube links)
-  /// is shown. Defaults to `false` so the promotional links stay hidden until
-  /// explicitly enabled in the remote config; the official website is surfaced
-  /// separately in the About card regardless of this flag.
+  /// Whether the Settings "App" section (contact, rate, YouTube links) is shown.
+  /// Defaults to `false` so the promotional links stay hidden until explicitly
+  /// enabled in the remote config; the official website is surfaced separately
+  /// in the About card regardless of this flag. ("Share app" itself moved to the
+  /// app-bar ⋯ menu — see [shareButton].)
   final bool appLinks;
 
   const FeatureFlags({
@@ -22,6 +34,7 @@ class FeatureFlags {
     required this.dailyBenefits,
     required this.announcements,
     required this.shareButton,
+    required this.shareLectureRow,
     required this.playbackSpeed,
     required this.continueListening,
     required this.language,
@@ -37,6 +50,7 @@ class FeatureFlags {
       dailyBenefits: _bool(j, 'dailyBenefits') ?? d.dailyBenefits,
       announcements: _bool(j, 'announcements') ?? d.announcements,
       shareButton: _bool(j, 'shareButton') ?? d.shareButton,
+      shareLectureRow: _bool(j, 'shareLectureRow') ?? d.shareLectureRow,
       playbackSpeed: _bool(j, 'playbackSpeed') ?? d.playbackSpeed,
       continueListening: _bool(j, 'continueListening') ?? d.continueListening,
       language: _bool(j, 'language') ?? d.language,
@@ -56,6 +70,7 @@ class FeatureFlags {
     dailyBenefits: true,
     announcements: true,
     shareButton: true,
+    shareLectureRow: true,
     playbackSpeed: true,
     continueListening: true,
     language: true,

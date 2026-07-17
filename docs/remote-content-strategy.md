@@ -102,6 +102,7 @@ Safe defaults (stable = `true`, experimental = `false`) are hardcoded in Dart as
     "dailyBenefits": true,
     "announcements": true,
     "shareButton": true,
+    "shareLectureRow": true,
     "playbackSpeed": true,
     "continueListening": true,
     "language": false,

@@ -27,9 +27,10 @@ Lecture _lec() => const Lecture(
     );
 
 // Downloads off keeps the trailing area simple (no DownloadButton), so these
-// tests only need to wire the providers the share path touches.
+// tests only need to wire the providers the share path touches. The row share
+// is gated by shareLectureRow (not shareButton — that's player + app share).
 FeatureFlagsProvider _flags({required bool share}) => FeatureFlagsProvider()
-  ..setFeaturesJsonForTest({'downloads': false, 'shareButton': share});
+  ..setFeaturesJsonForTest({'downloads': false, 'shareLectureRow': share});
 
 Widget _wrap(FeatureFlagsProvider flags) {
   return MultiProvider(

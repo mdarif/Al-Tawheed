@@ -476,11 +476,16 @@ is portable memory: any LLM working the repo should read and extend it.
   associated-domains, or `/lecture/:id` route), so a shared link opens the web
   page, never the app. Verify after slug/catalog changes by curling a real
   `(chapterId, number)` pair from `catalog.json`.
-- **`shareButton` flag is the single kill-switch** for all three share
-  affordances (player app-bar, lecture rows, and the app-bar ⋯ "Share app",
-  which moved out of the `appLinks`-gated Settings section so it's actually
-  reachable). It defaults `true`; unknown keys parse safely, so no content
-  change is needed to ship it on.
+- **Two share flags, split by surface** (both default `true`, remotely
+  toggleable in `Al-Tawheed-Content/tawheed/feature-flags.json`):
+  - `shareButton` → the player app-bar "Share lecture" button **and** the app-bar
+    ⋯ "Share app" action (which moved out of the `appLinks`-gated Settings
+    section so it's actually reachable).
+  - `shareLectureRow` → the share button on each **lecture row**. Split out so it
+    can be flipped off on its own if the row looks crowded, without losing the
+    player or app share.
+  Unknown keys fall back to the Dart defaults (`FeatureFlags.fromJson`), so
+  shipping either on needs no content change.
 
 ## Security
 
