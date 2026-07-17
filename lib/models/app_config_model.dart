@@ -180,8 +180,13 @@ class AppConfigModel {
           subject: '${AppConfig.appTitle} — Feedback',
         ),
         share: const AppConfigShare(
-          message: 'The *${AppConfig.appTitle}* app — 50 audio lectures of '
-              'Fazilat Shaikh Abdullah Nasir Rahmani Hafizahullah.\n\n'
+          // Multilingual (Urdu/Arabic-first audience) + the branded website
+          // download page. Kept in sync with the remote app-config.json; the
+          // remote copy wins once fetched.
+          message: '*${AppConfig.appTitle}* — free audio lectures explaining '
+              'Kitab at-Tawheed, now in Urdu & Arabic.\n\n'
+              'اردو اور عربی میں کتاب التوحید کی مکمل تشریح — مفت آڈیو دروس سنیں اور ڈاؤن لوڈ کریں۔\n\n'
+              'شرح كتاب التوحيد بالأردية والعربية — دروس صوتية مجانية، استمِع وحمِّل التطبيق.\n\n'
               'https://kitabattawheed.com/download/',
         ),
         about: const AppConfigAbout(
