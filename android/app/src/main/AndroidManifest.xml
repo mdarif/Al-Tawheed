@@ -46,7 +46,7 @@
             </intent-filter>
         </activity>
         <!-- audio_service: background media playback -->
-        <!-- exported=true required: targetSdk 35 mandates it for services with intent-filter -->
+        <!-- exported=true required for services with an intent-filter on modern Android targets. -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"

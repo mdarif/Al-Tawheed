@@ -193,7 +193,7 @@ void main() {
       expect(find.text('كتاب التوحيد'), findsOneWidget);
     });
 
-    testWidgets('both cards carry an Audio chip, no language qualifier chips',
+    testWidgets('both cards carry an Audio chip and a small language chip',
         (tester) async {
       final series = SeriesProvider()
         ..load(false)
@@ -203,8 +203,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Audio'), findsNWidgets(2));
-      expect(find.text('Urdu'), findsNothing);
-      expect(find.text('Arabic'), findsNothing);
+      expect(find.text('اردو'), findsOneWidget);
+      expect(find.text('العربية'), findsOneWidget);
     });
 
     testWidgets('Study Mode chip shown only for series with hasStudyMode',
@@ -232,8 +232,7 @@ void main() {
       expect(find.text('Book'), findsOneWidget);
     });
 
-    testWidgets(
-        'minimal series (no studyMode, no book) shows only Audio chip',
+    testWidgets('minimal series (no studyMode, no book) shows only Audio chip',
         (tester) async {
       final series = SeriesProvider()
         ..load(false)
@@ -247,7 +246,7 @@ void main() {
       expect(find.text('Book'), findsNothing);
     });
 
-    testWidgets('language thumbnail shows native script labels',
+    testWidgets('language thumbnail uses shaikh portraits with language chips',
         (tester) async {
       final series = SeriesProvider()
         ..load(false)
@@ -256,6 +255,18 @@ void main() {
       await tester.pumpWidget(_wrap(series: series));
       await tester.pumpAndSettle();
 
+      expect(
+        find.image(
+          const AssetImage(
+            'assets/images/sheikh-abdullah-nasir-rahmani.jpg',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.image(const AssetImage('assets/images/sheikh_fawzan.png')),
+        findsOneWidget,
+      );
       expect(find.text('اردو'), findsOneWidget);
       expect(find.text('العربية'), findsOneWidget);
     });
@@ -319,8 +330,10 @@ void main() {
       expect(find.text('Salih al-Fawzan Hafizhahullah'), findsOneWidget);
 
       // Full names with "Shaikh" prefix should NOT appear
-      expect(find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
-          findsNothing,);
+      expect(
+        find.text('Shaikh Abdullah Nasir Rahmani Hafizahullah'),
+        findsNothing,
+      );
       expect(find.text('Shaikh Salih al-Fawzan Hafizhahullah'), findsNothing);
     });
 
@@ -334,7 +347,9 @@ void main() {
 
       expect(find.text('Abdullah Nasir Rahmani'), findsOneWidget);
       expect(
-          find.text('Fazilat Shaikh Abdullah Nasir Rahmani'), findsNothing,);
+        find.text('Fazilat Shaikh Abdullah Nasir Rahmani'),
+        findsNothing,
+      );
     });
 
     testWidgets('speaker name without known prefix is shown as-is',
@@ -354,7 +369,9 @@ void main() {
     testWidgets('tapping the already-current Urdu card goes to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')),);
+        'catalog_tawheed-ur',
+        jsonEncode(_catalogJson('urdu-book')),
+      );
 
       // Use load(true) so _currentId starts null (simulating the fresh-install
       // path where the user reaches ChooseSeriesScreen). currentSeries falls
@@ -377,7 +394,9 @@ void main() {
       expect(series.currentSeries.id, _urduSeries.id);
       expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
       expect(
-          PreferencesService.instance.selectedSeriesId, _urduSeries.id,);
+        PreferencesService.instance.selectedSeriesId,
+        _urduSeries.id,
+      );
       expect(find.text('Lectures'), findsOneWidget);
     });
   });
@@ -387,7 +406,9 @@ void main() {
         'tapping a different (Arabic) card routes to its welcome screen',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
+        'catalog_tawheed-ar',
+        jsonEncode(_catalogJson('arabic-book')),
+      );
 
       final series = SeriesProvider()
         ..load(false)
@@ -405,7 +426,9 @@ void main() {
 
       expect(series.currentSeries.id, _arabicSeries.id);
       expect(
-          PreferencesService.instance.selectedSeriesId, _arabicSeries.id,);
+        PreferencesService.instance.selectedSeriesId,
+        _arabicSeries.id,
+      );
       // Switching to a not-yet-seen series shows that series' welcome (the
       // router stays on '/'), rather than skipping straight to lectures.
       expect(series.shouldShowWelcomeForCurrentSeries, isTrue);
@@ -418,7 +441,9 @@ void main() {
     testWidgets('tapping a card shows a spinner on the tapped card',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
+        'catalog_tawheed-ar',
+        jsonEncode(_catalogJson('arabic-book')),
+      );
 
       final series = SeriesProvider()
         ..load(false)
@@ -450,7 +475,9 @@ void main() {
     testWidgets('cards are AbsorbPointer-blocked while switching',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ar', jsonEncode(_catalogJson('arabic-book')),);
+        'catalog_tawheed-ar',
+        jsonEncode(_catalogJson('arabic-book')),
+      );
 
       final series = SeriesProvider()
         ..load(false)

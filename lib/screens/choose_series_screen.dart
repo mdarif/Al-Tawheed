@@ -366,12 +366,19 @@ class _SeriesCard extends StatelessWidget {
   }
 }
 
-/// Gold square showing the series' content language in its own script — a
-/// glanceable visual identifier distinguishing the Urdu and Arabic series.
+/// Circular teacher portrait with a small language chip — a glanceable visual
+/// identifier that keeps the existing card structure while making each series
+/// feel tied to its shaikh.
 class _LanguageThumbnail extends StatelessWidget {
   const _LanguageThumbnail({required this.series});
 
   final SeriesConfig series;
+
+  String? get _portraitAsset => switch (series.language) {
+        'ar' => 'assets/images/sheikh_fawzan.png',
+        'ur' => 'assets/images/sheikh-abdullah-nasir-rahmani.jpg',
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -382,28 +389,79 @@ class _LanguageThumbnail extends StatelessWidget {
       _ => series.language.toUpperCase(),
     };
 
-    return Container(
-      width: 48,
-      height: 48,
-      padding: const EdgeInsets.all(6),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.brandColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: context.onBrandColor,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+    final portrait = _portraitAsset;
+    if (portrait == null) {
+      return Container(
+        width: 48,
+        height: 48,
+        padding: const EdgeInsets.all(6),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: context.brandColor,
+          shape: BoxShape.circle,
+        ),
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: context.onBrandColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
             ),
           ),
         ),
+      );
+    }
+
+    return SizedBox(
+      width: 58,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.brandColor,
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                portrait,
+                fit: BoxFit.cover,
+                semanticLabel: label,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: context.brandColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: context.onBrandColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
