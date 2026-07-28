@@ -307,6 +307,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAbout => 'حول';
 
   @override
+  String get moreOptions => 'المزيد من الخيارات';
+
+  @override
   String get statLectures => 'الدروس';
 
   @override

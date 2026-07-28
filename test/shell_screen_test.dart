@@ -16,6 +16,7 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -84,7 +85,8 @@ Widget _wrap({
       connectivity != null
           ? ChangeNotifierProvider.value(value: connectivity)
           : ChangeNotifierProvider(
-              create: (_) => ConnectivityProvider.testOnline(),),
+              create: (_) => ConnectivityProvider.testOnline(),
+            ),
       progress != null
           ? ChangeNotifierProvider.value(value: progress)
           : ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
@@ -93,6 +95,7 @@ Widget _wrap({
           : ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
       player != null
           ? ChangeNotifierProvider.value(value: player)
           : ChangeNotifierProvider(
@@ -143,6 +146,17 @@ Widget _wrap({
   );
 }
 
+AnimatedSlide _shellChromeSlide(WidgetTester tester) {
+  return tester.widget<AnimatedSlide>(
+    find
+        .ancestor(
+          of: find.byType(NavigationBar),
+          matching: find.byType(AnimatedSlide),
+        )
+        .first,
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -152,8 +166,7 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets(
-      'shows 3 tabs (Lectures, Book, Study) for the Urdu series',
+  testWidgets('shows 3 tabs (Lectures, Book, Study) for the Urdu series',
       (tester) async {
     final series = SeriesProvider()..load(false);
 
@@ -216,6 +229,29 @@ void main() {
     expect(find.text('الرئيسية'), findsNothing);
   });
 
+  testWidgets('hides and restores bottom navigation chrome on request',
+      (tester) async {
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(_shellChromeSlide(tester).offset, Offset.zero);
+
+    tester.element(find.byType(ShellScreen)).read<ShellChromeProvider>().hide();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(_shellChromeSlide(tester).offset, const Offset(0, 1));
+
+    tester.element(find.byType(ShellScreen)).read<ShellChromeProvider>().show();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(_shellChromeSlide(tester).offset, Offset.zero);
+  });
+
   group('ShellScreen — mini player', () {
     testWidgets(
         'shows the Arabic lecture title for the Arabic series, with l10n nav unchanged',
@@ -238,15 +274,17 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(
-        series: series,
-        catalog: _arabicCatalog(),
-        player: player,
-        progress: progress,
-        downloads: downloads,
-        connectivity: connectivity,
-        locale: const Locale('ar'),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          series: series,
+          catalog: _arabicCatalog(),
+          player: player,
+          progress: progress,
+          downloads: downloads,
+          connectivity: connectivity,
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Content (mini-player track title) is Arabic per edition, regardless of UI.

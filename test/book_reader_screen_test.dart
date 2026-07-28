@@ -23,9 +23,71 @@ const _testBook = BookContent(
   chapters: [
     BookChapter(id: 'intro', number: 0, title: 'مقدمة', text: 'نص المقدمة'),
     BookChapter(
-        id: 'ch-01', number: 1, title: 'الباب الأول', text: 'نص الباب الأول',),
+      id: 'ch-01',
+      number: 1,
+      title: 'الباب الأول',
+      text: 'نص الباب الأول',
+    ),
     BookChapter(
-        id: 'ch-02', number: 2, title: 'الباب الثاني', text: 'نص الباب الثاني',),
+      id: 'ch-02',
+      number: 2,
+      title: 'الباب الثاني',
+      text: 'نص الباب الثاني',
+    ),
+  ],
+);
+
+final _longReaderBook = BookContent(
+  title: 'كتاب التوحيد',
+  author: 'الشيخ محمد بن عبد الوهاب',
+  chapters: [
+    BookChapter(
+      id: 'ch-long',
+      number: 1,
+      title: 'باب طويل',
+      text: List.filled(80, 'نص طويل للقراءة داخل الباب الأول').join('\n'),
+    ),
+    const BookChapter(
+      id: 'ch-next',
+      number: 2,
+      title: 'باب بعده',
+      text: 'نص الباب التالي',
+    ),
+  ],
+);
+
+final _bottomClearanceBook = BookContent(
+  title: 'كتاب التوحيد',
+  author: 'الشيخ محمد بن عبد الوهاب',
+  chapters: [
+    BookChapter(
+      id: 'ch-bottom',
+      number: 1,
+      title: 'باب آخره واضح',
+      text: [
+        ...List.filled(50, 'نص طويل للقراءة داخل الباب'),
+        'آخر سطر لا يختبئ تحت التنقل',
+      ].join('\n'),
+    ),
+  ],
+);
+
+final _twoLongChaptersBook = BookContent(
+  title: 'كتاب التوحيد',
+  author: 'الشيخ محمد بن عبد الوهاب',
+  chapters: [
+    BookChapter(
+      id: 'ch-long-1',
+      number: 1,
+      title: 'باب طويل أول',
+      text: List.filled(80, 'نص طويل للقراءة داخل الباب الأول').join('\n'),
+    ),
+    BookChapter(
+      id: 'ch-long-2',
+      number: 2,
+      title: 'باب طويل ثان',
+      text: List.filled(80, 'نص طويل للقراءة داخل الباب الثاني').join('\n'),
+    ),
   ],
 );
 
@@ -71,6 +133,28 @@ TextSpan? _spanFor(WidgetTester tester, String text) {
     if (found != null) return found;
   }
   return null;
+}
+
+AnimatedSlide _readerAppBarSlide(WidgetTester tester) {
+  return tester.widget<AnimatedSlide>(
+    find
+        .ancestor(
+          of: find.text('باب طويل'),
+          matching: find.byType(AnimatedSlide),
+        )
+        .first,
+  );
+}
+
+ScrollPosition _readerScrollPosition(WidgetTester tester) {
+  return tester
+      .state<ScrollableState>(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.byType(Scrollable),
+        ),
+      )
+      .position;
 }
 
 void main() {
@@ -129,7 +213,10 @@ void main() {
 
       final span = _spanFor(tester, 'اس باب کے کچھ اہم مسائل:');
       expect(span, isNotNull);
-      expect(span!.style?.color, AppTheme.light.extension<AppSemanticColors>()!.brand);
+      expect(
+        span!.style?.color,
+        AppTheme.light.extension<AppSemanticColors>()!.brand,
+      );
       expect(span.style?.fontWeight, FontWeight.w700);
     });
 
@@ -153,7 +240,8 @@ void main() {
     });
 
     testWidgets('a chapter with no masāʾil gets no rule', (tester) async {
-      final book = BookProvider()..setBookForTest(_testBook); // Arabic, matn-only
+      final book = BookProvider()
+        ..setBookForTest(_testBook); // Arabic, matn-only
       await tester.pumpWidget(_wrap(book, 'ch-01'));
       await tester.pumpAndSettle();
 
@@ -171,17 +259,24 @@ void main() {
 
       // SeriesProvider defaults to the Urdu series here, so Urdu numerals.
       expect(find.text('۲ / ۳'), findsOneWidget);
+      expect(
+        find.widgetWithIcon(IconButton, Icons.chevron_left_rounded),
+        findsNothing,
+      );
+      expect(
+        find.widgetWithIcon(IconButton, Icons.chevron_right_rounded),
+        findsNothing,
+      );
     });
 
-    testWidgets('tracks position as you move through the book',
-        (tester) async {
+    testWidgets('tracks position as you move through the book', (tester) async {
       final book = BookProvider()..setBookForTest(_testBook);
       await tester.pumpWidget(_wrap(book, 'intro')); // 1st of 3
       await tester.pumpAndSettle();
 
       expect(find.text('۱ / ۳'), findsOneWidget);
 
-      await tester.tap(find.widgetWithIcon(IconButton, Icons.chevron_left_rounded));
+      await tester.fling(find.byType(PageView), const Offset(500, 0), 1000);
       await tester.pumpAndSettle();
 
       expect(find.text('۲ / ۳'), findsOneWidget);
@@ -198,50 +293,115 @@ void main() {
     expect(find.text('نص الباب الأول'), findsOneWidget);
   });
 
-  testWidgets('prev button is disabled on the first chapter', (tester) async {
-    final book = BookProvider()..setBookForTest(_testBook);
-
-    await tester.pumpWidget(_wrap(book, 'intro'));
-    await tester.pumpAndSettle();
-
-    final prevButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.chevron_right_rounded),
-    );
-    final nextButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.chevron_left_rounded),
-    );
-    expect(prevButton.onPressed, isNull);
-    expect(nextButton.onPressed, isNotNull);
-  });
-
-  testWidgets('next button is disabled on the last chapter', (tester) async {
-    final book = BookProvider()..setBookForTest(_testBook);
-
-    await tester.pumpWidget(_wrap(book, 'ch-02'));
-    await tester.pumpAndSettle();
-
-    final prevButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.chevron_right_rounded),
-    );
-    final nextButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.chevron_left_rounded),
-    );
-    expect(prevButton.onPressed, isNotNull);
-    expect(nextButton.onPressed, isNull);
-  });
-
-  testWidgets('next button navigates to the next chapter without growing the stack',
+  testWidgets('first visible line sits close under the reader app bar',
       (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-01'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithIcon(IconButton, Icons.chevron_left_rounded));
+    final appBarBottom = tester.getRect(find.byType(AppBar)).bottom;
+    final bodyTop = tester.getRect(find.text('نص الباب الأول')).top;
+
+    expect(bodyTop - appBarBottom, lessThanOrEqualTo(24));
+  });
+
+  testWidgets('hides reader chrome on scroll down and restores it on scroll up',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longReaderBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-long'));
     await tester.pumpAndSettle();
 
-    expect(find.text('الباب الثاني'), findsOneWidget);
-    expect(find.text('نص الباب الثاني'), findsOneWidget);
+    expect(find.text('باب طويل'), findsOneWidget);
+    expect(_readerAppBarSlide(tester).offset, Offset.zero);
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -450),
+    );
+    await tester.pumpAndSettle();
+
+    expect(_readerAppBarSlide(tester).offset, const Offset(0, -1));
+
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 220));
+    await tester.pumpAndSettle();
+
+    expect(find.text('باب طويل'), findsOneWidget);
+    expect(_readerAppBarSlide(tester).offset, Offset.zero);
+  });
+
+  testWidgets('pulling down at the chapter start does not rubber-band',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longReaderBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-long'));
+    await tester.pumpAndSettle();
+
+    final position = _readerScrollPosition(tester);
+
+    expect(position.pixels, 0);
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, 320),
+    );
+    await tester.pump();
+
+    expect(position.pixels, 0);
+  });
+
+  testWidgets('opens a chapter at the top even when an old offset was saved',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longReaderBook);
+    final reading = ReadingProvider()..load();
+    await reading.setBookScrollOffset('ch-long', 900);
+
+    await tester.pumpWidget(_wrap(book, 'ch-long', reading: reading));
+    await tester.pumpAndSettle();
+
+    expect(_readerScrollPosition(tester).pixels, 0);
+  });
+
+  testWidgets('last reader line stays above the bottom safe area',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_bottomClearanceBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-bottom'));
+    await tester.pumpAndSettle();
+
+    final position = _readerScrollPosition(tester);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+
+    final lastLineBottom =
+        tester.getRect(find.text('آخر سطر لا يختبئ تحت التنقل')).bottom;
+    final viewportBottom =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio;
+
+    expect(lastLineBottom, lessThan(viewportBottom - 20));
+  });
+
+  testWidgets('moving to another chapter starts at its own top offset',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_twoLongChaptersBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-long-1'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -520),
+    );
+    await tester.pumpAndSettle();
+
+    expect(_readerScrollPosition(tester).pixels, greaterThan(0));
+
+    await tester.drag(find.byType(PageView), const Offset(500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('باب طويل ثان'), findsOneWidget);
+    expect(_readerScrollPosition(tester).pixels, 0);
   });
 
   testWidgets('swiping the page advances to the next chapter', (tester) async {
@@ -284,15 +444,18 @@ void main() {
     // are Arabic typography and must be laid out RTL like the reader body,
     // whatever language the chrome happens to be in.
     final verseSample = tester.widget<Directionality>(
-      find.ancestor(
-        of: find.text('\u{FD3F}\u{2026}\u{FD3E}'),
-        matching: find.byType(Directionality),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('\u{FD3F}\u{2026}\u{FD3E}'),
+            matching: find.byType(Directionality),
+          )
+          .first,
     );
     expect(verseSample.textDirection, TextDirection.rtl);
   });
 
-  testWidgets('share, from the overflow menu, shares the chapter title and text',
+  testWidgets(
+      'share, from the overflow menu, shares the chapter title and text',
       (tester) async {
     final sharePlatform = _FakeSharePlatform();
     SharePlatform.instance = sharePlatform;

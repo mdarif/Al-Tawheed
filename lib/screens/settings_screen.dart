@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/providers/app_config_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -41,14 +42,14 @@ class _SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Material(
         color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         clipBehavior: Clip.antiAlias,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: context.groupedBorder, width: 1),
           ),
           child: child,
@@ -70,10 +71,12 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabSettings)),
       body: ListView(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 92),
         children: [
           _SectionHeader(l10n.settingsAppearance),
           const _SettingsCard(child: ThemeModeSwitch()),
-          const Divider(height: 32),
+          const SizedBox(height: 6),
 
           // The edition switcher is always reachable whenever multi-series is
           // active with more than one series available — there is no separate
@@ -81,9 +84,9 @@ class SettingsScreen extends StatelessWidget {
           // launched.
           if (flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
-            _SectionHeader(l10n.settingsLanguage),
+            _SectionHeader(l10n.settingsSeries),
             const _SettingsCard(child: _SeriesLanguageSelector()),
-            const Divider(height: 32),
+            const SizedBox(height: 6),
           ],
 
           // The UI-language picker is headed "App language" (distinct from the
@@ -92,27 +95,12 @@ class SettingsScreen extends StatelessWidget {
           if (flags.features.language) ...[
             _SectionHeader(l10n.settingsAppLanguage),
             const _SettingsCard(child: _LanguageSelector()),
-            const Divider(height: 32),
+            const SizedBox(height: 6),
           ],
 
           _SectionHeader(l10n.settingsPlayback),
-          _SettingsCard(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsPlaybackSpeed,
-                    style: context.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 12),
-                  const PlaybackSpeedSelector(),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 32),
+          const _SettingsCard(child: _PlaybackSpeedRow()),
+          const SizedBox(height: 6),
 
           // The App section bundles promotional/outbound links (contact, rate,
           // YouTube). Gated behind its own feature flag (default off) so it can
@@ -158,12 +146,12 @@ class SettingsScreen extends StatelessWidget {
                   if (config.links.youtube != null)
                     ListTile(
                       leading: const Icon(Icons.play_circle_outline_rounded),
-                      title: Text(
+                      title: Text(l10n.settingsYouTubeChannel),
+                      subtitle: Text(
                         context
                             .watch<LanguageProvider>()
                             .resolve(config.branding.appBrand),
                       ),
-                      subtitle: Text(l10n.settingsYouTubeChannel),
                       onTap: () => _launchOrNotify(
                         context,
                         config.links.youtube!,
@@ -173,14 +161,14 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 32),
+            const SizedBox(height: 6),
           ],
 
           if (flags.features.downloads) const _DownloadsSection(),
 
           // Settings is pure config — Bookmarks / About / Settings are reached
           // from the ⋯ overflow menu (see AppOverflowMenu), not from here.
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -194,10 +182,75 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
       child: Text(
-        title.toUpperCase(),
-        style: context.textTheme.labelSmall,
+        title,
+        style: context.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaybackSpeedRow extends StatelessWidget {
+  const _PlaybackSpeedRow();
+
+  static String _speedLabel(BuildContext context, double speed) {
+    return '${context.localizedDecimal(speed.toStringAsFixed(1))}x';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final player = context.watch<PlayerNotifier>();
+    final speed = player.speed;
+    final l10n = context.l10n;
+
+    return ListTile(
+      leading: const Icon(Icons.speed_rounded),
+      title: Text(l10n.settingsPlaybackSpeed),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _speedLabel(context, speed),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded),
+        ],
+      ),
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => ChangeNotifierProvider<PlayerNotifier>.value(
+          value: player,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.settingsPlaybackSpeed,
+                    style: context.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  const PlaybackSpeedSelector(),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -242,17 +295,15 @@ class _DownloadsSection extends StatelessWidget {
               // Storage summary + library link
               ListTile(
                 leading: const Icon(Icons.storage_rounded),
-                title: Text(
+                title: Text(l10n.offlineLibrary),
+                subtitle: Text(
                   count == 0
-                      ? l10n.settingsNoDownloads
-                      : l10n.settingsDownloadsCount(count),
+                      ? l10n.offlineLibraryEmpty
+                      : '${l10n.settingsDownloadsCount(count)}\n'
+                          '${l10n.settingsStorageUsed(_formatBytes(size))}',
                 ),
-                subtitle: count > 0
-                    ? Text(l10n.settingsStorageUsed(_formatBytes(size)))
-                    : null,
-                trailing:
-                    count > 0 ? const Icon(Icons.chevron_right_rounded) : null,
-                onTap: count > 0 ? () => context.push('/offline-library') : null,
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/offline-library'),
               ),
 
               if (count > 0)
@@ -284,7 +335,7 @@ class _DownloadsSection extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 32),
+        const SizedBox(height: 6),
       ],
     );
   }
@@ -348,8 +399,8 @@ class _SeriesLanguageSelector extends StatelessWidget {
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.changeSeriesConfirmTitle,
-      message:
-          l10n.changeSeriesConfirmMessage(_seriesLanguageLabel(context, target)),
+      message: l10n
+          .changeSeriesConfirmMessage(_seriesLanguageLabel(context, target)),
       confirmLabel: l10n.changeSeriesConfirm,
       filledConfirm: true,
     );

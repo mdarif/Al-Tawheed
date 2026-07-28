@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
 enum _Tab { lectures, book, study, settings }
+
+const _kChromeAnim = Duration(milliseconds: 220);
 
 extension on _Tab {
   String get path => switch (this) {
@@ -59,6 +62,7 @@ class ShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final series = context.watch<SeriesProvider>().currentSeries;
+    final chromeVisible = context.watch<ShellChromeProvider>().visible;
     final tabs = _tabsFor(series);
     final l10n = context.l10n;
 
@@ -70,18 +74,24 @@ class ShellScreen extends StatelessWidget {
             Expanded(child: child),
           ],
         ),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const MiniPlayer(),
-            NavigationBar(
-              selectedIndex: _selectedIndex(context, tabs),
-              onDestinationSelected: (i) => context.go(tabs[i].path),
-              destinations: [
-                for (final tab in tabs) tab.destination(l10n),
-              ],
-            ),
-          ],
+        extendBody: true,
+        bottomNavigationBar: AnimatedSlide(
+          offset: chromeVisible ? Offset.zero : const Offset(0, 1),
+          duration: _kChromeAnim,
+          curve: Curves.easeOut,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const MiniPlayer(),
+              NavigationBar(
+                selectedIndex: _selectedIndex(context, tabs),
+                onDestinationSelected: (i) => context.go(tabs[i].path),
+                destinations: [
+                  for (final tab in tabs) tab.destination(l10n),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

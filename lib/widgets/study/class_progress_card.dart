@@ -35,36 +35,36 @@ class ClassProgressCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border:
                 Border.all(color: context.brandColor.withValues(alpha: 0.38)),
             boxShadow: [
               BoxShadow(
-                color: context.brandColor.withValues(alpha: 0.14),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+                color: context.brandColor.withValues(alpha: 0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           )
         : BoxDecoration(
             color: context.groupedSurface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: context.groupedBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 5,
+                offset: const Offset(0, 1),
               ),
             ],
           );
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: decoration,
           padding: const EdgeInsets.all(14),
@@ -86,12 +86,11 @@ class ClassProgressCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            l10n.studyRecommendedNext.toUpperCase(),
+                            l10n.studyRecommendedNext,
                             style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 10,
                               color: context.brandColor,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
                             ),
                           ),
                         ],
@@ -117,6 +116,10 @@ class ClassProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         StudyStatusChip(status: info.status),
+                        if (info.isRecommended) ...[
+                          const SizedBox(width: 8),
+                          _RecommendedPlayCue(onTap: onTap),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -144,6 +147,37 @@ class ClassProgressCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecommendedPlayCue extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _RecommendedPlayCue({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: context.l10n.studyStart,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 22,
+        child: Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: context.brandColor,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.play_arrow_rounded,
+            color: context.onBrandColor,
+            size: 22,
           ),
         ),
       ),

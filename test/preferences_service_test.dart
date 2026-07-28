@@ -84,7 +84,7 @@ void main() {
   group('downloads', () {
     test('round-trips downloaded ids and the wifi-only flag', () async {
       expect(prefs.loadDownloadedIds(), isEmpty);
-      expect(prefs.downloadOnWifiOnly, isFalse);
+      expect(prefs.downloadOnWifiOnly, isTrue);
 
       await prefs.saveDownloadedIds({'lec-a'});
       await prefs.saveDownloadOnWifiOnly(true);

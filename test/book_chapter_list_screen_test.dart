@@ -9,6 +9,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -30,11 +31,33 @@ const _testBook = BookContent(
   chapters: [
     BookChapter(id: 'intro', number: 0, title: 'مقدمة', text: 'نص المقدمة'),
     BookChapter(
-        id: 'ch-01', number: 1, title: 'باب فضل التوحيد', text: 'نص الباب',),
+      id: 'ch-01',
+      number: 1,
+      title: 'باب فضل التوحيد',
+      text: 'نص الباب',
+    ),
   ],
 );
 
-Widget _wrap({required BookProvider book, required SeriesProvider series}) {
+final _longBook = BookContent(
+  title: 'كتاب التوحيد',
+  author: 'الشيخ محمد بن عبد الوهاب',
+  chapters: [
+    for (var i = 1; i <= 40; i++)
+      BookChapter(
+        id: 'ch-$i',
+        number: i,
+        title: 'باب رقم $i',
+        text: 'نص الباب',
+      ),
+  ],
+);
+
+Widget _wrap({
+  required BookProvider book,
+  required SeriesProvider series,
+  ShellChromeProvider? shellChrome,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: book),
@@ -42,6 +65,9 @@ Widget _wrap({required BookProvider book, required SeriesProvider series}) {
       // The screen's app bar hosts AppOverflowMenu, which reads the shareButton
       // flag; the app provides this globally.
       ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      shellChrome != null
+          ? ChangeNotifierProvider.value(value: shellChrome)
+          : ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
@@ -65,6 +91,17 @@ Widget _wrap({required BookProvider book, required SeriesProvider series}) {
         ],
       ),
     ),
+  );
+}
+
+AnimatedSlide _appBarSlide(WidgetTester tester) {
+  return tester.widget<AnimatedSlide>(
+    find
+        .ancestor(
+          of: find.text('كتاب التوحيد'),
+          matching: find.byType(AnimatedSlide),
+        )
+        .first,
   );
 }
 
@@ -126,7 +163,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final badge = tester.widget<Text>(find.text('۰۱'));
-    expect(badge.style?.fontFamily, SeriesConfig.legacyUrduFallback.bookFontFamily);
+    expect(
+      badge.style?.fontFamily,
+      SeriesConfig.legacyUrduFallback.bookFontFamily,
+    );
     expect(badge.style?.fontFamily, 'NotoNastaliqUrdu');
   });
 
@@ -143,6 +183,89 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reader: ch-01'), findsOneWidget);
+  });
+
+  testWidgets('hides top chrome on scroll down and restores it on scroll up',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longBook);
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+    final shellChrome = ShellChromeProvider();
+
+    await tester.pumpWidget(
+      _wrap(book: book, series: series, shellChrome: shellChrome),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('كتاب التوحيد'), findsOneWidget);
+    expect(shellChrome.visible, isTrue);
+    expect(_appBarSlide(tester).offset, Offset.zero);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await tester.pumpAndSettle();
+
+    expect(_appBarSlide(tester).offset, const Offset(0, -1));
+    expect(shellChrome.visible, isFalse);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 220));
+    await tester.pumpAndSettle();
+
+    expect(find.text('كتاب التوحيد'), findsOneWidget);
+    expect(_appBarSlide(tester).offset, Offset.zero);
+    expect(shellChrome.visible, isTrue);
+  });
+
+  testWidgets(
+      'chapter list starts below the overlaid app bar without extra gap',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longBook);
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(padding: EdgeInsets.only(top: 47)),
+        child: _wrap(book: book, series: series),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final list = tester.widget<ListView>(find.byType(ListView));
+    expect(list.padding, const EdgeInsets.only(top: 103));
+
+    final appBarBottom = tester.getRect(find.byType(AppBar)).bottom;
+    final firstChapterTop = tester.getRect(find.text('باب رقم 1')).top;
+    expect(firstChapterTop, greaterThan(appBarBottom));
+    expect(firstChapterTop - appBarBottom, lessThanOrEqualTo(24));
+  });
+
+  testWidgets('pulling down at the first chapter does not rubber-band',
+      (tester) async {
+    final book = BookProvider()..setBookForTest(_longBook);
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(book: book, series: series));
+    await tester.pumpAndSettle();
+
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+
+    expect(position.pixels, 0);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 320));
+    await tester.pump();
+
+    expect(position.pixels, 0);
   });
 
   testWidgets('loading state shows a progress indicator', (tester) async {

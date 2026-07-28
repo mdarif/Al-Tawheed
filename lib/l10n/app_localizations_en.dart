@@ -310,6 +310,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAbout => 'About';
 
   @override
+  String get moreOptions => 'More options';
+
+  @override
   String get statLectures => 'Lectures';
 
   @override

@@ -28,6 +28,8 @@ class AppOverflowMenu extends StatelessWidget {
 
     return PopupMenuButton<_MenuItem>(
       icon: const Icon(Icons.more_vert_rounded),
+      tooltip: l10n.moreOptions,
+      constraints: const BoxConstraints(minWidth: 184, maxWidth: 216),
       onSelected: (item) {
         switch (item) {
           case _MenuItem.bookmarks:
@@ -44,9 +46,9 @@ class AppOverflowMenu extends StatelessWidget {
       },
       itemBuilder: (context) => [
         _item(_MenuItem.bookmarks, Icons.bookmark_outline_rounded, l10n.saved),
+        _item(_MenuItem.about, Icons.info_outline_rounded, l10n.settingsAbout),
         if (shareEnabled)
           _item(_MenuItem.shareApp, Icons.share_rounded, l10n.settingsShareApp),
-        _item(_MenuItem.about, Icons.info_outline_rounded, l10n.settingsAbout),
       ],
     );
   }
@@ -58,10 +60,12 @@ class AppOverflowMenu extends StatelessWidget {
   ) {
     return PopupMenuItem<_MenuItem>(
       value: item,
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          Icon(icon, size: 22),
-          const SizedBox(width: 12),
+          Icon(icon, size: 21),
+          const SizedBox(width: 10),
           // Flexible so a long localized label ellipsizes rather than
           // overflowing the row.
           Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),

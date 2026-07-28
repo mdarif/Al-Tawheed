@@ -79,6 +79,9 @@ void main() {
 
   testWidgets('opens with Bookmarks and About entries', (tester) async {
     await tester.pumpWidget(_wrap(SeriesProvider()));
+
+    expect(find.byTooltip('More options'), findsOneWidget);
+
     await _openMenu(tester);
 
     expect(find.text('Bookmarks'), findsOneWidget);
@@ -86,6 +89,18 @@ void main() {
     // Settings has its own bottom-nav tab (last) and is deliberately NOT
     // duplicated in the overflow menu.
     expect(find.text('Settings'), findsNothing);
+  });
+
+  testWidgets('orders in-app destinations before Share app', (tester) async {
+    await tester.pumpWidget(_wrap(SeriesProvider()));
+    await _openMenu(tester);
+
+    final bookmarksTop = tester.getTopLeft(find.text('Bookmarks')).dy;
+    final aboutTop = tester.getTopLeft(find.text('About')).dy;
+    final shareTop = tester.getTopLeft(find.text('Share app')).dy;
+
+    expect(bookmarksTop, lessThan(aboutTop));
+    expect(aboutTop, lessThan(shareTop));
   });
 
   testWidgets('selecting Bookmarks pushes /bookmarks', (tester) async {

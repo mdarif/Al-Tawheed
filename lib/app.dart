@@ -17,6 +17,7 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
@@ -236,6 +237,7 @@ class MyApp extends StatelessWidget {
           create: (_) => ReadingProvider()..load(),
           lazy: false,
         ),
+        ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
         // Depends on SeriesProvider so the active edition can supply the
         // default chrome language (Arabic edition ⇒ Arabic UI). An explicit
         // pick still wins — see LanguageProvider.language / ADR-0002.

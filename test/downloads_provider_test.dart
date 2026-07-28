@@ -6,8 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-Lecture _lec(String id,
-        {int bytes = 1000, String chapterId = 'ch-01', String audioUrl = '',}) =>
+Lecture _lec(
+  String id, {
+  int bytes = 1000,
+  String chapterId = 'ch-01',
+  String audioUrl = '',
+}) =>
     Lecture(
       id: id,
       number: 1,
@@ -32,9 +36,9 @@ void main() {
   // ── Wi-Fi only preference ─────────────────────────────────────────────────
 
   group('downloadOnWifiOnly', () {
-    test('defaults to false', () {
+    test('defaults to true', () {
       final provider = DownloadsProvider();
-      expect(provider.downloadOnWifiOnly, isFalse);
+      expect(provider.downloadOnWifiOnly, isTrue);
     });
 
     test('setDownloadOnWifiOnly(true) persists and is readable', () async {
@@ -164,7 +168,8 @@ void main() {
       expect(provider.isChapterDownloading('ch-01'), isTrue);
     });
 
-    test('cancelChapterDownload is a no-op when chapter is not downloading', () {
+    test('cancelChapterDownload is a no-op when chapter is not downloading',
+        () {
       final provider = DownloadsProvider();
       expect(
         () => provider.cancelChapterDownload('ch-01'),

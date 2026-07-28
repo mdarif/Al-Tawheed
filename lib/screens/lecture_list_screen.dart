@@ -385,17 +385,17 @@ class _TeacherAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 64,
-      height: 64,
+      width: 68,
+      height: 68,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: context.dividerColor),
+        border: Border.all(color: context.brandColor.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
           ),
         ],
       ),

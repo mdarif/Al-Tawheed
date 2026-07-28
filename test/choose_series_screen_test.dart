@@ -218,6 +218,7 @@ void main() {
 
       // Urdu has studyMode, Arabic does not
       expect(find.text('Study Mode'), findsOneWidget);
+      expect(find.byIcon(Icons.school_rounded), findsOneWidget);
     });
 
     testWidgets('Book chip shown only for series with hasBook', (tester) async {
@@ -312,6 +313,33 @@ void main() {
             .first,
       );
       expect(material.elevation, greaterThan(0));
+    });
+
+    testWidgets('cards expose button semantics and press-scale on touch',
+        (tester) async {
+      final series = SeriesProvider()
+        ..load(false)
+        ..setAvailableSeriesForTest(const [_urduSeries]);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+      expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+      expect(
+        tester.getSemantics(find.byType(InkWell)).flagsCollection.isButton,
+        isTrue,
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(InkWell)),
+      );
+      await tester.pump();
+
+      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+      expect(scale.scale, 0.985);
+
+      await gesture.cancel();
     });
   });
 
@@ -461,6 +489,19 @@ void main() {
 
       // After tap — spinner should be visible (in-card overlay)
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      final emphasizedBorders = tester.widgetList<AnimatedContainer>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AnimatedContainer &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).border is Border &&
+              ((widget.decoration! as BoxDecoration).border! as Border)
+                      .top
+                      .width ==
+                  1.5,
+        ),
+      );
+      expect(emphasizedBorders, isNotEmpty);
 
       // Let async work complete
       await tester.runAsync(() async {

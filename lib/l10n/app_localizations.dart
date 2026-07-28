@@ -647,6 +647,12 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsAbout;
 
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
   /// No description provided for @statLectures.
   ///
   /// In en, this message translates to:

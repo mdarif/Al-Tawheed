@@ -303,12 +303,14 @@ class PlayerNotifier extends ChangeNotifier {
     Lecture lecture, {
     PlaybackSource source = PlaybackSource.stream,
     bool isStuckBuffering = false,
+    bool isPlaying = false,
   }) {
     _current = lecture;
     _queue = [lecture];
     _duration = Duration(seconds: lecture.durationSeconds);
     _playbackSource = source;
     _isStuckBuffering = isStuckBuffering;
+    _playing = isPlaying;
     notifyListeners();
   }
 

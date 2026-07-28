@@ -149,7 +149,7 @@ void main() {
       // "Next Up" recommends class-05, not the just-completed class-04.
       expect(find.text('Next Up'), findsOneWidget);
       expect(find.text('Class 05'), findsOneWidget);
-      expect(find.text('RECOMMENDED NEXT'), findsOneWidget);
+      expect(find.text('Recommended next'), findsOneWidget);
       expect(find.text('Start'), findsOneWidget);
       expect(find.text('1 part'), findsOneWidget);
       expect(find.text('Continue to Class 05'), findsOneWidget);
@@ -163,7 +163,8 @@ void main() {
       expect(find.text('Back to Study Mode'), findsOneWidget);
     });
 
-    testWidgets('shows a single "Back to Study Mode" button once every class is studied',
+    testWidgets(
+        'shows a single "Back to Study Mode" button once every class is studied',
         (tester) async {
       tester.view.physicalSize = const Size(400, 1600);
       tester.view.devicePixelRatio = 1.0;
@@ -179,9 +180,10 @@ void main() {
       // Series-complete variant: richer headline and message, no "Next Up".
       expect(find.text('Series Completed!'), findsOneWidget);
       expect(
-          find.text('You have studied every class in the series.'
-              ' May Allah make it a source of lasting benefit for you.'),
-          findsOneWidget,);
+        find.text('You have studied every class in the series.'
+            ' May Allah make it a source of lasting benefit for you.'),
+        findsOneWidget,
+      );
       expect(find.text('5 of 5 classes studied'), findsOneWidget);
       expect(find.text('100%'), findsNWidgets(2));
       expect(find.text('You have completed the full series.'), findsOneWidget);

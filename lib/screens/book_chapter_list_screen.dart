@@ -4,11 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/reader_scroll_physics.dart';
+import 'package:myapp/utils/scroll_immersion_detector.dart';
 import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
+
+const _kChromeAnim = Duration(milliseconds: 220);
 
 class BookChapterListScreen extends StatefulWidget {
   const BookChapterListScreen({super.key});
@@ -18,15 +23,60 @@ class BookChapterListScreen extends StatefulWidget {
 }
 
 class _BookChapterListScreenState extends State<BookChapterListScreen> {
+  final _scrollController = ScrollController();
+  final _immersion = ScrollImmersionDetector();
+  bool _chromeVisible = true;
+  double _lastOffset = 0;
+  ShellChromeProvider? _shellChrome;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<BookProvider>();
       if (provider.status == BookStatus.idle) {
         provider.load(context.read<SeriesProvider>().currentSeries);
       }
     });
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    final delta = offset - _lastOffset;
+    if (offset <= 8 || delta < -6) {
+      _setChromeVisible(true);
+    } else if (delta > 6) {
+      _setChromeVisible(false);
+    }
+    _lastOffset = offset;
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    final hidden = _immersion.update(notification);
+    if (hidden != null) _setChromeVisible(!hidden);
+    return false;
+  }
+
+  void _setChromeVisible(bool visible) {
+    if (_chromeVisible != visible) setState(() => _chromeVisible = visible);
+    _shellChrome?.setVisible(visible);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final shellChrome = context.read<ShellChromeProvider>();
+    if (_shellChrome == shellChrome) return;
+    _shellChrome?.show();
+    _shellChrome = shellChrome..show();
+  }
+
+  @override
+  void dispose() {
+    _shellChrome?.show();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,21 +89,25 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
     final language = series.language;
 
     return Scaffold(
-      appBar: AppBar(
-        title: book != null
-            ? Directionality(
-                textDirection: TextDirection.rtl,
-                child: Text(
-                  book.title,
-                  textAlign: TextAlign.right,
-                  style: context.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontFamily: fontFamily,
+      extendBodyBehindAppBar: true,
+      appBar: _SlidingAppBar(
+        visible: _chromeVisible,
+        child: AppBar(
+          title: book != null
+              ? Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Text(
+                    book.title,
+                    textAlign: TextAlign.right,
+                    style: context.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFamily: fontFamily,
+                    ),
                   ),
-                ),
-              )
-            : Text(l10n.tabBook),
-        actions: const [AppOverflowMenu()],
+                )
+              : Text(l10n.tabBook),
+          actions: const [AppOverflowMenu()],
+        ),
       ),
       body: switch (provider.status) {
         BookStatus.idle || BookStatus.loading => Center(
@@ -68,6 +122,8 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
             ),
           ),
         BookStatus.loaded => _ChapterList(
+            controller: _scrollController,
+            onScrollNotification: _onScrollNotification,
             chapters: book!.chapters,
             fontFamily: fontFamily,
             language: language,
@@ -77,12 +133,36 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
   }
 }
 
+class _SlidingAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final bool visible;
+  final PreferredSizeWidget child;
+
+  const _SlidingAppBar({required this.visible, required this.child});
+
+  @override
+  Size get preferredSize => child.preferredSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSlide(
+      offset: visible ? Offset.zero : const Offset(0, -1),
+      duration: _kChromeAnim,
+      curve: Curves.easeOut,
+      child: child,
+    );
+  }
+}
+
 class _ChapterList extends StatelessWidget {
+  final ScrollController controller;
+  final ValueChanged<ScrollNotification> onScrollNotification;
   final List<BookChapter> chapters;
   final String fontFamily;
   final String language;
 
   const _ChapterList({
+    required this.controller,
+    required this.onScrollNotification,
     required this.chapters,
     required this.fontFamily,
     required this.language,
@@ -90,28 +170,42 @@ class _ChapterList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: chapters.length,
-      itemBuilder: (context, index) {
-        final chapter = chapters[index];
-        return Column(
-          children: [
-            _ChapterTile(
-              chapter: chapter,
-              // 1-based position, so the list reads ۱, ۲, ۳… not ۰, ۱, ۲…
-              displayNumber: index + 1,
-              fontFamily: fontFamily,
-              language: language,
-            ),
-            Divider(
-              height: 1,
-              indent: 70,
-              endIndent: 16,
-              color: context.dividerColor,
-            ),
-          ],
-        );
+    final topInset = MediaQuery.paddingOf(context).top;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        onScrollNotification(notification);
+        return false;
       },
+      child: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: ListView.builder(
+          controller: controller,
+          physics: const ReaderClampEdgesPhysics(),
+          padding: EdgeInsets.only(top: topInset),
+          itemCount: chapters.length,
+          itemBuilder: (context, index) {
+            final chapter = chapters[index];
+            return Column(
+              children: [
+                _ChapterTile(
+                  chapter: chapter,
+                  // 1-based position, so the list reads ۱, ۲, ۳… not ۰, ۱, ۲…
+                  displayNumber: index + 1,
+                  fontFamily: fontFamily,
+                  language: language,
+                ),
+                Divider(
+                  height: 1,
+                  indent: 70,
+                  endIndent: 16,
+                  color: context.dividerColor,
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -204,4 +298,3 @@ class _NumberBadge extends StatelessWidget {
     );
   }
 }
-

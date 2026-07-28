@@ -37,13 +37,13 @@ class StudyDashboardCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.groupedBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.28),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -84,12 +84,11 @@ class StudyDashboardCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.studyYourProgress.toUpperCase(),
+                      l10n.studyYourProgress,
                       style: context.textTheme.labelSmall?.copyWith(
                         fontSize: 10,
                         color: context.brandColor,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -191,7 +190,6 @@ class _DashboardStat extends StatelessWidget {
           style: context.textTheme.labelSmall?.copyWith(
             fontSize: 9,
             color: context.secondaryTextColor,
-            letterSpacing: 1.1,
           ),
         ),
       ],
@@ -240,7 +238,6 @@ class _DurationRow extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: context.secondaryTextColor,
-                letterSpacing: 0.8,
               ),
             ),
           ],

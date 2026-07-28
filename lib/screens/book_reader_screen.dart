@@ -8,6 +8,8 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/reader_scroll_physics.dart';
+import 'package:myapp/utils/scroll_immersion_detector.dart';
 import 'package:myapp/widgets/book/report_mistake.dart';
 import 'package:myapp/widgets/book/scroll_to_top_button.dart';
 
@@ -23,6 +25,9 @@ typedef _HighlightColors = ({
 /// The reader's secondary actions, gathered behind the app-bar ⋮.
 enum _ReaderAction { colorKey, share, report }
 
+const _kChromeAnim = Duration(milliseconds: 220);
+const _kReaderBottomTextGap = 28.0;
+
 class BookReaderScreen extends StatefulWidget {
   final String chapterId;
 
@@ -36,6 +41,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
   PageController? _pageController;
   List<BookChapter> _chapters = const [];
   int _currentIndex = 0;
+  bool _chromeVisible = true;
 
   @override
   void didChangeDependencies() {
@@ -61,12 +67,9 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     super.dispose();
   }
 
-  void _goToPage(int index) {
-    _pageController?.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  void _setChromeVisible(bool visible) {
+    if (_chromeVisible == visible) return;
+    setState(() => _chromeVisible = visible);
   }
 
   static const _minFontSize = 14.0;
@@ -166,83 +169,87 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     final language = series.language;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                chapter.title,
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontFamily: fontFamily,
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: _SlidingAppBar(
+        visible: _chromeVisible,
+        child: AppBar(
+          title: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  chapter.title,
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontFamily: fontFamily,
+                  ),
                 ),
-              ),
-              // Long bab titles ellipsize, so the title alone never says WHERE
-              // you are. Digits only ("۲ / ۶۷"): unambiguous in every locale and
-              // needs no new strings. Rendered in the book font so the numerals
-              // take the series' own shapes (Urdu vs Persian differ at 4/5/6/7).
-              Text(
-                '${localizedDigitsInString('${_currentIndex + 1}', language)}'
-                ' / '
-                '${localizedDigitsInString('${_chapters.length}', language)}',
-                textAlign: TextAlign.right,
-                style: context.textTheme.labelSmall?.copyWith(
-                  color: context.secondaryTextColor,
-                  fontFamily: fontFamily,
-                  height: 1.0,
+                Text(
+                  '${localizedDigitsInString('${_currentIndex + 1}', language)}'
+                  ' / '
+                  '${localizedDigitsInString('${_chapters.length}', language)}',
+                  textAlign: TextAlign.right,
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: context.secondaryTextColor.withValues(alpha: 0.72),
+                    fontFamily: fontFamily,
+                    fontSize: 10,
+                    height: 0.95,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        actions: [
-          // Just the ⋮ — text size is set by pinch-to-zoom (no on-screen
-          // control), so the chapter title gets the width the A−/A+ buttons
-          // used to take.
-          PopupMenuButton<_ReaderAction>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (action) {
-              switch (action) {
-                case _ReaderAction.colorKey:
-                  _showColorKey(context);
-                case _ReaderAction.share:
-                  SharePlus.instance.share(
-                    ShareParams(text: '${chapter.title}\n\n${chapter.text}'),
-                  );
-                case _ReaderAction.report:
-                  reportBookMistake(
-                    context,
-                    chapterNumber: chapter.number,
-                    chapterTitle: chapter.title,
-                  );
-              }
-            },
-            itemBuilder: (context) => [
-              _readerMenuItem(
-                _ReaderAction.colorKey,
-                Icons.palette_outlined,
-                context.l10n.bookColorKey,
-              ),
-              _readerMenuItem(
-                _ReaderAction.share,
-                Icons.share_rounded,
-                context.l10n.bookShareChapter,
-              ),
-              // Only when a report has somewhere to go.
-              if (hasBookContact(context))
+          actions: [
+            // Just the ⋮ — text size is set by pinch-to-zoom (no on-screen
+            // control), so the chapter title gets the width the A−/A+ buttons
+            // used to take.
+            PopupMenuButton<_ReaderAction>(
+              icon: const Icon(Icons.more_vert_rounded),
+              onSelected: (action) {
+                switch (action) {
+                  case _ReaderAction.colorKey:
+                    _showColorKey(context);
+                  case _ReaderAction.share:
+                    SharePlus.instance.share(
+                      ShareParams(
+                        text: '${chapter.title}\n\n${chapter.text}',
+                      ),
+                    );
+                  case _ReaderAction.report:
+                    reportBookMistake(
+                      context,
+                      chapterNumber: chapter.number,
+                      chapterTitle: chapter.title,
+                    );
+                }
+              },
+              itemBuilder: (context) => [
                 _readerMenuItem(
-                  _ReaderAction.report,
-                  Icons.flag_outlined,
-                  context.l10n.bookReportIssue,
+                  _ReaderAction.colorKey,
+                  Icons.palette_outlined,
+                  context.l10n.bookColorKey,
                 ),
-            ],
-          ),
-        ],
+                _readerMenuItem(
+                  _ReaderAction.share,
+                  Icons.share_rounded,
+                  context.l10n.bookShareChapter,
+                ),
+                // Only when a report has somewhere to go.
+                if (hasBookContact(context))
+                  _readerMenuItem(
+                    _ReaderAction.report,
+                    Icons.flag_outlined,
+                    context.l10n.bookReportIssue,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
       // The Listener passively watches pointers for the pinch-to-zoom (see the
       // _onPointer* handlers); it never enters the gesture arena, so it can't
@@ -269,21 +276,20 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
             // text instead of turning the page.
             physics: _pageLocked ? const NeverScrollableScrollPhysics() : null,
             itemCount: _chapters.length,
-            onPageChanged: (i) => setState(() => _currentIndex = i),
+            onPageChanged: (i) {
+              setState(() => _currentIndex = i);
+              _setChromeVisible(true);
+            },
             itemBuilder: (context, i) => _BookBody(
+              key: ValueKey(_chapters[i].id),
               text: _chapters[i].text,
               chapterId: _chapters[i].id,
               fontFamily: fontFamily,
               language: language,
+              onChromeVisibilityChanged: _setChromeVisible,
             ),
           ),
         ),
-      ),
-      bottomNavigationBar: _ChapterNavBar(
-        onPrev: _currentIndex > 0 ? () => _goToPage(_currentIndex - 1) : null,
-        onNext: _currentIndex < _chapters.length - 1
-            ? () => _goToPage(_currentIndex + 1)
-            : null,
       ),
     );
   }
@@ -294,22 +300,45 @@ class _BookBody extends StatefulWidget {
   final String chapterId;
   final String fontFamily;
   final String language;
+  final ValueChanged<bool> onChromeVisibilityChanged;
   const _BookBody({
+    super.key,
     required this.text,
     required this.chapterId,
     required this.fontFamily,
     required this.language,
+    required this.onChromeVisibilityChanged,
   });
 
   @override
   State<_BookBody> createState() => _BookBodyState();
 }
 
+class _SlidingAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final bool visible;
+  final PreferredSizeWidget child;
+
+  const _SlidingAppBar({required this.visible, required this.child});
+
+  @override
+  Size get preferredSize => child.preferredSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSlide(
+      offset: visible ? Offset.zero : const Offset(0, -1),
+      duration: _kChromeAnim,
+      curve: Curves.easeOut,
+      child: child,
+    );
+  }
+}
+
 class _BookBodyState extends State<_BookBody> {
   bool _initialized = false;
   final _scrollController = ScrollController();
+  final _immersion = ScrollImmersionDetector();
   double _lastOffset = 0;
-  late ReadingProvider _reading;
 
   // The "back to top" button shows once you're a screenful or so down. A little
   // hysteresis (show past 400, hide before 240) stops it flickering while you
@@ -537,11 +566,24 @@ class _BookBodyState extends State<_BookBody> {
   }
 
   void _onScroll() {
-    _lastOffset = _scrollController.offset;
+    final offset = _scrollController.offset;
+    final delta = offset - _lastOffset;
+    if (offset <= 8 || delta < -6) {
+      widget.onChromeVisibilityChanged(true);
+    } else if (delta > 6) {
+      widget.onChromeVisibilityChanged(false);
+    }
+    _lastOffset = offset;
     final show = _showScrollTop
         ? _lastOffset > _hideTopBelow
         : _lastOffset > _showTopAbove;
     if (show != _showScrollTop) setState(() => _showScrollTop = show);
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    final hidden = _immersion.update(notification);
+    if (hidden != null) widget.onChromeVisibilityChanged(!hidden);
+    return false;
   }
 
   void _scrollToTop() {
@@ -565,27 +607,11 @@ class _BookBodyState extends State<_BookBody> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      _reading = context.read<ReadingProvider>();
-      // Restore the saved reading position once the content has been laid out
-      // (maxScrollExtent is only known after the first frame).
-      final saved = _reading.bookScrollOffsetFor(widget.chapterId);
-      if (saved > 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_scrollController.hasClients) return;
-          final max = _scrollController.position.maxScrollExtent;
-          _scrollController.jumpTo(saved.clamp(0.0, max));
-        });
-      }
     }
   }
 
   @override
   void dispose() {
-    // Persist the final position when leaving the chapter (navigation or pop).
-    // Skip a chapter still at the top — no need to store a zero offset.
-    if (_lastOffset > 0) {
-      _reading.setBookScrollOffset(widget.chapterId, _lastOffset);
-    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -601,27 +627,38 @@ class _BookBodyState extends State<_BookBody> {
     // are chosen by script in _renderLines. letterSpacing stays 0 — any
     // positive value breaks Arabic cursive joins and the الله ligature.
     final template = context.textTheme.bodyLarge ?? const TextStyle();
+    final media = MediaQuery.of(context);
+    final contentPadding = EdgeInsets.fromLTRB(
+      20,
+      media.padding.top + 8,
+      20,
+      media.padding.bottom + _kReaderBottomTextGap,
+    );
 
     return Stack(
       children: [
-        SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(20),
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _renderLines(
-                template,
-                fontSize,
-                (
-                  verse: context.bookVerseColor,
-                  citation: context.bookCitationColor,
-                  hadith: context.bookHadithColor,
-                  // Brand gold, deliberately NOT one of the three scripture
-                  // colours: the masāʾil heading is structural, not a fourth
-                  // category of quoted text.
-                  masailHeading: context.brandColor,
+        NotificationListener<ScrollNotification>(
+          onNotification: _onScrollNotification,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const ReaderClampEdgesPhysics(),
+            padding: contentPadding,
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _renderLines(
+                  template,
+                  fontSize,
+                  (
+                    verse: context.bookVerseColor,
+                    citation: context.bookCitationColor,
+                    hadith: context.bookHadithColor,
+                    // Brand gold, deliberately NOT one of the three scripture
+                    // colours: the masāʾil heading is structural, not a fourth
+                    // category of quoted text.
+                    masailHeading: context.brandColor,
+                  ),
                 ),
               ),
             ),
@@ -739,35 +776,3 @@ class _ColorKeyRow extends StatelessWidget {
 /// kept in LTR order regardless of the app's UI language. The callbacks drive
 /// the [PageView]; a null callback disables (greys out) that direction at the
 /// first/last chapter.
-class _ChapterNavBar extends StatelessWidget {
-  final VoidCallback? onPrev;
-  final VoidCallback? onNext;
-
-  const _ChapterNavBar({this.onPrev, this.onNext});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: onNext,
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: onPrev,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

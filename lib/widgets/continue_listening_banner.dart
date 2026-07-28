@@ -26,6 +26,11 @@ class ContinueListeningBanner extends StatelessWidget {
     if (lastId == null || catalog.status != CatalogStatus.loaded) {
       return const SizedBox.shrink();
     }
+    final currentLectureId = context.select<PlayerNotifier, String?>(
+      (p) => p.current?.id,
+    );
+    if (currentLectureId == lastId) return const SizedBox.shrink();
+
     final lecture = catalog.catalog!.lectureById(lastId);
     if (lecture == null) return const SizedBox.shrink();
 

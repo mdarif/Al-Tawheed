@@ -141,7 +141,7 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
   }
 }
 
-class _SeriesCard extends StatelessWidget {
+class _SeriesCard extends StatefulWidget {
   const _SeriesCard({
     required this.series,
     required this.onTap,
@@ -151,6 +151,13 @@ class _SeriesCard extends StatelessWidget {
   final SeriesConfig series;
   final VoidCallback onTap;
   final bool loading;
+
+  @override
+  State<_SeriesCard> createState() => _SeriesCardState();
+}
+
+class _SeriesCardState extends State<_SeriesCard> {
+  bool _pressed = false;
 
   /// Strips a leading honorific ("Shaikh", "Fazilat Shaikh", "الشيخ") from a
   /// speaker name so the card shows the shorter, more glanceable form — e.g.
@@ -175,11 +182,13 @@ class _SeriesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final series = widget.series;
     final lang = context.read<LanguageProvider>();
     final l10n = context.l10n;
     final displayName = lang.resolve(series.displayName);
     final speakerName = _shortenSpeaker(lang.resolve(series.speakerName));
     final baseTitle = _baseTitle(displayName);
+    final emphasized = widget.loading || _pressed;
 
     final titleWidget = SizedBox(
       width: double.infinity,
@@ -197,168 +206,190 @@ class _SeriesCard extends StatelessWidget {
         ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
         : titleWidget;
 
-    return Material(
-      // A subtle raised surface so the card reads as tappable at rest, with the
-      // InkWell ripple confirming the tap — no drastic restyle.
-      color: context.groupedSurface,
-      borderRadius: BorderRadius.circular(20),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
+    return Semantics(
+      button: true,
+      child: AnimatedScale(
+        scale: _pressed ? 0.985 : 1,
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOutCubic,
+        child: Material(
+          // A subtle raised surface so the card reads as tappable at rest, with
+          // the press scale/tint confirming touch on both iOS and Android.
+          color: emphasized
+              ? Color.alphaBlend(
+                  context.brandColor.withValues(alpha: 0.06),
+                  context.groupedSurface,
+                )
+              : context.groupedSurface,
+          borderRadius: BorderRadius.circular(20),
+          elevation: _pressed ? 1 : 2,
+          shadowColor: Colors.black.withValues(alpha: 0.18),
+          child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: context.groupedBorder, width: 1),
-          ),
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 110),
+              curve: Curves.easeOutCubic,
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color:
+                      emphasized ? context.brandColor : context.groupedBorder,
+                  width: widget.loading ? 1.5 : 1,
+                ),
+              ),
+              child: Stack(
                 children: [
-                  Row(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _LanguageThumbnail(series: series),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            titleCell,
-                            if (series.language == 'ur' ||
-                                series.language == 'ar') ...[
-                              const SizedBox(height: 4),
-                              Directionality(
-                                textDirection: TextDirection.rtl,
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: Text(
-                                    series.language == 'ar'
-                                        ? _arNativeTitle
-                                        : _urNativeTitle,
-                                    textAlign: TextAlign.right,
-                                    style:
-                                        context.textTheme.bodyMedium?.copyWith(
-                                      color: context.brandColor,
-                                      fontFamily: 'NotoNaskhArabic',
-                                      letterSpacing: 0,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _LanguageThumbnail(series: series),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                titleCell,
+                                if (series.language == 'ur' ||
+                                    series.language == 'ar') ...[
+                                  const SizedBox(height: 4),
+                                  Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: Text(
+                                        series.language == 'ar'
+                                            ? _arNativeTitle
+                                            : _urNativeTitle,
+                                        textAlign: TextAlign.right,
+                                        style: context.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          color: context.brandColor,
+                                          fontFamily: 'NotoNaskhArabic',
+                                          letterSpacing: 0,
+                                        ),
+                                      ),
                                     ),
                                   ),
+                                ],
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    _MetricChip(
+                                      icon: Icons.headphones_rounded,
+                                      label: l10n.audioLabel,
+                                    ),
+                                    if (series.hasStudyMode)
+                                      _MetricChip(
+                                        icon: Icons.school_rounded,
+                                        label: l10n.studyMode,
+                                      ),
+                                    if (series.hasBook)
+                                      _MetricChip(
+                                        icon: Icons.menu_book_rounded,
+                                        label: l10n.tabBook,
+                                      ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _MetricChip(
-                                  icon: Icons.headphones_rounded,
-                                  label: l10n.audioLabel,
-                                ),
-                                if (series.hasStudyMode)
-                                  _MetricChip(
-                                    icon: Icons.menu_book_rounded,
-                                    label: l10n.studyMode,
-                                  ),
-                                if (series.hasBook)
-                                  _MetricChip(
-                                    icon: Icons.menu_book_rounded,
-                                    label: l10n.tabBook,
-                                  ),
                               ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (speakerName.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: context.groupedBorder),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.person_outline_rounded,
+                              size: 16,
+                              color: context.brandColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    speakerName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        context.textTheme.bodySmall?.copyWith(
+                                      color: context.primaryTextColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (series.isRtl) ...[
+                                    const SizedBox(height: 4),
+                                    Directionality(
+                                      textDirection: TextDirection.rtl,
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: Text(
+                                          _shortenSpeaker(
+                                            (series.speakerName['ar']
+                                                    as String?) ??
+                                                _arSpeakerFallback,
+                                          ),
+                                          textAlign: TextAlign.right,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: context.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: context.secondaryTextColor,
+                                            fontFamily: 'NotoNaskhArabic',
+                                            fontSize: 12,
+                                            letterSpacing: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                  if (speakerName.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: context.groupedBorder),
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 16,
-                          color: context.brandColor,
+                  // While this card's series is being switched to, dim the
+                  // content and centre a spinner over the card itself — keeps
+                  // the feedback anchored to what the user tapped.
+                  if (widget.loading)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: context.groupedSurface.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                speakerName,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.bodyMedium?.copyWith(
-                                  color: context.primaryTextColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (series.isRtl) ...[
-                                const SizedBox(height: 4),
-                                Directionality(
-                                  textDirection: TextDirection.rtl,
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: Text(
-                                      _shortenSpeaker(
-                                        (series.speakerName['ar'] as String?) ??
-                                            _arSpeakerFallback,
-                                      ),
-                                      textAlign: TextAlign.right,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style:
-                                          context.textTheme.bodySmall?.copyWith(
-                                        color: context.secondaryTextColor,
-                                        fontFamily: 'NotoNaskhArabic',
-                                        fontSize: 13,
-                                        letterSpacing: 0,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: context.brandColor,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-              // While this card's series is being switched to, dim the content
-              // and centre a spinner over the card itself — keeps the feedback
-              // anchored to what the user tapped instead of a loose loader.
-              if (loading)
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: context.groupedSurface.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: context.brandColor,
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -418,44 +449,52 @@ class _LanguageThumbnail extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 58,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      width: 64,
+      height: 72,
+      child: Stack(
+        alignment: Alignment.topCenter,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: context.brandColor,
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                portrait,
-                fit: BoxFit.cover,
-                semanticLabel: label,
+          Positioned(
+            top: 0,
+            child: Container(
+              width: 58,
+              height: 58,
+              padding: const EdgeInsets.all(1),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.brandColor,
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  portrait,
+                  fit: BoxFit.cover,
+                  semanticLabel: label,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: context.brandColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: context.onBrandColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
+          Positioned(
+            top: 50,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 64),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: context.brandColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.groupedSurface, width: 1),
+              ),
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: context.onBrandColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ),

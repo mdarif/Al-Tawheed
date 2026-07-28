@@ -117,23 +117,25 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'urdu-book',
-        chapters: const [
-          {
-            'id': 'ch-01',
-            'number': 1,
-            'title': {'en': 'Introduction to Tawheed'},
-            'lectureCount': 1,
-          },
-          {
-            'id': 'ch-02',
-            'number': 2,
-            'title': {'en': 'Tawheed al-Rububiyyah'},
-            'lectureCount': 1,
-          },
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'urdu-book',
+          chapters: const [
+            {
+              'id': 'ch-01',
+              'number': 1,
+              'title': {'en': 'Introduction to Tawheed'},
+              'lectureCount': 1,
+            },
+            {
+              'id': 'ch-02',
+              'number': 2,
+              'title': {'en': 'Tawheed al-Rububiyyah'},
+              'lectureCount': 1,
+            },
+          ],
+        ),
+      ),
     );
 
     final series = SeriesProvider()..load(false);
@@ -143,6 +145,42 @@ void main() {
     expect(find.byType(ClassProgressCard), findsNWidgets(2));
     expect(find.text('Introduction to Tawheed'), findsOneWidget);
     expect(find.text('Tawheed al-Rububiyyah'), findsOneWidget);
+  });
+
+  testWidgets('uses soft study labels and a clear next-class affordance',
+      (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(
+        _catalogJson(
+          bookId: 'urdu-book',
+          chapters: const [
+            {
+              'id': 'ch-01',
+              'number': 1,
+              'title': {'en': 'Introduction to Tawheed'},
+              'lectureCount': 1,
+            },
+            {
+              'id': 'ch-02',
+              'number': 2,
+              'title': {'en': 'Tawheed al-Rububiyyah'},
+              'lectureCount': 1,
+            },
+          ],
+        ),
+      ),
+    );
+
+    final series = SeriesProvider()..load(false);
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your progress'), findsOneWidget);
+    expect(find.text('Recommended next'), findsOneWidget);
+    expect(find.text('YOUR PROGRESS'), findsNothing);
+    expect(find.text('RECOMMENDED NEXT'), findsNothing);
+    expect(find.byTooltip('Start'), findsOneWidget);
   });
 
   testWidgets('shows an error body when the catalog fails to load',
@@ -167,44 +205,48 @@ void main() {
     // Urdu (legacy) catalog under the bare cache key.
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'urdu-book',
-        chapters: const [
-          {
-            'id': 'ch-01',
-            'number': 1,
-            'title': {'en': 'Urdu Class One'},
-            'lectureCount': 1,
-          },
-          {
-            'id': 'ch-02',
-            'number': 2,
-            'title': {'en': 'Urdu Class Two'},
-            'lectureCount': 1,
-          },
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'urdu-book',
+          chapters: const [
+            {
+              'id': 'ch-01',
+              'number': 1,
+              'title': {'en': 'Urdu Class One'},
+              'lectureCount': 1,
+            },
+            {
+              'id': 'ch-02',
+              'number': 2,
+              'title': {'en': 'Urdu Class Two'},
+              'lectureCount': 1,
+            },
+          ],
+        ),
+      ),
     );
     // Arabic catalog under the namespaced cache key.
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [
-          {
-            'id': 'ch-01',
-            'number': 1,
-            'title': {'en': 'Arabic Class One'},
-            'lectureCount': 1,
-          },
-          {
-            'id': 'ch-02',
-            'number': 2,
-            'title': {'en': 'Arabic Class Two'},
-            'lectureCount': 1,
-          },
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [
+            {
+              'id': 'ch-01',
+              'number': 1,
+              'title': {'en': 'Arabic Class One'},
+              'lectureCount': 1,
+            },
+            {
+              'id': 'ch-02',
+              'number': 2,
+              'title': {'en': 'Arabic Class Two'},
+              'lectureCount': 1,
+            },
+          ],
+        ),
+      ),
     );
 
     // Mount on the Urdu (legacy) series.

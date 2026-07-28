@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,9 +55,35 @@ Widget _wrap({
   LanguageProvider? language,
   bool multiSeries = true,
   bool appLinks = false,
+  bool downloads = false,
   // The app-language picker (default ON in prod) is turned OFF here so tests can
   // isolate the content-edition switcher — both render اردو/العربية rows, so a
   // test keying on those text finders would otherwise be ambiguous.
+  bool languageFlag = false,
+}) {
+  return MaterialApp(
+    theme: AppTheme.light,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: _settingsProviders(
+      series: series,
+      language: language,
+      multiSeries: multiSeries,
+      appLinks: appLinks,
+      downloads: downloads,
+      languageFlag: languageFlag,
+      child: const SettingsScreen(),
+    ),
+  );
+}
+
+Widget _settingsProviders({
+  required SeriesProvider series,
+  required Widget child,
+  LanguageProvider? language,
+  bool multiSeries = true,
+  bool appLinks = false,
+  bool downloads = false,
   bool languageFlag = false,
 }) {
   return MultiProvider(
@@ -68,12 +95,14 @@ Widget _wrap({
           ..setExperimentalJsonForTest({'multiSeries': multiSeries})
           ..setFeaturesJsonForTest({
             'appLinks': appLinks,
+            'downloads': downloads,
             'language': languageFlag,
           }),
       ),
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider.value(
-          value: language ?? (LanguageProvider()..load()),),
+        value: language ?? (LanguageProvider()..load()),
+      ),
       ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
@@ -87,12 +116,7 @@ Widget _wrap({
         ),
       ),
     ],
-    child: MaterialApp(
-      theme: AppTheme.light,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const SettingsScreen(),
-    ),
+    child: child,
   );
 }
 
@@ -202,7 +226,7 @@ void main() {
 
   group('SettingsScreen — app-language picker (independent of edition)', () {
     testWidgets(
-        'renders under its own "App language" header, separate from the '
+        'renders under its own header, separate from the '
         'content-edition switcher', (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
@@ -213,11 +237,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Two distinct section headers (uppercased by _SectionHeader): the content
-      // edition switcher ("Language") and the app/chrome language picker
-      // ("App language") — proving they read as separate, independent axes.
-      expect(find.text('LANGUAGE'), findsOneWidget);
-      expect(find.text('APP LANGUAGE'), findsOneWidget);
+      // Two distinct section headers: the content edition switcher ("Series")
+      // and the app/chrome language picker ("App language") — proving they
+      // read as separate, independent axes without shouting in all caps.
+      expect(find.text('Series'), findsOneWidget);
+      expect(find.text('App language'), findsOneWidget);
+      expect(find.text('LANGUAGE'), findsNothing);
+      expect(find.text('APP LANGUAGE'), findsNothing);
       // The UI picker offers English, which the edition switcher never does.
       expect(find.text('English'), findsWidgets);
     });
@@ -247,8 +273,104 @@ void main() {
       await tester.pumpWidget(_wrap(series: series, appLinks: true));
       await tester.pumpAndSettle();
 
-      expect(find.text('APP'), findsOneWidget);
+      expect(find.text('App'), findsOneWidget);
       expect(find.text('Contact Us'), findsOneWidget);
+      expect(find.text('YouTube channel'), findsOneWidget);
+      expect(find.text('Al Marfa Duroos'), findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — playback speed', () {
+    testWidgets('opens the speed selector from a compact settings row',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback speed'), findsOneWidget);
+      expect(find.text('1.0x'), findsOneWidget);
+      expect(find.text('0.75x'), findsNothing);
+
+      await tester.tap(find.text('Playback speed'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0.75x'), findsOneWidget);
+      expect(find.text('2.0x'), findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — downloads', () {
+    testWidgets(
+        'keeps the offline library row visible on a tall phone viewport',
+        (tester) async {
+      tester.view.physicalSize = const Size(1272, 2800);
+      tester.view.devicePixelRatio = 3.5;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(
+        _wrap(series: series, multiSeries: true, downloads: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Downloads'), findsWidgets);
+
+      final downloadsRowBottom =
+          tester.getBottomLeft(find.text('No downloads yet')).dy;
+
+      expect(
+        downloadsRowBottom,
+        lessThan(tester.view.physicalSize.height / 3.5),
+      );
+    });
+
+    testWidgets('shows offline library even before anything is downloaded',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, __) => _settingsProviders(
+              series: series,
+              downloads: true,
+              child: const SettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/offline-library',
+            builder: (_, __) => const Scaffold(body: Text('Offline route')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp.router(
+          theme: AppTheme.light,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Downloads'), findsWidgets);
+      expect(find.text('No downloads yet'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
+
+      await tester.tap(find.text('Downloads').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Offline route'), findsOneWidget);
     });
   });
 

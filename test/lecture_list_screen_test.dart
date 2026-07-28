@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
@@ -44,8 +45,7 @@ Finder _avatarFinder(String asset) => find.byWidgetPredicate(
           (w.image as AssetImage).assetName == asset,
     );
 
-Map<String, dynamic> _lectureJson(String id, int number, {String? titleAr}) =>
-    {
+Map<String, dynamic> _lectureJson(String id, int number, {String? titleAr}) => {
       'id': id,
       'number': number,
       'chapterId': 'ch-01',
@@ -73,7 +73,9 @@ Map<String, dynamic> _catalogJson({
         'titleArabic': '',
         'speaker': bookSpeaker ?? {'en': 'Speaker'},
         'totalDurationSeconds': lectures.fold<int>(
-            0, (sum, l) => sum + (l['durationSeconds'] as int),),
+          0,
+          (sum, l) => sum + (l['durationSeconds'] as int),
+        ),
         'lectureCount': lectures.length,
         'coverImageUrl': '',
         'language': 'English',
@@ -138,18 +140,20 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'legacy-book',
-        chapters: const [
-          {
-            'id': 'ch-01',
-            'number': 1,
-            'title': {'en': 'Chapter One'},
-            'lectureCount': 2,
-          },
-        ],
-        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [
+            {
+              'id': 'ch-01',
+              'number': 1,
+              'title': {'en': 'Chapter One'},
+              'lectureCount': 2,
+            },
+          ],
+          lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+        ),
+      ),
     );
 
     final series = SeriesProvider()..load(false);
@@ -166,15 +170,17 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [],
-        lectures: [
-          _lectureJson('lec-001', 1),
-          _lectureJson('lec-002', 2),
-          _lectureJson('lec-003', 3),
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          lectures: [
+            _lectureJson('lec-001', 1),
+            _lectureJson('lec-002', 2),
+            _lectureJson('lec-003', 3),
+          ],
+        ),
+      ),
     );
 
     final series = SeriesProvider()
@@ -196,19 +202,21 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [],
-        bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
-        bookSpeaker: const {
-          'en': 'Shaikh Salih al-Fawzan Hafizahullah',
-          'ar': 'الشيخ صالح الفوزان حفظه الله',
-        },
-        lectures: [
-          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
-          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+          bookSpeaker: const {
+            'en': 'Shaikh Salih al-Fawzan Hafizahullah',
+            'ar': 'الشيخ صالح الفوزان حفظه الله',
+          },
+          lectures: [
+            _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+            _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+          ],
+        ),
+      ),
     );
 
     final series = SeriesProvider()
@@ -229,6 +237,18 @@ void main() {
     expect(find.text('2 lectures · 2m'), findsOneWidget);
     // The redesigned hero shows the Arabic series teacher (Shaikh al-Fawzan).
     expect(_avatarFinder('assets/images/sheikh_fawzan.png'), findsOneWidget);
+    final avatarContainer = tester.widget<Container>(
+      find
+          .ancestor(
+            of: _avatarFinder('assets/images/sheikh_fawzan.png'),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    final avatarDecoration = avatarContainer.decoration! as BoxDecoration;
+    expect(avatarContainer.constraints?.maxWidth, 68);
+    expect(avatarContainer.constraints?.maxHeight, 68);
+    expect((avatarDecoration.border! as Border).top.width, 1);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('الدرس الثاني'), findsOneWidget);
   });
@@ -241,14 +261,16 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [],
-        lectures: [
-          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
-          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          lectures: [
+            _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+            _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+          ],
+        ),
+      ),
     );
 
     final series = SeriesProvider()
@@ -266,14 +288,16 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [],
-        lectures: [
-          _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
-          _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
-        ],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          lectures: [
+            _lectureJson('lec-001', 1, titleAr: 'الدرس الأول'),
+            _lectureJson('lec-002', 2, titleAr: 'الدرس الثاني'),
+          ],
+        ),
+      ),
     );
 
     final series = SeriesProvider()
@@ -290,6 +314,51 @@ void main() {
     expect(find.text('۰۱'), findsNothing);
   });
 
+  testWidgets('Arabic lecture rows fit on a narrow phone width',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog_tawheed-ar',
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+          lectures: [
+            _lectureJson(
+              'lec-001',
+              1,
+              titleAr: 'الدرس الأول في شرح كتاب التوحيد ومسائله',
+            ),
+            _lectureJson(
+              'lec-002',
+              2,
+              titleAr: 'الدرس الثاني في شرح كتاب التوحيد ومسائله',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
+
+    await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('الدرس الأول في شرح كتاب التوحيد ومسائله'),
+      findsOneWidget,
+    );
+    expect(find.text('٠١'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   // The Urdu edition is deliberately untouched by the Arabic-chrome work: its
   // audience reads English chrome, so its lecture list counts 01, 02 exactly as
   // it always has. (Its *Book* is the exception — that renders ۰۱, in the
@@ -298,11 +367,13 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'legacy-book',
-        chapters: const [],
-        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+        ),
+      ),
     );
 
     final series = SeriesProvider()..load(false); // Urdu fallback
@@ -320,11 +391,13 @@ void main() {
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'legacy-book',
-        chapters: const [],
-        lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+        ),
+      ),
     );
 
     final series = SeriesProvider()..load(false); // Urdu fallback
@@ -340,15 +413,94 @@ void main() {
     expect(badge.style?.fontFamily, 'NotoNastaliqUrdu');
   });
 
+  testWidgets('marks the currently loaded lecture in the list', (tester) async {
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          lectures: [_lectureJson('lec-001', 1), _lectureJson('lec-002', 2)],
+        ),
+      ),
+    );
+
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(LectureListScreen));
+    context.read<PlayerNotifier>().setPlaybackStateForTest(
+          Catalog.fromJson(
+            _catalogJson(
+              bookId: 'legacy-book',
+              chapters: const [],
+              lectures: [
+                _lectureJson('lec-001', 1),
+                _lectureJson('lec-002', 2),
+              ],
+            ),
+          ).lectures.first,
+        );
+    await tester.pump();
+
+    expect(find.byType(NowPlayingBars), findsOneWidget);
+    expect(find.byIcon(Icons.equalizer_rounded), findsNothing);
+    expect(find.text('Now Playing'), findsOneWidget);
+    final highlightedRows = tester.widgetList<AnimatedContainer>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AnimatedContainer &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).color != null &&
+            (widget.decoration! as BoxDecoration).color != Colors.transparent,
+      ),
+    );
+    expect(highlightedRows, isNotEmpty);
+  });
+
+  testWidgets('progress badges distinguish complete, in-progress, and new',
+      (tester) async {
+    await PreferencesService.instance.saveProgress('lec-001', 60);
+    await PreferencesService.instance.saveProgress('lec-002', 30);
+    await PreferencesService.instance.saveRemoteJson(
+      'catalog',
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          lectures: [
+            _lectureJson('lec-001', 1),
+            _lectureJson('lec-002', 2),
+            _lectureJson('lec-003', 3),
+          ],
+        ),
+      ),
+    );
+
+    final series = SeriesProvider()..load(false);
+
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(find.text('01'), findsNothing);
+    expect(find.text('02'), findsOneWidget);
+    expect(find.text('03'), findsOneWidget);
+  });
+
   testWidgets('shows an empty-state message when the catalog has no lectures',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'legacy-book',
-        chapters: const [],
-        lectures: const [],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          lectures: const [],
+        ),
+      ),
     );
 
     final series = SeriesProvider()..load(false);
@@ -366,26 +518,30 @@ void main() {
     // Urdu (legacy) catalog under the bare "catalog" cache key.
     await PreferencesService.instance.saveRemoteJson(
       'catalog',
-      jsonEncode(_catalogJson(
-        bookId: 'legacy-book',
-        chapters: const [],
-        bookTitle: const {'en': 'Sharah Kitab at-Tawheed'},
-        lectures: [_lectureJson('lec-001', 1)],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'legacy-book',
+          chapters: const [],
+          bookTitle: const {'en': 'Sharah Kitab at-Tawheed'},
+          lectures: [_lectureJson('lec-001', 1)],
+        ),
+      ),
     );
     // Arabic catalog under the namespaced "catalog_tawheed-ar" key.
     await PreferencesService.instance.saveRemoteJson(
       'catalog_tawheed-ar',
-      jsonEncode(_catalogJson(
-        bookId: 'arabic-book',
-        chapters: const [],
-        bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
-        bookSpeaker: const {
-          'en': 'Shaikh Salih al-Fawzan Hafizahullah',
-          'ar': 'الشيخ صالح الفوزان حفظه الله',
-        },
-        lectures: [_lectureJson('lec-001', 1, titleAr: 'الدرس الأول')],
-      ),),
+      jsonEncode(
+        _catalogJson(
+          bookId: 'arabic-book',
+          chapters: const [],
+          bookTitle: const {'en': 'Kitab at-Tawheed', 'ar': 'كتاب التوحيد'},
+          bookSpeaker: const {
+            'en': 'Shaikh Salih al-Fawzan Hafizahullah',
+            'ar': 'الشيخ صالح الفوزان حفظه الله',
+          },
+          lectures: [_lectureJson('lec-001', 1, titleAr: 'الدرس الأول')],
+        ),
+      ),
     );
 
     // Mount on the Urdu (legacy) series — mirrors the brief boot window before

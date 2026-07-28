@@ -141,7 +141,7 @@ class PreferencesService {
   Future<void> saveDownloadedIds(Set<String> ids, {String prefix = ''}) =>
       _p.setStringList('${prefix}downloaded_lecture_ids', ids.toList());
 
-  bool get downloadOnWifiOnly => _p.getBool('download_wifi_only') ?? false;
+  bool get downloadOnWifiOnly => _p.getBool('download_wifi_only') ?? true;
 
   Future<void> saveDownloadOnWifiOnly(bool value) =>
       _p.setBool('download_wifi_only', value);

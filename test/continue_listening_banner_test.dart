@@ -51,8 +51,10 @@ Lecture _lec(String id, int num, {String? titleAr}) => Lecture(
     );
 
 final _lectures = List.generate(5, (i) => _lec('l${i + 1}', i + 1));
-final _arabicLectures =
-    List.generate(5, (i) => _lec('l${i + 1}', i + 1, titleAr: 'الدرس ${i + 1}'));
+final _arabicLectures = List.generate(
+  5,
+  (i) => _lec('l${i + 1}', i + 1, titleAr: 'الدرس ${i + 1}'),
+);
 
 Catalog _catalog({bool arabic = false}) => Catalog(
       version: 1,
@@ -76,13 +78,16 @@ Widget _wrap({
     providers: [
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider.value(
-          value: progress ?? (ProgressProvider()..load()),),
+        value: progress ?? (ProgressProvider()..load()),
+      ),
       ChangeNotifierProvider.value(value: DownloadsProvider()),
       ChangeNotifierProvider.value(
-          value: connectivity ?? ConnectivityProvider.testOnline(),),
+        value: connectivity ?? ConnectivityProvider.testOnline(),
+      ),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false)),),
+        value: series ?? (SeriesProvider()..load(false)),
+      ),
       ChangeNotifierProvider(
         create: (ctx) => PlayerNotifier(
           TawheedAudioHandler(),
@@ -148,14 +153,32 @@ void main() {
     expect(find.text('10% complete'), findsOneWidget);
   });
 
+  testWidgets('hides when the saved lecture is already loaded in the player',
+      (tester) async {
+    final progress = ProgressProvider()..load();
+    await progress.saveProgress('l1', 60);
+
+    await tester.pumpWidget(_wrap(progress: progress));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(ContinueListeningBanner));
+    context.read<PlayerNotifier>().setPlaybackStateForTest(_lectures.first);
+    await tester.pump();
+
+    expect(find.text('Continue Listening'), findsNothing);
+    expect(find.text('Lecture 1'), findsNothing);
+  });
+
   testWidgets('tapping resumes into the player', (tester) async {
     final progress = ProgressProvider()..load();
     await progress.saveProgress('l1', 60);
 
-    await tester.pumpWidget(_wrap(
-      progress: progress,
-      connectivity: ConnectivityProvider.testOffline(),
-    ),);
+    await tester.pumpWidget(
+      _wrap(
+        progress: progress,
+        connectivity: ConnectivityProvider.testOffline(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Lecture 1'));
@@ -173,12 +196,14 @@ void main() {
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    await tester.pumpWidget(_wrap(
-      progress: progress,
-      series: series,
-      catalog: _catalog(arabic: true),
-      locale: const Locale('ar'),
-    ),);
+    await tester.pumpWidget(
+      _wrap(
+        progress: progress,
+        series: series,
+        catalog: _catalog(arabic: true),
+        locale: const Locale('ar'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Content (الدرس 1) is Arabic per edition; the chrome labels below are

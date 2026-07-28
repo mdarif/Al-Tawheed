@@ -26,7 +26,7 @@ class OverallProgressSummary extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.groupedBorder, width: 1),
       ),
       child: Column(
@@ -114,12 +114,11 @@ class OverallProgressSummary extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    l10n.studyOverallProgress.toUpperCase(),
+                    l10n.studyOverallProgress,
                     style: context.textTheme.labelSmall?.copyWith(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: context.secondaryTextColor,
-                      letterSpacing: 0.8,
                     ),
                   ),
                 ],

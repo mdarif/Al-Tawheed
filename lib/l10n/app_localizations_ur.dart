@@ -312,6 +312,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAbout => 'ایپ کے بارے میں';
 
   @override
+  String get moreOptions => 'مزید اختیارات';
+
+  @override
   String get statLectures => 'دروس';
 
   @override
@@ -880,6 +883,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get settingsAbout => 'App ke baare mein';
+
+  @override
+  String get moreOptions => 'Mazeed ikhtiyarat';
 
   @override
   String get statLectures => 'Lectures';
