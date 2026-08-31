@@ -30,10 +30,19 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **Widget tests that exercise `PlayerNotifier` must inject `AudioPlayback`,
+  even when their subject is not the player.** A production
+  `TawheedAudioHandler` owns a platform-backed `just_audio` engine; an offline
+  blocked load now correctly awaits `stop()`, which has no platform response in
+  a pure widget test and can stall the whole parallel suite. Use
+  `FakeAudioPlayback` unless the test is specifically proving the handler
+  boundary (where the injectable `AudioEngine` covers callback provenance).
+
 - **PlayerNotifier tests must drive tagged `AudioPlayback` events, never notifier
-  state.** `TawheedAudioHandler` tags playback/position/duration/completion/error
-  callbacks with the load session that produced them; the notifier rejects an
-  old session after another load, stop, or dispose. The controllable test
+  state.** `TawheedAudioHandler` creates an engine per load and tags
+  playback/position/duration/completion/error callbacks from that engine with
+  its immutable load session; the notifier rejects an old session after another
+  load, stop, or dispose. The controllable test
   implementation must model both the typed error event and the underlying
   `playbackState` error fan-out, because production emits both. This catches
   removed production wiring while avoiding `just_audio` platform channels. Pass

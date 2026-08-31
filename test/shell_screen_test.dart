@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
@@ -22,6 +21,8 @@ import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+
+import 'support/fake_audio_playback.dart';
 
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
@@ -102,7 +103,7 @@ Widget _wrap({
           ? ChangeNotifierProvider.value(value: player)
           : ChangeNotifierProvider(
               create: (ctx) => PlayerNotifier(
-                TawheedAudioHandler(),
+                FakeAudioPlayback(),
                 ctx.read<ProgressProvider>(),
                 ctx.read<DownloadsProvider>(),
                 ctx.read<ConnectivityProvider>(),
@@ -298,7 +299,7 @@ void main() {
         final downloads = DownloadsProvider();
         final connectivity = ConnectivityProvider.testOffline();
         final player = PlayerNotifier(
-          TawheedAudioHandler(),
+          FakeAudioPlayback(),
           progress,
           downloads,
           connectivity,

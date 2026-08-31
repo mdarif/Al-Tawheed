@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,8 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/continue_listening_banner.dart';
+
+import 'support/fake_audio_playback.dart';
 
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
@@ -70,6 +74,9 @@ Widget _wrap({
   SeriesProvider? series,
   ConnectivityProvider? connectivity,
   Locale? locale,
+  AudioPlayback? audio,
+  void Function(PlayerNotifier notifier)? onPlayerCreated,
+  VoidCallback? onPlayerRoute,
 }) {
   final catalogProvider = CatalogProvider()
     ..setCatalogForTest(catalog ?? _catalog());
@@ -89,12 +96,16 @@ Widget _wrap({
         value: series ?? (SeriesProvider()..load(false)),
       ),
       ChangeNotifierProvider(
-        create: (ctx) => PlayerNotifier(
-          TawheedAudioHandler(),
-          ctx.read<ProgressProvider>(),
-          ctx.read<DownloadsProvider>(),
-          ctx.read<ConnectivityProvider>(),
-        ),
+        create: (ctx) {
+          final notifier = PlayerNotifier(
+            audio ?? FakeAudioPlayback(),
+            ctx.read<ProgressProvider>(),
+            ctx.read<DownloadsProvider>(),
+            ctx.read<ConnectivityProvider>(),
+          );
+          onPlayerCreated?.call(notifier);
+          return notifier;
+        },
       ),
     ],
     child: MaterialApp.router(
@@ -112,8 +123,10 @@ Widget _wrap({
           ),
           GoRoute(
             path: '/player',
-            builder: (_, __) =>
-                const Scaffold(body: Center(child: Text('Player'))),
+            builder: (_, __) {
+              onPlayerRoute?.call();
+              return const Scaffold(body: Center(child: Text('Player')));
+            },
           ),
         ],
       ),
@@ -176,7 +189,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(
         progress: progress,
-        connectivity: ConnectivityProvider.testOffline(),
+        audio: FakeAudioPlayback(),
       ),
     );
     await tester.pumpAndSettle();
@@ -185,6 +198,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Player'), findsOneWidget);
+  });
+
+  testWidgets('disposing while resume waits cannot navigate or notify later',
+      (tester) async {
+    final progress = ProgressProvider()..load();
+    await progress.saveProgress('l1', 60);
+    final audio = FakeAudioPlayback()..pendingLoad = Completer<void>();
+    PlayerNotifier? player;
+    var notifications = 0;
+    var playerRouteBuilds = 0;
+
+    await tester.pumpWidget(
+      _wrap(
+        progress: progress,
+        audio: audio,
+        onPlayerCreated: (notifier) {
+          player = notifier;
+          notifier.addListener(() => notifications++);
+        },
+        onPlayerRoute: () => playerRouteBuilds++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lecture 1'));
+    await tester.pump();
+    final notificationsBeforeDispose = notifications;
+    expect(playerRouteBuilds, 0);
+
+    // Tear down both the banner and its provider while loadLecture is held.
+    await tester.pumpWidget(const SizedBox.shrink());
+    audio.pendingLoad!.complete();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(notifications, notificationsBeforeDispose);
+    expect(playerRouteBuilds, 0);
+    expect(player!.current?.id, 'l1');
   });
 
   testWidgets('Arabic series shows Arabic title; chrome follows Arabic UI',

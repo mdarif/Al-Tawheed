@@ -57,6 +57,79 @@ abstract interface class AudioPlayback {
   Future<void> stop();
 }
 
+/// One concrete audio backend. A new instance is created for each load so its
+/// callbacks have an immutable source-session provenance.
+abstract interface class AudioEngine {
+  Stream<PlaybackEvent> get playbackEventStream;
+  Stream<Duration> get positionStream;
+  Stream<Duration?> get durationStream;
+  Stream<ProcessingState> get processingStateStream;
+  bool get playing;
+  ProcessingState get processingState;
+  Duration get position;
+  Duration get bufferedPosition;
+  double get speed;
+  double get volume;
+  Future<void> setAudioSource(AudioSource source, {Duration? initialPosition});
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+  Future<void> setSpeed(double speed);
+  Future<void> setVolume(double volume);
+  Future<void> stop();
+  Future<void> dispose();
+}
+
+class JustAudioEngine implements AudioEngine {
+  JustAudioEngine() : _player = AudioPlayer(handleInterruptions: false);
+
+  final AudioPlayer _player;
+
+  @override
+  Stream<PlaybackEvent> get playbackEventStream => _player.playbackEventStream;
+  @override
+  Stream<Duration> get positionStream => _player.positionStream;
+  @override
+  Stream<Duration?> get durationStream => _player.durationStream;
+  @override
+  Stream<ProcessingState> get processingStateStream =>
+      _player.processingStateStream;
+  @override
+  bool get playing => _player.playing;
+  @override
+  ProcessingState get processingState => _player.processingState;
+  @override
+  Duration get position => _player.position;
+  @override
+  Duration get bufferedPosition => _player.bufferedPosition;
+  @override
+  double get speed => _player.speed;
+  @override
+  double get volume => _player.volume;
+  @override
+  Future<void> setAudioSource(
+    AudioSource source, {
+    Duration? initialPosition,
+  }) async {
+    await _player.setAudioSource(source, initialPosition: initialPosition);
+  }
+
+  @override
+  Future<void> play() => _player.play();
+  @override
+  Future<void> pause() => _player.pause();
+  @override
+  Future<void> seek(Duration position) => _player.seek(position);
+  @override
+  Future<void> setSpeed(double speed) => _player.setSpeed(speed);
+  @override
+  Future<void> setVolume(double volume) => _player.setVolume(volume);
+  @override
+  Future<void> stop() => _player.stop();
+  @override
+  Future<void> dispose() => _player.dispose();
+}
+
 class TawheedAudioHandler extends BaseAudioHandler
     with SeekHandler
     implements AudioPlayback {
@@ -66,7 +139,9 @@ class TawheedAudioHandler extends BaseAudioHandler
   // "end" event auto-resumes — even if the user paused in between. We
   // disable it and track interruption-vs-user pauses ourselves so a manual
   // pause (e.g. from the lock screen) always wins and is never overridden.
-  final AudioPlayer _player = AudioPlayer(handleInterruptions: false);
+  final AudioEngine Function() _engineFactory;
+  final Future<AudioSession> Function() _sessionFactory;
+  late AudioEngine _player;
   final _playbackEvents =
       StreamController<AudioPlaybackEvent<PlaybackState>>.broadcast();
   final _rawPlaybackStates = StreamController<PlaybackState>.broadcast();
@@ -87,43 +162,55 @@ class TawheedAudioHandler extends BaseAudioHandler
   Future<void> Function()? onSkipToNext;
   Future<void> Function()? onSkipToPrevious;
 
-  TawheedAudioHandler() {
-    _init();
+  TawheedAudioHandler({
+    AudioEngine Function()? engineFactory,
+    Future<AudioSession> Function()? sessionFactory,
+    bool configureAudioSession = true,
+  })  : _engineFactory = engineFactory ?? JustAudioEngine.new,
+        _sessionFactory = sessionFactory ?? (() => AudioSession.instance) {
+    _player = _newEngine(0);
+    if (configureAudioSession) _init();
+  }
+
+  AudioEngine _newEngine(int sessionId) {
+    final engine = _engineFactory();
     // Forward just_audio playback events into audio_service's playbackState
     // stream. `.listen()` rather than `.pipe()` — `pipe()`/`addStream()`
     // would permanently lock `playbackState` against direct `.add()` calls
     // (e.g. from `super.stop()`) for as long as the player's event stream
     // stays open, which is its entire lifetime.
-    _player.playbackEventStream.map(_stateFromEvent).listen(
+    engine.playbackEventStream
+        .map((event) => _stateFromEvent(engine, event))
+        .listen(
       (state) {
+        _playbackEvents.add(AudioPlaybackEvent(sessionId, state));
+        if (sessionId != _activeSessionId) return;
         playbackState.add(state);
         _rawPlaybackStates.add(state);
-        _playbackEvents.add(AudioPlaybackEvent(_activeSessionId, state));
       },
       onError: (Object error, StackTrace stackTrace) {
-        _errorEvents.add(AudioPlaybackEvent(_activeSessionId, error));
+        _errorEvents.add(AudioPlaybackEvent(sessionId, error));
+        if (sessionId != _activeSessionId) return;
         playbackState.addError(error, stackTrace);
         _rawPlaybackStates.addError(
-          AudioPlaybackFailure(_activeSessionId, error),
+          AudioPlaybackFailure(sessionId, error),
           stackTrace,
         );
       },
     );
-    _player.positionStream.listen(
+    engine.positionStream.listen(
       (position) =>
-          _positionEvents.add(AudioPlaybackEvent(_activeSessionId, position)),
+          _positionEvents.add(AudioPlaybackEvent(sessionId, position)),
     );
-    _player.durationStream.listen(
+    engine.durationStream.listen(
       (duration) =>
-          _durationEvents.add(AudioPlaybackEvent(_activeSessionId, duration)),
+          _durationEvents.add(AudioPlaybackEvent(sessionId, duration)),
     );
-    _player.processingStateStream.listen(
-      (state) =>
-          _processingEvents.add(AudioPlaybackEvent(_activeSessionId, state)),
+    engine.processingStateStream.listen(
+      (state) => _processingEvents.add(AudioPlaybackEvent(sessionId, state)),
     );
+    return engine;
   }
-
-  AudioPlayer get player => _player;
 
   @override
   Stream<PlaybackState> get rawPlaybackState => _rawPlaybackStates.stream;
@@ -148,7 +235,7 @@ class TawheedAudioHandler extends BaseAudioHandler
   Stream<AudioPlaybackEvent<Object>> get errorEvents => _errorEvents.stream;
 
   Future<void> _init() async {
-    final session = await AudioSession.instance;
+    final session = await _sessionFactory();
     await session.configure(const AudioSessionConfiguration.music());
 
     session.becomingNoisyEventStream.listen((_) => pause());
@@ -195,7 +282,14 @@ class TawheedAudioHandler extends BaseAudioHandler
     String artist = AppConfig.appTitle,
     String? displayTitle,
   }) async {
+    final previous = _player;
     _activeSessionId = sessionId;
+    final player = _newEngine(sessionId);
+    _player = player;
+    // Retiring an engine is deliberately asynchronous: just_audio may still
+    // finish a native callback after stop. Its listener closes over the old
+    // [sessionId], so that callback cannot be mistaken for this new load.
+    unawaited(_retireEngine(previous));
     mediaItem.add(
       MediaItem(
         id: lecture.id,
@@ -210,10 +304,11 @@ class TawheedAudioHandler extends BaseAudioHandler
         ? AudioSource.uri(Uri.file(localFilePath))
         : AudioSource.uri(Uri.parse(lecture.audioUrl));
 
-    await _player.setAudioSource(source, initialPosition: startFrom);
+    await player.setAudioSource(source, initialPosition: startFrom);
     // A slower old source load must never resume over the latest request.
     if (sessionId != _activeSessionId) return;
-    await play();
+    _pausedByInterruption = false;
+    await player.play();
   }
 
   // ── BaseAudioHandler overrides ─────────────────────────────────────────
@@ -250,12 +345,27 @@ class TawheedAudioHandler extends BaseAudioHandler
     return super.stop();
   }
 
+  Future<void> _retireEngine(AudioEngine engine) async {
+    try {
+      await engine.stop();
+    } catch (_) {
+      // A source that is already being disposed can reject stop. It is no
+      // longer active and its callbacks remain tagged with its old session.
+    }
+    try {
+      await engine.dispose();
+    } catch (_) {
+      // The replacement engine is already active; disposal failure must not
+      // turn into an unhandled background error.
+    }
+  }
+
   // ── Map just_audio state to audio_service PlaybackState ───────────────
-  PlaybackState _stateFromEvent(PlaybackEvent event) {
+  PlaybackState _stateFromEvent(AudioEngine player, PlaybackEvent event) {
     return PlaybackState(
       controls: [
         MediaControl.skipToPrevious,
-        if (_player.playing) MediaControl.pause else MediaControl.play,
+        if (player.playing) MediaControl.pause else MediaControl.play,
         MediaControl.skipToNext,
       ],
       systemActions: const {
@@ -270,11 +380,11 @@ class TawheedAudioHandler extends BaseAudioHandler
         ProcessingState.buffering: AudioProcessingState.buffering,
         ProcessingState.ready: AudioProcessingState.ready,
         ProcessingState.completed: AudioProcessingState.completed,
-      }[_player.processingState]!,
-      playing: _player.playing,
-      updatePosition: _player.position,
-      bufferedPosition: _player.bufferedPosition,
-      speed: _player.speed,
+      }[player.processingState]!,
+      playing: player.playing,
+      updatePosition: player.position,
+      bufferedPosition: player.bufferedPosition,
+      speed: player.speed,
     );
   }
 }

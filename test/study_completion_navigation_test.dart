@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
@@ -22,6 +21,8 @@ import 'package:myapp/screens/study_class_complete_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_audio_playback.dart';
 
 // Covers the "Class N Completed" -> "Next Up" regression: finishing a
 // chapter (even by jumping straight to its last part) must mark that
@@ -79,7 +80,7 @@ void main() {
     final catalogProvider = CatalogProvider()..setCatalogForTest(catalog);
     final study = StudyProgressProvider(progress, catalogProvider)..load();
     final player = PlayerNotifier(
-      TawheedAudioHandler(),
+      FakeAudioPlayback(),
       progress,
       DownloadsProvider(),
       ConnectivityProvider.testOffline(),

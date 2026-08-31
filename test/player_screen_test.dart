@@ -83,8 +83,8 @@ Catalog _arabicCatalog() => Catalog(
 
 /// Builds a [PlayerNotifier] with offline-safe defaults and pumps
 /// [PlayerScreen] wired to it. Optionally loads [lecture] via the
-/// offline + undownloaded `loadAndPlay` early-return path, which never
-/// touches the real `just_audio`/`audio_service` platform channels.
+/// offline + undownloaded `loadAndPlay` early-return path. Tests keep the
+/// platform audio backend out of widget lifecycles by default.
 Future<PlayerNotifier> _pumpPlayer(
   WidgetTester tester, {
   Lecture? lecture,
@@ -104,7 +104,7 @@ Future<PlayerNotifier> _pumpPlayer(
   final connectivityProvider =
       connectivity ?? ConnectivityProvider.testOffline();
   final player = PlayerNotifier(
-    audioPlayback ?? TawheedAudioHandler(),
+    audioPlayback ?? FakeAudioPlayback(),
     progress,
     downloadsProvider,
     connectivityProvider,

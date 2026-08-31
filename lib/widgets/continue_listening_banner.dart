@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -46,11 +48,15 @@ class ContinueListeningBanner extends StatelessWidget {
         .resolveForSeries(lecture.title, series);
 
     final card = GestureDetector(
-      onTap: () {
-        context
+      onTap: () async {
+        await context
             .read<PlayerNotifier>()
             .loadAndPlay(lecture, catalog.catalog!.lectures);
-        context.push('/player');
+        // The load can outlive this banner (for example, when its tab or the
+        // entire provider tree is disposed). Do not navigate from a stale
+        // BuildContext once that await resumes.
+        if (!context.mounted) return;
+        unawaited(context.push('/player'));
       },
       child: Container(
         decoration: BoxDecoration(

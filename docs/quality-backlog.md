@@ -26,7 +26,7 @@ sequencing; this page records the quality truth that active docs should use.
   and stale callbacks without a platform audio backend.
 - **Navigation:** tabs come from `SeriesConfig.hasBook` and
   `SeriesConfig.hasStudyMode`; route guards enforce the same capabilities.
-- **Release evidence:** the current baseline is **559 passing unit/widget
+- **Release evidence:** the current baseline is **561 passing unit/widget
   tests**, with two intentional skips. Goldens are macOS-only and skipped by
   default; live CDN contract tests are tagged and run separately.
 - **Design accessibility:** secondary text now uses semantic theme roles with
