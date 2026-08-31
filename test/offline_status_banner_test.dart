@@ -4,6 +4,7 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 import 'package:provider/provider.dart';
@@ -38,12 +39,15 @@ void main() {
   testWidgets('banner hidden when online', (tester) async {
     await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: false));
     await tester.pumpAndSettle();
+    expect(find.byKey(WidgetKeys.offlineStatusBanner), findsNothing);
     expect(find.text('Offline'), findsNothing);
   });
 
-  testWidgets('banner shown when offline and downloads enabled', (tester) async {
+  testWidgets('banner shown when offline and downloads enabled',
+      (tester) async {
     await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: true));
     await tester.pumpAndSettle();
+    expect(find.byKey(WidgetKeys.offlineStatusBanner), findsOneWidget);
     expect(find.text('Offline'), findsOneWidget);
     expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
   });
@@ -51,6 +55,7 @@ void main() {
   testWidgets('banner hidden when downloads feature off', (tester) async {
     await tester.pumpWidget(wrap(downloadsEnabled: false, isOffline: true));
     await tester.pumpAndSettle();
+    expect(find.byKey(WidgetKeys.offlineStatusBanner), findsNothing);
     expect(find.text('Offline'), findsNothing);
   });
 }

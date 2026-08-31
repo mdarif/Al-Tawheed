@@ -20,6 +20,10 @@ abstract final class WidgetKeys {
   static const shellStudyTab = ValueKey<String>('shell.tab.study');
   static const shellSettingsTab = ValueKey<String>('shell.tab.settings');
 
+  static const offlineStatusBanner = ValueKey<String>(
+    'shell.offline-status-banner',
+  );
+
   static const playerClose = ValueKey<String>('player.close');
   static const playerBookmark = ValueKey<String>('player.bookmark');
   static const playerDownload = ValueKey<String>('player.download');

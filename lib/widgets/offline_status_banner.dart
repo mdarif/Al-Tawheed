@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
@@ -24,6 +25,7 @@ class OfflineStatusBanner extends StatelessWidget {
     final l10n = context.l10n;
 
     return Material(
+      key: WidgetKeys.offlineStatusBanner,
       color: const Color(0xFFE65100).withValues(
         alpha: context.isDarkTheme ? 0.22 : 0.12,
       ),

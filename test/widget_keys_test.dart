@@ -11,6 +11,7 @@ void main() {
       WidgetKeys.shellBookTab,
       WidgetKeys.shellStudyTab,
       WidgetKeys.shellSettingsTab,
+      WidgetKeys.offlineStatusBanner,
       WidgetKeys.playerClose,
       WidgetKeys.playerBookmark,
       WidgetKeys.playerDownload,

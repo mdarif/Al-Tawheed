@@ -66,6 +66,15 @@ void main() {
     'blocks skip-next offline with dialog when next part is not downloaded',
     ($) async {
       await PatrolFlow.bootstrapToLectures($);
+      final tiles = find.byType(LectureTile);
+      await AppFlow.waitFor(
+        $.tester,
+        tiles,
+        timeout: const Duration(seconds: 15),
+        reason: 'lecture list before reading notification title',
+      );
+      final lectureTitle =
+          $.tester.widget<LectureTile>(tiles.first).lecture.title.en;
       await AppFlow.openFirstLecture($.tester);
 
       await PatrolFlow.withAirplaneMode($, () async {
@@ -249,15 +258,21 @@ void main() {
         return;
       }
 
-      await $.platform.mobile.openNotifications();
-      await AppFlow.pumpFrames($.tester, count: 5);
-
-      final notifications = await $.platform.mobile.getNotifications();
-      expect(notifications, isNotEmpty);
-
-      await $.platform.mobile.closeNotifications();
-      await AppFlow.cancelDownloadFromPlayer($.tester);
-      await AppFlow.dismissPlayer($.tester);
+      var shadeOpened = false;
+      try {
+        await $.platform.mobile.openNotifications();
+        shadeOpened = true;
+        await $.platform.waitUntilVisible(
+          Selector(text: lectureTitle),
+          timeout: const Duration(seconds: 15),
+        );
+      } finally {
+        if (shadeOpened) {
+          await $.platform.mobile.closeNotifications();
+        }
+        await AppFlow.cancelDownloadFromPlayer($.tester);
+        await AppFlow.dismissPlayer($.tester);
+      }
     },
     timeout: patrolTimeout,
   );
