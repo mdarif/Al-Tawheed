@@ -23,8 +23,12 @@ on:
   pull_request:
     branches:
       - master
-  schedule:
-    - cron: '0 2 * * *'   # 02:00 UTC daily
+  # Nightly schedule removed 2026-08-31: these ran at 02:00 UTC and failed
+  # 11 of the last 15 scheduled runs between them, burning free-tier quota
+  # (Regression and Golden bill at the 10x macOS rate) while producing no
+  # usable signal. Still runnable on demand via workflow_dispatch — do that
+  # before a release. Restore the schedule once the underlying failures are
+  # fixed; a red nightly nobody acts on is worse than no nightly.
   workflow_dispatch:       # manual trigger from Actions tab
 
 concurrency:

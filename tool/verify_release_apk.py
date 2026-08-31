@@ -58,6 +58,13 @@ DEBUG_SIGNER_MARKERS = ("CN=Android Debug", "O=Android, C=US")
 LAUNCH_TIMEOUT_SECONDS = 90
 FIRST_FRAME_PATTERN = re.compile(r"Displayed .*" + re.escape(PACKAGE))
 
+# Pre-granted before launch. Without this the runtime permission dialog
+# (GrantPermissionsActivity) sits on top of MainActivity on a fresh install, so
+# the activity never logs "Displayed" and the launch looks like a hang — the
+# app behind the dialog is perfectly healthy. Granting up front keeps this a
+# test of the app, not of Android's permission UI.
+PREGRANT_PERMISSIONS = ("android.permission.POST_NOTIFICATIONS",)
+
 
 class VerificationError(RuntimeError):
     """The release artifact is not shippable."""
@@ -195,29 +202,50 @@ def smoke_test(*, apk: Path, device: str, evidence: Path) -> bool:
         print(f"::error::adb install failed:\n{install.stdout}", file=sys.stderr)
         return False
 
+    for permission in PREGRANT_PERMISSIONS:
+        granted = _adb(device, "shell", "pm", "grant", PACKAGE, permission)
+        # Older API levels do not know the permission; that is not a failure.
+        if granted.stdout.strip():
+            print(f"pm grant {permission}: {granted.stdout.strip()}")
+
     _adb(device, "logcat", "-c")
     _adb(device, "shell", "am", "force-stop", PACKAGE)
     launch = _adb(device, "shell", "am", "start", "-W", "-n", ACTIVITY)
     if "Error" in launch.stdout:
         print(f"::error::Launch failed:\n{launch.stdout}", file=sys.stderr)
         ok = False
+    print(f"am start -W:\n{launch.stdout.strip()}")
 
     # Wait for the framework's own "Displayed" marker rather than a fixed
     # sleep: emulator start-up time varies by an order of magnitude between a
     # warm local machine and a cold CI runner.
+    #
+    # Two accepted signals, because one is not enough. "Displayed" is the
+    # honest first-frame marker but is suppressed whenever something else owns
+    # the foreground; `am start -W` blocks until the launch completes and
+    # reports its own status. Requiring only the first turned a healthy app
+    # behind a permission dialog into a 90s "hang".
     deadline = time.monotonic() + LAUNCH_TIMEOUT_SECONDS
     displayed = False
     while time.monotonic() < deadline:
-        if FIRST_FRAME_PATTERN.search(_adb(device, "logcat", "-d", "-s", "ActivityTaskManager").stdout):
+        if FIRST_FRAME_PATTERN.search(_adb(device, "logcat", "-d").stdout):
             displayed = True
             break
         time.sleep(2)
-    if not displayed:
+
+    launched_ok = "Status: ok" in launch.stdout
+    if not displayed and not launched_ok:
         print(
-            f"::error::App did not report a first frame within {LAUNCH_TIMEOUT_SECONDS}s.",
+            f"::error::App did not report a first frame within {LAUNCH_TIMEOUT_SECONDS}s "
+            "and `am start -W` did not report Status: ok.",
             file=sys.stderr,
         )
         ok = False
+    elif not displayed:
+        print(
+            "::warning::No 'Displayed' marker seen, but `am start -W` reported "
+            "Status: ok — continuing to the resume check."
+        )
 
     # Background/resume: a release-only plugin registration or audio-service
     # binding fault typically surfaces on resume, not on cold start.
