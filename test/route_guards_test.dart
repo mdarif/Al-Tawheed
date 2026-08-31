@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/navigation/route_guards.dart';
+import 'package:myapp/navigation/series_navigation_policy.dart';
 
 /// The redirect matrix for `lib/app.dart`. `app.dart` itself has no test — the
 /// `AudioService` singleton makes `MyApp` unmountable in the test harness — so
@@ -76,6 +77,44 @@ void main() {
       const urdu = SeriesConfig.legacyUrduFallback;
       expect(RouteGuards.book(urdu), isNull);
       expect(RouteGuards.study(urdu), isNull);
+    });
+
+    test('guards mirror the shared local capability policy', () {
+      const arabic = SeriesConfig(
+        id: 'tawheed-ar',
+        catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
+        storagePrefix: 'ar_',
+        hasStudyMode: false,
+        hasBook: true,
+        language: 'ar',
+        displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
+        speakerName: {'en': 'Shaikh Salih al-Fawzan'},
+      );
+      const editions = <SeriesConfig>[SeriesConfig.legacyUrduFallback, arabic];
+
+      for (final series in editions) {
+        final tabs = SeriesNavigationPolicy.tabsFor(series);
+        expect(
+          RouteGuards.book(series),
+          tabs.contains(SeriesNavigationTab.book) ? isNull : '/lectures',
+        );
+        expect(
+          RouteGuards.study(series),
+          tabs.contains(SeriesNavigationTab.study) ? isNull : '/lectures',
+        );
+      }
+
+      expect(SeriesNavigationPolicy.tabsFor(SeriesConfig.legacyUrduFallback), [
+        SeriesNavigationTab.lectures,
+        SeriesNavigationTab.book,
+        SeriesNavigationTab.study,
+        SeriesNavigationTab.settings,
+      ]);
+      expect(SeriesNavigationPolicy.tabsFor(arabic), [
+        SeriesNavigationTab.lectures,
+        SeriesNavigationTab.book,
+        SeriesNavigationTab.settings,
+      ]);
     });
   });
 }

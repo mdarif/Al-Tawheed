@@ -1,4 +1,5 @@
 import 'package:myapp/models/series.dart';
+import 'package:myapp/navigation/series_navigation_policy.dart';
 
 /// Pure redirect predicates for the app router (see `lib/app.dart`).
 ///
@@ -18,11 +19,16 @@ abstract final class RouteGuards {
   /// `/book` exists only for a series that bundles a book asset. A deep link or
   /// stale nav into `/book` on a series without one is bounced to the lecture
   /// list. Returning `null` means "no redirect — allow the route".
-  static String? book(SeriesConfig series) => series.hasBook ? null : lectures;
+  static String? book(SeriesConfig series) =>
+      SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.book)
+      ? null
+      : lectures;
 
   /// `/study` likewise requires the series to offer study mode.
   static String? study(SeriesConfig series) =>
-      series.hasStudyMode ? null : lectures;
+      SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.study)
+      ? null
+      : lectures;
 
   /// `/` (welcome / splash): a returning user — one who has already seen the
   /// welcome for the current edition — skips straight to the lecture list, so

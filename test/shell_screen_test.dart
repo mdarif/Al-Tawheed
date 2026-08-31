@@ -9,6 +9,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/navigation/series_navigation_policy.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -200,6 +201,17 @@ void main() {
         .widgetList<NavigationDestination>(find.byType(NavigationDestination))
         .map((d) => d.label)
         .toList();
+    final expected = SeriesNavigationPolicy.tabsFor(series.currentSeries)
+        .map(
+          (tab) => switch (tab) {
+            SeriesNavigationTab.lectures => 'Lectures',
+            SeriesNavigationTab.book => 'Book',
+            SeriesNavigationTab.study => 'Study',
+            SeriesNavigationTab.settings => 'Settings',
+          },
+        )
+        .toList();
+    expect(labels, expected);
     expect(labels, ['Lectures', 'Book', 'Study', 'Settings']);
   });
 
@@ -218,6 +230,23 @@ void main() {
     expect(find.text('Study'), findsNothing); // no Study for the Arabic series
     // Lectures + Book + Settings — Settings is series-independent.
     expect(find.byType(NavigationDestination), findsNWidgets(3));
+
+    final labels = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((d) => d.label)
+        .toList();
+    final expected = SeriesNavigationPolicy.tabsFor(series.currentSeries)
+        .map(
+          (tab) => switch (tab) {
+            SeriesNavigationTab.lectures => 'الدروس',
+            SeriesNavigationTab.book => 'الكتاب',
+            SeriesNavigationTab.study => 'وضع الدراسة',
+            SeriesNavigationTab.settings => 'الإعدادات',
+          },
+        )
+        .toList();
+    expect(labels, expected);
+    expect(labels, ['الدروس', 'الكتاب', 'الإعدادات']);
   });
 
   testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI', (

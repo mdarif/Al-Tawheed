@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
-import 'package:myapp/models/series.dart';
+import 'package:myapp/navigation/series_navigation_policy.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/testing/widget_keys.dart';
@@ -11,38 +11,36 @@ import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/offline_status_banner.dart';
 
-enum _Tab { lectures, book, study, settings }
-
 const _kChromeAnim = Duration(milliseconds: 220);
 
-extension on _Tab {
+extension on SeriesNavigationTab {
   String get path => switch (this) {
-        _Tab.lectures => '/lectures',
-        _Tab.book => '/book',
-        _Tab.study => '/study',
-        _Tab.settings => '/settings',
+        SeriesNavigationTab.lectures => '/lectures',
+        SeriesNavigationTab.book => '/book',
+        SeriesNavigationTab.study => '/study',
+        SeriesNavigationTab.settings => '/settings',
       };
 
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
-        _Tab.lectures => NavigationDestination(
+        SeriesNavigationTab.lectures => NavigationDestination(
             key: WidgetKeys.shellLecturesTab,
             icon: const Icon(Icons.headphones_outlined),
             selectedIcon: const Icon(Icons.headphones_rounded),
             label: l10n.tabLectures,
           ),
-        _Tab.book => NavigationDestination(
+        SeriesNavigationTab.book => NavigationDestination(
             key: WidgetKeys.shellBookTab,
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
             label: l10n.tabBook,
           ),
-        _Tab.study => NavigationDestination(
+        SeriesNavigationTab.study => NavigationDestination(
             key: WidgetKeys.shellStudyTab,
             icon: const Icon(Icons.school_outlined),
             selectedIcon: const Icon(Icons.school_rounded),
             label: l10n.tabStudyMode,
           ),
-        _Tab.settings => NavigationDestination(
+        SeriesNavigationTab.settings => NavigationDestination(
             key: WidgetKeys.shellSettingsTab,
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings_rounded),
@@ -50,15 +48,6 @@ extension on _Tab {
           ),
       };
 }
-
-// Settings is always last, after the series-dependent tabs; Bookmarks and About
-// stay in the ⋯ overflow menu.
-List<_Tab> _tabsFor(SeriesConfig series) => [
-      _Tab.lectures,
-      if (series.hasBook) _Tab.book,
-      if (series.hasStudyMode) _Tab.study,
-      _Tab.settings,
-    ];
 
 class ShellScreen extends StatelessWidget {
   final Widget child;
@@ -68,7 +57,7 @@ class ShellScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final series = context.watch<SeriesProvider>().currentSeries;
     final chromeVisible = context.watch<ShellChromeProvider>().visible;
-    final tabs = _tabsFor(series);
+    final tabs = SeriesNavigationPolicy.tabsFor(series);
     final l10n = context.l10n;
 
     return AllLecturesCompleteListener(
@@ -100,7 +89,7 @@ class ShellScreen extends StatelessWidget {
     );
   }
 
-  int _selectedIndex(BuildContext context, List<_Tab> tabs) {
+  int _selectedIndex(BuildContext context, List<SeriesNavigationTab> tabs) {
     final path = GoRouterState.of(context).uri.path;
     final index = tabs.indexWhere((tab) => path.startsWith(tab.path));
     return index == -1 ? 0 : index;
