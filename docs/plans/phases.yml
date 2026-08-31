@@ -32,11 +32,19 @@ phases:
       - integration_test/app_test.dart
       - integration_test/support/app_flow.dart
       - test/widget_keys_test.dart
+      - test/patrol_result_test.dart
       - test/shell_screen_test.dart
+      - test/welcome_screen_test.dart
+      - test/choose_series_screen_test.dart
+      - test/settings_screen_test.dart
+      - test/player_screen_test.dart
+      - test/offline_sheet_test.dart
+      - tool/patrol_result.dart
       - Makefile
       - docs/testing.md
       - docs/release-runbook.md
       - docs/ci-cd.md
+      - docs/gotchas.md
     runner: codex:gpt-5.6-luna
     review: codex:gpt-5.6-sol
 
