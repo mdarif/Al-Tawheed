@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 import 'package:patrol/patrol.dart';
 
@@ -24,7 +25,7 @@ void main() {
     ($) async {
       await PatrolFlow.bootstrapToLectures($);
       await PatrolFlow.withAirplaneMode($, () async {
-        expect($('Offline'), findsOneWidget);
+        expect(find.byKey(WidgetKeys.offlineStatusBanner), findsOneWidget);
       });
     },
     timeout: patrolTimeout,
