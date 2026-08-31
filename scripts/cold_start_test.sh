@@ -97,6 +97,12 @@ install_profile_apk() {
   fi
 }
 
+force_stop_app() {
+  if ! adb -s "$device_id" shell am force-stop "$package_name"; then
+    echo "Unable to force-stop $package_name on $device_id" >&2
+  fi
+}
+
 grant_notifications() {
   # POST_NOTIFICATIONS was introduced in API 33. On older APIs there is no
   # runtime permission to grant; on API 33+ any grant error is actionable.
@@ -115,7 +121,9 @@ run_drive() {
   flutter drive \
     --driver=test_driver/perf_driver.dart \
     --target=integration_test/performance_test.dart \
+    --profile \
     --use-application-binary="$binary_path" \
+    --keep-app-running \
     --timeout="$timeout_seconds" \
     --dart-define=COLD_START_ONLY=true \
     --dart-define=COLD_START_COHORT="$cohort" \
@@ -142,6 +150,7 @@ run_drive() {
       fi
       terminate_process_tree "$drive_pid" KILL
       if wait "$drive_pid"; then :; fi
+      force_stop_app
       break
     fi
     sleep 1
@@ -159,6 +168,9 @@ run_drive() {
     drive_status=$?
   fi
   cat "$log_file"
+  if (( drive_status != 0 )); then
+    force_stop_app
+  fi
   return "$drive_status"
 }
 
@@ -177,6 +189,7 @@ if [[ "$cohort" == returning ]]; then
     echo "returning-user setup drive failed" >&2
     exit "$setup_status"
   fi
+  force_stop_app
 fi
 build_profile_apk false "$performance_apk"
 install_profile_apk "$performance_apk"
@@ -215,6 +228,7 @@ for sample in $(seq 1 "$samples"); do
   logcat_file="${output_dir}/sample-${sample}-logcat.log"
   if ! adb -s "$device_id" logcat -d -v brief -s 'TawheedStartup:I' '*:S' \
     > "$logcat_file"; then
+    force_stop_app
     echo "adb logcat failed for $cohort sample $sample" >&2
     exit 1
   fi
@@ -222,10 +236,12 @@ for sample in $(seq 1 "$samples"); do
   # "--------- beginning of main") even with tag filters. Only marker records
   # may reach the strict parser; malformed marker records remain visible to it.
   if ! native_log=$(awk '/COLD_START_INTERACTIVE/ { print }' "$logcat_file"); then
+    force_stop_app
     echo "Failed to filter adb logcat for $cohort sample $sample" >&2
     exit 1
   fi
   if [[ -z "$native_log" ]]; then
+    force_stop_app
     echo "No native COLD_START_INTERACTIVE marker for sample $sample" >&2
     echo "The app did not reach a verified interactive surface." >&2
     exit 1
@@ -233,6 +249,7 @@ for sample in $(seq 1 "$samples"); do
   # The report parser rejects any malformed, duplicate, wrong-cohort, or
   # wrong-surface sample, and enforces the exact requested count.
   printf '%s\n' "$native_log" | tee -a "$markers_file"
+  force_stop_app
 done
 
 dart run tool/cold_start_report.dart \

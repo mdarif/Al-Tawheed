@@ -67,11 +67,15 @@ the cohort and cold-start defines, installs that exact APK, and passes it to
 first runs a separate setup build through the real onboarding/catalog flow,
 then rebuilds and installs the measured APK in place. An APK signature
 mismatch is fatal; the runner never uninstalls the app to hide lost state.
+`flutter drive` is given `--keep-app-running`; the runner force-stops the app
+itself after each marker (and on failure/timeout) so drive cleanup cannot
+remove the measured APK.
 
 The runner force-stops the app between returning-user samples while retaining
-app data, and verifies that the marker surface is `lectures`. Seed/select a
-series once before the returning-user cohort; an unseeded install is rejected
-instead of being mislabeled as returning. It clears `com.almarfa.tawheed` app data before **every**
+app data, and verifies that the marker surface is `lectures`. Its separate
+returning setup build seeds/selects a series through the real onboarding flow,
+so an empty install is prepared automatically rather than mislabeled as
+returning. It clears `com.almarfa.tawheed` app data before **every**
 fresh-install sample, so no sample silently becomes a returning-user run. It
 captures the native logcat marker, keeps raw drive and logcat logs under
 `build/cold-start/`, and prints a median/min/max summary. Keep the cohorts and
