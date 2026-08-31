@@ -48,6 +48,26 @@ void main() {
       );
     });
 
+    test('accepts a marker after logcat header filtering', () {
+      const rawLogcat = [
+        '--------- beginning of main',
+        '08-31 10:00:00.000 I/TawheedStartup: '
+            'COLD_START_INTERACTIVE cohort=returning surface=lectures '
+            'elapsed_ms=98',
+      ];
+      final markerLines = rawLogcat
+          .where((line) => line.contains('COLD_START_INTERACTIVE'));
+      expect(
+        StartupMeasurement.parseBatch(
+          markerLines,
+          cohort: 'returning',
+          surface: 'lectures',
+          expectedCount: 1,
+        ),
+        hasLength(1),
+      );
+    });
+
     test('computes a median without fabricating a sample', () {
       final samples = [
         const StartupMeasurement(

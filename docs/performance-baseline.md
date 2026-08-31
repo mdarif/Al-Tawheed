@@ -54,14 +54,20 @@ make cold-start-test DEVICE=<android-emulator-or-device> \
   COLD_START_COHORT=fresh-install COLD_START_SAMPLES=3
 ```
 
+Each sample is bounded by `COLD_START_TIMEOUT_SECONDS` (180 seconds by
+default; override it when invoking `make`). On Android 13 and newer the runner
+pre-grants `POST_NOTIFICATIONS` after state preparation, so the system
+permission dialog cannot cover the app before its interactive marker. A grant
+failure is fatal; only pre-Android-13 devices, where this permission does not
+exist, skip the grant.
+
 The runner force-stops the app between returning-user samples while retaining
 app data, and verifies that the marker surface is `lectures`. Seed/select a
 series once before the returning-user cohort; an unseeded install is rejected
 instead of being mislabeled as returning. It clears `com.almarfa.tawheed` app data before **every**
 fresh-install sample, so no sample silently becomes a returning-user run. It
-captures the native logcat marker, keeps each raw drive log under
-`build/cold-start/`, including raw drive and logcat logs, and prints a
-median/min/max summary. Keep the cohorts and
+captures the native logcat marker, keeps raw drive and logcat logs under
+`build/cold-start/`, and prints a median/min/max summary. Keep the cohorts and
 their summaries separate; never combine them into one startup number.
 
 For a manual physical profile-mode run, use the same cohort rules and fill the

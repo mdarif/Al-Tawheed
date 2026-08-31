@@ -185,13 +185,15 @@ perf-test: pub-get
 # interactive marker from logcat and prints a median/min/max summary.
 COLD_START_COHORT ?= returning
 COLD_START_SAMPLES ?= 3
+COLD_START_TIMEOUT_SECONDS ?= 180
 cold-start-test: pub-get
 	@if [ -z "$(DEVICE)" ]; then \
 		echo "Error: DEVICE is required (an Android emulator/device)."; \
 		echo "  make cold-start-test DEVICE=<android_id> COLD_START_COHORT=returning"; \
 		exit 1; \
 	fi
-	./scripts/cold_start_test.sh "$(DEVICE)" "$(COLD_START_COHORT)" "$(COLD_START_SAMPLES)"
+	COLD_START_TIMEOUT_SECONDS="$(COLD_START_TIMEOUT_SECONDS)" \
+		./scripts/cold_start_test.sh "$(DEVICE)" "$(COLD_START_COHORT)" "$(COLD_START_SAMPLES)"
 
 # Capture + frame the Play Store screenshot set (v3, Arabic-led). Runs the
 # on-device capture harness, then composites clean device frames on the brand
