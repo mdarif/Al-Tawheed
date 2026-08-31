@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format build release release-auto release-android release-ios release-apk integration-test perf-test patrol-test orientation-test screenshots run ci ci-logs
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format format-check build release release-dry release-auto release-android release-ios release-apk integration-test perf-test patrol-test orientation-test screenshots run ci ci-logs test-tooling verify-apk
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -18,6 +18,9 @@ help:
 	@echo ""
 	@echo "CI / CD:"
 	@echo "  make ci                   - Run full CI pipeline locally (analyze + test + build)"
+	@echo "  make format-check         - dart format --set-exit-if-changed (mirrors CI's format gate)"
+	@echo "  make test-tooling         - Run the tool/ Python test suite (unittest discover)"
+	@echo "  make verify-apk           - Run tool/verify_release_apk.py (APK=..., optional DEVICE=...)"
 	@echo "  make release-apk          - Release pipeline: pub get, tests, integration, release APK"
 	@echo "  make integration-test     - Run validation app_test.dart on device (DEVICE required)"
 	@echo "  make orientation-test     - Run orientation flip test on device (DEVICE required)"
@@ -26,6 +29,7 @@ help:
 	@echo "  make ci-logs              - Fetch latest failed GitHub Actions run logs"
 	@echo "  make setup-release-secrets - One-time: push signing + Play Store creds to GitHub secrets"
 	@echo "  make release              - Trigger release workflow (BUMP=patch|minor|major), from master"
+	@echo "  make release-dry          - Dry-run the release workflow from develop (no ship, validates the graph)"
 	@echo "  make release-auto         - One-click release from develop (promotes, releases, syncs back)"
 	@echo ""
 	@echo "Testing & Quality:"
@@ -122,6 +126,12 @@ analyze:
 format:
 	dart format .
 
+# Format-only CHECK (no rewrite) — exact mirror of the `build-android` CI gate
+# added when the whole repo was reformatted for the new release pipeline.
+# Exits non-zero if anything is unformatted, without touching files.
+format-check:
+	dart format --set-exit-if-changed -o none lib test tool integration_test
+
 coverage:
 	flutter test --coverage
 	@echo "✓ Coverage report generated in coverage/"
@@ -129,7 +139,13 @@ coverage:
 lint:
 	dart analyze
 
-check-quality: analyze lint test
+# Python test suite for the release tooling (tool/compute_release_version.py,
+# tool/verify_release_apk.py, tool/play_release_preflight.py). Mirrors the
+# `python3 -m unittest discover -s test/tool` gate in `build-android`.
+test-tooling:
+	python3 -m unittest discover -s test/tool
+
+check-quality: analyze lint test format-check test-tooling
 	@echo "✓ All quality checks passed!"
 
 # Device ID for on-device tests — required by integration-test and release-apk.
@@ -247,8 +263,28 @@ release-apk: pub-get
 	flutter build apk --release
 	@echo "✓ Release APK: build/app/outputs/flutter-apk/app-release.apk"
 
+# Inspect (and optionally on-device smoke-test) a signed release APK, exactly
+# like the `verify-android` CI job does. APK defaults to the standard release
+# APK output path if unset. With DEVICE unset it's the deterministic,
+# no-device --inspect-only path (asset hashes + JSON validity + rejects a
+# debug-signed APK); with DEVICE set it installs/launches/backgrounds/resumes
+# it and writes screenshot+logcat evidence to verify-evidence/.
+APK ?= build/app/outputs/flutter-apk/app-release.apk
+verify-apk:
+	@if [ ! -f "$(APK)" ]; then \
+		echo "Error: APK does not exist: $(APK)"; \
+		echo "  Build one first: flutter build apk --release"; \
+		echo "  Or pass an existing one: make verify-apk APK=<path>"; \
+		exit 1; \
+	fi
+	@if [ -z "$(DEVICE)" ]; then \
+		python3 tool/verify_release_apk.py --apk $(APK) --inspect-only; \
+	else \
+		python3 tool/verify_release_apk.py --apk $(APK) --device $(DEVICE) --evidence-dir verify-evidence; \
+	fi
+
 # Run the exact same steps as the GitHub Actions CI pipeline locally
-ci:
+ci: format-check test-tooling
 	@echo "Running CI pipeline locally..."
 	flutter analyze --fatal-warnings
 	flutter test --reporter=expanded
@@ -323,6 +359,28 @@ release-auto:
 	  --field confirm_promote=true \
 	  --field dry_run=$(DRY_RUN)
 	@echo "✓ Release workflow triggered — watch it at:"
+	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
+
+# Dry-run the release workflow from develop: runs prepare/build-android/
+# verify-android exactly as a real release would, but publishes nothing
+# (no tag, no commit, no Play upload, no GitHub Release).
+# IMPORTANT: a dry run that finishes in under a minute with no artifacts is a
+# FAILURE (a `needs:` cascade-skip through the job graph), not a pass — go
+# open the run and confirm build-android/verify-android actually executed and
+# uploaded the `android-release` / `verify-evidence` artifacts.
+release-dry:
+	@echo "Triggering release workflow dry run (bump=$(BUMP))..."
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "develop" ]; then \
+	  echo "Error: release-dry must be run from develop (you are on $$BRANCH)"; \
+	  exit 1; \
+	fi
+	gh workflow run flutter-release.yml \
+	  --ref develop \
+	  --field bump=$(BUMP) \
+	  --field dry_run=true \
+	  --field confirm_promote=false
+	@echo "✓ Dry-run release workflow triggered — watch it at:"
 	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
 
 release-android:

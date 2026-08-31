@@ -101,6 +101,17 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------ #
+      # 7b. Formatting — the release pipeline enforces the same check, so
+      #     catching drift here keeps a release from being the first place a
+      #     stray format shows up. Note that `dart format` and the
+      #     `require_trailing_commas` lint can disagree: run `dart format`,
+      #     then `dart fix --apply --code=require_trailing_commas`, and repeat
+      #     until both are clean. `make format-check` mirrors this exactly.
+      # ------------------------------------------------------------------ #
+      - name: Verify formatting
+        run: dart format --set-exit-if-changed -o none lib test tool integration_test
+
+      # ------------------------------------------------------------------ #
       # 8. Analyze (static analysis)
       #    --fatal-warnings fails the job on warnings and errors.
       #    --fatal-infos is intentionally avoided: third-party packages

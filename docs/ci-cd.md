@@ -13,8 +13,9 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 | CD Phase 1 — Release automation | **Active** — first release (`1.0.1`) shipped 2026-06-02 | `.github/workflows/flutter-release.yml` |
 | CD Phase 1.5 — Promote + sync automation | **Implemented** — not yet used for a release | `.github/workflows/flutter-release.yml` |
 | CD Phase 2 — Signed release APK/AAB | **Implemented** — needs the 4 signing secrets set, then unused for a release | `.github/workflows/flutter-release.yml`, `android/app/build.gradle` |
-| CD Phase 3 — Play Store internal-track upload | **Implemented** — needs the `GOOGLE_PLAY_SERVICE_ACCOUNT` secret set, then unused for a release | `.github/workflows/flutter-release.yml` |
+| CD Phase 3 — Play Store internal-track upload | **Implemented** — needs the `GOOGLE_PLAY_SERVICE_ACCOUNT` secret **and** the new `PLAY_FGS_MEDIA_DECLARED` secret set | `.github/workflows/flutter-release.yml` |
 | CD Phase 4 — Android emulator CI gate | **4a Implemented** (non-blocking) — 4b (required check) not started | `.github/workflows/flutter-android-emulator.yml` |
+| CD Phase 5 — Seven-job release graph + on-device verify gate | **Active** — `promote → prepare → build-android → verify-android → publish → sync-develop` (+ `dry-run-summary` on dry runs) | `.github/workflows/flutter-release.yml`, `tool/compute_release_version.py`, `tool/verify_release_apk.py`, `tool/play_release_preflight.py` |
 
 ---
 
@@ -24,10 +25,16 @@ Complete reference for the CI/CD pipeline: what's built, how to use it, what sti
 .github/
   workflows/
     flutter-ci.yml          ← CI: runs on every push/PR
-    flutter-release.yml     ← CD: release automation (workflow_dispatch)
+    flutter-release.yml     ← CD: release automation (workflow_dispatch), 7-job graph
 .githooks/
-  pre-push                  ← Local: mirrors CI, runs before every push
-Makefile                    ← Updated with ci, ci-logs, release, setup-hooks targets
+  pre-push                  ← Local: mirrors CI, runs before every push (now incl. format-check + test-tooling)
+tool/
+  compute_release_version.py    ← single source of truth for version/tag (bump, tag-collision guard)
+  verify_release_apk.py         ← --inspect-only (assets/signing) and --device (install/launch/logcat) checks
+  play_release_preflight.py     ← Play upload gate: PLAY_FGS_MEDIA_DECLARED + manifest checks
+test/tool/
+  test_compute_release_version.py   ← 16 unit tests for the version/tag logic
+Makefile                    ← ci, ci-logs, release, release-dry, setup-hooks, format-check, test-tooling, verify-apk targets
 ```
 
 ---
@@ -128,6 +135,39 @@ gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT --repo mdarif/Al-Tawheed < /path/to/se
 > "no application was found" / track-not-found style error, do one manual
 > upload to the **internal** track via Play Console first, then re-run.
 
+### 7. Add the `PLAY_FGS_MEDIA_DECLARED` secret — REQUIRED, or `publish` fails
+
+> ⚠️ **Without this secret set, the `publish` job WILL fail.** It is not
+> optional the way some of the setup above is "if you want Play upload."
+
+The manifest declares `android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK`
+(needed for background audio playback with lock-screen controls). Play
+requires an explicit declaration form for any app requesting a foreground
+service permission, and `tool/play_release_preflight.py` — a new step in the
+`publish` job, run before every Play upload — refuses to upload an AAB until
+it can confirm that declaration exists, so a burned `versionCode` doesn't get
+wasted on a Play-side rejection.
+
+```sh
+# Normal case: the Play Console declaration form is already filled in
+gh secret set PLAY_FGS_MEDIA_DECLARED --repo mdarif/Al-Tawheed <<< "true"
+```
+
+**Bootstrap escape hatch:** if Play Console isn't yet showing the foreground-
+service declaration form (it only appears after Google has seen the
+permission in an uploaded APK/AAB at least once), set the secret to
+`bootstrap` instead of `true` for exactly one release attempt:
+
+```sh
+gh secret set PLAY_FGS_MEDIA_DECLARED --repo mdarif/Al-Tawheed <<< "bootstrap"
+```
+
+`bootstrap` lets the preflight pass with a loud `::warning::` so Play sees the
+permission and surfaces the declaration form — then switch the secret back to
+`true` (after actually filling in the form in Play Console) before the next
+release. Any other value, or an unset secret, fails the preflight and blocks
+the upload outright.
+
 ---
 
 ## Setup Status (re-verified live 2026-06-07, post-1.0.1)
@@ -199,8 +239,14 @@ The hook at `.githooks/pre-push` runs automatically on every `git push`. It runs
 ```
 ▶  flutter analyze --fatal-warnings
 ▶  flutter test
+▶  dart format --set-exit-if-changed
+▶  python3 -m unittest discover -s test/tool
 ✓  All checks passed — push allowed.
 ```
+
+The format-check and Python tooling-test steps were added alongside the new
+`build-android` CI gates of the same name, so a push can't land unformatted
+code or a broken `tool/` script that CI would catch ~20 minutes later mid-build.
 
 If either step fails, the push is **blocked**. You fix it locally and push again. No CI minutes wasted.
 
@@ -214,7 +260,7 @@ Do not use this routinely.
 
 ---
 
-## CD Phase 1 / 1.5 / 2 / 3 — Release Automation
+## CD Phase 1 / 1.5 / 2 / 3 / 5 — Release Automation
 
 **Trigger:** manual (`workflow_dispatch`), from `develop` (one-click) or `master` (traditional).
 
@@ -222,7 +268,8 @@ Do not use this routinely.
 GitHub → Actions → Release → Run workflow
   → bump: patch | minor | major
   → confirm_promote (required when dispatched from develop)
-  → dry_run (analyze/test/build only, nothing pushed/tagged/released)
+  → dry_run (build + verify only, nothing pushed/tagged/released/uploaded)
+  → skip_verify ("Emergency hotfix only" — skips the on-device APK check)
   → Run
 ```
 
@@ -232,44 +279,112 @@ Or from the terminal:
 # One-click, from develop: promotes develop -> master, releases, syncs develop back
 make release-auto BUMP=patch
 make release-auto BUMP=patch DRY_RUN=true   # validate without shipping anything
+make release-dry BUMP=patch                 # same idea, dedicated target — see below
 
 # Traditional, from master: release only (sync-develop still runs after)
 make release BUMP=patch
 ```
 
-### What happens
+`concurrency: {group: release, cancel-in-progress: false}` is set at the
+workflow level — a second dispatch queues behind an in-flight release instead
+of racing or cancelling it.
 
-Three jobs run in sequence — `promote` → `release` → `sync-develop`:
+### What happens — the seven-job graph
 
 ```
-promote        (skipped unless dispatched from develop)
+promote -> prepare -> build-android -> verify-android -> publish -> sync-develop
+(plus dry-run-summary, which only runs on a dry run, and only if the
+ build+verify jobs actually SUCCEEDED — not merely didn't fail)
+```
+
+```
+promote          (skipped unless dispatched from develop)
   - Require confirm_promote=true, else fail the run
   - git merge --ff-only develop -> master, push
 
-release        (skipped if promote failed)
-  - Checkout the promoted SHA (or current ref, for master / dry runs)
-  - Compute new version (semver + build number from pubspec.yaml)
-  - Guard: abort if the tag already exists
-  - Update pubspec.yaml with new version
+prepare          (needs: promote, always()+success-checked — see gotchas.md)
+  - Cheap, fail-fast job: no Flutter/Gradle work yet.
+  - Compute the new version + tag (tool/compute_release_version.py)
+  - Guard: abort if that tag already exists
+  - Verify the 4 signing secrets + GOOGLE_PLAY_SERVICE_ACCOUNT are non-empty
+  - All of the above used to run AFTER a ~20-minute build; now it fails in
+    seconds if something as simple as a missing secret would have doomed
+    the run anyway.
+
+build-android    (needs: promote, prepare)
+  - The ONLY job holding signing secrets.
   - Java 21 + Flutter + Gradle cache, flutter pub get
   - flutter analyze --fatal-warnings   ← refuses to tag a broken build
   - flutter test                        ← refuses to tag a failing build
+  - dart format --set-exit-if-changed lib test tool integration_test  ← format gate
+  - python3 -m unittest discover -s test/tool  ← release-tooling gate
   - Configure release signing (decode KEYSTORE_BASE64 -> upload-keystore.jks,
     write key.properties from KEY_ALIAS/KEY_PASSWORD/STORE_PASSWORD)
   - flutter build apk --release
   - flutter build appbundle --release
-  - Rename APK → al-tawheed-X.Y.Z.apk
-  - Generate changelog (git-cliff --unreleased) + Play Store notes
+  - Upload the signed APK+AAB as artifact `android-release`
+
+verify-android   (needs: prepare, build-android) — clean runner, NO secrets
+  - Skipped-checks version: if skip_verify=true, logs a ::warning:: and a
+    step-summary line, and every check below is skipped. See "skip_verify"
+    below for when this is legitimate.
+  - Otherwise: downloads the exact signed APK from `android-release`
+  - tool/verify_release_apk.py --inspect-only (asset hashes byte-for-byte,
+    JSON validity, rejects a debug-signed APK)
+  - Installs/launches/backgrounds/resumes it on an API 34 x86_64 emulator
+    (reactivecircus/android-emulator-runner), fails on any logcat crash
+  - Uploads screenshot + logcat as artifact `verify-evidence` — whether or
+    not it passed, so evidence exists for failing runs too
+
+publish          (needs: prepare, build-android, verify-android;
+                   if: always() && needs.build-android.result == 'success' &&
+                       needs.verify-android.result == 'success')
+  - Builds NOTHING — reuses the `android-release` artifact from build-android
+  - tool/play_release_preflight.py — NEW gate before the Play upload; refuses
+    to upload unless PLAY_FGS_MEDIA_DECLARED is `true` (or `bootstrap` for one
+    bootstrap attempt) — see One-Time Setup §7
+  - Generate changelog (git-cliff --unreleased) + Play Store notes (500-char
+    cap, up from 480) for THREE locales: en-US, ar, ur — all carrying the
+    SAME English text, deliberately, because release notes are authored in
+    English only (this is the one user-facing string set NOT covered by
+    ARB parity — see gotchas.md)
   - [skipped if dry_run] Upload app-release.aab to the Play Store internal
-    track (r0adkll/upload-google-play, status: completed, What's new from
-    play-store-notes.txt)
+    track (r0adkll/upload-google-play, status: completed)
   - [skipped if dry_run] Commit version bump -> master (chore: release X.Y.Z),
     tag it (X.Y.Z, no v prefix), push commit + tag
   - [skipped if dry_run] Create GitHub Release with APK + changelog attached
 
-sync-develop   (skipped unless release succeeded, or if dry_run)
+sync-develop     (needs: publish)
   - git merge --ff-only master -> develop, push
+
+dry-run-summary  (only on dry_run=true; needs: prepare, build-android,
+                   verify-android; if: build-android succeeded AND
+                   (verify-android succeeded OR skip_verify==true))
+  - Writes a step-summary confirming the dry run actually built + verified
+    something, rather than just reporting a green run that skipped
+    everything (see "reading a dry run" below)
 ```
+
+### `skip_verify` — when it's legitimate
+
+`skip_verify` (boolean input, default `false`, labeled "Emergency hotfix
+only") skips `verify-android`'s on-device install/launch check entirely. Use
+it **only** when a release is time-critical and the on-device check itself is
+the blocker (e.g. emulator infra is down) — never to route around a real
+failure the check found. Every use logs a `::warning::` in the run and a line
+in the step summary, so it's visible after the fact who shipped without the
+on-device gate.
+
+### Reading a dry run correctly
+
+A dry run that finishes in **under a minute with no artifacts is a FAILURE**
+(a `needs:` cascade-skip through the job graph), not a pass — `needs:`
+propagates skips transitively, so if an upstream job is skipped, everything
+downstream skips too and the run still shows green. Always check that
+`build-android` and `verify-android` actually ran and uploaded the
+`android-release` / `verify-evidence` artifacts — `dry-run-summary`'s
+step-summary exists specifically to make this obvious without digging through
+job logs.
 
 ### Version format
 
@@ -342,7 +457,10 @@ CI runs on the PR. Merge when green.
 | Command | What it does |
 |---|---|
 | `make setup-hooks` | Activate `.githooks/pre-push` for this clone |
-| `make ci` | Run CI locally: analyze + unit/widget tests + debug APK |
+| `make ci` | Run CI locally: format-check + tooling tests + analyze + unit/widget tests + debug APK |
+| `make format-check` | `dart format --set-exit-if-changed -o none lib test tool integration_test` — mirrors the `build-android` CI gate exactly |
+| `make test-tooling` | `python3 -m unittest discover -s test/tool` — mirrors the `build-android` CI gate exactly |
+| `make verify-apk` | Run `tool/verify_release_apk.py` locally (`APK=` optional, defaults to the standard release path; `DEVICE=` optional for the on-device check) |
 | `make integration-test DEVICE=<id>` | Run validation `integration_test/app_test.dart` on a device |
 | `make screenshots DEVICE=<id>` | Generate Play Store assets (not validation) |
 | `make patrol-test DEVICE=<id>` | Run Patrol 4.6.1 native tests with CLI 4.4.0; reject `Total: 0` |
@@ -351,6 +469,7 @@ CI runs on the PR. Merge when green.
 | `make release` | Trigger release workflow (patch bump) |
 | `make release BUMP=minor` | Trigger release workflow (minor bump) |
 | `make release BUMP=major` | Trigger release workflow (major bump) |
+| `make release-dry BUMP=<level>` | Dispatch a dry-run release from develop (build + verify, nothing shipped) |
 | `make analyze` | `flutter analyze --fatal-warnings` (matches CI) |
 | `make test` | Run the CI test files with expanded reporter |
 
@@ -497,4 +616,4 @@ A tag for the computed version already exists. Either the version in `pubspec.ya
 
 ---
 
-*Last updated: 2026-06-13*
+*Last updated: 2026-08-31*

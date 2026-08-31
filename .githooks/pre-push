@@ -16,4 +16,12 @@ echo "▶  flutter test"
 flutter test --reporter=expanded
 
 echo ""
+echo "▶  dart format --set-exit-if-changed"
+dart format --set-exit-if-changed -o none lib test tool integration_test
+
+echo ""
+echo "▶  python3 -m unittest discover -s test/tool"
+python3 -m unittest discover -s test/tool
+
+echo ""
 echo "✓  All checks passed — push allowed."

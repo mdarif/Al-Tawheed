@@ -46,6 +46,12 @@ looks like, and what to do if it doesn't go to plan.
       [ci-cd.md → One-Time Setup → "Add CD Phase 3 Play Store
       secret"](ci-cd.md#6-add-cd-phase-3-play-store-secret) — Step 2 will fail
       at "Require Play Store service account" without it.
+- [ ] **`PLAY_FGS_MEDIA_DECLARED` is set to `true`** (or, for a one-time
+      bootstrap attempt, `bootstrap`) — `gh secret list --repo
+      mdarif/Al-Tawheed` should list it. Without this the `publish` job's
+      Play preflight (`tool/play_release_preflight.py`) refuses the upload
+      outright. See [ci-cd.md → One-Time Setup → "Add the
+      `PLAY_FGS_MEDIA_DECLARED` secret"](ci-cd.md#7-add-the-play_fgs_media_declared-secret--required-or-publish-fails).
 
 ## Step 1 — Run the local release gate
 
@@ -109,26 +115,56 @@ gh run watch
 # or: https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml
 ```
 
-The workflow runs three jobs:
+The workflow runs a six-job graph (plus a dry-run-only summary job):
+`promote → prepare → build-android → verify-android → publish → sync-develop`.
+
 1. **`promote`** — fast-forward merges `develop` into `master` and pushes.
    Fails fast if that's not possible (see Troubleshooting).
-2. **`release`** — bumps `pubspec.yaml`, re-runs analyze + tests (refuses to
-   tag a broken build even if Step 1 passed — different machine, same
-   checks), builds a **production-signed** APK + AAB (CD Phase 2 — same
-   upload key as Step 1's local build), uploads the AAB to the Play Store
-   **internal track** (CD Phase 3), commits the version bump to `master`,
-   tags it, pushes both, and creates a GitHub Release with the APK and an
-   auto-generated changelog.
-3. **`sync-develop`** — fast-forward merges `master` (now including the
+2. **`prepare`** — cheap and fast: computes the new version/tag, rejects a
+   duplicate tag, and checks the signing secrets + Play service account are
+   non-empty. All of this used to run only after a ~20-minute build; now a
+   missing secret or a stale tag fails in seconds.
+3. **`build-android`** — the only job holding signing secrets. Re-runs
+   analyze + tests (refuses to tag a broken build even if Step 1 passed —
+   different machine, same checks), plus the new `dart format
+   --set-exit-if-changed` and `tool/` unit-test gates, builds a
+   **production-signed** APK + AAB (CD Phase 2 — same upload key as Step 1's
+   local build), and uploads them as the `android-release` artifact.
+4. **`verify-android`** — a clean runner with no secrets. Downloads the exact
+   signed APK, runs `tool/verify_release_apk.py --inspect-only`, then
+   installs/launches/backgrounds/resumes it on an API 34 emulator, uploading
+   screenshot + logcat evidence either way. **This is the job the
+   `skip_verify` input bypasses** — see ci-cd.md for when that's legitimate.
+5. **`publish`** — builds nothing (reuses `android-release`). Runs
+   `tool/play_release_preflight.py` (which requires the
+   `PLAY_FGS_MEDIA_DECLARED` secret — see the pre-flight checklist above),
+   uploads the AAB to the Play Store **internal track** (CD Phase 3), commits
+   the version bump to `master`, tags it, pushes both, and creates a GitHub
+   Release with the APK and an auto-generated changelog. Play "What's new"
+   notes are written for en-US/ar/ur but with the **same English text** in
+   all three — release notes are authored in English only, unlike every
+   other user-facing string in this app.
+6. **`sync-develop`** — fast-forward merges `master` (now including the
    version bump + tag) back into `develop` and pushes. This is the step that
    used to be a manual "close out the release" chore — it's now automatic.
 
-> **First time, or testing a workflow change?** Add `DRY_RUN=true` to run
-> analyze/test/build only — nothing is promoted, committed, tagged, pushed,
-> or released:
+> **`needs:` propagates skips.** If an early job is skipped (e.g. `promote`
+> on a non-develop dispatch), everything downstream skips too and the run
+> still shows green with nothing built. See "dry run" note below and
+> `docs/gotchas.md` for the mechanics.
+
+> **First time, or testing a workflow change?** Add `DRY_RUN=true` (or run
+> `make release-dry BUMP=patch`) to run build + verify only — nothing is
+> promoted, committed, tagged, pushed, or released:
 > ```sh
 > make release-auto BUMP=patch DRY_RUN=true
 > ```
+> **A dry run that finishes in under a minute with no artifacts is a
+> FAILURE, not a pass.** `needs:` cascade-skips can make the whole graph
+> report green while nothing actually built. Confirm `build-android` and
+> `verify-android` ran and uploaded the `android-release` / `verify-evidence`
+> artifacts — the `dry-run-summary` job's step-summary exists to make this
+> obvious.
 
 ### Fallback: manual promote + release from master
 
@@ -243,6 +279,51 @@ manually.
 
 ## Troubleshooting
 
+### Failure blast radius by job — read this first
+
+The new job graph fails in three very different ways depending on which job
+breaks. Know which one you're in before you touch anything:
+
+**`verify-android` fails => NOTHING has shipped, safe to fix and re-run.**
+No secrets are even present in this job, no upload has happened, no tag or
+commit exists. Fix the underlying issue (a real crash the on-device check
+caught, or infra flakiness in the emulator runner) and re-run
+`make release-auto` from scratch. If the check itself is the blocker and the
+release is genuinely time-critical, `skip_verify=true` bypasses it — but that
+is an escape hatch for infra outages, not a way to ship past a real failure
+it found.
+
+**`publish` fails partway => the release may be HALF-SHIPPED. Do NOT blindly
+re-run.** `publish` does multiple non-atomic things in sequence: Play upload,
+then commit+tag+push, then GitHub Release creation. If it fails after the
+Play upload step but before the tag push, the AAB is live on the Play Store
+**internal track** with a `versionCode` now consumed, while `origin` has no
+new tag/commit for it. Before doing anything:
+1. Check the Play Console **internal testing** track — is the new build
+   already there?
+2. Check the tag list — `git fetch --tags && git tag --sort=-creatordate | head -3`
+   — does the new version's tag exist?
+3. If Play has it but the tag doesn't: don't re-trigger a normal release (it
+   will try to reuse the same `versionCode` and get rejected — see "Version
+   code N has already been used" below). Bump `pubspec.yaml`'s `+BUILD`,
+   commit, tag, and push manually to reconcile, or bump `+BUILD` and let a
+   fresh `make release-auto` run produce a new tag pointing at the right code.
+4. If neither Play nor the tag has it: the failure happened before any
+   irreversible action — a plain re-run is safe.
+
+**`sync-develop` fails => the release already shipped — only `develop` needs
+manual fixing.** By the time `sync-develop` runs, `publish` has already
+succeeded: the AAB is on Play, the tag and GitHub Release exist, the commit
+is on `master`. Nothing about the *release* is broken — only merging that
+commit back into `develop` failed (see the `DEVELOP_SYNC_TOKEN` entry below
+for the usual cause). Do not re-trigger the release workflow; just reconcile
+`develop` by hand:
+```sh
+git checkout develop && git merge --ff-only origin/master && git push origin develop
+```
+
+---
+
 **"Upload to Play Store failed: 'The caller does not have permission' (403),
 even though the service account is invited and Active"**
 Account-level "Release apps to testing tracks" is **not sufficient**. Grant it
@@ -296,6 +377,16 @@ secret values in chat.
 is not set"**
 `GOOGLE_PLAY_SERVICE_ACCOUNT` isn't set as a repo secret yet (CD Phase 3). See
 `docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 3 Play Store secret".
+
+**"`publish` failed in the Play preflight step (`tool/play_release_preflight.py`):
+refusing to upload — `PLAY_FGS_MEDIA_DECLARED` is not true"**
+The `PLAY_FGS_MEDIA_DECLARED` secret is unset or not `true`/`bootstrap`. This
+is a required secret, not an optional one — see the pre-flight checklist and
+`docs/ci-cd.md` → "One-Time Setup" → "Add the `PLAY_FGS_MEDIA_DECLARED`
+secret". If Play Console hasn't surfaced the foreground-service declaration
+form yet, set it to `bootstrap` for one attempt, then switch it to `true`
+once you've filled in the form. Nothing has shipped at this point — this
+step runs before the Play upload.
 
 **"Release workflow failed at 'Upload to Play Store' with 'no application was
 found' / track not found"**

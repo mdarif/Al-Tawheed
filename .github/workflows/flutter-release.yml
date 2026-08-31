@@ -1,29 +1,40 @@
 # CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation,
 # CD Phase 2 — production-signed APK/AAB, CD Phase 3 — Play Store
-# internal-track upload)
+# internal-track upload, CD Phase 4c — release-artifact verification)
+#
+# Job graph:
+#
+#   promote -> prepare -> build-android -> verify-android -> publish -> sync-develop
+#
+# Split out of a single monolithic job so that (a) a bad version or a missing
+# signing secret fails in `prepare` in ~30s instead of after a twenty-minute
+# Gradle build, and (b) the signed APK that ships is actually installed and
+# launched on a device by `verify-android` before `publish` can upload it.
+# Only `build-android` ever sees the signing secrets.
 #
 # One-click release: dispatch from `develop` with `confirm_promote: true`.
-# This fast-forwards `develop` into `master`, bumps the version, runs CI
-# checks, builds a production-signed release APK + AAB, uploads the AAB to
-# the Play Store internal track, tags the commit, creates a GitHub Release,
-# and syncs the version bump back into `develop` — all in one run.
+# Traditional flow: dispatch from `master` (promote/sync are skipped).
+# Use `dry_run: true` to run analyze/test/build/verify only — no commits,
+# tags, releases, pushes, or Play Store uploads of any kind.
 #
-# Traditional flow: dispatch from `master` (the promote/sync jobs are
-# skipped) — this is the original CD Phase 1 behaviour, unchanged.
-#
-# Use `dry_run: true` to run analyze/test/build only — no commits, tags,
-# releases, pushes, or Play Store uploads of any kind. Useful for testing
-# workflow changes.
+# WHY every downstream job carries `always() && needs.X.result == 'success'`:
+# `needs:` propagates SKIPS transitively. On a dry run `promote` is skipped, so
+# a plain `needs:` chain would cascade-skip the entire pipeline and report a
+# green run that built nothing — a false all-clear on the exact flow whose job
+# is to catch problems. The explicit result checks below are load-bearing; do
+# not "simplify" them away. See docs/gotchas.md -> CI / release.
 #
 # Prerequisites (one-time GitHub settings):
-#   - Settings → Branches → master → Bypass list → add github-actions[bot]
+#   - Settings -> Branches -> master -> Bypass list -> add github-actions[bot]
 #     Without this, the version-bump push to master will be rejected.
 #   - Repo secrets for release signing (CD Phase 2): KEYSTORE_BASE64,
-#     KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD (mirrors
-#     android/key.properties).
+#     KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD (mirrors android/key.properties).
 #   - Repo secret for Play Store upload (CD Phase 3):
-#     GOOGLE_PLAY_SERVICE_ACCOUNT (service account JSON, Release Manager
-#     access). See docs/ci-cd.md -> "One-Time Setup".
+#     GOOGLE_PLAY_SERVICE_ACCOUNT (service account JSON, Release Manager).
+#   - Repo secret PLAY_FGS_MEDIA_DECLARED=true — the app declares
+#     FOREGROUND_SERVICE_MEDIA_PLAYBACK; Play requires an accepted declaration
+#     form. See docs/ci-cd.md -> "One-Time Setup".
+#   - Repo secret DEVELOP_SYNC_TOKEN for the develop fast-forward.
 
 name: Release
 
@@ -45,7 +56,12 @@ on:
         default: false
         type: boolean
       dry_run:
-        description: 'Run analyze/test/build only - skip promote, tag, release, and the develop sync.'
+        description: 'Run analyze/test/build/verify only - skip promote, tag, release, Play upload, and the develop sync.'
+        required: false
+        default: false
+        type: boolean
+      skip_verify:
+        description: 'Emergency hotfix only - skip the on-device release APK verification.'
         required: false
         default: false
         type: boolean
@@ -55,15 +71,20 @@ on:
 permissions:
   contents: write
 
+# Two concurrent releases would race on the same tag and the same
+# `git push origin HEAD:master`. Queue rather than cancel: a half-finished
+# release that has already uploaded to Play must be allowed to finish tagging.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   # ------------------------------------------------------------------ #
   # Promote develop -> master (CD Phase 1.5)
   #
-  # Only runs when dispatched from develop with dry_run=false. Fast-forward
-  # only: if master has diverged from develop in a way that can't
-  # fast-forward, this job fails rather than guessing at a merge - see
-  # docs/release-runbook.md -> Troubleshooting -> "release-auto failed at
-  # promote: 'not possible to fast-forward'" for the manual recovery.
+  # Fast-forward only: if master has diverged from develop in a way that
+  # can't fast-forward, this fails rather than guessing at a merge — see
+  # docs/release-runbook.md -> Troubleshooting.
   # ------------------------------------------------------------------ #
   promote:
     name: Promote develop to master
@@ -99,263 +120,76 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   # ------------------------------------------------------------------ #
-  # Release (CD Phase 1)
+  # Prepare — cheap, fail-fast gate. No Flutter, no Gradle, no secrets
+  # consumed beyond an emptiness check. Everything that can reject a
+  # release without building it happens here.
   # ------------------------------------------------------------------ #
-  release:
-    name: Release
+  prepare:
+    name: Prepare release version
     runs-on: ubuntu-latest
     needs: [promote]
-    # Run when dispatched from master (promote skipped) or from develop with
-    # a successful promote (or a skipped one, for dry runs). Anything else
-    # (promote failed/cancelled, or an unrelated ref) skips this job too.
     if: |
       always() &&
       (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop') &&
       (needs.promote.result == 'success' || needs.promote.result == 'skipped')
+    outputs:
+      ref: ${{ steps.resolve.outputs.ref }}
+      new_version: ${{ steps.version.outputs.new_version }}
+      new_semver: ${{ steps.version.outputs.new_semver }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      tag: ${{ steps.version.outputs.tag }}
+      apk: ${{ steps.version.outputs.apk }}
+      aab: ${{ steps.version.outputs.aab }}
 
     steps:
-      # ------------------------------------------------------------------ #
-      # 1. Full checkout — needed for changelog generation across all tags.
-      #    Checks out the SHA `promote` just pushed to master, or falls back
-      #    to the triggering ref itself (master in the traditional flow, or
-      #    develop for a dry run dispatched from develop).
-      # ------------------------------------------------------------------ #
+      - name: Resolve release ref
+        id: resolve
+        run: |
+          # The SHA promote just pushed to master, or the triggering ref itself
+          # (master in the traditional flow, develop for a dry run).
+          REF="${{ needs.promote.outputs.sha || github.ref_name }}"
+          echo "ref=${REF}" >> "$GITHUB_OUTPUT"
+          echo "Releasing from ${REF}"
+
+      # fetch-depth: 0 — the duplicate-tag guard needs every tag, and the
+      # changelog in `publish` needs full history.
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ needs.promote.outputs.sha || github.ref_name }}
+          ref: ${{ steps.resolve.outputs.ref }}
 
-      # ------------------------------------------------------------------ #
-      # Free disk space — ubuntu-latest runners ship with large unused
-      # toolchains (.NET, GHC, CodeQL) that leave little headroom for the
-      # Android SDK + Gradle cache + APK build. Without this, packaging can
-      # fail with "No space left on device" (hit on 2026-06-12).
-      # ------------------------------------------------------------------ #
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          df -h /
-
-      # ------------------------------------------------------------------ #
-      # 2. Compute new version from pubspec.yaml + bump type
-      #    pubspec.yaml format:  version: X.Y.Z+BUILD
-      #    Tag format matches existing convention: X.Y.Z  (no v prefix)
-      # ------------------------------------------------------------------ #
-      - name: Compute new version
+      # Fails on an unparseable pubspec or an already-released tag. Does NOT
+      # pass --write: the version is applied in build-android, on its own
+      # checkout, so a rejected release leaves no half-bumped file behind.
+      - name: Compute release version
         id: version
         run: |
-          CURRENT=$(grep '^version:' pubspec.yaml | awk '{print $2}')
-          SEMVER=$(echo "$CURRENT" | cut -d'+' -f1)
-          BUILD=$(echo "$CURRENT"  | cut -d'+' -f2)
+          python3 tool/compute_release_version.py \
+            --bump "${{ inputs.bump }}" \
+            --github-output "$GITHUB_OUTPUT"
 
-          MAJOR=$(echo "$SEMVER" | cut -d'.' -f1)
-          MINOR=$(echo "$SEMVER" | cut -d'.' -f2)
-          PATCH=$(echo "$SEMVER" | cut -d'.' -f3)
-
-          case "${{ inputs.bump }}" in
-            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH+1)) ;;
-          esac
-          BUILD=$((BUILD+1))
-
-          NEW_SEMVER="${MAJOR}.${MINOR}.${PATCH}"
-          NEW_VERSION="${NEW_SEMVER}+${BUILD}"
-          TAG="${NEW_SEMVER}"
-
-          echo "Bumping: ${CURRENT} → ${NEW_VERSION}  (tag: ${TAG})"
-
-          # Abort early if this tag already exists — prevents duplicate releases
-          if git rev-parse "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "::error::Tag ${TAG} already exists. Is this version already released?"
-            exit 1
-          fi
-
-          # Persist outputs for downstream steps
-          echo "current=${CURRENT}"         >> "$GITHUB_OUTPUT"
-          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}"                 >> "$GITHUB_OUTPUT"
-          echo "apk=al-tawheed-${TAG}.apk"  >> "$GITHUB_OUTPUT"
-
-          # Write the new version into pubspec.yaml
-          sed -i "s/^version: .*/version: ${NEW_VERSION}/" pubspec.yaml
-
-      # ------------------------------------------------------------------ #
-      # 3. Java 21 — matches android/app/build.gradle compileOptions
-      # ------------------------------------------------------------------ #
-      - name: Set up Java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      # ------------------------------------------------------------------ #
-      # 4. Flutter (pinned)
-      # ------------------------------------------------------------------ #
-      - name: Set up Flutter (pinned)
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.41.1
-          cache: true
-
-      # ------------------------------------------------------------------ #
-      # 5. Cache Gradle
-      # ------------------------------------------------------------------ #
-      - name: Cache Gradle
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle', 'android/settings.gradle', 'android/gradle.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
-      # ------------------------------------------------------------------ #
-      # 6. Override Gradle JVM heap (same guard as CI workflow)
-      # ------------------------------------------------------------------ #
-      - name: Override Gradle JVM args
-        run: |
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -Dkotlin.daemon.jvm.options=-Xmx1g" >> android/gradle.properties
-
-      # ------------------------------------------------------------------ #
-      # 7. Install dependencies
-      # ------------------------------------------------------------------ #
-      - name: Install Flutter dependencies
-        run: flutter pub get
-
-      # ------------------------------------------------------------------ #
-      # 8. Analyze — refuse to tag a build with static analysis errors
-      # ------------------------------------------------------------------ #
-      - name: Analyze code
-        run: flutter analyze --fatal-warnings
-
-      # ------------------------------------------------------------------ #
-      # 10. Test — refuse to tag a build with failing tests
-      # ------------------------------------------------------------------ #
-      - name: Run tests
-        run: flutter test --reporter=expanded
-
-      # ------------------------------------------------------------------ #
-      # CD Phase 2 — configure production signing
-      #     Decodes KEYSTORE_BASE64 into android/app/upload-keystore.jks and
-      #     writes android/key.properties from KEY_ALIAS / KEY_PASSWORD /
-      #     STORE_PASSWORD, matching signingConfigs.release in
-      #     android/app/build.gradle. See docs/ci-cd.md -> "One-Time Setup"
-      #     for how to set these secrets.
-      # ------------------------------------------------------------------ #
-      - name: Configure release signing
+      # Checked here, not after the build: an empty secret makes Gradle fall
+      # back to the DEBUG signing key silently, and the failure would otherwise
+      # surface twenty minutes later (or, worse, not at all).
+      - name: Require signing secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$STORE_PASSWORD" ]; then
-            echo "::error::One or more signing secrets (KEYSTORE_BASE64, KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD) are not set. See docs/ci-cd.md -> 'One-Time Setup' -> 'Add CD Phase 2 signing secrets'."
+          MISSING=""
+          [ -z "$KEYSTORE_BASE64" ] && MISSING="$MISSING KEYSTORE_BASE64"
+          [ -z "$KEY_ALIAS" ]       && MISSING="$MISSING KEY_ALIAS"
+          [ -z "$KEY_PASSWORD" ]    && MISSING="$MISSING KEY_PASSWORD"
+          [ -z "$STORE_PASSWORD" ]  && MISSING="$MISSING STORE_PASSWORD"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing signing secret(s):${MISSING}. Run 'make setup-release-secrets'. See docs/ci-cd.md -> 'One-Time Setup'."
             exit 1
           fi
+          echo "All four signing secrets are present."
 
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-          cat > android/key.properties <<EOF
-          storePassword=$STORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
-          storeFile=upload-keystore.jks
-          EOF
-
-      # ------------------------------------------------------------------ #
-      # 11. Build release APK + AAB
-      #     Signed with the production upload key (configured above) — the
-      #     same signer as Step 1's local `make release-apk` build.
-      #     Run integration tests + release APK locally: make release-apk DEVICE=<id>
-      # ------------------------------------------------------------------ #
-      - name: Build release APK
-        run: flutter build apk --release
-
-      - name: Build release AAB
-        run: flutter build appbundle --release
-
-      # ------------------------------------------------------------------ #
-      # 12. Rename APK to include version tag in filename
-      # ------------------------------------------------------------------ #
-      - name: Rename APK
-        run: |
-          mv build/app/outputs/flutter-apk/app-release.apk \
-             "${{ steps.version.outputs.apk }}"
-
-      # ------------------------------------------------------------------ #
-      # 13a. Generate structured changelog from conventional commits
-      #      git-cliff groups feat/fix/perf commits and skips ci/chore/docs
-      #      noise. Output is Markdown used in the GitHub Release body.
-      # ------------------------------------------------------------------ #
-      - name: Generate changelog
-        id: cliff
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --unreleased --strip header
-        env:
-          GITHUB_REPO: ${{ github.repository }}
-
-      # ------------------------------------------------------------------ #
-      # 13b. Derive Play Store plain-text notes from the changelog
-      #      Play Store "What's new" field: max 500 characters per locale.
-      #      This step strips Markdown formatting and truncates to 480 chars
-      #      (leaving room for a manual tweak before submitting).
-      #      The file is attached to the GitHub Release as a ready-to-copy
-      #      artifact — open it, copy, paste into Play Console.
-      # ------------------------------------------------------------------ #
-      - name: Generate Play Store release notes
-        # Pass the changelog via env, NOT inline `${{ }}` in the script body —
-        # commit subjects contain double quotes (e.g. 'Now Playing') that would
-        # otherwise close the bash string and break the step (exit 127).
-        env:
-          MARKDOWN: ${{ steps.cliff.outputs.content }}
-        run: |
-          # Strip Markdown: remove ### headings, bold (**text**), leading dashes
-          PLAIN=$(echo "$MARKDOWN" \
-            | sed 's/^### //g' \
-            | sed 's/\*\*//g' \
-            | sed 's/^- /• /g' \
-            | sed '/^$/d')
-
-          # Truncate to 480 characters to stay safely under the 500-char limit
-          TRUNCATED=$(echo "$PLAIN" | head -c 480)
-
-          # Warn if we had to truncate
-          FULL_LEN=$(echo "$PLAIN" | wc -c | tr -d ' ')
-          if [ "$FULL_LEN" -gt 480 ]; then
-            echo "::warning::Play Store notes truncated to 480 chars (was ${FULL_LEN}). Review before submitting."
-          fi
-
-          echo "$TRUNCATED" > play-store-notes.txt
-          echo "Play Store notes:"
-          cat play-store-notes.txt
-
-      # ------------------------------------------------------------------ #
-      # CD Phase 3 — prepare Play Store "What's new" text for upload
-      #     r0adkll/upload-google-play expects a directory of locale-named
-      #     files (whatsnew-<locale>). Assumes en-US is the Play Console
-      #     default listing language — rename the file below if yours
-      #     differs.
-      # ------------------------------------------------------------------ #
-      - name: Prepare Play Store release notes for upload
-        run: |
-          mkdir -p distribution/whatsnew
-          cp play-store-notes.txt distribution/whatsnew/whatsnew-en-US
-
-      # ------------------------------------------------------------------ #
-      # CD Phase 3 — upload AAB to the Play Store internal track
-      #     Skipped for dry runs - this creates a real release in Play
-      #     Console. Internal track testers get it immediately
-      #     (status: completed). Promoting internal -> production stays a
-      #     manual step in Play Console — a deliberate human safety gate.
-      # ------------------------------------------------------------------ #
       - name: Require Play Store service account
         if: inputs.dry_run != true
         env:
@@ -366,65 +200,380 @@ jobs:
             exit 1
           fi
 
+      - name: Release summary
+        run: |
+          {
+            echo "### Release ${{ steps.version.outputs.tag }}"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Ref | \`${{ steps.resolve.outputs.ref }}\` |"
+            echo "| Version | \`${{ steps.version.outputs.new_version }}\` |"
+            echo "| Tag | \`${{ steps.version.outputs.tag }}\` |"
+            echo "| Dry run | \`${{ inputs.dry_run }}\` |"
+            echo "| Device verification | \`${{ inputs.skip_verify == true && 'SKIPPED' || 'enabled' }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------------------ #
+  # Build — the only job that touches the signing secrets.
+  # ------------------------------------------------------------------ #
+  build-android:
+    name: Build Android release artifacts
+    runs-on: ubuntu-latest
+    needs: [promote, prepare]
+    if: always() && needs.prepare.result == 'success'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.ref }}
+
+      # ubuntu-latest runners ship large unused toolchains (.NET, GHC, CodeQL)
+      # that leave too little headroom for the Android SDK + Gradle cache + the
+      # APK and AAB. Without this, packaging fails with "No space left on
+      # device" (hit on 2026-06-12).
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      # Java 21 — matches android/app/build.gradle compileOptions
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Flutter (pinned)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.1
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle', 'android/settings.gradle', 'android/gradle.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Override Gradle JVM args
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -Dkotlin.daemon.jvm.options=-Xmx1g" >> android/gradle.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # ---------------- Quality gates: refuse to tag a bad build -------- #
+      - name: Verify formatting
+        run: dart format --set-exit-if-changed lib test tool integration_test
+
+      - name: Analyze code
+        run: flutter analyze --fatal-warnings
+
+      - name: Run tests
+        run: flutter test --reporter=expanded
+
+      # The release tooling computes the tag and the Play versionCode. A bug
+      # there is expensive and invisible, so it is gated like app code.
+      - name: Test release tooling
+        run: python3 -m unittest discover -s test/tool
+
+      # Applied here rather than in `prepare` so a rejected release never
+      # leaves a mutated pubspec.yaml behind on any checkout.
+      - name: Apply release version to pubspec.yaml
+        run: |
+          python3 tool/compute_release_version.py \
+            --bump "${{ inputs.bump }}" --write --no-check-tag
+          grep '^version:' pubspec.yaml
+
+      # CD Phase 2 — decodes KEYSTORE_BASE64 into android/app/upload-keystore.jks
+      # and writes android/key.properties, matching signingConfigs.release in
+      # android/app/build.gradle. Presence was already verified in `prepare`.
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Rename artifacts
+        run: |
+          mkdir -p release-artifacts
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             "release-artifacts/${{ needs.prepare.outputs.apk }}"
+          mv build/app/outputs/bundle/release/app-release.aab \
+             "release-artifacts/${{ needs.prepare.outputs.aab }}"
+          ls -lh release-artifacts
+
+      # compression-level: 0 — an APK/AAB is already deflated; re-compressing
+      # costs minutes and saves nothing. if-no-files-found: error so a silent
+      # rename change cannot produce an empty "successful" release.
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts/*
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------ #
+  # Verify — installs the EXACT signed artifact that will ship onto a
+  # real Android image and drives it. Runs on a clean runner with no
+  # signing secrets and no build tree: it can only see what users get.
+  # ------------------------------------------------------------------ #
+  verify-android:
+    name: Verify Android release APK
+    runs-on: ubuntu-latest
+    needs: [prepare, build-android]
+    if: always() && needs.build-android.result == 'success'
+
+    steps:
+      - name: Record explicit verification bypass
+        if: inputs.skip_verify == true
+        run: |
+          echo "::warning::Release APK verification was SKIPPED via skip_verify. The signed artifact about to ship has not been installed or launched anywhere."
+          echo "⚠️ **Device verification bypassed** via \`skip_verify\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout repository
+        if: inputs.skip_verify != true
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+
+      - name: Download Android artifacts
+        if: inputs.skip_verify != true
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts
+
+      # apksigner is a Java program and is NOT on a stock runner's PATH; the
+      # verifier globs $ANDROID_SDK_ROOT/build-tools/*/apksigner for it, but
+      # without a JRE it cannot run at all. This job builds nothing, so it
+      # would otherwise have no Java.
+      - name: Set up Java 21
+        if: inputs.skip_verify != true
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Deterministic checks first — no emulator needed, so a packaging or
+      # signing fault reports in seconds rather than after a boot.
+      # --require-signature-check: in CI, an apksigner that cannot run is a
+      # HARD failure. Degrading to a warning here would retire the one guard
+      # that catches a debug-signed release — precisely the situation a broken
+      # signing setup produces.
+      - name: Inspect release APK
+        if: inputs.skip_verify != true
+        run: |
+          python3 tool/verify_release_apk.py \
+            --apk "release-artifacts/${{ needs.prepare.outputs.apk }}" \
+            --inspect-only \
+            --require-signature-check
+
+      - name: Enable KVM
+        if: inputs.skip_verify != true
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # NOTE: the `script:` command MUST stay on ONE line. The action wraps it
+      # in `sh -c`, which drops backslash continuations — a multi-line script
+      # silently runs only its first fragment. See docs/gotchas.md.
+      - name: Install, launch, and resume the release APK
+        if: inputs.skip_verify != true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: python3 tool/verify_release_apk.py --apk "release-artifacts/${{ needs.prepare.outputs.apk }}" --device emulator-5554 --evidence-dir verify-evidence
+
+      # `!cancelled()` and not `failure()`: the screenshot and logcat of a
+      # crashed or blank first screen are the entire point of this upload.
+      - name: Upload verification evidence
+        if: ${{ !cancelled() && inputs.skip_verify != true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-evidence
+          path: verify-evidence
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ------------------------------------------------------------------ #
+  # Publish — builds nothing. Changelog, Play upload, tag, GitHub Release.
+  # Skipped entirely on a dry run.
+  # ------------------------------------------------------------------ #
+  publish:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: [prepare, build-android, verify-android]
+    if: |
+      always() &&
+      inputs.dry_run != true &&
+      needs.build-android.result == 'success' &&
+      needs.verify-android.result == 'success'
+
+    steps:
+      # fetch-depth: 0 — git-cliff walks every tag to build the range.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.ref }}
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts
+
+      # Structured changelog from conventional commits: git-cliff groups
+      # feat/fix/perf and skips ci/chore/docs noise.
+      - name: Generate changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --strip header
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
+      # Play Store "What's new": 500 characters per locale, hard limit.
+      # Pass the changelog via env, NOT inline `${{ }}` — commit subjects
+      # contain double quotes (e.g. 'Now Playing') that would close the bash
+      # string and break the step with exit 127.
+      - name: Generate Play Store release notes
+        env:
+          MARKDOWN: ${{ steps.cliff.outputs.content }}
+        run: |
+          PLAIN=$(echo "$MARKDOWN" \
+            | sed 's/^### //g' \
+            | sed 's/\*\*//g' \
+            | sed 's/^- /• /g' \
+            | sed '/^$/d')
+
+          TRUNCATED=$(echo "$PLAIN" | head -c 500)
+          FULL_LEN=$(echo "$PLAIN" | wc -c | tr -d ' ')
+          if [ "$FULL_LEN" -gt 500 ]; then
+            echo "::warning::Play Store notes truncated to 500 chars (was ${FULL_LEN}). Review before promoting to production."
+          fi
+
+          echo "$TRUNCATED" > play-store-notes.txt
+          echo "Play Store notes:"
+          cat play-store-notes.txt
+
+      # r0adkll/upload-google-play expects a directory of locale-named files.
+      # The app ships four locales (ar, en, ur, and the Arabic edition chrome),
+      # but release notes are authored in English only — so every locale gets
+      # the en-US text DELIBERATELY, rather than Play falling back on its own
+      # because a file happened to be absent. Release notes are the one
+      # user-facing string set not covered by ARB parity; translating them is
+      # tracked separately. See docs/release-runbook.md.
+      - name: Prepare Play Store release notes for upload
+        run: |
+          mkdir -p distribution/whatsnew
+          for LOCALE in en-US ar ur; do
+            cp play-store-notes.txt "distribution/whatsnew/whatsnew-${LOCALE}"
+          done
+          ls distribution/whatsnew
+
+      # Fail before the upload can burn a version code Play will reject:
+      # checks the FOREGROUND_SERVICE_MEDIA_PLAYBACK declaration and asks the
+      # Play API whether this versionCode is actually publishable.
+      - name: Play release preflight
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          PLAY_FGS_MEDIA_DECLARED: ${{ secrets.PLAY_FGS_MEDIA_DECLARED }}
+        run: |
+          # pubspec.yaml on this checkout is still pre-bump (the bump lives in
+          # build-android's tree), so stamp the version the AAB was actually
+          # built with before asking Play about its version code.
+          sed -i 's/^version: .*/version: ${{ needs.prepare.outputs.new_version }}/' pubspec.yaml
+          python3 tool/play_release_preflight.py \
+            --package-name com.almarfa.tawheed \
+            --manifest android/app/src/main/AndroidManifest.xml
+          git checkout -- pubspec.yaml
+
+      # Internal track testers get it immediately (status: completed).
+      # Promoting internal -> production stays a manual step in Play Console —
+      # a deliberate human safety gate.
       - name: Upload to Play Store (internal track)
-        if: inputs.dry_run != true
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
           packageName: com.almarfa.tawheed
-          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          releaseFiles: release-artifacts/${{ needs.prepare.outputs.aab }}
           track: internal
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
-      # ------------------------------------------------------------------ #
-      # 14. Commit version bump, tag, and push
-      #     Requires github-actions[bot] in the master branch bypass list.
-      #     Skipped for dry runs — nothing is committed, tagged, or pushed.
-      # ------------------------------------------------------------------ #
       - name: Configure git identity
-        if: inputs.dry_run != true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # Requires github-actions[bot] in the master branch bypass list.
       - name: Commit, tag, and push
-        if: inputs.dry_run != true
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
+
+          python3 tool/compute_release_version.py \
+            --bump "${{ inputs.bump }}" --write --no-check-tag
 
           git add pubspec.yaml
           git commit -m "chore: release ${TAG}"
           git tag "${TAG}" -m "Release ${TAG}"
-          # HEAD:master (not "master") — when dispatched from develop the job
-          # checks out the promote SHA in detached-HEAD state, so there is no
-          # local "master" branch to push. HEAD:master works detached and
-          # on-branch alike. ("src refspec master does not match any" otherwise.)
+          # HEAD:master (not "master") — this checkout is detached at the
+          # release SHA, so there is no local "master" branch to push.
+          # ("src refspec master does not match any" otherwise.)
           git push origin HEAD:master
           git push origin "${TAG}"
 
-      # ------------------------------------------------------------------ #
-      # 15. Create GitHub Release — attach APK and Play Store notes
-      #     Skipped for dry runs.
-      # ------------------------------------------------------------------ #
+      # CHANGELOG goes via env, not inline `${{ }}`, and the body via
+      # --notes-file — commit subjects contain quotes and backticks that would
+      # otherwise be re-parsed by bash.
       - name: Create GitHub Release
-        if: inputs.dry_run != true
-        # CHANGELOG goes via env, not inline `${{ }}` — commit subjects contain
-        # double quotes that would otherwise break the command. The notes body
-        # is written to a file and passed with --notes-file for the same reason.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHANGELOG: ${{ steps.cliff.outputs.content }}
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          APK="${{ steps.version.outputs.apk }}"
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
+          APK="${{ needs.prepare.outputs.apk }}"
+          AAB="${{ needs.prepare.outputs.aab }}"
+          NEW_VERSION="${{ needs.prepare.outputs.new_version }}"
 
           [ -z "$CHANGELOG" ] && CHANGELOG="- Maintenance release"
 
-          # Env-var expansion inserts CHANGELOG literally (its own quotes/
-          # backticks are not re-parsed); the \` escapes keep literal backticks.
           cat > release-notes.md <<EOF
           ## What's changed
 
@@ -433,38 +582,56 @@ jobs:
           ---
           **Build:** \`${NEW_VERSION}\`
           **APK:** release build, signed with the production key — install via \`adb install ${APK}\`
+          **Verified:** installed, launched, backgrounded and resumed on an API 34 emulator
           **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new
           EOF
 
           gh release create "${TAG}" \
-            "${APK}#Al-Tawheed Android APK (release, signed)" \
+            "release-artifacts/${APK}#Al-Tawheed Android APK (release, signed)" \
+            "release-artifacts/${AAB}#Al-Tawheed Android App Bundle (release, signed)" \
             "play-store-notes.txt#Play Store release notes (plain text)" \
             --title "Al-Tawheed ${TAG}" \
             --notes-file release-notes.md
 
-      # ------------------------------------------------------------------ #
-      # Dry run summary — confirms analyze/test/build succeeded without
-      # touching master, develop, tags, or releases.
-      # ------------------------------------------------------------------ #
-      - name: Dry run summary
-        if: inputs.dry_run == true
+  # ------------------------------------------------------------------ #
+  # Dry run summary — a dry run must prove it BUILT and VERIFIED, not
+  # merely that nothing errored. A cascade-skipped pipeline reports
+  # success too; this step only runs if the real work did.
+  # ------------------------------------------------------------------ #
+  dry-run-summary:
+    name: Dry run summary
+    runs-on: ubuntu-latest
+    needs: [prepare, build-android, verify-android]
+    if: |
+      always() &&
+      inputs.dry_run == true &&
+      needs.build-android.result == 'success' &&
+      (needs.verify-android.result == 'success' || inputs.skip_verify == true)
+
+    steps:
+      - name: Report
         run: |
-          echo "::notice::Dry run complete for ${{ github.ref_name }} — analyze, test, and build succeeded. Nothing was committed, tagged, pushed, released, or uploaded to the Play Store."
+          echo "::notice::Dry run complete for ${{ github.ref_name }} — version ${{ needs.prepare.outputs.new_version }} computed, analyze/format/test passed, signed APK + AAB built and verified on device. Nothing was committed, tagged, pushed, released, or uploaded to the Play Store."
+          {
+            echo "### ✅ Dry run passed"
+            echo ""
+            echo "Would have released \`${{ needs.prepare.outputs.tag }}\` (\`${{ needs.prepare.outputs.new_version }}\`)."
+            echo "Artifacts are attached to this run for 14 days."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ------------------------------------------------------------------ #
   # Sync develop with master (CD Phase 1.5)
   #
-  # The release job above commits the version bump + tag directly to
-  # master. Fast-forward that into develop so the next release's promote
-  # doesn't hit a pubspec.yaml version conflict. Fast-forward only - if
-  # develop has picked up its own commits since the last sync, this job
-  # fails rather than guessing at a merge.
+  # `publish` commits the version bump + tag directly to master. Fast-forward
+  # that into develop so the next release's promote doesn't hit a pubspec.yaml
+  # conflict. Fast-forward only — if develop picked up its own commits since,
+  # this fails rather than guessing at a merge.
   # ------------------------------------------------------------------ #
   sync-develop:
     name: Sync develop with master
     runs-on: ubuntu-latest
-    needs: [release]
-    if: always() && needs.release.result == 'success' && inputs.dry_run != true
+    needs: [publish]
+    if: always() && needs.publish.result == 'success' && inputs.dry_run != true
 
     steps:
       - name: Checkout repository
@@ -473,9 +640,9 @@ jobs:
           fetch-depth: 0
           # Push to the protected `develop` branch as the repo owner (admin) so
           # the fast-forward isn't rejected by the "Flutter CI" required check —
-          # the default GITHUB_TOKEN (github-actions[bot]) has no bypass. checkout
-          # persists this token, so the later `git push` uses it. See
-          # docs/gotchas.md → CI / release.
+          # the default GITHUB_TOKEN (github-actions[bot]) has no bypass.
+          # checkout persists this token, so the later `git push` uses it.
+          # See docs/gotchas.md → CI / release.
           token: ${{ secrets.DEVELOP_SYNC_TOKEN }}
 
       - name: Configure git identity
@@ -488,7 +655,7 @@ jobs:
           git fetch origin develop master
           git checkout -B develop origin/develop
           git merge --ff-only origin/master || {
-            echo "::error::develop has diverged from master and cannot be fast-forwarded (develop likely picked up its own commits since the last sync). See docs/release-runbook.md -> Troubleshooting -> \"sync-develop failed: 'not possible to fast-forward'\" for the manual recovery (resolve the pubspec.yaml version conflict on develop, then push)."
+            echo "::error::develop has diverged from master and cannot be fast-forwarded (develop likely picked up its own commits since the last sync). The release HAS already shipped — do not re-run the workflow. See docs/release-runbook.md -> Troubleshooting -> \"sync-develop failed: 'not possible to fast-forward'\" for the manual recovery."
             exit 1
           }
           git push origin develop

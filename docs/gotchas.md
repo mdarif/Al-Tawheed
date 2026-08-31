@@ -359,6 +359,29 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## CI / release
 
+- **`dart format` and the `require_trailing_commas` lint fight each other:**
+  formatting can introduce lint infos, and `flutter analyze
+  --fatal-warnings` exits 1 on infos. Run `dart format` then `dart fix
+  --apply --code=require_trailing_commas`, and re-check, until it reaches a
+  fixpoint — a single pass of either tool alone can leave the other failing.
+- **A `^version:...\s*$` regex under `re.MULTILINE` matches the trailing
+  NEWLINE too, so `re.sub` on it silently deletes a line from
+  `pubspec.yaml`.** Use `[^\S\n]*` for the trailing whitespace run instead
+  of `\s*` so the match stops before the newline. This was a real bug caught
+  by `test/tool/test_compute_release_version.py`.
+- **The `script:` passed to `reactivecircus/android-emulator-runner` must be
+  ONE line.** The action wraps it in `sh -c`, which drops backslash line
+  continuations, so a multi-line script silently runs only its first
+  fragment — no error, just missing steps. Keep it a single `&&`-chained
+  line (or call out to a shell script file instead).
+- **GitHub Actions `needs:` propagates SKIPS transitively.** If an upstream
+  job is skipped, every job with a plain `needs: [upstream]` skips too by
+  default — so a dry run (which intentionally skips `promote`) can
+  cascade-skip the entire release pipeline and still report a green run that
+  built and verified nothing. Downstream jobs that must run even when an
+  upstream job was *legitimately* skipped (not failed) need
+  `if: always() && needs.X.result == 'success'`, checked explicitly rather
+  than relying on the implicit skip-on-skip default.
 - **The one-click release job runs in detached HEAD — push with `HEAD:master`,
   not `master`.** When dispatched from `develop`, the `release` job checks out
   the promote SHA (`ref: needs.promote.outputs.sha`), so there is no local
