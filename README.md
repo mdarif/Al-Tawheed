@@ -3,7 +3,7 @@
 [![CI](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-ci.yml)
 [![codecov](https://codecov.io/gh/mdarif/Al-Tawheed/graph/badge.svg)](https://codecov.io/gh/mdarif/Al-Tawheed)
 
-**Al Marfa Duroos** — a free offline-first audio app for the complete Sharah Kitab at-Tawheed lecture series by Shaikh Abdullah Nasir Rahmani Hafizahullah. Stream or download all 50 lectures, follow the structured study programme class by class, and listen with full lock-screen and notification controls.
+**Al Marfa Duroos** — a free offline-first audio app for Sharah Kitab at-Tawheed. Choose the Urdu lecture series by Shaikh Abdullah Nasir Rahmani Hafizahullah or the Arabic series by Shaikh Salih al-Fawzan, then stream or download lectures with full lock-screen and notification controls.
 
 **[kitabattawheed.com](https://kitabattawheed.com)** &nbsp;·&nbsp;
 **[Play Store](https://play.google.com/store/apps/details?id=com.almarfa.tawheed)** &nbsp;·&nbsp;
@@ -17,19 +17,19 @@
   &nbsp;&nbsp;
   <img src="docs/play-store/Phone%20Screenshots%20/v2-thin-bezel/03-player-framed.png" width="30%" alt="Audio player" />
   &nbsp;&nbsp;
-  <img src="docs/play-store/Phone%20Screenshots%20/v2-thin-bezel/04-home-framed.png" width="30%" alt="Home screen" />
+  <img src="docs/play-store/v3/framed/06-lectures-ur-framed.png" width="30%" alt="Lectures screen" />
 </p>
 
 ---
 
 ## Features
 
-- **50 lectures · 27+ hours** — the complete Sharah Kitab at-Tawheed series
+- **Two lecture series** — Arabic and Urdu content, selected on first launch
 - **Offline playback** — download any lecture for listening without a connection
 - **Study Mode** — 15 structured classes to work through the series systematically
 - **Background audio** — lock-screen controls and notification transport on Android and iOS
 - **Multilingual** — English, Urdu, and Roman Urdu interface
-- **Daily Benefit** — a rotating Quranic reminder on the home screen
+- **Arabic Book** — read the complete Arabic text alongside the Arabic series
 - **Bookmarks** — save any lecture to revisit later
 - **Variable speed** — 0.75× to 2.0× playback
 
@@ -45,7 +45,7 @@ tree with explicit dependency ordering.
 ```
 lib/
   app.dart, app_config.dart, main.dart   # App shell, remote config, entry point
-  screens/                               # Routed pages (home, player, library, settings …)
+  screens/                               # Routed pages (lectures, player, book, study, settings …)
   widgets/                               # Reusable UI pieces (lecture tiles, offline sheet …)
   providers/                             # ChangeNotifier state: catalog, downloads, progress,
                                          #   connectivity, language, theme, feature flags …
@@ -107,6 +107,7 @@ flutter test integration_test/app_test.dart -d <id> # end-to-end on device
 | [Testing](docs/testing.md) | Running and writing tests |
 | [i18n architecture](docs/i18n-architecture.md) | Multilingual content strategy |
 | [Remote content strategy](docs/remote-content-strategy.md) | Catalog/announcement caching |
+| [Quality backlog](docs/quality-backlog.md) | Current quality status and follow-ups |
 | [Troubleshooting](docs/troubleshooting.md) | Common errors and fixes |
 
 ---

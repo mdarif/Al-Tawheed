@@ -59,7 +59,7 @@ No Photoshop; optional free account on the web tool.
 
 | Asset | Old listing (likely) | New listing (v2) |
 |-------|----------------------|------------------|
-| Screenshots | YouTube video player, old UI | Native **audio** app: lectures, player, Home, Study, About |
+| Screenshots | YouTube video player, old UI | Native **audio** app: lectures, player, Book, Study, Settings |
 | Short description | Video / YouTube focus | 50 audio lectures, offline-friendly, Urdu support |
 | Full description | Outdated features | See copy below |
 | Feature graphic | Old branding | New banner (see `docs/store-assets/feature-graphic-spec.md`) |
@@ -248,7 +248,7 @@ Adjust emoji if you prefer a plainer tone (Google allows them; some publishers r
 
 1. **Grow** → **Store presence** → **Main store listing**
 2. Upload **Feature graphic** (1024×500)
-3. Upload **Phone screenshots** (drag to order: Welcome → Lectures → Player → Home → Study → Saved → About)
+3. Upload **Phone screenshots** (drag to order: Welcome → picker → Arabic Book/player → Urdu Lectures/Study/player)
 4. Paste **Short** and **Full** description
 5. **Save** → review preview
 6. If using **Custom store listing** per country, duplicate or localize Urdu for Pakistan

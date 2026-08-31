@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-06-01  
-**Branch:** v2
+**Branch:** current multi-series app
 
 ---
 
@@ -11,9 +11,9 @@
 Several things in the Al-Tawheed app are hardcoded in Dart source code that should be remotely configurable:
 
 - Contact email, Play Store URL, website URL, share message text (all in `settings_screen.dart`)
-- Feature flags for planned features (downloads, study mode, etc.)
+- Feature flags for rollout controls (downloads, study mode, etc.)
 - In-app announcements and notifications
-- Daily benefits (currently only 1 entry in `catalog.json`)
+- Daily benefits supplied by the catalog (the app tolerates an empty list)
 
 Any change to these requires a new Play Store / App Store release. This ADR defines the strategy to make the app a **stable shell** where content and configuration are driven from Cloudflare Pages JSON files.
 
@@ -23,11 +23,11 @@ Any change to these requires a new Play Store / App Store release. This ADR defi
 
 ```
 Al-Tawheed-Content (GitHub)
-  └── Cloudflare Pages → https://al-tawheed-content.pages.dev
+  └── Cloudflare Pages → https://content.kitabattawheed.com
         ├── tawheed/catalog.json          ← lectures, chapters, benefits (exists)
-        ├── tawheed/app-config.json       ← links, contact, share text    (new)
-        ├── tawheed/feature-flags.json    ← remote feature toggles         (new)
-        └── tawheed/announcements.json    ← in-app banners/notices         (new)
+        ├── tawheed/app-config.json       ← links, contact, share text
+        ├── tawheed/feature-flags.json    ← remote feature toggles
+        └── tawheed/announcements.json    ← in-app banners/notices
 ```
 
 Audio files remain on Cloudflare R2 (unchanged).  
@@ -43,9 +43,9 @@ Al-Tawheed-Content/
 ├── tawheed/
 │   ├── catalog.json           # EXISTS — lectures, chapters, benefits
 │   ├── cover.jpg              # EXISTS — book cover
-│   ├── app-config.json        # NEW
-│   ├── feature-flags.json     # NEW
-│   ├── announcements.json     # NEW
+│   ├── app-config.json        # links and branding
+│   ├── feature-flags.json     # rollout flags
+│   ├── announcements.json     # optional notices
 │   └── audio/
 │       └── lec-001.mp3 … lec-050.mp3   # on R2, not in Pages
 ```
@@ -97,7 +97,7 @@ Safe defaults (stable = `true`, experimental = `false`) are hardcoded in Dart as
   "updatedAt": "2026-06-01T00:00:00Z",
   "features": {
     "bookmarks": true,
-    "downloads": false,
+    "downloads": true,
     "studyMode": false,
     "dailyBenefits": true,
     "announcements": true,
@@ -105,8 +105,8 @@ Safe defaults (stable = `true`, experimental = `false`) are hardcoded in Dart as
     "shareLectureRow": true,
     "playbackSpeed": true,
     "continueListening": true,
-    "language": false,
-    "seriesSwitcher": false
+    "language": true,
+    "appLinks": false
   },
   "experimental": {
     "arabicTranslations": false,
@@ -119,7 +119,7 @@ Safe defaults (stable = `true`, experimental = `false`) are hardcoded in Dart as
 
 ### announcements.json
 
-Time-gated, platform-filtered in-app banners displayed on the Home screen.
+Time-gated, platform-filtered in-app banners displayed on the lectures surface.
 
 ```json
 {
@@ -170,8 +170,8 @@ cache_announcements_json      cache_announcements_fetched_at
 
 | Scenario | Behaviour |
 |---|---|
-| First launch, no network | Error screen with retry button |
-| Returning user, no network | Load from cache instantly; stale banner if cache > 24h |
+| First launch, no network and no cache | Clear error state with retry button |
+| Returning user, no network | Load cached catalog/config instantly |
 | Network lost mid-session | Already-loaded content works; audio may pause |
 | Fetch fails, cache fresh | Serve cache silently; no user-facing error |
 
@@ -204,9 +204,9 @@ main()
         └── runApp(MyApp)
               └── MultiProvider
                     ├── CatalogProvider          (exists)  — catalog.json
-                    ├── AppConfigProvider         (new)     — app-config.json
-                    ├── FeatureFlagsProvider      (new)     — feature-flags.json
-                    ├── AnnouncementsProvider     (new)     — announcements.json
+                    ├── AppConfigProvider         (shipped) — app-config.json
+                    ├── FeatureFlagsProvider      (shipped) — feature-flags.json
+                    ├── AnnouncementsProvider     (shipped) — announcements.json
                     ├── ProgressProvider          (exists)  — SharedPreferences
                     └── PlayerNotifier            (exists)  — audio
 ```
@@ -217,11 +217,12 @@ Each new provider: **cache → fetch in background → notify**. Never blocks st
 
 ## Website Sharing
 
-`https://kitabattawheed.com` and the mobile app consume the **same** Cloudflare Pages URLs:
+The mobile app consumes the custom HTTPS CDN domain below (the website may use
+the content repo at build time):
 
 ```
-https://al-tawheed-content.pages.dev/tawheed/catalog.json
-https://al-tawheed-content.pages.dev/tawheed/app-config.json
+https://content.kitabattawheed.com/tawheed/catalog.json
+https://content.kitabattawheed.com/tawheed/app-config.json
 ```
 
 Website fetches at build time (SSG) or at runtime (client-side). No backend. The content repo is the shared content layer for both surfaces.
@@ -230,7 +231,7 @@ Website fetches at build time (SSG) or at runtime (client-side). No backend. The
 
 ## Phased Rollout
 
-### Phase 1 — Remote Configuration (~1 day, low risk)
+### Historical rollout (complete)
 1. Create `app-config.json` and `feature-flags.json` in Al-Tawheed-Content
 2. Add `AppConfigProvider` and `FeatureFlagsProvider` to Flutter app
 3. Replace all hardcoded links/email/text in `settings_screen.dart` with provider reads
@@ -247,7 +248,7 @@ Website fetches at build time (SSG) or at runtime (client-side). No backend. The
 **Outcome:** App works fully offline; daily benefits rotate meaningfully.
 
 ### Phase 3 — Announcements + Website Foundation (~2 days)
-1. Create `announcements.json`; build `AnnouncementsProvider`; add banner to Home screen
+1. ~~Create `announcements.json`; build `AnnouncementsProvider`; add banner~~ (shipped)
 2. Implement date-range and platform filtering
 3. Define shared content contract for the future website
 

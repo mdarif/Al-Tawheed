@@ -6,7 +6,8 @@ it from here, and leave the landmine in [gotchas.md](gotchas.md).
 
 ## How this is prioritized
 
-**Not by coverage %.** The suite is at 418 tests and the gaps are not where the
+**Not by coverage %.** The suite has 511 passing tests (with two intentional
+skips), and the gaps are not where the
 percentage is lowest. Every item below is ranked by:
 
 > *Has this class of bug actually shipped in this repo?* × *what does it cost

@@ -1,14 +1,17 @@
-# Offline mode — next release plan
+# Offline mode — shipped design and follow-ups
 
-**Status:** Draft for next release  
-**Feature flag:** `downloads` (promote to on in production when ready)  
-**Goal:** Offline listening is a **prominent**, understandable feature — especially when the user loses network **while in the player**.
+**Status:** Shipped in the current app; remaining work is follow-up hardening.
+**Feature flag:** `downloads` is enabled by the remote configuration (the Dart
+default is also enabled).
+**Goal:** Offline listening is prominent and understandable, especially when
+the user loses network while in the player.
 
 ---
 
 ## 1. Problem statement
 
-Today the app **can** play downloaded MP3s and **can** stream from CDN, but offline is treated as a small download icon, not a mode.
+The app can play downloaded MP3s, stream from the CDN, detect connectivity,
+show offline status, and manage saved lectures from the Offline Library.
 
 ### What works today
 
@@ -19,14 +22,11 @@ Today the app **can** play downloaded MP3s and **can** stream from CDN, but offl
 | Catalog | Stale-while-revalidate JSON cache (offline OK if opened online before) |
 | UI | Download icon on lecture row + player app bar; Settings shows count/size |
 
-### What fails UX (especially in player)
+### Remaining follow-ups
 
-1. **No connectivity awareness** — app does not know the device went offline.
-2. **Streaming + airplane mode** — playback stalls/errors with no message or recovery.
-3. **Next / auto-advance** — loads next part without checking download → fails offline.
-4. **Download is hidden** — icon-only in app bar; no “prepare for offline” flow while listening.
-5. **No source indicator** — user cannot see “Streaming” vs “Saved on device”.
-6. **Undownloaded lectures** — still tappable offline → confusing loading/error states.
+1. Physical-device airplane-mode QA and retry/recovery verification.
+2. Persisting and resuming a multi-lecture download queue across process death.
+3. Analytics for download and offline-play events, if product telemetry is needed.
 
 ---
 
@@ -63,7 +63,7 @@ User-facing name suggestion: **“Offline listening”** (not only “Downloads�
 
 ## 5. UX specification
 
-### 5.1 Player — status strip (P0)
+### 5.1 Player — status strip (shipped)
 
 Place below track title or above seek bar.
 
@@ -84,7 +84,7 @@ Place below track title or above seek bar.
 
 Replace icon-only `DownloadButton` in app bar as primary entry; keep icon as secondary or remove.
 
-### 5.2 Lecture list (P0)
+### 5.2 Lecture list (shipped)
 
 - Downloaded: gold check or dot on tile.
 - Offline + not downloaded: muted row, tap → snackbar: “Download on Wi‑Fi to listen offline.”
@@ -99,10 +99,10 @@ Rename/enhance **Downloads** section:
 - “Download all lectures” with strong confirm (~total MB from catalog).
 - Clear all (existing).
 
-### 5.4 App shell (P2)
+### 5.4 App shell (follow-up)
 
 - When offline: subtle **Offline** chip in app bar (optional).
-- Pull-to-refresh on Home: “You’re offline — showing cached content.”
+- Pull-to-refresh messaging on the lectures surface (if product requires it).
 
 ### 5.5 Copy & i18n
 
@@ -112,7 +112,7 @@ All new strings in `app_en.arb`, `app_ur.arb`, `app_ur_roman.arb` before release
 
 ## 6. Technical plan
 
-### Phase 1 — Must ship (P0)
+### Phase 1 — shipped
 
 | Task | Details |
 |------|---------|
@@ -139,7 +139,7 @@ All new strings in `app_en.arb`, `app_ur.arb`, `app_ur_roman.arb` before release
 ### Phase 3 — Later (P2)
 
 - Download progress in system notification (Android)
-- “Download Continue Listening + next 2 parts” suggestion on Home
+- “Download Continue Listening + next 2 parts” suggestion on the lectures surface
 - Study Mode offline rules (document which parts count if mixed)
 - iOS background download behaviour audit
 
@@ -202,9 +202,9 @@ playbackSource = path != null ? local : stream;
 
 ## 10. Release checklist
 
-- [ ] `feature-flags.json`: `"downloads": true`
-- [ ] Play Store listing mentions offline listening
-- [ ] l10n complete for offline strings
+- [x] `feature-flags.json`: `"downloads": true`
+- [x] Play Store listing mentions offline listening
+- [x] l10n complete for offline strings
 - [ ] QA on physical device (airplane mode)
 - [ ] Optional: analytics events (download_started, offline_play)
 
@@ -212,19 +212,19 @@ playbackSource = path != null ? local : stream;
 
 ## 11. Implementation order
 
-1. `ConnectivityProvider` + tests  
-2. `PlayerNotifier` guards + `PlaybackSource`  
-3. Player status strip + offline sheet  
-4. Smart next / auto-advance  
-5. Lecture tile offline states  
-6. Offline Library + class download (P1)  
-7. Wi‑Fi only (P2)
+1. ~~`ConnectivityProvider` + tests~~ (shipped)
+2. ~~`PlayerNotifier` guards + `PlaybackSource`~~ (shipped)
+3. ~~Player status strip + offline sheet~~ (shipped)
+4. ~~Smart next / auto-advance~~ (shipped)
+5. ~~Lecture tile offline states~~ (shipped)
+6. ~~Offline Library~~ (shipped); class-wide queue remains follow-up
+7. Wi‑Fi-only policy and richer queue persistence remain follow-ups
 
 ---
 
-## 12. Out of scope (this release)
+## 12. Out of scope for the shipped slice
 
 - Syncing downloads across devices  
 - Streaming quality selection / adaptive bitrate  
-- Offline daily benefits rotation (catalog JSON still needs cache — separate)  
+- Rotating daily benefits (the catalog currently supplies one benefit)
 - Website offline PWA
