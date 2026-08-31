@@ -7,6 +7,8 @@ samples=${3:-3}
 package_name=com.almarfa.tawheed
 output_dir="build/cold-start/${cohort}"
 markers_file="${output_dir}/markers.log"
+expected_surface=welcome
+if [[ "$cohort" == returning ]]; then expected_surface=lectures; fi
 
 case "$cohort" in
   returning|fresh-install) ;;
@@ -52,22 +54,18 @@ for sample in $(seq 1 "$samples"); do
     exit "$drive_status"
   fi
 
-  native_marker=$(adb -s "$device_id" logcat -d -v brief -s 'TawheedStartup:I' '*:S' \
-    | grep 'COLD_START_INTERACTIVE' | tail -n 1 || true)
-  if [[ -z "$native_marker" ]]; then
+  native_log=$(adb -s "$device_id" logcat -d -v brief -s 'TawheedStartup:I' '*:S')
+  if [[ -z "$native_log" ]]; then
     echo "No native COLD_START_INTERACTIVE marker for sample $sample" >&2
     echo "The app did not reach a verified interactive surface." >&2
     exit 1
   fi
-  expected_surface=welcome
-  if [[ "$cohort" == returning ]]; then expected_surface=lectures; fi
-  if [[ "$native_marker" != *"surface=${expected_surface}"* ]]; then
-    echo "Expected $cohort startup to reach surface=$expected_surface, got:" >&2
-    echo "$native_marker" >&2
-    echo "Seed the returning-user state before measuring that cohort." >&2
-    exit 1
-  fi
-  echo "$native_marker" | tee -a "$markers_file"
+  # Keep every line from the dedicated tag. The report parser rejects any
+  # malformed, duplicate, wrong-cohort, or wrong-surface sample.
+  printf '%s\n' "$native_log" | tee -a "$markers_file"
 done
 
-dart run tool/cold_start_report.dart < "$markers_file"
+dart run tool/cold_start_report.dart \
+  --cohort="$cohort" \
+  --surface="$expected_surface" \
+  --samples="$samples" < "$markers_file"

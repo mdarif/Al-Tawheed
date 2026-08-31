@@ -34,6 +34,49 @@ class StartupMeasurement {
     );
   }
 
+  /// Parses a complete runner batch and rejects any malformed, unexpected, or
+  /// missing sample. The cold-start CLI uses this instead of silently keeping
+  /// only lines that happen to contain a marker.
+  static List<StartupMeasurement> parseBatch(
+    Iterable<String> lines, {
+    required String cohort,
+    required String surface,
+    required int expectedCount,
+  }) {
+    if (cohort.isEmpty || surface.isEmpty || expectedCount < 1) {
+      throw const FormatException('invalid cold-start batch expectations');
+    }
+    final measurements = <StartupMeasurement>[];
+    var lineNumber = 0;
+    for (final line in lines) {
+      lineNumber++;
+      if (line.trim().isEmpty) {
+        throw FormatException('empty sample line $lineNumber');
+      }
+      final sample = tryParse(line);
+      if (sample == null) {
+        throw FormatException('malformed sample line $lineNumber');
+      }
+      if (sample.cohort != cohort) {
+        throw FormatException(
+          'sample line $lineNumber has cohort ${sample.cohort}, expected $cohort',
+        );
+      }
+      if (sample.surface != surface) {
+        throw FormatException(
+          'sample line $lineNumber has surface ${sample.surface}, expected $surface',
+        );
+      }
+      measurements.add(sample);
+    }
+    if (measurements.length != expectedCount) {
+      throw FormatException(
+        'expected $expectedCount samples, got ${measurements.length}',
+      );
+    }
+    return measurements;
+  }
+
   static double medianMillis(Iterable<StartupMeasurement> samples) {
     final values = samples.map((sample) => sample.elapsedMillis).toList()
       ..sort();

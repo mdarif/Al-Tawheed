@@ -3,10 +3,10 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'startup_measurement.dart';
 import 'package:flutter/services.dart';
 
 export 'startup_measurement.dart';
-import 'startup_measurement.dart';
 
 // This is deliberately a library-level clock. It starts when the application
 // isolate loads, before main() performs plugin and provider initialization.
@@ -22,23 +22,41 @@ class StartupInteractiveMarker extends StatefulWidget {
     super.key,
     required this.surface,
     required this.child,
+    this.interactiveDelay = Duration.zero,
   });
 
   final String surface;
   final Widget child;
+  final Duration interactiveDelay;
 
   @override
   State<StartupInteractiveMarker> createState() =>
       _StartupInteractiveMarkerState();
 }
 
-class _StartupInteractiveMarkerState extends State<StartupInteractiveMarker> {
+class _StartupInteractiveMarkerState extends State<StartupInteractiveMarker>
+    with SingleTickerProviderStateMixin {
   bool _marked = false;
+  AnimationController? _delayController;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markIfPainted());
+    if (widget.interactiveDelay == Duration.zero) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _markIfPainted());
+    } else {
+      _delayController = AnimationController(
+        vsync: this,
+        duration: widget.interactiveDelay,
+      )
+        ..addStatusListener((status) {
+          if (status == AnimationStatus.completed && mounted) {
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _markIfPainted());
+          }
+        })
+        ..forward();
+    }
   }
 
   void _markIfPainted() {
@@ -51,6 +69,12 @@ class _StartupInteractiveMarkerState extends State<StartupInteractiveMarker> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+
+  @override
+  void dispose() {
+    _delayController?.dispose();
+    super.dispose();
+  }
 }
 
 /// Process-start-to-interactive measurement state.

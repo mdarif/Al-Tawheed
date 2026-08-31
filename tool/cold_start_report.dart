@@ -3,31 +3,51 @@ import 'dart:io';
 
 import 'package:myapp/utils/startup_measurement.dart';
 
-Future<void> main() async {
-  final measurements = <StartupMeasurement>[];
-  await for (final line
-      in stdin.transform(utf8.decoder).transform(const LineSplitter())) {
-    final measurement = StartupMeasurement.tryParse(line);
-    if (measurement != null) measurements.add(measurement);
-  }
-  if (measurements.isEmpty) {
-    stderr.writeln('No valid COLD_START_INTERACTIVE measurements found.');
-    exitCode = 1;
+Future<void> main(List<String> args) async {
+  final expectedCohort = _option(args, '--cohort');
+  final expectedSurface = _option(args, '--surface');
+  final expectedSamples = int.tryParse(_option(args, '--samples') ?? '');
+  if (expectedCohort == null ||
+      expectedSurface == null ||
+      expectedSamples == null) {
+    stderr.writeln(
+      'Usage: dart run tool/cold_start_report.dart '
+      '--cohort=<cohort> --surface=<surface> --samples=<count>',
+    );
+    exitCode = 2;
     return;
   }
 
-  final byCohort = <String, List<StartupMeasurement>>{};
-  for (final measurement in measurements) {
-    byCohort.putIfAbsent(measurement.cohort, () => []).add(measurement);
+  final lines = <String>[];
+  await for (final line
+      in stdin.transform(utf8.decoder).transform(const LineSplitter())) {
+    lines.add(line);
   }
-  for (final entry in byCohort.entries) {
-    final values = entry.value.map((sample) => sample.elapsedMillis).toList()
+  try {
+    final measurements = StartupMeasurement.parseBatch(
+      lines,
+      cohort: expectedCohort,
+      surface: expectedSurface,
+      expectedCount: expectedSamples,
+    );
+    final values = measurements.map((sample) => sample.elapsedMillis).toList()
       ..sort();
-    final median = StartupMeasurement.medianMillis(entry.value);
+    final median = StartupMeasurement.medianMillis(measurements);
     stdout.writeln(
-      'COLD_START_SUMMARY cohort=${entry.key} samples=${values.length} '
+      'COLD_START_SUMMARY cohort=$expectedCohort samples=${values.length} '
       'median_ms=${median.toStringAsFixed(median == median.roundToDouble() ? 0 : 1)} '
       'min_ms=${values.first} max_ms=${values.last}',
     );
+  } on FormatException catch (error) {
+    stderr.writeln('Invalid cold-start batch: ${error.message}');
+    exitCode = 1;
   }
+}
+
+String? _option(List<String> args, String name) {
+  final prefix = '$name=';
+  for (final arg in args) {
+    if (arg.startsWith(prefix)) return arg.substring(prefix.length);
+  }
+  return null;
 }

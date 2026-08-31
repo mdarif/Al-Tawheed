@@ -132,6 +132,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ? StartupInteractiveMarker(
                             key: WidgetKeys.startupInteractiveMarker,
                             surface: 'welcome',
+                            // Wait until the 300 ms reveal has completed. A
+                            // marker during AnimatedOpacity's initial frame
+                            // would report an invisible welcome as interactive.
+                            interactiveDelay: const Duration(milliseconds: 350),
                             child: SafeArea(
                               child: Column(
                                 children: [
@@ -164,8 +168,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                                     width: 104,
                                                     height: 104,
                                                     fit: BoxFit.cover,
-                                                    frameBuilder: (ctx, child,
-                                                        frame, sync) {
+                                                    frameBuilder: (
+                                                      ctx,
+                                                      child,
+                                                      frame,
+                                                      sync,
+                                                    ) {
                                                       if (sync) return child;
                                                       return AnimatedOpacity(
                                                         opacity: frame == null
@@ -206,8 +214,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                                     width: 104,
                                                     height: 104,
                                                     fit: BoxFit.cover,
-                                                    frameBuilder: (ctx, child,
-                                                        frame, sync) {
+                                                    frameBuilder: (
+                                                      ctx,
+                                                      child,
+                                                      frame,
+                                                      sync,
+                                                    ) {
                                                       if (sync) return child;
                                                       return AnimatedOpacity(
                                                         opacity: frame == null
@@ -312,7 +324,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(
-                                        32, 0, 32, 48),
+                                      32,
+                                      0,
+                                      32,
+                                      48,
+                                    ),
                                     child: SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
@@ -324,7 +340,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                           textStyle: context
                                               .textTheme.labelLarge
                                               ?.copyWith(
-                                                  color: semantic.onBrand),
+                                            color: semantic.onBrand,
+                                          ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(14),

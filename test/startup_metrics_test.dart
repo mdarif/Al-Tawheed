@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:myapp/utils/startup_metrics.dart';
+import 'package:myapp/utils/startup_measurement.dart';
 
 void main() {
   group('StartupMeasurement', () {
@@ -69,23 +68,45 @@ void main() {
         throwsArgumentError,
       );
     });
-  });
 
-  testWidgets('interactive marker records after its first painted frame',
-      (tester) async {
-    StartupMetrics.resetForTest();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: StartupInteractiveMarker(
-          surface: 'welcome',
-          child: const Scaffold(body: Text('ready')),
+    test('batch parser rejects malformed, wrong, and missing samples', () {
+      const valid = 'I/TawheedStartup: COLD_START_INTERACTIVE cohort=returning '
+          'surface=lectures elapsed_ms=100';
+      const wrongCohort =
+          'I/TawheedStartup: COLD_START_INTERACTIVE cohort=fresh-install '
+          'surface=lectures elapsed_ms=100';
+      const wrongSurface =
+          'I/TawheedStartup: COLD_START_INTERACTIVE cohort=returning '
+          'surface=welcome elapsed_ms=100';
+      const malformed =
+          'I/TawheedStartup: COLD_START_INTERACTIVE surface=lectures';
+
+      expect(
+        StartupMeasurement.parseBatch(
+          [valid, valid, valid],
+          cohort: 'returning',
+          surface: 'lectures',
+          expectedCount: 3,
         ),
-      ),
-    );
-
-    expect(StartupMetrics.measurement?.surface, 'welcome');
-    final first = StartupMetrics.measurement;
-    await tester.pump();
-    expect(StartupMetrics.measurement, same(first));
+        hasLength(3),
+      );
+      for (final lines in [
+        [valid, malformed, valid],
+        [wrongCohort, valid, valid],
+        [wrongSurface, valid, valid],
+        [valid, valid],
+        [valid, valid, valid, valid],
+      ]) {
+        expect(
+          () => StartupMeasurement.parseBatch(
+            lines,
+            cohort: 'returning',
+            surface: 'lectures',
+            expectedCount: 3,
+          ),
+          throwsFormatException,
+        );
+      }
+    });
   });
 }

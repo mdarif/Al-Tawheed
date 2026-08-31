@@ -23,6 +23,7 @@ import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/utils/startup_metrics.dart';
 
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
@@ -133,6 +134,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+    StartupMetrics.resetForTest();
   });
 
   group('WelcomeScreen — rendering', () {
@@ -197,6 +199,30 @@ void main() {
         find.byType(AnimatedOpacity).first,
       );
       expect(opacity.opacity, 0.0);
+    });
+
+    testWidgets(
+        'startup marker waits for the visible welcome reveal to complete',
+        (tester) async {
+      final series = SeriesProvider()..load(true);
+
+      await tester.pumpWidget(_wrapWithRouter(series: series));
+      await tester.pump();
+      expect(find.byKey(WidgetKeys.startupInteractiveMarker), findsNothing);
+      expect(StartupMetrics.measurement, isNull);
+
+      // This is the same readiness transition that makes the production
+      // welcome content visible; the marker is now mounted but its 350 ms
+      // delay keeps it from reporting AnimatedOpacity's invisible frame.
+      series.setAvailableSeriesForTest([SeriesConfig.legacyUrduFallback]);
+      await tester.pump();
+      expect(find.byKey(WidgetKeys.startupInteractiveMarker), findsOneWidget);
+      expect(StartupMetrics.measurement, isNull);
+
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(StartupMetrics.measurement, isNull);
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(StartupMetrics.measurement?.surface, 'welcome');
     });
 
     testWidgets('Urdu welcome shows the Kitab at-Tawheed cover image',
