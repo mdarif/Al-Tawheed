@@ -28,7 +28,7 @@
 - **Offline playback** — download any lecture for listening without a connection
 - **Study Mode** — 15 structured classes to work through the series systematically
 - **Background audio** — lock-screen controls and notification transport on Android and iOS
-- **Multilingual** — English, Urdu, and Roman Urdu interface
+- **Multilingual** — English, Arabic, Urdu, and Roman Urdu interface (four UI locales)
 - **Arabic Book** — read the complete Arabic text alongside the Arabic series
 - **Urdu Book** — read the bundled Urdu book text alongside the Urdu series
 - **Bookmarks** — save any lecture to revisit later

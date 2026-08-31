@@ -159,6 +159,7 @@ Time-gated, platform-filtered in-app banners displayed on the lectures surface.
 | `app-config.json` | 1 hour | 1 hour | Stale-while-revalidate |
 | `feature-flags.json` | 5 min | 5 min | Stale-while-revalidate |
 | `announcements.json` | 30 min | 30 min | Stale-while-revalidate |
+| `series.json` | 1 hour | 1 hour | Stale-while-revalidate; cache key `series_manifest` |
 | `audio/*.mp3` | Immutable | Forever | Never expire |
 
 **App-side:** Raw JSON strings cached in `SharedPreferences` with `_fetched_at` timestamp.  
@@ -166,10 +167,12 @@ On startup: serve cache immediately → fetch in background → update UI silent
 
 **SharedPreferences keys:**
 ```
-cache_catalog_json            cache_catalog_fetched_at
+cache_catalog_json            cache_catalog_fetched_at (legacy Urdu)
+cache_catalog_<series>_json   cache_catalog_<series>_fetched_at
 cache_app_config_json         cache_app_config_fetched_at
 cache_feature_flags_json      cache_feature_flags_fetched_at
 cache_announcements_json      cache_announcements_fetched_at
+cache_series_manifest_json    cache_series_manifest_fetched_at
 ```
 
 ---
@@ -190,7 +193,8 @@ cache_announcements_json      cache_announcements_fetched_at
 - `FeatureFlagsProvider extends ChangeNotifier` — same pattern as `CatalogProvider`
 - Hardcoded safe defaults applied first; remote flags overlay on fetch
 - Gate: `context.watch<FeatureFlagsProvider>().features.bookmarks`
-- **Never block UI on flag fetch** — defaults always apply until remote arrives
+- Flags use safe defaults while fetching; series-aware welcome content may wait
+  for definitive flags/manifest resolution to avoid an incorrect first frame.
 
 ---
 
@@ -198,11 +202,11 @@ cache_announcements_json      cache_announcements_fetched_at
 
 - Each JSON file has `"version": N`
 - Each has a `maxSupported*Version` constant in `lib/app_config.dart`
-- Breaking changes (rename/remove field) → increment version; unsupported
-  catalog/config/flags/announcement schemas are rejected with an update error
-  where that provider has a status surface. A malformed or empty series
-  manifest instead falls back to the bundled Urdu edition so onboarding is not
-  blocked.
+- Breaking changes (rename/remove field) → increment version. An unsupported
+  catalog version becomes a catalog update error; unsupported app-config and
+  feature-flag versions keep safe defaults, while unsupported announcements are
+  ignored. A malformed or empty series manifest falls back to the bundled Urdu
+  edition so onboarding is not blocked.
 - Additive changes (new optional field) → no version bump needed
 - Audio files on R2: never mutate in-place; use a new filename if content changes
 

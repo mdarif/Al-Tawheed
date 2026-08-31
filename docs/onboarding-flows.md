@@ -31,12 +31,13 @@ shown, preventing an Urdu fallback flash.
 
 ## Scenario 1: Returning User (any prior version that completed onboarding)
 
-**Preconditions:** `has_completed_onboarding = true` in SharedPreferences
+**Preconditions:** `has_completed_onboarding = true` and the active edition's
+id is in `seenWelcomeSeriesIds` (the migration seeds the legacy Urdu id).
 
 **Flow:**
 1. App starts → `/` route redirect fires
 2. `shouldShowWelcomeForCurrentSeries` is `false` → redirect to `/lectures`
-3. User never sees WelcomeScreen or ChooseSeriesScreen
+3. User never sees WelcomeScreen or ChooseSeriesScreen for that edition
 
 **Final state:** Lands on `/lectures` immediately
 
@@ -115,7 +116,7 @@ Urdu-only app and updates to v3.
 **Flow:**
 1. `SeriesProvider.load(true)`: no saved id, no legacy data → `_currentId = null`, `_isLoading = true`
 2. `loadManifest()` fetches series.json → `_maybeDefaultToArabic()`: device IS Arabic → auto-selects Arabic series, saves to prefs → `_currentId = arabicSeriesId`, `_isLoading = false`
-3. `/` route: `hasCompletedOnboarding = false` → show WelcomeScreen
+3. `/` route: `shouldShowWelcomeForCurrentSeries = true` → show WelcomeScreen
 4. WelcomeScreen: `isSeriesReady = true`, series is Arabic → shows Arabic welcome (sheikh photo, Arabic title, Arabic CTA)
 5. User taps "ابدأ الاستماع" (Start Listening in Arabic)
 6. `_startListening()`: `hasSelectedSeries == true` → `markWelcomeSeenForCurrentSeries()` → `/lectures`
@@ -134,7 +135,7 @@ Urdu-only app and updates to v3.
 **Flow:**
 1. `SeriesProvider.load(true)`: no saved id, no legacy data → `_currentId = null`
 2. `loadManifest()`: only one series available, not Arabic device → `_currentId` stays null
-3. `/` route: show WelcomeScreen
+3. `/` route: `shouldShowWelcomeForCurrentSeries = true` → show WelcomeScreen
 4. User taps "START LISTENING"
 5. `_startListening()`: `hasSelectedSeries == false`, `availableSeries.length == 1` → `switchSeries()` with the single series → `markWelcomeSeenForCurrentSeries()` → `/lectures`
 
@@ -208,7 +209,7 @@ Urdu-only app and updates to v3.
 
 2. **Manifest loads slowly** — WelcomeScreen content is invisible (`isSeriesReady = false`) until manifest resolves. The solid black background + background image show immediately; content fades in once ready.
 
-3. **System back from ChooseSeriesScreen** — `context.push('/choose-series')` means back returns to WelcomeScreen. Onboarding is NOT completed until a card is tapped, so killing the app and reopening will show WelcomeScreen again.
+3. **System back from ChooseSeriesScreen** — `context.push('/choose-series')` means back returns to `/` and the current edition's WelcomeScreen. No `completeOnboarding()` call is required: the current flow records the edition with `markWelcomeSeenForCurrentSeries()` when its CTA/card is accepted; backing out leaves it unseen.
 
 4. **Series switching from Settings** — existing users can switch series from Settings without ever touching ChooseSeriesScreen. Uses the same `switchSeries()` function but does not re-run onboarding.
 

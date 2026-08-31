@@ -1,7 +1,7 @@
 # Navigation policy — intentionally deferred
 
-**Status:** Deferred; no implementation work is scheduled in the current
-maintenance roadmap.
+**Status:** Deferred; the current roadmap keeps this as a local capability
+policy follow-up in P5.
 
 The app's footer tabs are intentionally derived from the active content
 edition's capabilities in `SeriesConfig`: `hasBook` adds Book and

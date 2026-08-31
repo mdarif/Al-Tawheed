@@ -17,7 +17,7 @@ show offline status, and manage saved lectures from the Offline Library.
 
 | Piece | Behaviour |
 |-------|-----------|
-| Storage | Per-series files under `{documents}/audio/{storagePrefix}/{lectureId}.mp3` |
+| Storage | Per-series files under `{documents}/audio/{seriesId}/{lectureId}.mp3`; legacy Urdu keeps the unprefixed `audio/{lectureId}.mp3` layout |
 | Playback | `PlayerNotifier` uses local file if downloaded, else stream |
 | Catalog | Stale-while-revalidate JSON cache (offline OK if opened online before) |
 | UI | Download icon on lecture row/player, chapter download, Offline Library, and Settings count/size |
@@ -25,8 +25,7 @@ show offline status, and manage saved lectures from the Offline Library.
 ### Remaining follow-ups
 
 1. Physical-device airplane-mode QA and retry/recovery verification.
-2. Persisting and resuming a multi-lecture download queue across process death.
-3. Analytics for download and offline-play events, if product telemetry is needed.
+2. Analytics for download and offline-play events, if product telemetry is needed.
 
 ---
 
@@ -44,7 +43,7 @@ User-facing name suggestion: **“Offline listening”** (not only “Downloads�
 2. **Offline is visible** — badges, player strip, optional app-bar pill.
 3. **Prepare before you leave** — download this part / whole class from player.
 4. **Graceful degradation** — disable or skip undownloaded content with clear copy.
-5. **Wi‑Fi respectful** — optional “Download on Wi‑Fi only” (Phase 2).
+5. **Wi‑Fi respectful** — the persisted “Download on Wi‑Fi only” setting is shipped.
 
 ---
 
@@ -96,7 +95,7 @@ Rename/enhance **Downloads** section:
 
 - Grouped by class, list downloaded parts.
 - Total storage used.
-- “Download all lectures” with strong confirm (~total MB from catalog).
+- Chapter-wide downloads are supported; a global “download all lectures” action is not shipped.
 - Clear all (existing).
 
 ### 5.4 App shell (follow-up)
@@ -121,7 +120,7 @@ Offline strings are present in all four ARB locales: `app_en.arb`, `app_ar.arb`,
 | `PlaybackSource` | `stream` \| `local` on `PlayerNotifier`; drive player strip |
 | Guard `loadAndPlay` | If offline && !downloaded → return error state, don’t start stream |
 | Smart `playNext` / `_onCompleted` | Offline: only advance to downloaded parts; else show dialog |
-| Network error handling | Subscribe to `just_audio` errors; map to offline UI |
+| Network error handling | `just_audio` errors are surfaced for retry; dedicated error-to-offline mapping is not yet shipped |
 | Player strip + offline sheet | New widgets; wire to `DownloadsProvider` |
 | Lecture tile states | Disable + message when offline && !downloaded |
 | Catalog offline launch | If cache exists, load without error screen |
@@ -135,7 +134,7 @@ Offline strings are present in all four ARB locales: `app_en.arb`, `app_ar.arb`,
 | `downloadChapter(chapterId)` | Queue all lectures in a chapter |
 | Download queue | Serial jobs with cancellation |
 | Offline Library screen | Full list UI in Settings |
-| Wi‑Fi only setting | Persisted preference blocks cellular downloads |
+| Wi‑Fi only setting | Persisted preference blocks cellular downloads (shipped) |
 
 ### Phase 3 — Later (P2)
 
@@ -179,7 +178,7 @@ playbackSource = path != null ? local : stream;
 | Decision | Recommendation |
 |----------|----------------|
 | Next part not downloaded offline | **Stop + dialog** (Study Mode needs explicit user choice) |
-| Bulk “download all 50” in v1 | **Defer** — offer per-class first (~27 MB avg per class) |
+| Bulk “download all lectures” | **Not shipped** — chapter downloads are the available bulk action |
 | Stream buffer then offline | **Pause at buffer end** + banner (don’t fake continuity) |
 | Delete download while playing | **Confirm + stop playback** |
 | First install never online | Block lectures with message: connect once to load catalog |
@@ -218,8 +217,8 @@ playbackSource = path != null ? local : stream;
 3. ~~Player status strip + offline sheet~~ (shipped)
 4. ~~Smart next / auto-advance~~ (shipped)
 5. ~~Lecture tile offline states~~ (shipped)
-6. ~~Offline Library~~ (shipped); class-wide queue remains follow-up
-7. Wi‑Fi-only policy and richer queue persistence remain follow-ups
+6. ~~Offline Library and chapter downloads~~ (shipped)
+7. ~~Wi‑Fi-only policy~~ (shipped)
 
 ---
 

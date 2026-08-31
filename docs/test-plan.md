@@ -1,8 +1,7 @@
 # Test plan — historical gap analysis
 
 Companion to [testing.md](testing.md) (which is *how to run* the suite). This is
-*what is missing and why*, ranked. It is a living backlog: close an item, delete
-it from here, and leave the landmine in [gotchas.md](gotchas.md). The current
+*what was missing and why*, ranked. Historical details remain here; the current
 backlog is [quality-backlog.md](quality-backlog.md).
 
 ## How this is prioritized

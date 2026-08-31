@@ -31,7 +31,7 @@ Use a **store screenshot generator** — upload your raw PNGs, pick Android phon
 **Workflow:**
 
 1. `flutter run --release` on a **Pixel 6** (or similar) emulator → light theme.  
-2. Capture screens (Android Studio **Camera** icon, or `adb exec-out screencap -p > 01-home.png`).  
+2. Capture screens (Android Studio **Camera** icon, or `adb exec-out screencap -p > 01-welcome.png`).
 3. Open **Previewed** (or similar) → template **Google Play** / Android phone.  
 4. Background: `#FAF8F5` or soft gold `#FBF3E0`.  
 5. Per slide, add headline (examples):
