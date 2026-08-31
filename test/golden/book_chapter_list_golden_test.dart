@@ -10,7 +10,9 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/book_provider.dart';
+import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -65,6 +67,8 @@ Widget _app({
     providers: [
       ChangeNotifierProvider.value(value: bookProvider),
       ChangeNotifierProvider.value(value: seriesProvider),
+      ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
+      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
     ],
     // `locale:` drives text direction: the Global*Localizations delegates set
     // Directionality from the locale (RTL for ar/ur), so this reproduces the

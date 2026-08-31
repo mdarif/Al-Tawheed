@@ -47,7 +47,7 @@ void main() {
       }
       await AppFlow.navigateToTab(tester, 'Settings');
       await AppFlow.scrollToSettingsDownloads(tester);
-      expect(find.text('DOWNLOADS'), findsWidgets);
+      expect(find.text('Downloads'), findsWidgets);
       await AppFlow.navigateToTab(tester, 'Lectures');
 
       // ── Player opens with transport controls ────────────────────────────
