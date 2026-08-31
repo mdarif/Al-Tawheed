@@ -3,9 +3,19 @@ import '../tool/patrol_result.dart';
 
 void main() {
   test('accepts a positive Patrol total', () {
-    final result = parsePatrolResult('log\nTotal: 6 tests\n');
+    final result = parsePatrolResult('log\n📝 Total: 6\n');
 
     expect(result.total, 6);
+  });
+
+  test('accepts an ANSI-colored Patrol formatter summary', () {
+    final result = parsePatrolResult('\x1B[32m📝 Total: 6\x1B[0m\n');
+
+    expect(result.total, 6);
+  });
+
+  test('accepts the plain Total formatter summary', () {
+    expect(parsePatrolResult('Total: 6 tests').total, 6);
   });
 
   test('rejects zero discovered tests', () {

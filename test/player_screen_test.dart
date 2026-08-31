@@ -518,6 +518,8 @@ void main() {
       final handle = tester.ensureSemantics();
       await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
 
+      expect(find.byKey(WidgetKeys.playerTransportControls), findsOneWidget);
+
       // labeledTapTargetGuideline fails if ANY tappable node has no label —
       // it caught the five unlabelled transport controls and the collapse
       // button that this change fixed.
@@ -564,6 +566,7 @@ void main() {
         (tester) async {
       await _pumpPlayer(tester, lecture: _lectures.first, queue: _lectures);
 
+      expect(find.byKey(WidgetKeys.playerShare), findsOneWidget);
       await tester.tap(find.byTooltip('Share lecture'));
       await tester.pumpAndSettle();
 
@@ -581,6 +584,7 @@ void main() {
         ..setFeaturesJsonForTest({'shareButton': false});
       await _pumpPlayer(tester, lecture: _lectures.first, featureFlags: flags);
 
+      expect(find.byKey(WidgetKeys.playerShare), findsNothing);
       expect(find.byTooltip('Share lecture'), findsNothing);
     });
 

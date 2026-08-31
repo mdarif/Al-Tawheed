@@ -430,51 +430,28 @@ class AppFlow {
     return false;
   }
 
-  /// Switches to [displayName] (canonical English name, e.g.
-  /// `'Kitab at-Tawheed (Arabic)'`) via the Settings series picker.
+  /// Switches to [seriesId] via the Settings series picker.
   ///
   /// Returns false without switching if the seriesSwitcher flag is disabled
   /// in this environment (the series row will simply not be present).
   static Future<bool> switchToSeries(
     WidgetTester tester,
-    String displayName,
+    String seriesId,
   ) async {
     await navigateToSettingsTab(tester);
 
-    // Scroll until the series row (library_books icon) is visible.
-    final seriesRow = find.byIcon(Icons.library_books_rounded);
+    final seriesOption = find.byKey(WidgetKeys.settingsSeriesOption(seriesId));
     final scrollEnd = DateTime.now().add(const Duration(seconds: 10));
     while (DateTime.now().isBefore(scrollEnd)) {
-      if (tester.any(seriesRow)) break;
+      if (tester.any(seriesOption)) break;
       await tester.drag(find.byType(ListView), const Offset(0, -300));
       await pumpFrames(tester, count: 2);
     }
-    if (!tester.any(seriesRow)) return false;
+    if (!tester.any(seriesOption)) return false;
 
-    await tester.ensureVisible(seriesRow);
+    await tester.ensureVisible(seriesOption);
     await pumpFrames(tester, count: 2);
-    await tester.tap(seriesRow);
-    await pumpFrames(tester, count: 3);
-
-    // Picker sheet — canonical English names are always shown regardless of
-    // the current UI language, so find.text works unconditionally.
-    final seriesOption = find.text(displayName);
-    await waitFor(
-      tester,
-      seriesOption,
-      timeout: const Duration(seconds: 5),
-      reason: 'series option "$displayName" in picker sheet',
-    );
-    // Use the row's stable series-id key for the action. The display name is
-    // used only to locate the requested remote edition in the picker.
-    final optionRow = find.ancestor(
-      of: seriesOption,
-      matching: find.byType(ListTile),
-    );
-    expect(optionRow, findsOneWidget);
-    final optionKey = tester.widget<ListTile>(optionRow).key;
-    expect(optionKey, isNotNull);
-    await tester.tap(find.byKey(optionKey!));
+    await tester.tap(seriesOption);
     await pumpFrames(tester, count: 3);
 
     // Confirm dialog — target the FilledButton regardless of its label locale.
@@ -495,7 +472,7 @@ class AppFlow {
       tester,
       find.byType(LectureTile),
       timeout: const Duration(seconds: 30),
-      reason: 'lecture list after switching to "$displayName"',
+      reason: 'lecture list after switching to "$seriesId"',
     );
     return true;
   }

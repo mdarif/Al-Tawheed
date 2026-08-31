@@ -206,15 +206,13 @@ orientation-test: pub-get
 patrol-test:
 	@PATROL_LOG=$$(mktemp /tmp/at-tawheed-patrol.XXXXXX); \
 	trap 'rm -f "$$PATROL_LOG"' 0; \
-	patrol test -t patrol_test/native_test.dart \
-		$(if $(DEVICE),--device $(DEVICE),) >"$$PATROL_LOG" 2>&1; \
+	bash -o pipefail -c 'patrol test -t patrol_test/native_test.dart \
+		$(if $(DEVICE),--device $(DEVICE),) 2>&1 | tee "$$1"' _ "$$PATROL_LOG"; \
 	STATUS=$$?; \
-	cat "$$PATROL_LOG"; \
-	if [ "$$STATUS" -ne 0 ]; then \
-		dart run tool/patrol_result.dart --exit-code=$$STATUS "$$PATROL_LOG"; \
-		exit $$STATUS; \
-	fi; \
-	dart run tool/patrol_result.dart --exit-code=0 "$$PATROL_LOG"
+	dart run tool/patrol_result.dart --exit-code=$$STATUS "$$PATROL_LOG"; \
+	PARSE_STATUS=$$?; \
+	if [ "$$STATUS" -ne 0 ]; then exit "$$STATUS"; fi; \
+	exit "$$PARSE_STATUS"
 
 # Full release pipeline (local):
 #   pub get → analyze → unit/widget tests → validation integration test →

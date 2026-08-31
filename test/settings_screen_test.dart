@@ -336,6 +336,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Downloads'), findsWidgets);
+      expect(find.byKey(WidgetKeys.settingsDownloadOnWifiOnly), findsOneWidget);
 
       final downloadsRowBottom =
           tester.getBottomLeft(find.text('No downloads yet')).dy;
@@ -379,6 +380,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Downloads'), findsWidgets);
+      expect(find.byKey(WidgetKeys.settingsDownloadOnWifiOnly), findsOneWidget);
       expect(find.text('No downloads yet'), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
 
@@ -386,6 +388,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Offline route'), findsOneWidget);
+    });
+
+    testWidgets('hides the Wi-Fi-only control when downloads are disabled',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(WidgetKeys.settingsDownloadOnWifiOnly), findsNothing);
     });
   });
 

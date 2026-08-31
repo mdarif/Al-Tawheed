@@ -15,7 +15,9 @@ class PatrolFlow {
   static const _controlCenterUnavailable =
       'Control Center is not available on Simulator';
 
-  static Future<void> grantNotificationsIfPrompted(PatrolIntegrationTester $) async {
+  static Future<void> grantNotificationsIfPrompted(
+    PatrolIntegrationTester $,
+  ) async {
     if (await $.platform.mobile.isPermissionDialogVisible(
       timeout: const Duration(seconds: 8),
     )) {
@@ -39,12 +41,12 @@ class PatrolFlow {
     PatrolIntegrationTester $,
   ) async {
     await bootstrapToLectures($);
-    return AppFlow.switchToSeries($.tester, 'Kitab at-Tawheed (Arabic)');
+    return AppFlow.switchToSeries($.tester, 'tawheed-ar');
   }
 
   /// Switches back to the Urdu series for test cleanup.
   static Future<void> restoreToUrduSeries(PatrolIntegrationTester $) async {
-    await AppFlow.switchToSeries($.tester, 'Kitab at-Tawheed (Urdu)');
+    await AppFlow.switchToSeries($.tester, 'tawheed-ur');
   }
 
   static Future<void> withAirplaneMode(

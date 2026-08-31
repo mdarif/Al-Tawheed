@@ -118,10 +118,10 @@ flutter test integration_test/app_test.dart -d <device_id> --timeout 15m
 make integration-test DEVICE=<device_id>
 ```
 
-`integration_test/app_test.dart` is the validation gate. The Play Store
-screenshot generators (`screenshots_test.dart` and
-`screenshots_tablet_test.dart`) are asset-generation jobs, not validation, and
-run only through `make screenshots DEVICE=<device_id>`.
+`integration_test/app_test.dart` is the validation gate. `make screenshots`
+invokes the phone capture harness (`screenshots_test.dart`) only; the framing
+step derives both phone and tablet aspect assets. `screenshots_tablet_test.dart`
+is not invoked by that target and neither capture file is validation.
 
 **Notes**
 

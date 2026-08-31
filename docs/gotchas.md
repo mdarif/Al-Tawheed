@@ -115,10 +115,12 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Screenshots (Play Store)
 
-- **Automated via `make screenshots DEVICE=<id>`** — `flutter drive` runs
-  `integration_test/screenshots_test.dart` (reuses `AppFlow` to navigate) →
-  raws → `scripts/frame_screenshots.py` (Pillow) frames them on the brand
-  gradient → `docs/play-store/v3/`. iOS sim works well.
+- **Automated via `make screenshots DEVICE=<id>`** — `flutter drive` runs only
+  `integration_test/screenshots_test.dart` (the phone capture harness; it
+  reuses `AppFlow` to navigate) → raws → `scripts/frame_screenshots.py`
+  (Pillow) derives phone and tablet aspect assets on the brand gradient →
+  `docs/play-store/v3/`. `screenshots_tablet_test.dart` is not invoked by this
+  target. iOS sim works well.
 - **The two series have different chrome — capture BOTH.** The Urdu series
   renders the app UI in **English** (Now Playing, Study Mode, Settings) and has a
   Study tab; the Arabic series renders **Arabic** chrome (يُشغَّل الآن، الدروس) and

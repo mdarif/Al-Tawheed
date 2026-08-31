@@ -18,6 +18,14 @@ final class PatrolResultError implements Exception {
   String toString() => message;
 }
 
+// Patrol's reporter prefixes the summary with a note emoji. ANSI colour
+// sequences can wrap the whole line when output is attached to a terminal.
+final _ansiEscape = RegExp('\x1B(?:\\[[0-?]*[ -/]*[@-~]|[@-_])');
+final _summary = RegExp(
+  r'^\s*(?:📝\s*)?Total:\s*(\d+)\s*(?:tests?)?\s*$',
+  caseSensitive: false,
+);
+
 /// Parses and validates Patrol's final summary.
 ///
 /// A native run is accepted only when it contains exactly one numeric
@@ -27,6 +35,7 @@ final class PatrolResultError implements Exception {
 PatrolResult parsePatrolResult(String output) {
   final summaryLines = output
       .split(RegExp(r'\r?\n'))
+      .map((line) => line.replaceAll(_ansiEscape, ''))
       .where((line) => line.contains('Total:'))
       .toList(growable: false);
 
@@ -41,9 +50,7 @@ PatrolResult parsePatrolResult(String output) {
     );
   }
 
-  final match =
-      RegExp(r'^\s*Total:\s*(\d+)\s*(?:tests?)?\s*$', caseSensitive: false)
-          .firstMatch(summaryLines.single);
+  final match = _summary.firstMatch(summaryLines.single);
   if (match == null) {
     throw const PatrolResultError(
       'Patrol result has a malformed "Total:" summary.',
