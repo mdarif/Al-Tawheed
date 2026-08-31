@@ -296,7 +296,11 @@ class TawheedAudioHandler extends BaseAudioHandler
             final resume = _resumeAfterInterruption && _wantsToPlay;
             _resumeAfterInterruption = false;
             if (resume) {
-              unawaited(_playIfStillDesired(_player, _loadGeneration));
+              _startPlayIfStillDesired(
+                _player,
+                _loadGeneration,
+                _activeSessionId,
+              );
             }
             break;
           case AudioInterruptionType.unknown:
@@ -348,10 +352,10 @@ class TawheedAudioHandler extends BaseAudioHandler
     await player.setSpeed(_speed);
     await player.setAudioSource(source, initialPosition: startFrom);
     // A slower old source load or a stop must never resume over the latest
-    // command. Pause/focus intent is checked separately by _playIfStillDesired.
+    // command. Pause/focus intent is checked separately before playback starts.
     if (!_isCurrentLoad(player, loadGeneration, sessionId)) return;
     _sourceReady = true;
-    await _playIfStillDesired(player, loadGeneration);
+    _startPlayIfStillDesired(player, loadGeneration, sessionId);
   }
 
   // ── BaseAudioHandler overrides ─────────────────────────────────────────
@@ -359,7 +363,12 @@ class TawheedAudioHandler extends BaseAudioHandler
   Future<void> play() {
     _wantsToPlay = true;
     if (_interruptionActive) _resumeAfterInterruption = true;
-    return _playIfStillDesired(_player, _loadGeneration);
+    _startPlayIfStillDesired(
+      _player,
+      _loadGeneration,
+      _activeSessionId,
+    );
+    return Future.value();
   }
 
   @override
@@ -404,25 +413,71 @@ class TawheedAudioHandler extends BaseAudioHandler
       generation == _loadGeneration &&
       sessionId == _activeSessionId;
 
-  Future<void> _playIfStillDesired(
+  void _startPlayIfStillDesired(
     AudioEngine player,
     int generation,
+    int sessionId,
+  ) {
+    if (!_canPlay(player, generation, sessionId)) return;
+    try {
+      // just_audio's Future completes when playback ends, pauses, or stops;
+      // it is not a "play request accepted" acknowledgement. Observe it for
+      // errors but never make a source load, navigation, or timer await it.
+      unawaited(
+        _observePlayFuture(
+          player,
+          generation,
+          sessionId,
+          player.play(),
+        ),
+      );
+    } catch (error, stackTrace) {
+      _reportPlayFailure(player, generation, sessionId, error, stackTrace);
+    }
+  }
+
+  bool _canPlay(AudioEngine player, int generation, int sessionId) =>
+      _isCurrentLoad(player, generation, sessionId) &&
+      _sourceReady &&
+      _wantsToPlay &&
+      !_interruptionActive;
+
+  Future<void> _observePlayFuture(
+    AudioEngine player,
+    int generation,
+    int sessionId,
+    Future<void> playFuture,
   ) async {
-    if (!identical(player, _player) ||
-        generation != _loadGeneration ||
-        !_sourceReady ||
-        !_wantsToPlay ||
-        _interruptionActive) {
+    try {
+      await playFuture;
+    } catch (error, stackTrace) {
+      _reportPlayFailure(player, generation, sessionId, error, stackTrace);
       return;
     }
-    await player.play();
     // A pause/stop can arrive while a platform play call is outstanding.
-    if (!identical(player, _player) ||
-        generation != _loadGeneration ||
-        !_wantsToPlay ||
-        _interruptionActive) {
-      await player.pause();
+    if (!_canPlay(player, generation, sessionId)) {
+      try {
+        await player.pause();
+      } catch (error, stackTrace) {
+        _reportPlayFailure(player, generation, sessionId, error, stackTrace);
+      }
     }
+  }
+
+  void _reportPlayFailure(
+    AudioEngine player,
+    int generation,
+    int sessionId,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (!_isCurrentLoad(player, generation, sessionId)) return;
+    _errorEvents.add(AudioPlaybackEvent(sessionId, error));
+    playbackState.addError(error, stackTrace);
+    _rawPlaybackStates.addError(
+      AudioPlaybackFailure(sessionId, error),
+      stackTrace,
+    );
   }
 
   Future<void> _retireEngine(AudioEngine engine) async {

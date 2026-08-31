@@ -241,6 +241,33 @@ void main() {
     await _flushMicrotasks();
     expect(later.playCalls, 0);
   });
+
+  test('load returns after initiating a pending play and reports its error',
+      () async {
+    final initial = _FakeAudioEngine();
+    final playbackLifetime = Completer<void>();
+    final engine = _FakeAudioEngine(pendingPlay: playbackLifetime);
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, engine]),
+      configureAudioSession: false,
+    );
+    final errors = <AudioPlaybackEvent<Object>>[];
+    final subscription = handler.errorEvents.listen(errors.add);
+
+    // This is what PlayerNotifier and ContinueListening await before they
+    // start timers or navigate. It must not wait for the full track lifetime.
+    await handler.loadLecture(_lecture('pending-play'), sessionId: 1);
+    expect(engine.playCalls, 1);
+
+    final failure = StateError('play failed after it started');
+    playbackLifetime.completeError(failure);
+    await _flushMicrotasks();
+
+    expect(errors, hasLength(1));
+    expect(errors.single.sessionId, 1);
+    expect(errors.single.value, same(failure));
+    await subscription.cancel();
+  });
 }
 
 AudioEngine Function() _engineFactory(List<_FakeAudioEngine> engines) {
@@ -265,9 +292,10 @@ Lecture _lecture(String id) => Lecture(
 /// retires the engine; [TawheedAudioHandler] must retain its original source
 /// provenance without any test-supplied session identifier.
 class _FakeAudioEngine implements AudioEngine {
-  _FakeAudioEngine({this.pendingSource});
+  _FakeAudioEngine({this.pendingSource, this.pendingPlay});
 
   final Completer<void>? pendingSource;
+  final Completer<void>? pendingPlay;
   final _events = StreamController<PlaybackEvent>.broadcast(sync: true);
   final _positions = StreamController<Duration>.broadcast(sync: true);
   final _durations = StreamController<Duration?>.broadcast(sync: true);
@@ -315,6 +343,7 @@ class _FakeAudioEngine implements AudioEngine {
   Future<void> play() async {
     _playing = true;
     playCalls++;
+    await pendingPlay?.future;
   }
 
   @override

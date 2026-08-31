@@ -37,6 +37,12 @@ is portable memory: any LLM working the repo should read and extend it.
   completion must re-check all of them. Test these with a pending `AudioEngine`
   source and a mocked `PlaybackAudioSession`, never a timing delay.
 
+- **`just_audio.play()` is a playback-lifetime future, not a start ack.** Do
+  not await it from `loadLecture` or control handlers: that blocks callers
+  waiting to start UI navigation or persistence timers until pause/stop/end.
+  Start it unawaited, observe its completion for errors, and forward a current
+  failure through the session-tagged audio error stream.
+
 - **Widget tests that exercise `PlayerNotifier` must inject `AudioPlayback`,
   even when their subject is not the player.** A production
   `TawheedAudioHandler` owns a platform-backed `just_audio` engine; an offline
