@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -132,6 +133,27 @@ void main() {
     expect(await File(savePath).length(), 256);
   });
 
+  test('fails closed when neither catalog bytes nor Content-Length is known',
+      () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/unknown-length.mp3';
+    await expectLater(
+      DownloadService.download(
+        cancelKey: 'unknown-length',
+        url: '$baseUrl/audio.mp3',
+        savePath: savePath,
+        fileSizeBytes: 0,
+        onProgress: (_) {},
+      ),
+      throwsA(isA<DownloadIntegrityException>()),
+    );
+
+    expect(await File(savePath).exists(), isFalse);
+    expect(await File('$savePath.part').exists(), isFalse);
+  });
+
   test('does not promote a response shorter than its Content-Length', () async {
     final (:server, :baseUrl) = await _startTruncatedContentLengthServer();
     addTearDown(() => server.close());
@@ -173,6 +195,98 @@ void main() {
     );
 
     expect(await existing.readAsBytes(), [7, 8, 9]);
+    expect(await File('$savePath.part').exists(), isFalse);
+  });
+
+  test('keeps the old destination visible until atomic replacement', () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/atomic.mp3';
+    final destination = File(savePath);
+    await destination.parent.create(recursive: true);
+    await destination.writeAsBytes([9, 9, 9]);
+    final enteredPromotion = Completer<void>();
+    final releasePromotion = Completer<void>();
+    DownloadService.beforePromotionForTest = (_) async {
+      enteredPromotion.complete();
+      await releasePromotion.future;
+    };
+
+    final done = DownloadService.download(
+      cancelKey: 'atomic',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    await enteredPromotion.future;
+
+    expect(await destination.readAsBytes(), [9, 9, 9]);
+    expect(await File('$savePath.part').exists(), isTrue);
+
+    releasePromotion.complete();
+    await done;
+    expect(await destination.length(), 256);
+    expect(await File('$savePath.part').exists(), isFalse);
+  });
+
+  test('does not expose a new destination before promotion', () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/invisible.mp3';
+    final enteredPromotion = Completer<void>();
+    final releasePromotion = Completer<void>();
+    DownloadService.beforePromotionForTest = (_) async {
+      enteredPromotion.complete();
+      await releasePromotion.future;
+    };
+
+    final done = DownloadService.download(
+      cancelKey: 'invisible',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    await enteredPromotion.future;
+
+    expect(await File(savePath).exists(), isFalse);
+    expect(await File('$savePath.part').exists(), isTrue);
+
+    releasePromotion.complete();
+    await done;
+    expect(await File(savePath).exists(), isTrue);
+  });
+
+  test('cancellation at promotion removes the final destination', () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/promotion-cancel.mp3';
+    final enteredPromotion = Completer<void>();
+    final releasePromotion = Completer<void>();
+    DownloadService.beforePromotionForTest = (_) async {
+      enteredPromotion.complete();
+      await releasePromotion.future;
+    };
+
+    final done = DownloadService.download(
+      cancelKey: 'promotion-cancel',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    final cancelled = expectLater(done, throwsA(isA<DownloadCancelled>()));
+    await enteredPromotion.future;
+    DownloadService.cancel('promotion-cancel');
+    await File('$savePath.part').delete();
+    releasePromotion.complete();
+
+    await cancelled;
+    expect(await File(savePath).exists(), isFalse);
     expect(await File('$savePath.part').exists(), isFalse);
   });
 

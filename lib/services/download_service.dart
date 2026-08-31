@@ -149,6 +149,11 @@ class DownloadService {
   @visibleForTesting
   static Future<void> Function(File partFile)? beforePartFileOpenForTest;
 
+  /// Test-only promotion barrier used to verify cancellation at the narrow
+  /// boundary between a fully-written `.part` and its atomic rename.
+  @visibleForTesting
+  static Future<void> Function(File partFile)? beforePromotionForTest;
+
   /// Must be called before any other method.
   static Future<void> init() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -215,21 +220,25 @@ class DownloadService {
     final client = HttpClient();
     final active = _ActiveDownload(client);
     _active[cancelKey] = active;
+    var promoted = false;
 
     try {
       await destination.parent.create(recursive: true);
-      final request = await client.getUrl(Uri.parse(url));
+      final uri = Uri.parse(url);
+      final request = await client.getUrl(uri);
       final response = await request.close();
 
       if (response.statusCode == HttpStatus.tooManyRequests ||
           response.statusCode >= HttpStatus.internalServerError) {
+        await _discardErrorResponse(response, client);
         throw RateLimitedException(
-          url: Uri.parse(url),
+          url: uri,
           statusCode: response.statusCode,
           retryAfter: _parseRetryAfter(response.headers),
         );
       }
       if (response.statusCode != HttpStatus.ok) {
+        await _discardErrorResponse(response, client);
         throw DownloadTransferException(
           '$url: HTTP ${response.statusCode}',
         );
@@ -240,6 +249,12 @@ class DownloadService {
           : response.contentLength >= 0
               ? response.contentLength
               : null;
+      if (expectedBytes == null) {
+        await _discardErrorResponse(response, client);
+        throw DownloadIntegrityException(
+          '$url: no trusted catalog byte count or Content-Length',
+        );
+      }
       var received = 0;
       await beforePartFileOpenForTest?.call(partFile);
       final sink = partFile.openWrite();
@@ -248,7 +263,7 @@ class DownloadService {
           if (active.cancelled) throw const DownloadCancelled();
           sink.add(chunk);
           received += chunk.length;
-          if (expectedBytes != null && expectedBytes > 0) {
+          if (expectedBytes > 0) {
             onProgress((received / expectedBytes).clamp(0.0, 1.0));
           }
         }
@@ -258,7 +273,7 @@ class DownloadService {
         // declared, it is still an integrity failure, not an opaque transfer
         // failure.
         if (active.cancelled) throw const DownloadCancelled();
-        if (expectedBytes != null && received != expectedBytes) {
+        if (received != expectedBytes) {
           throw DownloadIntegrityException(
             '$url: expected $expectedBytes bytes, got $received',
           );
@@ -269,16 +284,21 @@ class DownloadService {
       }
 
       if (active.cancelled) throw const DownloadCancelled();
-      if (expectedBytes != null && received != expectedBytes) {
+      if (received != expectedBytes) {
         throw DownloadIntegrityException(
           '$url: expected $expectedBytes bytes, got $received',
         );
       }
 
+      await beforePromotionForTest?.call(partFile);
+      if (active.cancelled) throw const DownloadCancelled();
       // POSIX rename replaces an existing destination atomically on Android
       // and iOS. Only a fully verified `.part` reaches this line.
       await partFile.rename(destination.path);
+      promoted = true;
+      if (active.cancelled) throw const DownloadCancelled();
     } on FileSystemException catch (error) {
+      if (active.cancelled) throw const DownloadCancelled();
       if (_isStorageError(error)) {
         throw InsufficientStorageException('$savePath: $error');
       }
@@ -298,14 +318,23 @@ class DownloadService {
       } on PathNotFoundException {
         // Already removed by concurrent delete cleanup.
       }
+      // A cancellation can land while `rename()` is in flight. Once that
+      // rename completes there is no `.part` left for the normal cleanup, so
+      // remove the promoted destination here and make cancellation win over
+      // any concurrent filesystem error or successful return.
+      if (active.cancelled) {
+        if (promoted) await _deleteIfExists(destination);
+        throw const DownloadCancelled();
+      }
     }
   }
 
   static Future<void> delete(
     String lectureId, {
     String seriesId = SeriesConfig.legacyId,
+    String? cancelKey,
   }) async {
-    cancel(lectureId);
+    cancel(cancelKey ?? lectureId);
     // The cancel above is synchronous but its file-cleanup runs asynchronously.
     // If the download's catch block deletes the partial file between our
     // exists() check and delete() call, swallow the PathNotFoundException —
@@ -344,9 +373,13 @@ class DownloadService {
     _active.clear();
     _documentsPath = documentsPath;
     beforePartFileOpenForTest = null;
+    beforePromotionForTest = null;
   }
 
   static Duration? _parseRetryAfter(HttpHeaders headers) {
+    // The app currently has no retry scheduler, so retain only the simple
+    // delta-seconds form for a future caller. HTTP-date Retry-After is
+    // intentionally left unparsed until that policy exists.
     final raw = headers.value(HttpHeaders.retryAfterHeader);
     final seconds = raw == null ? null : int.tryParse(raw.trim());
     return seconds == null ? null : Duration(seconds: seconds);
@@ -356,5 +389,30 @@ class DownloadService {
     final osError = error.osError;
     return osError?.errorCode == 28 ||
         osError?.message.toLowerCase().contains('no space') == true;
+  }
+
+  static Future<void> _discardErrorResponse(
+    HttpClientResponse response,
+    HttpClient client,
+  ) async {
+    // No response body is useful for a failed audio request. Close the only
+    // client first so a malicious/buggy endpoint cannot keep this operation
+    // alive by streaming an endless error body, then drain best-effort to
+    // release any buffered bytes.
+    client.close(force: true);
+    try {
+      await response.drain<void>();
+    } catch (_) {
+      // Closing a live response can make drain fail; the socket is already
+      // force-closed and the typed status failure below remains authoritative.
+    }
+  }
+
+  static Future<void> _deleteIfExists(File file) async {
+    try {
+      if (await file.exists()) await file.delete();
+    } on PathNotFoundException {
+      // Another cancellation/delete cleanup won the race.
+    }
   }
 }
