@@ -15,6 +15,13 @@ flutter devices
 make perf-test DEVICE=<physical-device-id>
 ```
 
+`make perf-test` is the strict physical-device regression gate; its
+`PERF_ENFORCE_THRESHOLDS` compile-time default is `true`. For emulator or
+harness smoke validation, use `make perf-smoke DEVICE=<android-emulator-id>`.
+Smoke mode executes every scenario and requires nonempty timing data, but does
+not fail on device-sensitive build/raster ceilings and must not be recorded as
+the physical baseline.
+
 The command uses `flutter drive --profile` and prints one `PERF[...]` line for
 each scenario (`lecture_list_scroll`, `book_reader_scroll`, and, when the
 selected edition has a Book, `book_page_turn`). Repeat each run three times

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:myapp/utils/performance_thresholds.dart';
 import 'package:myapp/utils/startup_metrics.dart';
 
 import 'package:myapp/widgets/lecture_tile.dart';
@@ -15,15 +16,20 @@ import 'support/app_flow.dart';
 ///   `  --target=integration_test/performance_test.dart --profile -d DEVICE`
 ///   (or: `make perf-test DEVICE=...`)
 ///
+/// `make perf-smoke DEVICE=...` runs the same scenarios with
+/// `PERF_ENFORCE_THRESHOLDS=false` for emulator/harness validation. It still
+/// requires nonempty frame timings and executes every scenario, but is not a
+/// physical-device regression gate.
+///
 /// Each scenario collects `FrameTiming`s directly via `addTimingsCallback`
 /// while a scroll/animation runs. (NOT `watchPerformance`/`traceAction`: those
 /// open a VM-service socket to enable the Dart timeline, which isn't reachable
 /// over `flutter drive` on a physical device — it fails with
 /// `SocketException: Connection refused localhost`. Frame-timing callbacks need
-/// no such connection.) We log the numbers so a run is readable at a glance and
-/// assert a **generous** ceiling — a regression net for egregious jank, not a
-/// micro-benchmark that flaps between devices. A 60Hz frame is 16.7ms; the
-/// ceilings sit well above it so a healthy build always passes.
+/// no such connection.) We log the numbers so a run is readable at a glance.
+/// Strict runs assert a **generous** ceiling — a regression net for egregious
+/// jank, not a micro-benchmark that flaps between devices. A 60Hz frame is
+/// 16.7ms; the ceilings sit well above it so a healthy physical build passes.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const coldStartCohort = String.fromEnvironment(
@@ -33,6 +39,10 @@ void main() {
   const coldStartOnly = bool.fromEnvironment(
     'COLD_START_ONLY',
     defaultValue: false,
+  );
+  const enforceThresholds = bool.fromEnvironment(
+    'PERF_ENFORCE_THRESHOLDS',
+    defaultValue: true,
   );
   const seedReturning = bool.fromEnvironment(
     'COLD_START_SETUP_RETURNING',
@@ -111,13 +121,21 @@ void main() {
         'worst=${raster.last.toStringAsFixed(1)} missed=${missed(raster)}');
 
     expect(
-      avg(build),
-      lessThan(maxAvgBuildMillis),
+      PerformanceThresholds.passes(
+        averageMillis: avg(build),
+        ceilingMillis: maxAvgBuildMillis,
+        enforce: enforceThresholds,
+      ),
+      isTrue,
       reason: '$key: average frame BUILD time too high — UI thread jank',
     );
     expect(
-      avg(raster),
-      lessThan(maxAvgRasterMillis),
+      PerformanceThresholds.passes(
+        averageMillis: avg(raster),
+        ceilingMillis: maxAvgRasterMillis,
+        enforce: enforceThresholds,
+      ),
+      isTrue,
       reason: '$key: average frame RASTER time too high — GPU jank',
     );
   }

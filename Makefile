@@ -1,4 +1,4 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format format-check build release release-dry release-auto release-android release-ios release-apk integration-test perf-test patrol-test orientation-test screenshots run ci ci-logs test-tooling verify-apk
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format format-check build release release-dry release-auto release-android release-ios release-apk integration-test perf-test perf-smoke patrol-test orientation-test screenshots run ci ci-logs test-tooling verify-apk
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
@@ -178,6 +178,21 @@ perf-test: pub-get
 		--driver=test_driver/perf_driver.dart \
 		--target=integration_test/performance_test.dart \
 		--profile -d $(DEVICE)
+
+# Profile-mode harness smoke run. It executes every performance scenario and
+# requires timings, but disables device-sensitive frame ceilings for emulators.
+perf-smoke: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required (an Android emulator/device)."; \
+		echo "  make perf-smoke DEVICE=<device_id>"; \
+		exit 1; \
+	fi
+	flutter drive \
+		--driver=test_driver/perf_driver.dart \
+		--target=integration_test/performance_test.dart \
+		--profile \
+		--dart-define=PERF_ENFORCE_THRESHOLDS=false \
+		-d $(DEVICE)
 
 # Repeated Android cold-start measurement. The runner clears app data before
 # EVERY fresh-install sample, while returning samples preserve data and only
