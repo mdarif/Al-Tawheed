@@ -102,7 +102,9 @@ Urdu-only app and updates to v3.
 8. User taps a card (e.g. Urdu)
 9. `_select()`: `switchSeries()` → `context.go('/')`; the router shows a new edition's welcome, or redirects to `/lectures` if its welcome was already seen.
 
-**Final state:** WelcomeScreen → taps CTA → ChooseSeriesScreen → taps card → `/lectures`
+**Final state:** WelcomeScreen → taps CTA → ChooseSeriesScreen → taps card →
+the same/already-seen edition goes to `/lectures`; a newly selected unseen
+edition shows its WelcomeScreen first, then its CTA goes to `/lectures`.
 
 ---
 

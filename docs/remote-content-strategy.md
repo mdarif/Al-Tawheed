@@ -200,8 +200,10 @@ cache_series_manifest_json    cache_series_manifest_fetched_at
 
 ## Versioning
 
-- Each JSON file has `"version": N`
-- Each has a `maxSupported*Version` constant in `lib/app_config.dart`
+- Catalog, app-config, feature-flags, and announcements JSON each have
+  `"version": N` and a corresponding `maxSupported*Version` constant in
+  `lib/app_config.dart`.
+- The series manifest is currently unversioned and unchecked.
 - Breaking changes (rename/remove field) → increment version. An unsupported
   catalog version becomes a catalog update error; unsupported app-config and
   feature-flag versions keep safe defaults, while unsupported announcements are

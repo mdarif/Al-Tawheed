@@ -26,6 +26,7 @@ show offline status, and manage saved lectures from the Offline Library.
 
 1. Physical-device airplane-mode QA and retry/recovery verification.
 2. Analytics for download and offline-play events, if product telemetry is needed.
+3. Persisting and resuming queued/chapter download jobs across process death (jobs are currently in memory).
 
 ---
 
@@ -120,7 +121,7 @@ Offline strings are present in all four ARB locales: `app_en.arb`, `app_ar.arb`,
 | `PlaybackSource` | `stream` \| `local` on `PlayerNotifier`; drive player strip |
 | Guard `loadAndPlay` | If offline && !downloaded → return error state, don’t start stream |
 | Smart `playNext` / `_onCompleted` | Offline: only advance to downloaded parts; else show dialog |
-| Network error handling | `just_audio` errors are surfaced for retry; dedicated error-to-offline mapping is not yet shipped |
+| Network error handling | No direct `just_audio` error/retry surface is shipped; stuck-buffering and connectivity recovery are surfaced, while direct error/retry handling remains open |
 | Player strip + offline sheet | New widgets; wire to `DownloadsProvider` |
 | Lecture tile states | Disable + message when offline && !downloaded |
 | Catalog offline launch | If cache exists, load without error screen |
