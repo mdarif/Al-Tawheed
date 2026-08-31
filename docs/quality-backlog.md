@@ -26,9 +26,13 @@ sequencing; this page records the quality truth that active docs should use.
   and stale callbacks without a platform audio backend.
 - **Navigation:** tabs come from `SeriesConfig.hasBook` and
   `SeriesConfig.hasStudyMode`; route guards enforce the same capabilities.
-- **Release evidence:** the current baseline is **567 passing unit/widget
-  tests**, with two intentional skips. Goldens are macOS-only and skipped by
-  default; live CDN contract tests are tagged and run separately.
+- **Release evidence:** the current baseline is **582 passing unit/widget
+  tests**, with two intentional skips, plus **16 release-tool tests**. Three
+  goldens pass. Android integration and orientation suites pass. Patrol reports
+  **5 passing, 0 failing, and 1 intentional skip** on the stock Android
+  emulator. The three-scenario emulator performance smoke also passes. Goldens
+  remain macOS-only and skipped by default; live CDN contract tests are tagged
+  and run separately.
 - **Design accessibility:** secondary text now uses semantic theme roles with
   WCAG AA contrast in both themes; the book reader exposes clean line semantics
   (ornate print punctuation is visual only) and covers 2.0 text scaling. See
@@ -39,13 +43,18 @@ sequencing; this page records the quality truth that active docs should use.
 
 - Persist and resume queued/chapter download jobs across process death; current
   download jobs are in memory only.
+- Capture and review a physical-device profile-mode performance baseline;
+  emulator smoke timings are not a substitute.
+- Configure a local release signing store/key so the release APK gate can package
+  a signed artifact; debug APK packaging is green.
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
-| P1 | Stable keys for high-value E2E controls; separate validation tests from screenshot generation; document Patrol/Android 16 discovery limits; make the release gate truthful. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
-| P2 | Atomic `.part` audio downloads with integrity/transfer/cancellation failure types. | [P2](plans/maintenance-roadmap.md#p2--verified-atomic-audio-downloads) |
-| P4 | Semantic status colors, accessibility/large-text coverage, component vocabulary, and broader multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
-| P5 | Physical-device performance baseline, cold-start measurement, and centralized local navigation capability checks. | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
+| P1 | ✅ Complete — stable E2E keys, separated validation/screenshots, truthful Patrol discovery gate, and documented Android compatibility limits. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
+| P2 | ✅ Complete — atomic `.part` audio downloads with integrity/transfer/cancellation failure types. Process-death queue persistence remains open above. | [P2](plans/maintenance-roadmap.md#p2--verified-atomic-audio-downloads) |
+| P3 | ✅ Complete — injectable player seam and direct coverage of load, recovery, queue, deletion, persistence, and stale-callback paths. | [P3](plans/maintenance-roadmap.md#p3--player-reliability) |
+| P4 | ✅ Complete for the delivered scope — semantic status colors, accessibility/large-text coverage, component vocabulary, and the initial multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
+| P5 | 🟡 Partial — cold-start automation and local navigation policy are complete; physical-device performance evidence remains open. | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
 
 ## Documentation rules
 

@@ -63,13 +63,14 @@ make integration-test DEVICE=<simulator_id>
 2. **iOS** — plug in via USB/network, trust the computer on the device, and make sure the device is registered to a signing team in Xcode (`open ios/Runner.xcworkspace` → Signing & Capabilities).
 3. Confirm it shows up: `flutter devices`, then use its ID with `-d` / `DEVICE=`.
 
-For final confidence, verify Patrol's native automator features on a physical
-stock-Android device when available. The current release gate also supports a
-stock Android API 34 emulator (and specifically requires that older target for
-Patrol discovery; Android 16/API 36 reports zero tests). OEM-skinned phones
-can still make airplane-mode automation unreliable, so treat those scenarios
-as manual checks there. Realistic download/Wi-Fi-only testing is best on a
-physical device because emulators proxy network through the host.
+The automated stock Android API 35 emulator run currently reports five passing
+scenarios, zero failures, and one intentional skip. For final confidence,
+verify Patrol's native automator features on a physical stock-Android device
+when available. Android 16/API 36 currently reports zero discovered tests and
+cannot satisfy the truthful Patrol gate. OEM-skinned phones can still make
+native network-toggle automation unreliable. Realistic download/Wi-Fi-only
+testing is best on a physical device because emulators proxy network through
+the host.
 
 ### Network
 
@@ -93,7 +94,8 @@ genhtml coverage/lcov.info -o coverage/html   # macOS, requires lcov
 open coverage/html/index.html
 ```
 
-CI runs the same command on every push/PR (`flutter-ci.yml`).
+CI runs the same command on every push/PR (`flutter-ci.yml`). The current local
+snapshot is 582 passing unit/widget tests with two intentional skips.
 
 ---
 
@@ -200,7 +202,7 @@ not a workaround.
 
 Patrol generates `patrol_test/test_bundle.dart` locally (gitignored).
 
-### Known issue — `enableAirplaneMode` fails on heavily-skinned OEM Android
+### Airplane-mode fallback on Android 35 and OEM variants
 
 On devices running custom Android skins (OnePlus OxygenOS, Oppo/Realme ColorOS, Samsung One UI, Xiaomi MIUI, etc.), `$.platform.mobile.enableAirplaneMode()` can fail with the suite showing the native step turn red ❌, e.g.:
 
@@ -211,17 +213,21 @@ On devices running custom Android skins (OnePlus OxygenOS, Oppo/Realme ColorOS, 
 ✅ disableAirplaneMode (native)
 ```
 
-**Why**: Patrol's native automator drives the stock/AOSP Settings UI to find and tap the airplane-mode toggle. OEM skins restyle and relocate that screen (different layout, resource IDs, labels), so the automator opens "Wireless & networks" but can't locate the toggle and times out. `disableAirplaneMode` then "passes" trivially because airplane mode was never actually turned on. The phone isn't frozen — the step genuinely can't find the UI element it's looking for. The repo pins `patrol: ^4.6.1`; upgrading the package or CLI is not a workaround for this OEM issue.
+**Why**: Patrol's native automator drives the stock/AOSP Settings UI to find and tap the airplane-mode toggle. Android 35 images can omit the Quick Settings tile, and OEM skins can relocate or rename the control, so the lookup may return 404 even on a healthy device.
 
-**Workaround**: run the native suite against a closer-to-stock Android target instead — e.g. one of the Pixel-profile AVDs already available locally:
+`PatrolFlow.withAirplaneMode` handles the known Android 404/missing-toggle
+failure by disabling both Wi-Fi and cellular through Patrol, then restoring
+both transports in `finally`. Unrelated native failures still fail the test;
+the fallback does not skip or weaken the offline assertions. If an OEM blocks
+both mechanisms, validate on a stock API 35 AVD or a real Pixel:
 
 ```bash
-flutter emulators --launch flutter_emulator        # use a stock API 34 AVD
+flutter emulators --launch flutter_emulator        # use a stock API 35 AVD
 flutter devices                                     # copy the emulator-XXXX id
 patrol test -t patrol_test/native_test.dart --device emulator-XXXX
 ```
 
-A real Pixel device works too. If you must validate on an OEM-skinned phone, treat the airplane-mode-dependent scenarios (`shows offline banner...`, `shows snackbar when tapping undownloaded lecture offline`, `blocks skip-next offline...`) as **manual** checks on that device rather than relying on the automated native step.
+A real Pixel device works too. If both native toggle paths fail on an OEM-skinned phone, treat the three airplane-mode-dependent scenarios as manual checks on that device and keep the stock-emulator gate as the automated evidence.
 
 ---
 
@@ -236,6 +242,9 @@ make release-apk DEVICE=<id>   # validation + discovered Patrol gate + APK
 generators, then runs Patrol and requires at least one discovered test. A
 successful process with `Total: 0` is intentionally rejected; Android 16/API
 36 therefore cannot satisfy this release gate with the current Patrol pins.
+The local release APK packaging step additionally requires the signing
+`storeFile`; without that local keystore, debug APK builds and the preceding
+validation gates can still pass, but a signed release artifact cannot be made.
 
 Pre-push hook (`.githooks/pre-push`): `flutter analyze` + `flutter test` — no device tests.
 

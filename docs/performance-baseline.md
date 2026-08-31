@@ -1,7 +1,8 @@
 # Performance baseline
 
-Status: the baseline is pending a physical-device profile-mode run. No
-measured values are recorded in this repository yet. The ceilings in
+Status: the physical baseline is pending a physical-device profile-mode run.
+The automated emulator smoke passes all three scenarios, but those timings are
+diagnostic only and are not recorded as the physical baseline. The ceilings in
 `integration_test/performance_test.dart` are regression limits, not baseline
 measurements.
 
@@ -21,6 +22,10 @@ harness smoke validation, use `make perf-smoke DEVICE=<android-emulator-id>`.
 Smoke mode executes every scenario and requires nonempty timing data, but does
 not fail on device-sensitive build/raster ceilings and must not be recorded as
 the physical baseline.
+
+Latest emulator smoke: `lecture_list_scroll`, `book_reader_scroll`, and
+`book_page_turn` all produced nonempty timings and passed on the Android test
+emulator. No physical-device values are claimed here.
 
 The command uses `flutter drive --profile` and prints one `PERF[...]` line for
 each scenario (`lecture_list_scroll`, `book_reader_scroll`, and, when the
@@ -87,6 +92,12 @@ fresh-install sample, so no sample silently becomes a returning-user run. It
 captures the native logcat marker, keeps raw drive and logcat logs under
 `build/cold-start/`, and prints a median/min/max summary. Keep the cohorts and
 their summaries separate; never combine them into one startup number.
+
+Latest emulator diagnostic (Android 35, three samples per cohort; not a
+physical baseline): fresh install `3224/3190/3173 ms` (median `3190 ms`, min
+`3173 ms`, max `3224 ms`); returning user `2477/2475/2550 ms` (median `2477
+ms`, min `2475 ms`, max `2550 ms`). These numbers prove the runner and cohort
+separation, not a release performance budget.
 
 For a manual physical profile-mode run, use the same cohort rules and fill the
 pending fields below:

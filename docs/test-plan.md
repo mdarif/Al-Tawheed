@@ -6,8 +6,8 @@ backlog is [quality-backlog.md](quality-backlog.md).
 
 ## How this is prioritized
 
-**Not by coverage %.** The suite has 511 passing tests (with two intentional
-skips), and the gaps are not where the
+**Not by coverage %.** The suite has 582 passing unit/widget tests (with two
+intentional skips), plus 16 release-tool tests, and the gaps are not where the
 percentage is lowest. Every item below is ranked by:
 
 > *Has this class of bug actually shipped in this repo?* × *what does it cost
@@ -220,7 +220,7 @@ Ranked by size × reachability, not by principle:
 | `lib/services/catalog_service.dart` | ✅ `catalog_service_test` — cache-key namespacing + version guard (the 2.3.0-shape gap) |
 | `lib/services/series_manifest_service.dart` | ✅ `series_manifest_service_test` — `cachedManifest()` parse/skip/fallback (runs every cold start) |
 | `lib/screens/bookmarks_screen.dart` | ✅ `bookmarks_screen_test` — empty / filter+count / live removal / tap-through |
-| `lib/audio/player_notifier.dart` | ⬜ 221 lines, ~50%, incidental only. The app's most stateful class — still the biggest P2 gap |
+| `lib/audio/player_notifier.dart` | ✅ Direct notifier coverage exercises load/resume, buffering/error/retry, completion, deletion, queue policy, persistence, and stale callbacks. |
 | `lib/utils/study_session.dart` | ⬜ NOTE: not "pure logic" as first thought — it's context/provider/nav-coupled, so it needs a widget harness (guards: catalog-null, lecture-null, chapter-not-in-catalog early returns) |
 | `lib/data/content_i18n_overlay.dart` | ⬜ 167 lines, no test imports it |
 | `lib/widgets/study/study_dashboard_card.dart` | ⬜ 288 lines — the largest widget — reachable only through `study_screen_test.dart`'s 3 tests |
@@ -230,18 +230,17 @@ Ranked by size × reachability, not by principle:
 
 ## P3 — the "best UX in the industry" bar
 
-### 7. Accessibility — 🟡 the marquee gap is closed; contrast is a live finding
+### 7. Accessibility — ✅ delivered scope covered
 
 | # | Test | Status |
 |---|---|---|
-| 7.1 | `textContrastGuideline`, light + dark | ⚠️ **FINDING (owner call):** the muted/secondary text colour (~`#8E8E93`) gives **4.27:1** at 14px — below WCAG AA (4.5:1) — in **both** themes. Not the brand gold; the stat-label grey. Fixing means darkening the secondary text colour **app-wide** (a theme decision), so it's surfaced here rather than changed unilaterally. Re-run `meetsGuideline(textContrastGuideline)` once the colour is chosen. |
+| 7.1 | `textContrastGuideline`, light + dark | ✅ semantic secondary, chip, and streaming-strip roles meet WCAG AA in both themes |
 | 7.2 | `android`/`iOSTapTargetGuideline` | ✅ `player_screen_test` — and fixed the 28px offline strip to a 48px hit area |
 | 7.3 | `labeledTapTargetGuideline` + per-control labels | ✅ `player_screen_test` — the five transport controls + the collapse button were unlabelled; now tooltipped (which carries the screen-reader label). 6 ARB strings ×4 locales. |
-| 7.4 | Screen-reader pass: seek bar announces position/duration; `«»`/`﴾﴿` not read as punctuation soup | ⬜ open — needs a semantics-tree assertion on the reader + seek bar |
+| 7.4 | Screen-reader pass: reader text exposes useful semantics and `«»`/`﴾﴿` are not announced as punctuation soup | ✅ semantics-tree assertion in `book_reader_screen_test` |
 
-The most defensible "not industry-best" claim — unlabelled transport controls on
-an audio app — is **fixed**. Contrast (7.1) is the remaining accessibility item
-and it needs a design decision, not just a test.
+The previously unlabelled transport controls and the contrast finding are fixed;
+the remaining dynamic-type items below are follow-up coverage.
 
 ### 8. Dynamic type / text scaling — 🟡 About strip guarded
 
@@ -253,11 +252,13 @@ and it needs a design decision, not just a test.
 - 8.1 ⬜ other key screens (lecture list, settings, player) at 2.0 still open.
 - 8.2 ⬜ Book reader at max scale + Nastaliq: no clipped diacritics.
 
-### 9. Performance — zero today
+### 9. Performance — 🟡 physical evidence remains open
 
 - 9.1 `traceAction` on book-reader scroll (67 chapters, Nastaliq) and the
-  91-lecture list; assert p90 frame budget.
-- 9.2 Cold-start-to-interactive budget.
+  91-lecture list; assert p90 frame budget — emulator smoke is automated, but
+  the physical baseline is still open.
+- 9.2 Cold-start-to-interactive budget — ✅ automated fresh/returning emulator
+  cohorts; timings are not a physical baseline.
 
 ### 10. Offline/edge matrix (already strong — these are the holes)
 
