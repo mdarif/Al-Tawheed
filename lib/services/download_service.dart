@@ -4,9 +4,52 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:myapp/models/series.dart';
 
+/// Base type for failures that can be surfaced by an audio download.
+abstract class DownloadException implements Exception {
+  const DownloadException(this.detail);
+
+  final String detail;
+
+  @override
+  String toString() => '$runtimeType: $detail';
+}
+
 /// Thrown when a download is cancelled via [DownloadService.cancel].
-class DownloadCancelled implements Exception {
-  const DownloadCancelled();
+///
+/// This keeps its existing public name so callers that already distinguish a
+/// user cancellation continue to do so.
+class DownloadCancelled extends DownloadException {
+  const DownloadCancelled() : super('download cancelled');
+}
+
+/// The streamed bytes did not match a catalog size or HTTP `Content-Length`.
+class DownloadIntegrityException extends DownloadException {
+  const DownloadIntegrityException(super.detail);
+}
+
+/// A non-retry-policy HTTP or transport error (invalid URL, connection drop,
+/// or an unexpected non-success response).
+class DownloadTransferException extends DownloadException {
+  const DownloadTransferException(super.detail);
+}
+
+/// The CDN asked the app to back off (`429`) or reported a transient server
+/// failure (`5xx`).
+class RateLimitedException extends DownloadException {
+  RateLimitedException({
+    required this.url,
+    required this.statusCode,
+    this.retryAfter,
+  }) : super('$url: HTTP $statusCode');
+
+  final Uri url;
+  final int statusCode;
+  final Duration? retryAfter;
+}
+
+/// The operating system reported that the device has no usable free storage.
+class InsufficientStorageException extends DownloadException {
+  const InsufficientStorageException(super.detail);
 }
 
 final _safeSegment = RegExp(r'^[A-Za-z0-9._-]+$');
@@ -100,6 +143,12 @@ class DownloadService {
   static String? _documentsPath;
   static final Map<String, _ActiveDownload> _active = {};
 
+  /// Test-only seam for exercising OS storage failures without relying on a
+  /// device-specific full disk. It intentionally runs immediately before the
+  /// `.part` file is opened, so production still has exactly one write path.
+  @visibleForTesting
+  static Future<void> Function(File partFile)? beforePartFileOpenForTest;
+
   /// Must be called before any other method.
   static Future<void> init() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -144,9 +193,15 @@ class DownloadService {
     _active[cancelKey]?.cancel();
   }
 
-  /// Downloads [url] to [savePath] streaming progress via [onProgress] (0.0–1.0).
-  /// Pass [cancelKey] so [cancel] can abort this transfer.
-  /// Cleans up partial file on failure or cancellation and rethrows.
+  /// Downloads [url] to a sibling `.part` file, verifies its bytes, and then
+  /// atomically promotes it to [savePath]. [fileSizeBytes] comes from the
+  /// catalog; if it is unknown, a response `Content-Length` is used instead.
+  ///
+  /// Pass [cancelKey] so [cancel] can abort this transfer. Failures are typed:
+  /// [DownloadCancelled], [DownloadIntegrityException],
+  /// [DownloadTransferException], [RateLimitedException], and
+  /// [InsufficientStorageException]. A failed attempt only removes its `.part`
+  /// file, never an already-complete [savePath].
   static Future<void> download({
     required String cancelKey,
     required String url,
@@ -154,52 +209,95 @@ class DownloadService {
     required int fileSizeBytes,
     required void Function(double progress) onProgress,
   }) async {
-    final file = File(savePath);
-    await file.parent.create(recursive: true);
+    final destination = File(savePath);
+    final partFile = File('$savePath.part');
 
     final client = HttpClient();
     final active = _ActiveDownload(client);
     _active[cancelKey] = active;
 
     try {
+      await destination.parent.create(recursive: true);
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
 
-      if (response.statusCode != 200) {
-        throw Exception('Download failed — HTTP ${response.statusCode}');
+      if (response.statusCode == HttpStatus.tooManyRequests ||
+          response.statusCode >= HttpStatus.internalServerError) {
+        throw RateLimitedException(
+          url: Uri.parse(url),
+          statusCode: response.statusCode,
+          retryAfter: _parseRetryAfter(response.headers),
+        );
+      }
+      if (response.statusCode != HttpStatus.ok) {
+        throw DownloadTransferException(
+          '$url: HTTP ${response.statusCode}',
+        );
       }
 
-      int received = 0;
-      final sink = file.openWrite();
+      final expectedBytes = fileSizeBytes > 0
+          ? fileSizeBytes
+          : response.contentLength >= 0
+              ? response.contentLength
+              : null;
+      var received = 0;
+      await beforePartFileOpenForTest?.call(partFile);
+      final sink = partFile.openWrite();
       try {
         await for (final chunk in response) {
           if (active.cancelled) throw const DownloadCancelled();
           sink.add(chunk);
           received += chunk.length;
-          if (fileSizeBytes > 0) {
-            onProgress((received / fileSizeBytes).clamp(0.0, 1.0));
+          if (expectedBytes != null && expectedBytes > 0) {
+            onProgress((received / expectedBytes).clamp(0.0, 1.0));
           }
         }
+      } catch (_) {
+        // Dart's HTTP client can report a premature close as a stream error
+        // before the loop reaches its post-stream byte check. If a size was
+        // declared, it is still an integrity failure, not an opaque transfer
+        // failure.
+        if (active.cancelled) throw const DownloadCancelled();
+        if (expectedBytes != null && received != expectedBytes) {
+          throw DownloadIntegrityException(
+            '$url: expected $expectedBytes bytes, got $received',
+          );
+        }
+        rethrow;
       } finally {
         await sink.close();
       }
-    } catch (e) {
-      // Best-effort partial-file cleanup. A concurrent delete() (user deleting
-      // an actively-downloading lecture) races to remove the same file, so
-      // tolerate its absence — otherwise the loser throws PathNotFoundException
-      // and this future rejects with that instead of DownloadCancelled.
-      try {
-        if (await file.exists()) await file.delete();
-      } on PathNotFoundException {
-        // Already removed by a concurrent delete() — the desired outcome.
+
+      if (active.cancelled) throw const DownloadCancelled();
+      if (expectedBytes != null && received != expectedBytes) {
+        throw DownloadIntegrityException(
+          '$url: expected $expectedBytes bytes, got $received',
+        );
       }
-      if (active.cancelled || e is DownloadCancelled) {
-        throw const DownloadCancelled();
+
+      // POSIX rename replaces an existing destination atomically on Android
+      // and iOS. Only a fully verified `.part` reaches this line.
+      await partFile.rename(destination.path);
+    } on FileSystemException catch (error) {
+      if (_isStorageError(error)) {
+        throw InsufficientStorageException('$savePath: $error');
       }
+      throw DownloadTransferException('$url: $error');
+    } on DownloadException {
       rethrow;
+    } catch (error) {
+      if (active.cancelled) throw const DownloadCancelled();
+      throw DownloadTransferException('$url: $error');
     } finally {
       _active.remove(cancelKey);
       client.close();
+      // Best-effort cleanup. A concurrent delete() can race this path; if it
+      // already removed the file, that is the intended final state.
+      try {
+        if (await partFile.exists()) await partFile.delete();
+      } on PathNotFoundException {
+        // Already removed by concurrent delete cleanup.
+      }
     }
   }
 
@@ -215,6 +313,8 @@ class DownloadService {
     try {
       final file = File(localPath(lectureId, seriesId: seriesId));
       if (await file.exists()) await file.delete();
+      final partFile = File('${file.path}.part');
+      if (await partFile.exists()) await partFile.delete();
     } on PathNotFoundException {
       // Already removed by cancel cleanup — nothing to do.
     }
@@ -243,5 +343,18 @@ class DownloadService {
     }
     _active.clear();
     _documentsPath = documentsPath;
+    beforePartFileOpenForTest = null;
+  }
+
+  static Duration? _parseRetryAfter(HttpHeaders headers) {
+    final raw = headers.value(HttpHeaders.retryAfterHeader);
+    final seconds = raw == null ? null : int.tryParse(raw.trim());
+    return seconds == null ? null : Duration(seconds: seconds);
+  }
+
+  static bool _isStorageError(FileSystemException error) {
+    final osError = error.osError;
+    return osError?.errorCode == 28 ||
+        osError?.message.toLowerCase().contains('no space') == true;
   }
 }

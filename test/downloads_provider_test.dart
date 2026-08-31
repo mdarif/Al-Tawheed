@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/downloads_provider.dart';
+import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,10 +30,18 @@ Lecture _lec(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late Directory tempDir;
+
   setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('downloads_provider_test_');
+    DownloadService.resetForTest(tempDir.path);
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+  });
+
+  tearDown(() async {
+    if (await tempDir.exists()) await tempDir.delete(recursive: true);
   });
 
   // ── Wi-Fi only preference ─────────────────────────────────────────────────
@@ -60,6 +71,18 @@ void main() {
       provider.addListener(() => fired++);
       await provider.setDownloadOnWifiOnly(true);
       expect(fired, 1);
+    });
+  });
+
+  group('download failures', () {
+    test('keeps failed status and exposes the typed transfer failure',
+        () async {
+      final provider = DownloadsProvider();
+
+      await provider.download(_lec('bad-url', audioUrl: 'not a URL'));
+
+      expect(provider.statusFor('bad-url'), DownloadStatus.failed);
+      expect(provider.failureFor('bad-url'), isA<DownloadTransferException>());
     });
   });
 

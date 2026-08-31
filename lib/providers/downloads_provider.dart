@@ -22,6 +22,7 @@ class DownloadsProvider extends ChangeNotifier {
 
   final Map<String, DownloadStatus> _statuses = {};
   final Map<String, double> _progress = {};
+  final Map<String, DownloadException> _failures = {};
   Set<String> _downloadedIds = {};
   int _totalDownloadedBytes = 0;
   final Set<String> _downloadingChapterIds = {};
@@ -66,6 +67,7 @@ class DownloadsProvider extends ChangeNotifier {
   Future<void> reload() async {
     _statuses.clear();
     _progress.clear();
+    _failures.clear();
     _downloadedIds = {};
     _totalDownloadedBytes = 0;
     _downloadingChapterIds.clear();
@@ -81,6 +83,12 @@ class DownloadsProvider extends ChangeNotifier {
       _statuses[lectureId] ?? DownloadStatus.notDownloaded;
 
   double progressFor(String lectureId) => _progress[lectureId] ?? 0.0;
+
+  /// The typed reason for a failed download, if its latest attempt failed.
+  /// Existing consumers can keep using [statusFor]; this gives future owned UI
+  /// a safe way to distinguish an integrity failure from a CDN backoff or a
+  /// device-storage problem.
+  DownloadException? failureFor(String lectureId) => _failures[lectureId];
 
   bool isDownloaded(String lectureId) =>
       statusFor(lectureId) == DownloadStatus.downloaded;
@@ -160,6 +168,7 @@ class DownloadsProvider extends ChangeNotifier {
 
     _statuses[lecture.id] = DownloadStatus.downloading;
     _progress[lecture.id] = 0.0;
+    _failures.remove(lecture.id);
     notifyListeners();
 
     var lastNotifiedProgress = -1.0;
@@ -207,11 +216,20 @@ class DownloadsProvider extends ChangeNotifier {
       );
     } on DownloadCancelled {
       _resetAfterCancel(lecture.id);
+    } on DownloadException catch (error) {
+      debugPrint('DownloadsProvider: download error for ${lecture.id}: $error');
+      if (_statuses[lecture.id] == DownloadStatus.downloading) {
+        _statuses[lecture.id] = DownloadStatus.failed;
+        _progress.remove(lecture.id);
+        _failures[lecture.id] = error;
+        unawaited(DownloadNotificationService.instance.dismiss(lecture.id));
+      }
     } catch (e) {
       debugPrint('DownloadsProvider: download error for ${lecture.id}: $e');
       if (_statuses[lecture.id] == DownloadStatus.downloading) {
         _statuses[lecture.id] = DownloadStatus.failed;
         _progress.remove(lecture.id);
+        _failures[lecture.id] = DownloadTransferException('$e');
         unawaited(DownloadNotificationService.instance.dismiss(lecture.id));
       }
     }
@@ -267,6 +285,7 @@ class DownloadsProvider extends ChangeNotifier {
     await DownloadService.delete(lectureId, seriesId: _seriesId);
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _downloadedIds.remove(lectureId);
+    _failures.remove(lectureId);
     await PreferencesService.instance
         .saveDownloadedIds(_downloadedIds, prefix: _prefix);
     _reduceTotalBytes(freed);
@@ -301,6 +320,7 @@ class DownloadsProvider extends ChangeNotifier {
       }
     }
     _statuses.clear();
+    _failures.clear();
     _downloadedIds.clear();
     _totalDownloadedBytes = 0;
     await PreferencesService.instance.saveDownloadedIds({}, prefix: _prefix);
@@ -315,6 +335,7 @@ class DownloadsProvider extends ChangeNotifier {
   void _resetAfterCancel(String lectureId) {
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _progress.remove(lectureId);
+    _failures.remove(lectureId);
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
   }
 
