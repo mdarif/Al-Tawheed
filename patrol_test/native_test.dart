@@ -253,16 +253,18 @@ void main() {
 
       await AppFlow.startDownloadFromListTile($.tester);
       await AppFlow.openFirstLecture($.tester);
-      await AppFlow.waitForDownloadProgressOrComplete($.tester);
-
-      if (!$.tester.any(find.textContaining('Downloading'))) {
-        return;
-      }
-
       var shadeOpened = false;
       try {
+        await AppFlow.waitForDownloadProgressOrComplete($.tester);
+        if (!$.tester.any(find.textContaining('Downloading'))) {
+          return;
+        }
+
         await $.platform.mobile.openNotifications();
         shadeOpened = true;
+        // getNotifications() traverses legacy SystemUI container IDs that
+        // time out on API 35. The download title is stable and identifies
+        // this notification without depending on SystemUI's container tree.
         await $.platform.mobile.waitUntilVisible(
           Selector(text: lectureTitle),
           timeout: const Duration(seconds: 15),
