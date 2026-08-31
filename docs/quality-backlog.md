@@ -27,6 +27,9 @@ sequencing; this page records the quality truth that active docs should use.
 
 ## Open work
 
+- Persist and resume queued/chapter download jobs across process death; current
+  download jobs are in memory only.
+
 | Priority | Follow-up | Owner phase |
 |---|---|---|
 | P1 | Stable keys for high-value E2E controls; separate validation tests from screenshot generation; document Patrol/Android 16 discovery limits; make the release gate truthful. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
