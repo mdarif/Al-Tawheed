@@ -17,10 +17,10 @@ show offline status, and manage saved lectures from the Offline Library.
 
 | Piece | Behaviour |
 |-------|-----------|
-| Storage | `{documents}/audio/{lectureId}.mp3` per lecture |
+| Storage | Per-series files under `{documents}/audio/{storagePrefix}/{lectureId}.mp3` |
 | Playback | `PlayerNotifier` uses local file if downloaded, else stream |
 | Catalog | Stale-while-revalidate JSON cache (offline OK if opened online before) |
-| UI | Download icon on lecture row + player app bar; Settings shows count/size |
+| UI | Download icon on lecture row/player, chapter download, Offline Library, and Settings count/size |
 
 ### Remaining follow-ups
 
@@ -90,7 +90,7 @@ Replace icon-only `DownloadButton` in app bar as primary entry; keep icon as sec
 - Offline + not downloaded: muted row, tap → snackbar: “Download on Wi‑Fi to listen offline.”
 - Class header action (P1): “Download class” (~N MB).
 
-### 5.3 Offline Library — Settings (P1)
+### 5.3 Offline Library — Settings (shipped)
 
 Rename/enhance **Downloads** section:
 
@@ -104,9 +104,10 @@ Rename/enhance **Downloads** section:
 - When offline: subtle **Offline** chip in app bar (optional).
 - Pull-to-refresh messaging on the lectures surface (if product requires it).
 
-### 5.5 Copy & i18n
+### 5.5 Copy & i18n (shipped)
 
-All new strings in `app_en.arb`, `app_ur.arb`, `app_ur_roman.arb` before release.
+Offline strings are present in all four ARB locales: `app_en.arb`, `app_ar.arb`,
+`app_ur.arb`, and `app_ur_roman.arb`.
 
 ---
 
@@ -127,18 +128,18 @@ All new strings in `app_en.arb`, `app_ur.arb`, `app_ur_roman.arb` before release
 
 **Estimate:** 3–5 dev days + QA.
 
-### Phase 2 — Same release or fast follow (P1)
+### Phase 2 — shipped
 
 | Task | Details |
 |------|---------|
-| `downloadChapter(chapterId)` | Queue all lectures in class |
-| Download queue | Serial jobs, cancel, persist in-progress (optional) |
+| `downloadChapter(chapterId)` | Queue all lectures in a chapter |
+| Download queue | Serial jobs with cancellation |
 | Offline Library screen | Full list UI in Settings |
-| Wi‑Fi only setting | Defer cellular downloads |
+| Wi‑Fi only setting | Persisted preference blocks cellular downloads |
 
 ### Phase 3 — Later (P2)
 
-- Download progress in system notification (Android)
+- Download progress in system notification (Android, shipped)
 - “Download Continue Listening + next 2 parts” suggestion on the lectures surface
 - Study Mode offline rules (document which parts count if mixed)
 - iOS background download behaviour audit

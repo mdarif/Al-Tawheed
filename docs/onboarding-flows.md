@@ -21,9 +21,11 @@ preconditions, the screens seen, and the final state.
 
 ## Route Redirect (app.dart)
 
-The `/` route has a redirect guard:
-- If `hasCompletedOnboarding == true` → redirect to `/lectures` (user never sees WelcomeScreen)
-- Otherwise → show `WelcomeScreen`
+The `/` route asks `SeriesProvider.shouldShowWelcomeForCurrentSeries`. A
+returning user, or a user who has already seen the active edition's welcome,
+redirects to `/lectures`; otherwise it builds `WelcomeScreen`. The provider
+waits for definitive feature-flag/manifest resolution before welcome content is
+shown, preventing an Urdu fallback flash.
 
 ---
 
@@ -33,7 +35,7 @@ The `/` route has a redirect guard:
 
 **Flow:**
 1. App starts → `/` route redirect fires
-2. `hasCompletedOnboarding` is `true` → redirect to `/lectures`
+2. `shouldShowWelcomeForCurrentSeries` is `false` → redirect to `/lectures`
 3. User never sees WelcomeScreen or ChooseSeriesScreen
 
 **Final state:** Lands on `/lectures` immediately
@@ -55,10 +57,10 @@ Urdu-only app and updates to v3.
    - If `multiSeriesEnabled == false`: `_currentId = legacyId` → `hasSelectedSeries = true`
    - If `multiSeriesEnabled == true`: `_hasLegacyData() == true` → `_currentId = legacyId`, saved to prefs → `hasSelectedSeries = true`
 2. Either way, user is pinned to Urdu series silently
-3. `/` route redirect: `hasCompletedOnboarding` is `false` → show WelcomeScreen
+3. `/` route checks `shouldShowWelcomeForCurrentSeries`; show the edition welcome when unseen
 4. WelcomeScreen shows the Urdu welcome splash (book icon, "Sharah Kitab at-Tawheed", "START LISTENING")
 5. User taps "START LISTENING"
-6. `_startListening()`: `hasSelectedSeries == true` → `completeOnboarding()` → `context.go('/lectures')`
+6. `_startListening()`: `hasSelectedSeries == true` → `markWelcomeSeenForCurrentSeries()` → `context.go('/lectures')`
 
 **Final state:** Sees WelcomeScreen once → taps CTA → lands on `/lectures`. Never sees ChooseSeriesScreen.
 
@@ -72,10 +74,10 @@ Urdu-only app and updates to v3.
 
 **Flow:**
 1. `SeriesProvider.load(false)`: `_currentId = legacyId` → `hasSelectedSeries = true`
-2. `/` route: `hasCompletedOnboarding = false` → show WelcomeScreen
+2. `/` route: `shouldShowWelcomeForCurrentSeries = true` → show WelcomeScreen
 3. WelcomeScreen shows Urdu welcome splash
 4. User taps "START LISTENING"
-5. `_startListening()`: `hasSelectedSeries == true` → `completeOnboarding()` → `/lectures`
+5. `_startListening()`: `hasSelectedSeries == true` → `markWelcomeSeenForCurrentSeries()` → `/lectures`
 
 **Final state:** Sees WelcomeScreen → taps CTA → `/lectures`. Never sees ChooseSeriesScreen.
 
@@ -91,13 +93,13 @@ Urdu-only app and updates to v3.
 **Flow:**
 1. `SeriesProvider.load(true)`: no saved id, no legacy data → `_currentId = null`, `_isLoading = true`
 2. `loadManifest()` fetches series.json → `_maybeDefaultToArabic()`: device is not Arabic, skips → `_currentId` stays null, `_isLoading = false`
-3. `/` route: `hasCompletedOnboarding = false` → show WelcomeScreen
-4. WelcomeScreen: `isSeriesReady = true`, `hasSelectedSeries = false` → shows Urdu fallback content (because `currentSeries` falls back to `legacyUrduFallback`)
+3. `/` route: `shouldShowWelcomeForCurrentSeries = true` → show WelcomeScreen
+4. WelcomeScreen: `isSeriesReady = true`, `hasSelectedSeries = false` → shows Urdu fallback content
 5. User taps "START LISTENING"
 6. `_startListening()`: `hasSelectedSeries == false` → check `availableSeries.length > 1` → `true` → `context.push('/choose-series')`
 7. ChooseSeriesScreen shows cards for all available series
 8. User taps a card (e.g. Urdu)
-9. `_select()`: `switchSeries()` → `completeOnboarding()` → `context.go('/lectures')`
+9. `_select()`: `switchSeries()` → `context.go('/')`; the router shows a new edition's welcome, or redirects to `/lectures` if its welcome was already seen.
 
 **Final state:** WelcomeScreen → taps CTA → ChooseSeriesScreen → taps card → `/lectures`
 
@@ -116,7 +118,7 @@ Urdu-only app and updates to v3.
 3. `/` route: `hasCompletedOnboarding = false` → show WelcomeScreen
 4. WelcomeScreen: `isSeriesReady = true`, series is Arabic → shows Arabic welcome (sheikh photo, Arabic title, Arabic CTA)
 5. User taps "ابدأ الاستماع" (Start Listening in Arabic)
-6. `_startListening()`: `hasSelectedSeries == true` → `completeOnboarding()` → `/lectures`
+6. `_startListening()`: `hasSelectedSeries == true` → `markWelcomeSeenForCurrentSeries()` → `/lectures`
 
 **Final state:** Arabic WelcomeScreen → taps CTA → `/lectures`. Never sees ChooseSeriesScreen.
 
@@ -134,7 +136,7 @@ Urdu-only app and updates to v3.
 2. `loadManifest()`: only one series available, not Arabic device → `_currentId` stays null
 3. `/` route: show WelcomeScreen
 4. User taps "START LISTENING"
-5. `_startListening()`: `hasSelectedSeries == false`, `availableSeries.length == 1` → `switchSeries()` with the single series → `completeOnboarding()` → `/lectures`
+5. `_startListening()`: `hasSelectedSeries == false`, `availableSeries.length == 1` → `switchSeries()` with the single series → `markWelcomeSeenForCurrentSeries()` → `/lectures`
 
 **Final state:** WelcomeScreen → taps CTA → `/lectures`. No ChooseSeriesScreen (only one option).
 
@@ -163,9 +165,9 @@ Urdu-only app and updates to v3.
 
 **Flow:**
 1. `SeriesProvider.load(true)`: saved id found → `_currentId = savedId`, `_isLoading = false`
-2. `/` route: `hasCompletedOnboarding = true` → redirect to `/lectures`
+2. `/` route checks the saved edition's seen marker: it redirects to `/lectures` if seen, otherwise shows that edition's WelcomeScreen.
 
-**Final state:** Straight to `/lectures`
+**Final state:** Straight to `/lectures` when that edition was already seen; otherwise its welcome appears once.
 
 ---
 
@@ -181,7 +183,7 @@ Urdu-only app and updates to v3.
 | Arabic native subtitle | Shows `شرح كتاب التوحيد` (Arabic script) |
 | Urdu native subtitle | Shows `شرح کتاب التوحید` (Urdu script) |
 | Card elevation | `Material` with `elevation: 2` for tappable affordance |
-| Tap a card | `switchSeries()` → `completeOnboarding()` → `context.go('/lectures')` |
+| Tap a card | `switchSeries()` → `context.go('/')`; the router decides whether the new edition's welcome is needed |
 | Loading state | Tapped card shows dimmed overlay + small spinner; other cards are `AbsorbPointer`-blocked |
 | Double-tap guard | `_selectingId` prevents concurrent taps |
 
@@ -210,4 +212,4 @@ Urdu-only app and updates to v3.
 
 4. **Series switching from Settings** — existing users can switch series from Settings without ever touching ChooseSeriesScreen. Uses the same `switchSeries()` function but does not re-run onboarding.
 
-5. **`completeOnboarding()` is idempotent** — calling it when already `true` is a no-op. Safe to call from multiple paths.
+5. **`markWelcomeSeenForCurrentSeries()` is idempotent** — each edition's welcome is recorded independently; switching editions can therefore show a new edition welcome once.

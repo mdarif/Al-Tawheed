@@ -13,9 +13,9 @@
 ---
 
 <p align="center">
-  <img src="docs/play-store/Phone%20Screenshots%20/v2-thin-bezel/01-welcome-framed.png" width="30%" alt="Welcome screen" />
+  <img src="docs/play-store/v3/framed/01-welcome-framed.png" width="30%" alt="Welcome screen" />
   &nbsp;&nbsp;
-  <img src="docs/play-store/Phone%20Screenshots%20/v2-thin-bezel/03-player-framed.png" width="30%" alt="Audio player" />
+  <img src="docs/play-store/v3/framed/05-player-ar-framed.png" width="30%" alt="Arabic audio player" />
   &nbsp;&nbsp;
   <img src="docs/play-store/v3/framed/06-lectures-ur-framed.png" width="30%" alt="Lectures screen" />
 </p>
@@ -30,6 +30,7 @@
 - **Background audio** — lock-screen controls and notification transport on Android and iOS
 - **Multilingual** — English, Urdu, and Roman Urdu interface
 - **Arabic Book** — read the complete Arabic text alongside the Arabic series
+- **Urdu Book** — read the bundled Urdu book text alongside the Urdu series
 - **Bookmarks** — save any lecture to revisit later
 - **Variable speed** — 0.75× to 2.0× playback
 

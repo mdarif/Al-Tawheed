@@ -27,7 +27,8 @@ Al-Tawheed-Content (GitHub)
         ├── tawheed/catalog.json          ← lectures, chapters, benefits (exists)
         ├── tawheed/app-config.json       ← links, contact, share text
         ├── tawheed/feature-flags.json    ← remote feature toggles
-        └── tawheed/announcements.json    ← in-app banners/notices
+        ├── tawheed/announcements.json    ← in-app banners/notices
+        └── series.json                   ← edition manifest and catalog URLs
 ```
 
 Audio files remain on Cloudflare R2 (unchanged).  
@@ -51,6 +52,13 @@ Al-Tawheed-Content/
 ```
 
 **Naming convention:** kebab-case, versioned via `version` field inside each JSON. URLs never change — content inside evolves.
+
+`series.json` is fetched from the CDN root. Each entry names an edition,
+language, storage prefix, capabilities (`hasBook`/`hasStudyMode`), and its
+catalog URL. The active edition's catalog is fetched separately; catalog cache
+keys are namespaced by series id (with the legacy Urdu `catalog` key retained
+for upgrade compatibility). The manifest itself uses the `series_manifest`
+cache key and the same stale-while-revalidate policy.
 
 ---
 
@@ -190,7 +198,11 @@ cache_announcements_json      cache_announcements_fetched_at
 
 - Each JSON file has `"version": N`
 - Each has a `maxSupported*Version` constant in `lib/app_config.dart`
-- Breaking changes (rename/remove field) → increment version; old app shows "Please update"
+- Breaking changes (rename/remove field) → increment version; unsupported
+  catalog/config/flags/announcement schemas are rejected with an update error
+  where that provider has a status surface. A malformed or empty series
+  manifest instead falls back to the bundled Urdu edition so onboarding is not
+  blocked.
 - Additive changes (new optional field) → no version bump needed
 - Audio files on R2: never mutate in-place; use a new filename if content changes
 
@@ -211,7 +223,10 @@ main()
                     └── PlayerNotifier            (exists)  — audio
 ```
 
-Each new provider: **cache → fetch in background → notify**. Never blocks startup.
+Each provider: **cache → fetch in background → notify**. Initial flags and
+series resolution are the exception: WelcomeScreen may wait until they are
+definitive to prevent painting the wrong edition for one frame. A cached or
+fallback manifest still keeps onboarding available offline.
 
 ---
 

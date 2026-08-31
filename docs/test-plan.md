@@ -1,8 +1,9 @@
-# Test plan — the gaps that matter
+# Test plan — historical gap analysis
 
 Companion to [testing.md](testing.md) (which is *how to run* the suite). This is
 *what is missing and why*, ranked. It is a living backlog: close an item, delete
-it from here, and leave the landmine in [gotchas.md](gotchas.md).
+it from here, and leave the landmine in [gotchas.md](gotchas.md). The current
+backlog is [quality-backlog.md](quality-backlog.md).
 
 ## How this is prioritized
 
@@ -20,7 +21,7 @@ commit. The four classes that actually recur here are:
    swung **three times**, each swing shipping a real regression. Now the
    best-tested area in the app.
 2. **Book content corruption** — 3 fixes touching 170+ text sites, including two
-   that *inverted the meaning of scripture*. **Effectively unguarded.**
+   that *inverted the meaning of scripture*.
 3. **Test-harness fidelity** — the repo's own meta-bug (below).
 4. **Release/CI toolchain** — one-shot latent traps, doc-only.
 
@@ -66,7 +67,8 @@ tashkeel strip has its own guard-the-guard test. `book_service_test.dart`'s fals
   carry more citations in Urdu by design. The truncation guard covers the real
   regression this was meant to catch.
 
-**Still open:** re-home a runnable content validator. The Dart integrity test now
+**Still open:** re-home a runnable content validator; track this in the
+[quality backlog](quality-backlog.md). The Dart integrity test now
 *is* that guard for the invariants above and runs in `make test`; the āyah-pairing
 QA harness that produced the 168 corrections still lives out-of-repo and cannot be
 re-run.
@@ -97,7 +99,8 @@ never committed. Same pattern as the builder script gotchas admits lives in
 | 1.6 | `_isMasailHeading` on real content: exactly 1 heading per Urdu chapter, 0 in Arabic | ✅ done |
 | 1.7 | Chapter-count + id-list, so a bad regen is loud | ✅ done (folded into 1.1) |
 
-**Still open — re-home a runnable validator.** The Dart integrity test is now that
+**Still open — re-home a runnable validator** (tracked in the
+[quality backlog](quality-backlog.md)). The Dart integrity test is now that
 guard for the invariants above and runs in `make test`. The out-of-repo
 āyah-pairing QA harness (`~/kat-urdu-work/`, `urdu_qa.md`) that produced the 168
 corrections still can't be re-run — that is the remaining memory-not-a-guard.

@@ -41,7 +41,7 @@ Use a **store screenshot generator** — upload your raw PNGs, pick Android phon
    | Welcome | Complete Sharah of Kitab at-Tawheed |
    | Lectures | 50 Lectures · 15 Classes |
    | Player | Listen in the Background |
-   | Home | Resume Where You Left Off |
+   | Settings | Manage downloads and playback |
    | Study | Study All Classes in Order |
    | About | By Shaikh Abdullah Nasir Rahmani |
 

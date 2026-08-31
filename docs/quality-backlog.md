@@ -9,6 +9,8 @@ sequencing; this page records the quality truth that active docs should use.
 - **Content integrity:** both bundled book editions are checked for chapter
   continuity, numbering, non-empty content, balanced markup, citation shape,
   and Urdu ayah truncation. See `test/book_content_integrity_test.dart`.
+  The external print/ayah-pairing validator still needs to be re-homed in the
+  repository so it can be rerun; this is an open backlog item below.
 - **Localization:** all four ARB files have matching keys and placeholders.
   See `test/arb_parity_test.dart`.
 - **Remote content:** catalog, app config, feature flags, announcements, and
@@ -32,6 +34,7 @@ sequencing; this page records the quality truth that active docs should use.
 | P3 | Injectable player seam and direct coverage for buffering, retry, completion, queue boundaries, local deletion, and disposal. | [P3](plans/maintenance-roadmap.md#p3--player-reliability) |
 | P4 | Semantic status colors, accessibility/large-text coverage, component vocabulary, and broader multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
 | P5 | Physical-device performance baseline, cold-start measurement, and centralized local navigation capability checks. | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
+| P0 follow-up | Re-home the external print/ayah-pairing content validator so scripture QA is reproducible. | P0 |
 
 ## Documentation rules
 
