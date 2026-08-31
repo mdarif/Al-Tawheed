@@ -67,15 +67,6 @@ void main() {
     'blocks skip-next offline with dialog when next part is not downloaded',
     ($) async {
       await PatrolFlow.bootstrapToLectures($);
-      final tiles = find.byType(LectureTile);
-      await AppFlow.waitFor(
-        $.tester,
-        tiles,
-        timeout: const Duration(seconds: 15),
-        reason: 'lecture list before reading notification title',
-      );
-      final lectureTitle =
-          $.tester.widget<LectureTile>(tiles.first).lecture.title.en;
       await AppFlow.openFirstLecture($.tester);
 
       await PatrolFlow.withAirplaneMode($, () async {
@@ -245,6 +236,15 @@ void main() {
       if (!Platform.isAndroid) return;
 
       await PatrolFlow.bootstrapToLectures($);
+      final tiles = find.byType(LectureTile);
+      await AppFlow.waitFor(
+        $.tester,
+        tiles,
+        timeout: const Duration(seconds: 15),
+        reason: 'lecture list before reading notification title',
+      );
+      final lectureTitle =
+          $.tester.widget<LectureTile>(tiles.first).lecture.title.en;
       await AppFlow.openFirstLecture($.tester);
       if ($.tester.any(find.text('Saved for offline'))) {
         await AppFlow.removeDownloadFromPlayer($.tester);
@@ -263,7 +263,7 @@ void main() {
       try {
         await $.platform.mobile.openNotifications();
         shadeOpened = true;
-        await $.platform.waitUntilVisible(
+        await $.platform.mobile.waitUntilVisible(
           Selector(text: lectureTitle),
           timeout: const Duration(seconds: 15),
         );
