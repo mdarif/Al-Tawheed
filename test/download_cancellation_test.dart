@@ -161,6 +161,27 @@ void main() {
     expect(provider.failureFor('rate-limit'), isA<RateLimitedException>());
   });
 
+  test('provider retains the service transfer failure detail', () async {
+    final (:server, :baseUrl) = await _startServer(
+      0,
+      statusCode: HttpStatus.notFound,
+    );
+    addTearDown(() => server.close(force: true));
+
+    final provider = DownloadsProvider();
+    await provider.download(_lec('not-found', bytes: 128, audioUrl: baseUrl));
+
+    expect(provider.statusFor('not-found'), DownloadStatus.failed);
+    expect(
+      provider.failureFor('not-found'),
+      isA<DownloadTransferException>().having(
+        (error) => error.detail,
+        'detail',
+        contains('HTTP 404'),
+      ),
+    );
+  });
+
   test('provider retains the concrete storage failure', () async {
     final (:server, :baseUrl) = await _startServer(128);
     addTearDown(() => server.close(force: true));
@@ -224,5 +245,45 @@ void main() {
       isTrue,
     );
     expect(DownloadService.existsSync('same-id'), isFalse);
+  });
+
+  test('A-to-B-to-A reload serializes a same-path retry', () async {
+    final (:server, :baseUrl) = await _startServer(128);
+    addTearDown(() => server.close(force: true));
+
+    var activeSeries = SeriesConfig.legacyUrduFallback;
+    final provider = DownloadsProvider.forSeries(() => activeSeries);
+    final firstAtPartOpen = Completer<void>();
+    final releaseFirst = Completer<void>();
+    var partOpenCount = 0;
+    DownloadService.beforePartFileOpenForTest = (_) async {
+      if (partOpenCount++ == 0) {
+        firstAtPartOpen.complete();
+        await releaseFirst.future;
+      }
+    };
+
+    final old = provider.download(
+      _lec('same-path', bytes: 128, audioUrl: baseUrl),
+    );
+    await firstAtPartOpen.future;
+
+    activeSeries = _arabicSeries;
+    await provider.reload();
+    activeSeries = SeriesConfig.legacyUrduFallback;
+    await provider.reload();
+
+    final retry = provider.download(
+      _lec('same-path', bytes: 128, audioUrl: baseUrl),
+    );
+    releaseFirst.complete();
+    await Future.wait([old, retry]);
+
+    expect(provider.statusFor('same-path'), DownloadStatus.downloaded);
+    expect(DownloadService.existsSync('same-path'), isTrue);
+    expect(
+      DownloadService.existsSync('same-path', seriesId: _arabicSeries.id),
+      isFalse,
+    );
   });
 }

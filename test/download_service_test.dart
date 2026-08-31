@@ -62,6 +62,15 @@ Future<({ServerSocket server, String baseUrl})>
   return (server: server, baseUrl: baseUrl);
 }
 
+Future<List<FileSystemEntity>> _partFilesFor(String savePath) async {
+  final parent = File(savePath).parent;
+  if (!await parent.exists()) return const [];
+  return parent
+      .list()
+      .where((entity) => entity.path.endsWith('.part'))
+      .toList();
+}
+
 void main() {
   late Directory tempDir;
 
@@ -113,7 +122,7 @@ void main() {
     );
 
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('uses response Content-Length when the catalog byte count is unknown',
@@ -151,7 +160,7 @@ void main() {
     );
 
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('does not promote a response shorter than its Content-Length', () async {
@@ -171,7 +180,7 @@ void main() {
     );
 
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('keeps an existing destination when verification fails', () async {
@@ -195,7 +204,7 @@ void main() {
     );
 
     expect(await existing.readAsBytes(), [7, 8, 9]);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('keeps the old destination visible until atomic replacement', () async {
@@ -223,12 +232,14 @@ void main() {
     await enteredPromotion.future;
 
     expect(await destination.readAsBytes(), [9, 9, 9]);
-    expect(await File('$savePath.part').exists(), isTrue);
+    final partPath = DownloadService.activePartPathForTest(savePath);
+    expect(partPath, isNotNull);
+    expect(await File(partPath!).exists(), isTrue);
 
     releasePromotion.complete();
     await done;
     expect(await destination.length(), 256);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('does not expose a new destination before promotion', () async {
@@ -253,18 +264,24 @@ void main() {
     await enteredPromotion.future;
 
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isTrue);
+    final partPath = DownloadService.activePartPathForTest(savePath);
+    expect(partPath, isNotNull);
+    expect(await File(partPath!).exists(), isTrue);
 
     releasePromotion.complete();
     await done;
     expect(await File(savePath).exists(), isTrue);
   });
 
-  test('cancellation at promotion removes the final destination', () async {
+  test('cancellation before promotion preserves an existing destination',
+      () async {
     final (:server, :baseUrl) = await _startServer(256);
     addTearDown(() => server.close(force: true));
 
     final savePath = '${tempDir.path}/audio/promotion-cancel.mp3';
+    final destination = File(savePath);
+    await destination.parent.create(recursive: true);
+    await destination.writeAsBytes([4, 5, 6]);
     final enteredPromotion = Completer<void>();
     final releasePromotion = Completer<void>();
     DownloadService.beforePromotionForTest = (_) async {
@@ -281,13 +298,94 @@ void main() {
     );
     final cancelled = expectLater(done, throwsA(isA<DownloadCancelled>()));
     await enteredPromotion.future;
-    DownloadService.cancel('promotion-cancel');
-    await File('$savePath.part').delete();
+    expect(DownloadService.cancel('promotion-cancel'), isTrue);
+    await File(DownloadService.activePartPathForTest(savePath)!).delete();
     releasePromotion.complete();
 
     await cancelled;
+    expect(await destination.readAsBytes(), [4, 5, 6]);
+    expect(await _partFilesFor(savePath), isEmpty);
+  });
+
+  test('cancellation after atomic rename leaves the successful file intact',
+      () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/post-rename-cancel.mp3';
+    final enteredAfterRename = Completer<void>();
+    final releaseAfterRename = Completer<void>();
+    DownloadService.afterPromotionForTest = (_) async {
+      enteredAfterRename.complete();
+      await releaseAfterRename.future;
+    };
+
+    final done = DownloadService.download(
+      cancelKey: 'post-rename-cancel',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    await enteredAfterRename.future;
+
+    expect(DownloadService.cancel('post-rename-cancel'), isFalse);
+    releaseAfterRename.complete();
+    await done;
+    expect(await File(savePath).length(), 256);
+  });
+
+  test('immediate retry waits for the old operation before owning the path',
+      () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/immediate-retry.mp3';
+    final firstAtPartOpen = Completer<void>();
+    final releaseFirst = Completer<void>();
+    var partOpenCount = 0;
+    DownloadService.beforePartFileOpenForTest = (_) async {
+      if (partOpenCount++ == 0) {
+        firstAtPartOpen.complete();
+        await releaseFirst.future;
+      }
+    };
+    final secondAtPromotion = Completer<void>();
+    final releaseSecond = Completer<void>();
+    DownloadService.beforePromotionForTest = (_) async {
+      secondAtPromotion.complete();
+      await releaseSecond.future;
+    };
+
+    final first = DownloadService.download(
+      cancelKey: 'retry',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    final firstCancelled =
+        expectLater(first, throwsA(isA<DownloadCancelled>()));
+    await firstAtPartOpen.future;
+
+    final second = DownloadService.download(
+      cancelKey: 'retry',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    releaseFirst.complete();
+    await firstCancelled;
+    await secondAtPromotion.future;
+
+    // The old finalizer has completed; this cancellation must still find the
+    // second operation, proving it did not unregister the retry's ownership.
+    expect(DownloadService.cancel('retry'), isTrue);
+    releaseSecond.complete();
+    await expectLater(second, throwsA(isA<DownloadCancelled>()));
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('classifies a CDN backoff response', () async {
@@ -359,7 +457,7 @@ void main() {
 
     await expectLater(done, throwsA(isA<DownloadCancelled>()));
     expect(await File(savePath).exists(), isFalse);
-    expect(await File('$savePath.part').exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
   });
 
   test('delete cancels an active download', () async {

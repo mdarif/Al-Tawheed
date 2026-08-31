@@ -242,6 +242,7 @@ class DownloadsProvider extends ChangeNotifier {
           lecture.id,
           seriesId: seriesId,
           cancelKey: downloadKey,
+          expectedOwnerKey: downloadKey,
         );
         return;
       }
@@ -295,12 +296,16 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   /// Aborts an in-flight download and clears progress immediately.
-  void cancelDownload(String lectureId) {
-    if (_statuses[lectureId] != DownloadStatus.downloading) return;
+  bool cancelDownload(String lectureId) {
+    if (_statuses[lectureId] != DownloadStatus.downloading) return false;
     final seriesId = _seriesId;
-    DownloadService.cancel(_downloadKey(lectureId, seriesId, _generation));
+    final cancelled = DownloadService.cancel(
+      _downloadKey(lectureId, seriesId, _generation),
+    );
+    if (!cancelled) return false;
     _resetAfterCancel(lectureId, seriesId: seriesId);
     notifyListeners();
+    return true;
   }
 
   /// Downloads all lectures in a chapter serially. Safe to call if already running.
@@ -339,13 +344,19 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   Future<void> delete(String lectureId) async {
-    if (isDownloading(lectureId)) {
-      cancelDownload(lectureId);
-      return;
-    }
     final generation = _generation;
     final seriesId = _seriesId;
     final prefix = _prefix;
+    if (isDownloading(lectureId)) {
+      if (cancelDownload(lectureId)) return;
+      // Promotion has begun. Mark the user intent now so the successful
+      // operation's completion cannot re-add the file while delete() waits for
+      // its finalizer and removes the captured-series destination.
+      _statuses[lectureId] = DownloadStatus.notDownloaded;
+      _progress.remove(lectureId);
+      _failures.remove(lectureId);
+      notifyListeners();
+    }
     unawaited(DownloadNotificationService.instance.dismiss(lectureId));
     // Read the size before deleting the file, then subtract incrementally.
     final freed = DownloadService.fileSizeSync(lectureId, seriesId: seriesId);

@@ -122,14 +122,28 @@ int totalBytesForIds(
 }
 
 class _ActiveDownload {
-  _ActiveDownload(this.client);
-  final HttpClient client;
-  bool cancelled = false;
+  _ActiveDownload(this.client, this.partFile);
 
-  void cancel() {
-    if (cancelled) return;
+  final HttpClient client;
+  final File partFile;
+  final Completer<void> _finished = Completer<void>();
+  bool cancelled = false;
+  bool promotionStarted = false;
+
+  /// Cancellation is accepted only before atomic promotion starts. Once a
+  /// verified file is entering `rename`, that commit is authoritative: callers
+  /// see a successful download and can explicitly delete it afterwards.
+  bool cancel() {
+    if (cancelled || promotionStarted) return false;
     cancelled = true;
     client.close(force: true);
+    return true;
+  }
+
+  Future<void> get finished => _finished.future;
+
+  void finish() {
+    if (!_finished.isCompleted) _finished.complete();
   }
 }
 
@@ -142,6 +156,9 @@ class DownloadService {
 
   static String? _documentsPath;
   static final Map<String, _ActiveDownload> _active = {};
+  static final Map<String, _ActiveDownload> _activeByDestination = {};
+  static final Map<String, String> _destinationOwnerKeys = {};
+  static int _nextOperationId = 0;
 
   /// Test-only seam for exercising OS storage failures without relying on a
   /// device-specific full disk. It intentionally runs immediately before the
@@ -153,6 +170,11 @@ class DownloadService {
   /// boundary between a fully-written `.part` and its atomic rename.
   @visibleForTesting
   static Future<void> Function(File partFile)? beforePromotionForTest;
+
+  /// Test-only post-rename barrier for defining cancellation semantics after a
+  /// verified atomic promotion has already committed.
+  @visibleForTesting
+  static Future<void> Function(File destination)? afterPromotionForTest;
 
   /// Must be called before any other method.
   static Future<void> init() async {
@@ -193,10 +215,9 @@ class DownloadService {
     }
   }
 
-  /// Aborts an in-flight download for [cancelKey] and deletes any partial file.
-  static void cancel(String cancelKey) {
-    _active[cancelKey]?.cancel();
-  }
+  /// Requests cancellation for [cancelKey]. Returns false after atomic
+  /// promotion has started, because that verified replacement must complete.
+  static bool cancel(String cancelKey) => _active[cancelKey]?.cancel() ?? false;
 
   /// Downloads [url] to a sibling `.part` file, verifies its bytes, and then
   /// atomically promotes it to [savePath]. [fileSizeBytes] comes from the
@@ -215,12 +236,13 @@ class DownloadService {
     required void Function(double progress) onProgress,
   }) async {
     final destination = File(savePath);
-    final partFile = File('$savePath.part');
+    await _cancelAndWaitForPrior(cancelKey, destination.path);
 
     final client = HttpClient();
-    final active = _ActiveDownload(client);
+    final partFile = File('$savePath.${++_nextOperationId}.part');
+    final active = _ActiveDownload(client, partFile);
     _active[cancelKey] = active;
-    var promoted = false;
+    _activeByDestination[destination.path] = active;
 
     try {
       await destination.parent.create(recursive: true);
@@ -294,9 +316,10 @@ class DownloadService {
       if (active.cancelled) throw const DownloadCancelled();
       // POSIX rename replaces an existing destination atomically on Android
       // and iOS. Only a fully verified `.part` reaches this line.
+      active.promotionStarted = true;
       await partFile.rename(destination.path);
-      promoted = true;
-      if (active.cancelled) throw const DownloadCancelled();
+      _destinationOwnerKeys[destination.path] = cancelKey;
+      await afterPromotionForTest?.call(destination);
     } on FileSystemException catch (error) {
       if (active.cancelled) throw const DownloadCancelled();
       if (_isStorageError(error)) {
@@ -309,7 +332,6 @@ class DownloadService {
       if (active.cancelled) throw const DownloadCancelled();
       throw DownloadTransferException('$url: $error');
     } finally {
-      _active.remove(cancelKey);
       client.close();
       // Best-effort cleanup. A concurrent delete() can race this path; if it
       // already removed the file, that is the intended final state.
@@ -318,14 +340,11 @@ class DownloadService {
       } on PathNotFoundException {
         // Already removed by concurrent delete cleanup.
       }
-      // A cancellation can land while `rename()` is in flight. Once that
-      // rename completes there is no `.part` left for the normal cleanup, so
-      // remove the promoted destination here and make cancellation win over
-      // any concurrent filesystem error or successful return.
-      if (active.cancelled) {
-        if (promoted) await _deleteIfExists(destination);
-        throw const DownloadCancelled();
+      if (identical(_active[cancelKey], active)) _active.remove(cancelKey);
+      if (identical(_activeByDestination[destination.path], active)) {
+        _activeByDestination.remove(destination.path);
       }
+      active.finish();
     }
   }
 
@@ -333,19 +352,24 @@ class DownloadService {
     String lectureId, {
     String seriesId = SeriesConfig.legacyId,
     String? cancelKey,
+    String? expectedOwnerKey,
   }) async {
-    cancel(cancelKey ?? lectureId);
-    // The cancel above is synchronous but its file-cleanup runs asynchronously.
-    // If the download's catch block deletes the partial file between our
-    // exists() check and delete() call, swallow the PathNotFoundException —
-    // the file is already gone, which is the desired outcome.
+    final file = File(localPath(lectureId, seriesId: seriesId));
+    await _cancelAndWaitForPrior(cancelKey ?? lectureId, file.path);
+    // A stale provider completion may only delete the destination it promoted.
+    // If a newer operation already owns this path, it must survive.
+    if (expectedOwnerKey != null &&
+        _destinationOwnerKeys[file.path] != expectedOwnerKey) {
+      return;
+    }
     try {
-      final file = File(localPath(lectureId, seriesId: seriesId));
       if (await file.exists()) await file.delete();
-      final partFile = File('${file.path}.part');
-      if (await partFile.exists()) await partFile.delete();
     } on PathNotFoundException {
       // Already removed by cancel cleanup — nothing to do.
+    }
+    if (expectedOwnerKey == null ||
+        _destinationOwnerKeys[file.path] == expectedOwnerKey) {
+      _destinationOwnerKeys.remove(file.path);
     }
   }
 
@@ -371,10 +395,18 @@ class DownloadService {
       active.cancel();
     }
     _active.clear();
+    _activeByDestination.clear();
+    _destinationOwnerKeys.clear();
+    _nextOperationId = 0;
     _documentsPath = documentsPath;
     beforePartFileOpenForTest = null;
     beforePromotionForTest = null;
+    afterPromotionForTest = null;
   }
+
+  @visibleForTesting
+  static String? activePartPathForTest(String savePath) =>
+      _activeByDestination[savePath]?.partFile.path;
 
   static Duration? _parseRetryAfter(HttpHeaders headers) {
     // The app currently has no retry scheduler, so retain only the simple
@@ -408,11 +440,17 @@ class DownloadService {
     }
   }
 
-  static Future<void> _deleteIfExists(File file) async {
-    try {
-      if (await file.exists()) await file.delete();
-    } on PathNotFoundException {
-      // Another cancellation/delete cleanup won the race.
+  static Future<void> _cancelAndWaitForPrior(
+    String cancelKey,
+    String destinationPath,
+  ) async {
+    final candidates = <_ActiveDownload>{
+      if (_active[cancelKey] case final active?) active,
+      if (_activeByDestination[destinationPath] case final active?) active,
+    };
+    for (final active in candidates) {
+      active.cancel();
     }
+    await Future.wait([for (final active in candidates) active.finished]);
   }
 }
