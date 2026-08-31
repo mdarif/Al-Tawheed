@@ -55,8 +55,8 @@ void main() {
             'COLD_START_INTERACTIVE cohort=returning surface=lectures '
             'elapsed_ms=98',
       ];
-      final markerLines = rawLogcat
-          .where((line) => line.contains('COLD_START_INTERACTIVE'));
+      final markerLines =
+          rawLogcat.where((line) => line.contains('COLD_START_INTERACTIVE'));
       expect(
         StartupMeasurement.parseBatch(
           markerLines,

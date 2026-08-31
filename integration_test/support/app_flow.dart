@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart' as app;
 import 'package:myapp/models/series.dart';
 import 'package:myapp/testing/widget_keys.dart';
+import 'package:myapp/utils/startup_metrics.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 /// Shared helpers for integration tests — real device/emulator, network required.
@@ -37,6 +38,27 @@ class AppFlow {
     fail(
       'Timed out after 30s waiting for welcome screen or lecture list after cold start',
     );
+  }
+
+  /// Waits for the startup marker while continuing to advance Flutter frames.
+  /// WelcomeScreen intentionally mounts its marker beneath a 300 ms reveal;
+  /// checking the key alone can therefore return while it is still hidden.
+  static Future<StartupMeasurement> waitForStartupInteractive(
+    WidgetTester tester, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (StartupMetrics.measurement == null && DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    final measurement = StartupMetrics.measurement;
+    if (measurement == null) {
+      fail(
+        'Timed out after ${timeout.inSeconds}s waiting for the startup '
+        'interactive marker while pumping frames',
+      );
+    }
+    return measurement;
   }
 
   /// Cold start through welcome (if shown) to a loaded lecture list.

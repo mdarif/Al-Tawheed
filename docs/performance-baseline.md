@@ -61,6 +61,13 @@ permission dialog cannot cover the app before its interactive marker. A grant
 failure is fatal; only pre-Android-13 devices, where this permission does not
 exist, skip the grant.
 
+The runner builds `integration_test/performance_test.dart` in profile mode with
+the cohort and cold-start defines, installs that exact APK, and passes it to
+`flutter drive` with `--use-application-binary`. In the returning cohort it
+first runs a separate setup build through the real onboarding/catalog flow,
+then rebuilds and installs the measured APK in place. An APK signature
+mismatch is fatal; the runner never uninstalls the app to hide lost state.
+
 The runner force-stops the app between returning-user samples while retaining
 app data, and verifies that the marker surface is `lectures`. Seed/select a
 series once before the returning-user cohort; an unseeded install is rejected

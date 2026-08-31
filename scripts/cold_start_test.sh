@@ -40,6 +40,20 @@ fi
 # flutter drive can leave a Dart VM/adb child behind when it is interrupted.
 # Walk the local process tree so a timed-out sample cannot contaminate the next
 # launch. pgrep -P is available in the macOS and common Linux toolchains.
+collect_descendants() {
+  local root_pid="$1"
+  local child_pids
+  local child_pid
+  if child_pids=$(pgrep -P "$root_pid" 2>/dev/null); then
+    while IFS= read -r child_pid; do
+      if [[ -n "$child_pid" ]]; then
+        printf '%s\n' "$child_pid"
+        collect_descendants "$child_pid"
+      fi
+    done <<< "$child_pids"
+  fi
+}
+
 terminate_process_tree() {
   local root_pid="$1"
   local signal="$2"
@@ -55,23 +69,33 @@ terminate_process_tree() {
   if kill "-$signal" "$root_pid" 2>/dev/null; then :; fi
 }
 
-if ! package_path=$(adb -s "$device_id" shell pm path "$package_name"); then
-  echo "Unable to query $package_name on device $device_id" >&2
-  exit 1
-fi
-if [[ -z "$(printf '%s' "$package_path" | tr -d '[:space:]')" ]]; then
-  echo "Installing the profile APK before the first cold-start sample..."
-  flutter build apk --profile
-  profile_apk=build/app/outputs/flutter-apk/app-profile.apk
-  if [[ ! -f "$profile_apk" ]]; then
-    echo "Profile APK was not produced at $profile_apk" >&2
+build_profile_apk() {
+  local setup_returning="$1"
+  local destination="$2"
+  flutter build apk \
+    --profile \
+    --target=integration_test/performance_test.dart \
+    --dart-define=COLD_START_ONLY=true \
+    --dart-define=COLD_START_COHORT="$cohort" \
+    --dart-define=COLD_START_SETUP_RETURNING="$setup_returning"
+  local built_apk=build/app/outputs/flutter-apk/app-profile.apk
+  if [[ ! -f "$built_apk" ]]; then
+    echo "Profile APK was not produced at $built_apk" >&2
     exit 1
   fi
-  if ! adb -s "$device_id" install -r "$profile_apk" >/dev/null; then
-    echo "Unable to install the profile APK on $device_id" >&2
+  if ! cp "$built_apk" "$destination"; then
+    echo "Unable to retain profile APK at $destination" >&2
     exit 1
   fi
-fi
+}
+
+install_profile_apk() {
+  local apk_path="$1"
+  if ! adb -s "$device_id" install -r "$apk_path"; then
+    echo "Unable to install $apk_path on $device_id; refusing to uninstall or lose state" >&2
+    exit 1
+  fi
+}
 
 grant_notifications() {
   # POST_NOTIFICATIONS was introduced in API 33. On older APIs there is no
@@ -83,6 +107,80 @@ grant_notifications() {
     exit 1
   fi
 }
+
+run_drive() {
+  local binary_path="$1"
+  local log_file="$2"
+  local setup_returning="$3"
+  flutter drive \
+    --driver=test_driver/perf_driver.dart \
+    --target=integration_test/performance_test.dart \
+    --use-application-binary="$binary_path" \
+    --timeout="$timeout_seconds" \
+    --dart-define=COLD_START_ONLY=true \
+    --dart-define=COLD_START_COHORT="$cohort" \
+    --dart-define=COLD_START_SETUP_RETURNING="$setup_returning" \
+    -d "$device_id" > "$log_file" 2>&1 &
+  local drive_pid=$!
+  local elapsed_seconds=0
+  local timed_out=false
+  local descendant_pids
+  while kill -0 "$drive_pid" 2>/dev/null; do
+    if (( elapsed_seconds >= timeout_seconds )); then
+      timed_out=true
+      # Capture descendants before TERM; a stubborn child may be reparented
+      # when flutter exits, so this list is also used for the KILL pass.
+      descendant_pids=$(collect_descendants "$drive_pid")
+      terminate_process_tree "$drive_pid" TERM
+      sleep 1
+      if [[ -n "$descendant_pids" ]]; then
+        while IFS= read -r descendant_pid; do
+          if [[ -n "$descendant_pid" ]]; then
+            if kill -KILL "$descendant_pid" 2>/dev/null; then :; fi
+          fi
+        done <<< "$descendant_pids"
+      fi
+      terminate_process_tree "$drive_pid" KILL
+      if wait "$drive_pid"; then :; fi
+      break
+    fi
+    sleep 1
+    elapsed_seconds=$((elapsed_seconds + 1))
+  done
+  if [[ "$timed_out" == true ]]; then
+    cat "$log_file"
+    echo "flutter drive timed out after ${timeout_seconds}s" >&2
+    return 124
+  fi
+  local drive_status
+  if wait "$drive_pid"; then
+    drive_status=0
+  else
+    drive_status=$?
+  fi
+  cat "$log_file"
+  return "$drive_status"
+}
+
+performance_apk="${output_dir}/performance-profile.apk"
+setup_apk="${output_dir}/returning-setup-profile.apk"
+if [[ "$cohort" == returning ]]; then
+  # A separate setup build drives the real onboarding flow when state was lost
+  # during reinstall. The measured build is rebuilt with setup disabled and
+  # installed in-place; a signature mismatch fails instead of uninstalling.
+  build_profile_apk true "$setup_apk"
+  install_profile_apk "$setup_apk"
+  grant_notifications
+  setup_log="${output_dir}/returning-setup.log"
+  if run_drive "$setup_apk" "$setup_log" true; then :; else
+    setup_status=$?
+    echo "returning-user setup drive failed" >&2
+    exit "$setup_status"
+  fi
+fi
+build_profile_apk false "$performance_apk"
+install_profile_apk "$performance_apk"
+grant_notifications
 
 for sample in $(seq 1 "$samples"); do
   if [[ "$cohort" == fresh-install ]]; then
@@ -104,39 +202,11 @@ for sample in $(seq 1 "$samples"); do
   adb -s "$device_id" logcat -c
 
   log_file="${output_dir}/sample-${sample}.log"
-  flutter drive \
-    --driver=test_driver/perf_driver.dart \
-    --target=integration_test/performance_test.dart \
-    --profile \
-    --dart-define=COLD_START_ONLY=true \
-    --dart-define=COLD_START_COHORT="$cohort" \
-    -d "$device_id" > "$log_file" 2>&1 &
-  drive_pid=$!
-  elapsed_seconds=0
-  timed_out=false
-  while kill -0 "$drive_pid" 2>/dev/null; do
-    if (( elapsed_seconds >= timeout_seconds )); then
-      timed_out=true
-      terminate_process_tree "$drive_pid" TERM
-      sleep 1
-      terminate_process_tree "$drive_pid" KILL
-      if wait "$drive_pid"; then :; fi
-      break
-    fi
-    sleep 1
-    elapsed_seconds=$((elapsed_seconds + 1))
-  done
-  if [[ "$timed_out" == true ]]; then
-    cat "$log_file"
-    echo "flutter drive timed out after ${timeout_seconds}s for $cohort sample $sample" >&2
-    exit 124
-  fi
-  if wait "$drive_pid"; then
+  if run_drive "$performance_apk" "$log_file" false; then
     drive_status=0
   else
     drive_status=$?
   fi
-  cat "$log_file"
   if (( drive_status != 0 )); then
     echo "flutter drive failed for $cohort sample $sample" >&2
     exit "$drive_status"

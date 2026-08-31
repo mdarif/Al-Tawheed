@@ -34,6 +34,10 @@ void main() {
     'COLD_START_ONLY',
     defaultValue: false,
   );
+  const seedReturning = bool.fromEnvironment(
+    'COLD_START_SETUP_RETURNING',
+    defaultValue: false,
+  );
 
   // Generous: ~2 frames of build headroom, ~2.5 of raster. Real profile
   // numbers on a mid device sit far under this; only real jank trips it.
@@ -124,7 +128,14 @@ void main() {
     // plugin/provider initialization.
     StartupMetrics.setCohortForTest(coldStartCohort);
     await AppFlow.launchApp(tester);
-    final startup = await StartupMetrics.interactive;
+    if (seedReturning) {
+      // This setup build is run only by the returning-user harness. It drives
+      // the real onboarding flow once so a reinstall or empty emulator still
+      // has a deterministic lectures landing state before measurement.
+      await AppFlow.goToLectureList(tester);
+      return;
+    }
+    final startup = await AppFlow.waitForStartupInteractive(tester);
     // Keep a line in the Flutter driver output for local runs. The automated
     // cold-start runner consumes the Android logcat line emitted by MainActivity,
     // whose elapsed time starts at Activity.onCreate rather than app.main().
