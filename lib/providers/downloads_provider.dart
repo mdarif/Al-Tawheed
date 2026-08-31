@@ -18,6 +18,8 @@ class DownloadsProvider extends ChangeNotifier {
 
   final SeriesProvider? _series;
   final SeriesConfig Function()? _seriesForTest;
+  static int _nextProviderIdentity = 0;
+  final int _providerIdentity = ++_nextProviderIdentity;
 
   SeriesConfig get _activeSeries =>
       _seriesForTest?.call() ??
@@ -35,14 +37,36 @@ class DownloadsProvider extends ChangeNotifier {
   final Set<String> _cancelledChapterIds = {};
   final Map<String, String> _chapterActiveLectureId = {};
   final Set<String> _activeDownloadKeys = {};
+  final Map<String, String> _attemptTokens = {};
   Lecture? _queuedDownload;
   int _generation = 0;
+  int _nextAttemptToken = 0;
 
-  String _downloadKey(String lectureId, String seriesId, int generation) =>
-      '$seriesId::$generation::$lectureId';
+  String _downloadKey(
+    String lectureId,
+    String seriesId,
+    int generation,
+    String attemptToken,
+  ) =>
+      '$seriesId::$generation::$lectureId::$attemptToken';
+
+  String _newAttemptToken() =>
+      'provider-$_providerIdentity-attempt-${++_nextAttemptToken}';
+
+  String _deleteKey(String lectureId, int generation) =>
+      'provider-$_providerIdentity-delete-$generation-$lectureId';
 
   bool _isCurrentOperation(int generation, String seriesId) =>
       generation == _generation && _seriesId == seriesId;
+
+  bool _isCurrentAttempt(
+    String lectureId,
+    String attemptToken,
+    int generation,
+    String seriesId,
+  ) =>
+      _isCurrentOperation(generation, seriesId) &&
+      _attemptTokens[lectureId] == attemptToken;
 
   /// Reconcile disk state off the UI thread — call once at startup.
   Future<void> load() async {
@@ -91,7 +115,7 @@ class DownloadsProvider extends ChangeNotifier {
     for (final key in _activeDownloadKeys) {
       DownloadService.cancel(key);
     }
-    _activeDownloadKeys.clear();
+    _attemptTokens.clear();
     _statuses.clear();
     _progress.clear();
     _failures.clear();
@@ -196,17 +220,25 @@ class DownloadsProvider extends ChangeNotifier {
     final generation = _generation;
     final seriesId = _seriesId;
     final prefix = _prefix;
-    final downloadKey = _downloadKey(lecture.id, seriesId, generation);
+    final attemptToken = _newAttemptToken();
+    final downloadKey = _downloadKey(
+      lecture.id,
+      seriesId,
+      generation,
+      attemptToken,
+    );
     final hadValidDownload = _downloadedIds.contains(lecture.id) &&
         DownloadService.existsSync(lecture.id, seriesId: seriesId);
 
     _statuses[lecture.id] = DownloadStatus.downloading;
     _progress[lecture.id] = 0.0;
     _failures.remove(lecture.id);
+    _attemptTokens[lecture.id] = attemptToken;
     _activeDownloadKeys.add(downloadKey);
     notifyListeners();
 
     var lastNotifiedProgress = -1.0;
+    var shouldNotifyAfterAttempt = false;
 
     try {
       // Preserve the existing provider contract: an uninitialized service is
@@ -218,8 +250,14 @@ class DownloadsProvider extends ChangeNotifier {
         url: lecture.audioUrl,
         savePath: savePath,
         fileSizeBytes: lecture.fileSizeBytes,
+        operationOwnerKey: attemptToken,
         onProgress: (p) {
-          if (!_isCurrentOperation(generation, seriesId) ||
+          if (!_isCurrentAttempt(
+                lecture.id,
+                attemptToken,
+                generation,
+                seriesId,
+              ) ||
               _statuses[lecture.id] != DownloadStatus.downloading) {
             return;
           }
@@ -236,13 +274,18 @@ class DownloadsProvider extends ChangeNotifier {
         },
       );
 
-      if (!_isCurrentOperation(generation, seriesId) ||
+      if (!_isCurrentAttempt(
+            lecture.id,
+            attemptToken,
+            generation,
+            seriesId,
+          ) ||
           _statuses[lecture.id] != DownloadStatus.downloading) {
         await DownloadService.delete(
           lecture.id,
           seriesId: seriesId,
           cancelKey: downloadKey,
-          expectedOwnerKey: downloadKey,
+          expectedOwnerKey: attemptToken,
         );
         return;
       }
@@ -253,7 +296,14 @@ class DownloadsProvider extends ChangeNotifier {
       _progress.remove(lecture.id);
       await PreferencesService.instance
           .saveDownloadedIds(_downloadedIds, prefix: prefix);
-      if (!_isCurrentOperation(generation, seriesId)) return;
+      if (!_isCurrentAttempt(
+        lecture.id,
+        attemptToken,
+        generation,
+        seriesId,
+      )) {
+        return;
+      }
       // Add just this file's size — no full re-stat of every download.
       if (!wasDownloaded) {
         _totalDownloadedBytes +=
@@ -264,12 +314,22 @@ class DownloadsProvider extends ChangeNotifier {
             .showComplete(lecture.id, lecture.title.en),
       );
     } on DownloadCancelled {
-      if (_isCurrentOperation(generation, seriesId)) {
+      if (_isCurrentAttempt(
+        lecture.id,
+        attemptToken,
+        generation,
+        seriesId,
+      )) {
         _resetAfterCancel(lecture.id, seriesId: seriesId);
       }
     } on DownloadException catch (error) {
       debugPrint('DownloadsProvider: download error for ${lecture.id}: $error');
-      if (_isCurrentOperation(generation, seriesId) &&
+      if (_isCurrentAttempt(
+            lecture.id,
+            attemptToken,
+            generation,
+            seriesId,
+          ) &&
           _statuses[lecture.id] == DownloadStatus.downloading) {
         _statuses[lecture.id] = hadValidDownload
             ? DownloadStatus.downloaded
@@ -280,7 +340,12 @@ class DownloadsProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('DownloadsProvider: download error for ${lecture.id}: $e');
-      if (_isCurrentOperation(generation, seriesId) &&
+      if (_isCurrentAttempt(
+            lecture.id,
+            attemptToken,
+            generation,
+            seriesId,
+          ) &&
           _statuses[lecture.id] == DownloadStatus.downloading) {
         _statuses[lecture.id] = hadValidDownload
             ? DownloadStatus.downloaded
@@ -290,17 +355,30 @@ class DownloadsProvider extends ChangeNotifier {
         unawaited(DownloadNotificationService.instance.dismiss(lecture.id));
       }
     } finally {
+      shouldNotifyAfterAttempt = _isCurrentAttempt(
+        lecture.id,
+        attemptToken,
+        generation,
+        seriesId,
+      );
       _activeDownloadKeys.remove(downloadKey);
+      if (_attemptTokens[lecture.id] == attemptToken) {
+        _attemptTokens.remove(lecture.id);
+      }
     }
-    if (_isCurrentOperation(generation, seriesId)) notifyListeners();
+    if (shouldNotifyAfterAttempt) {
+      notifyListeners();
+    }
   }
 
   /// Aborts an in-flight download and clears progress immediately.
   bool cancelDownload(String lectureId) {
     if (_statuses[lectureId] != DownloadStatus.downloading) return false;
     final seriesId = _seriesId;
+    final attemptToken = _attemptTokens[lectureId];
+    if (attemptToken == null) return false;
     final cancelled = DownloadService.cancel(
-      _downloadKey(lectureId, seriesId, _generation),
+      _downloadKey(lectureId, seriesId, _generation, attemptToken),
     );
     if (!cancelled) return false;
     _resetAfterCancel(lectureId, seriesId: seriesId);
@@ -363,7 +441,7 @@ class DownloadsProvider extends ChangeNotifier {
     await DownloadService.delete(
       lectureId,
       seriesId: seriesId,
-      cancelKey: _downloadKey(lectureId, seriesId, generation),
+      cancelKey: _deleteKey(lectureId, generation),
     );
     if (!_isCurrentOperation(generation, seriesId)) return;
     _statuses[lectureId] = DownloadStatus.notDownloaded;
@@ -390,7 +468,7 @@ class DownloadsProvider extends ChangeNotifier {
         await DownloadService.delete(
           lecture.id,
           seriesId: seriesId,
-          cancelKey: _downloadKey(lecture.id, seriesId, generation),
+          cancelKey: _deleteKey(lecture.id, generation),
         );
         if (!_isCurrentOperation(generation, seriesId)) return;
         _statuses[lecture.id] = DownloadStatus.notDownloaded;
@@ -412,7 +490,7 @@ class DownloadsProvider extends ChangeNotifier {
       await DownloadService.delete(
         id,
         seriesId: seriesId,
-        cancelKey: _downloadKey(id, seriesId, generation),
+        cancelKey: _deleteKey(id, generation),
       );
       if (!_isCurrentOperation(generation, seriesId)) return;
     }

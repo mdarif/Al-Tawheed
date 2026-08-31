@@ -122,10 +122,15 @@ int totalBytesForIds(
 }
 
 class _ActiveDownload {
-  _ActiveDownload(this.client, this.partFile);
+  _ActiveDownload(this.client, this.partFile, this.operationId);
 
   final HttpClient client;
   final File partFile;
+
+  /// A fresh identity for this one transfer. It is deliberately distinct from
+  /// the public cancellation key: callers may reuse a cancellation key for a
+  /// retry, while a promoted destination must always identify one attempt.
+  final String operationId;
   final Completer<void> _finished = Completer<void>();
   bool cancelled = false;
   bool promotionStarted = false;
@@ -147,6 +152,20 @@ class _ActiveDownload {
   }
 }
 
+/// One place in a FIFO chain for a single final destination. Completing
+/// [_release] lets exactly the next reservation begin; it is not a snapshot of
+/// the operation that happened to be active when this reservation was made.
+class _DestinationReservation {
+  _DestinationReservation(this.turn, this._release);
+
+  final Future<void> turn;
+  final Completer<void> _release;
+
+  void release() {
+    if (!_release.isCompleted) _release.complete();
+  }
+}
+
 /// Low-level download and file-management service.
 ///
 /// Call [init] once in main() so that [localPath] stays synchronous
@@ -157,6 +176,8 @@ class DownloadService {
   static String? _documentsPath;
   static final Map<String, _ActiveDownload> _active = {};
   static final Map<String, _ActiveDownload> _activeByDestination = {};
+  static final Map<String, Set<_ActiveDownload>> _downloadsByDestination = {};
+  static final Map<String, Future<void>> _destinationTails = {};
   static final Map<String, String> _destinationOwnerKeys = {};
   static int _nextOperationId = 0;
 
@@ -234,17 +255,26 @@ class DownloadService {
     required String savePath,
     required int fileSizeBytes,
     required void Function(double progress) onProgress,
+    String? operationOwnerKey,
   }) async {
     final destination = File(savePath);
-    await _cancelAndWaitForPrior(cancelKey, destination.path);
-
     final client = HttpClient();
-    final partFile = File('$savePath.${++_nextOperationId}.part');
-    final active = _ActiveDownload(client, partFile);
-    _active[cancelKey] = active;
-    _activeByDestination[destination.path] = active;
+    final operationNumber = ++_nextOperationId;
+    final partFile = File('$savePath.$operationNumber.part');
+    final active = _ActiveDownload(
+      client,
+      partFile,
+      operationOwnerKey ?? 'service-download-$operationNumber',
+    );
+    final reservation = _reserveDestination(
+      destination.path,
+      cancelKey: cancelKey,
+      active: active,
+    );
 
     try {
+      await reservation.turn;
+      if (active.cancelled) throw const DownloadCancelled();
       await destination.parent.create(recursive: true);
       final uri = Uri.parse(url);
       final request = await client.getUrl(uri);
@@ -318,7 +348,7 @@ class DownloadService {
       // and iOS. Only a fully verified `.part` reaches this line.
       active.promotionStarted = true;
       await partFile.rename(destination.path);
-      _destinationOwnerKeys[destination.path] = cancelKey;
+      _destinationOwnerKeys[destination.path] = active.operationId;
       await afterPromotionForTest?.call(destination);
     } on FileSystemException catch (error) {
       if (active.cancelled) throw const DownloadCancelled();
@@ -332,19 +362,28 @@ class DownloadService {
       if (active.cancelled) throw const DownloadCancelled();
       throw DownloadTransferException('$url: $error');
     } finally {
-      client.close();
-      // Best-effort cleanup. A concurrent delete() can race this path; if it
-      // already removed the file, that is the intended final state.
       try {
-        if (await partFile.exists()) await partFile.delete();
-      } on PathNotFoundException {
-        // Already removed by concurrent delete cleanup.
+        client.close();
+        // Best-effort cleanup. A concurrent delete() can race this path; if it
+        // already removed the file, that is the intended final state.
+        try {
+          if (await partFile.exists()) await partFile.delete();
+        } on PathNotFoundException {
+          // Already removed by concurrent delete cleanup.
+        }
+      } finally {
+        if (identical(_active[cancelKey], active)) _active.remove(cancelKey);
+        if (identical(_activeByDestination[destination.path], active)) {
+          _activeByDestination.remove(destination.path);
+        }
+        final downloads = _downloadsByDestination[destination.path];
+        downloads?.remove(active);
+        if (downloads?.isEmpty ?? false) {
+          _downloadsByDestination.remove(destination.path);
+        }
+        active.finish();
+        reservation.release();
       }
-      if (identical(_active[cancelKey], active)) _active.remove(cancelKey);
-      if (identical(_activeByDestination[destination.path], active)) {
-        _activeByDestination.remove(destination.path);
-      }
-      active.finish();
     }
   }
 
@@ -355,21 +394,29 @@ class DownloadService {
     String? expectedOwnerKey,
   }) async {
     final file = File(localPath(lectureId, seriesId: seriesId));
-    await _cancelAndWaitForPrior(cancelKey ?? lectureId, file.path);
-    // A stale provider completion may only delete the destination it promoted.
-    // If a newer operation already owns this path, it must survive.
-    if (expectedOwnerKey != null &&
-        _destinationOwnerKeys[file.path] != expectedOwnerKey) {
-      return;
-    }
+    final reservation = _reserveDestination(
+      file.path,
+      cancelKey: cancelKey ?? lectureId,
+    );
     try {
-      if (await file.exists()) await file.delete();
-    } on PathNotFoundException {
-      // Already removed by cancel cleanup — nothing to do.
-    }
-    if (expectedOwnerKey == null ||
-        _destinationOwnerKeys[file.path] == expectedOwnerKey) {
-      _destinationOwnerKeys.remove(file.path);
+      await reservation.turn;
+      // A stale provider completion may only delete the destination it
+      // promoted. A newer operation's unique owner identity must survive.
+      if (expectedOwnerKey != null &&
+          _destinationOwnerKeys[file.path] != expectedOwnerKey) {
+        return;
+      }
+      try {
+        if (await file.exists()) await file.delete();
+      } on PathNotFoundException {
+        // Already removed by cancel cleanup — nothing to do.
+      }
+      if (expectedOwnerKey == null ||
+          _destinationOwnerKeys[file.path] == expectedOwnerKey) {
+        _destinationOwnerKeys.remove(file.path);
+      }
+    } finally {
+      reservation.release();
     }
   }
 
@@ -396,6 +443,8 @@ class DownloadService {
     }
     _active.clear();
     _activeByDestination.clear();
+    _downloadsByDestination.clear();
+    _destinationTails.clear();
     _destinationOwnerKeys.clear();
     _nextOperationId = 0;
     _documentsPath = documentsPath;
@@ -440,17 +489,38 @@ class DownloadService {
     }
   }
 
-  static Future<void> _cancelAndWaitForPrior(
-    String cancelKey,
-    String destinationPath,
-  ) async {
+  /// Atomically cancels prior work that owns [destinationPath] or [cancelKey]
+  /// and reserves the next exclusive turn for this caller. Crucially, each
+  /// successor links to the *current tail* synchronously before awaiting, so
+  /// two retries cannot both resume after the same old operation finishes.
+  static _DestinationReservation _reserveDestination(
+    String destinationPath, {
+    required String cancelKey,
+    _ActiveDownload? active,
+  }) {
     final candidates = <_ActiveDownload>{
-      if (_active[cancelKey] case final active?) active,
-      if (_activeByDestination[destinationPath] case final active?) active,
+      if (_active[cancelKey] case final priorByKey?) priorByKey,
+      ...?_downloadsByDestination[destinationPath],
     };
-    for (final active in candidates) {
-      active.cancel();
+    for (final prior in candidates) {
+      prior.cancel();
     }
-    await Future.wait([for (final active in candidates) active.finished]);
+
+    if (active != null) {
+      _active[cancelKey] = active;
+      _activeByDestination[destinationPath] = active;
+      (_downloadsByDestination[destinationPath] ??= {}).add(active);
+    }
+
+    final turn = _destinationTails[destinationPath] ?? Future.value();
+    final release = Completer<void>();
+    final tail = turn.catchError((_) {}).then<void>((_) => release.future);
+    _destinationTails[destinationPath] = tail;
+    tail.whenComplete(() {
+      if (identical(_destinationTails[destinationPath], tail)) {
+        _destinationTails.remove(destinationPath);
+      }
+    });
+    return _DestinationReservation(turn, release);
   }
 }

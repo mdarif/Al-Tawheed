@@ -388,6 +388,113 @@ void main() {
     expect(await _partFilesFor(savePath), isEmpty);
   });
 
+  test('two queued successors reserve distinct destination turns', () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/two-successors.mp3';
+    final firstAtPartOpen = Completer<void>();
+    final releaseFirst = Completer<void>();
+    var partOpenCalls = 0;
+    DownloadService.beforePartFileOpenForTest = (_) async {
+      if (partOpenCalls++ == 0) {
+        firstAtPartOpen.complete();
+        await releaseFirst.future;
+      }
+    };
+
+    final first = DownloadService.download(
+      cancelKey: 'first',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    final firstCancelled =
+        expectLater(first, throwsA(isA<DownloadCancelled>()));
+    await firstAtPartOpen.future;
+
+    // Both successors are queued before the old finalizer is released. The
+    // second is cancelled by the newer request, so only the third can enter
+    // the write hook. A snapshot-and-wait implementation runs both here.
+    final second = DownloadService.download(
+      cancelKey: 'second',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    final secondCancelled =
+        expectLater(second, throwsA(isA<DownloadCancelled>()));
+    final third = DownloadService.download(
+      cancelKey: 'third',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+
+    releaseFirst.complete();
+    await Future.wait([firstCancelled, secondCancelled]);
+    await third;
+
+    expect(partOpenCalls, 2);
+    expect(await File(savePath).length(), 256);
+    expect(await _partFilesFor(savePath), isEmpty);
+  });
+
+  test('queued delete completes before a retry claims its destination',
+      () async {
+    final (:server, :baseUrl) = await _startServer(256);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/delete-then-retry.mp3';
+    final destination = File(savePath);
+    await destination.parent.create(recursive: true);
+    await destination.writeAsBytes([9, 9, 9]);
+    final firstAtPartOpen = Completer<void>();
+    final releaseFirst = Completer<void>();
+    var partOpenCalls = 0;
+    DownloadService.beforePartFileOpenForTest = (_) async {
+      if (partOpenCalls++ == 0) {
+        firstAtPartOpen.complete();
+        await releaseFirst.future;
+      }
+    };
+
+    final first = DownloadService.download(
+      cancelKey: 'delete-first',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+    final firstCancelled =
+        expectLater(first, throwsA(isA<DownloadCancelled>()));
+    await firstAtPartOpen.future;
+
+    final delete = DownloadService.delete(
+      'delete-then-retry',
+      cancelKey: 'delete-first',
+    );
+    final retry = DownloadService.download(
+      cancelKey: 'delete-retry',
+      url: '$baseUrl/audio.mp3',
+      savePath: savePath,
+      fileSizeBytes: 256,
+      onProgress: (_) {},
+    );
+
+    releaseFirst.complete();
+    await firstCancelled;
+    await delete;
+    await retry;
+
+    expect(partOpenCalls, 2);
+    expect(await destination.length(), 256);
+    expect(await _partFilesFor(savePath), isEmpty);
+  });
+
   test('classifies a CDN backoff response', () async {
     final (:server, :baseUrl) = await _startServer(
       0,

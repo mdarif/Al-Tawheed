@@ -98,6 +98,40 @@ void main() {
     expect(DownloadService.existsSync('x'), isFalse);
   });
 
+  test('immediate cancel and retry keeps the newer attempt authoritative',
+      () async {
+    final (:server, :baseUrl) = await _startServer(128);
+    addTearDown(() => server.close(force: true));
+
+    final provider = DownloadsProvider();
+    final firstAtPartOpen = Completer<void>();
+    final releaseFirst = Completer<void>();
+    var partOpenCalls = 0;
+    DownloadService.beforePartFileOpenForTest = (_) async {
+      if (partOpenCalls++ == 0) {
+        firstAtPartOpen.complete();
+        await releaseFirst.future;
+      }
+    };
+
+    final first =
+        provider.download(_lec('retry', bytes: 128, audioUrl: baseUrl));
+    await firstAtPartOpen.future;
+    expect(provider.cancelDownload('retry'), isTrue);
+
+    // The first Future is still unwinding while this replacement begins. Its
+    // catch/finally must not clear the retry's token, status, or disk file.
+    final retry =
+        provider.download(_lec('retry', bytes: 128, audioUrl: baseUrl));
+    releaseFirst.complete();
+    await Future.wait([first, retry]);
+
+    expect(partOpenCalls, 2);
+    expect(provider.statusFor('retry'), DownloadStatus.downloaded);
+    expect(provider.isDownloaded('retry'), isTrue);
+    expect(DownloadService.existsSync('retry'), isTrue);
+  });
+
   test('delete while downloading delegates to cancelDownload', () async {
     final (:server, :baseUrl) = await _startSlowServer();
     addTearDown(() => server.close(force: true));
