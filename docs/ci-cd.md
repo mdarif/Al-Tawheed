@@ -97,7 +97,8 @@ The release workflow commits a version bump directly to master. Without this, st
 
 The release workflow now builds a **production-signed** APK + AAB, using the
 same upload key as `android/key.properties`. Without these 4 repo secrets,
-the "Configure release signing" step fails fast with a clear error.
+the `prepare` job's "Require signing secrets" step fails fast with a clear
+error — before any build runs.
 
 Run these in your **terminal** — never paste secret values into Claude Code
 chat:
@@ -464,7 +465,7 @@ CI runs on the PR. Merge when green.
 | `make integration-test DEVICE=<id>` | Run validation `integration_test/app_test.dart` on a device |
 | `make screenshots DEVICE=<id>` | Generate Play Store assets (not validation) |
 | `make patrol-test DEVICE=<id>` | Run Patrol 4.6.1 native tests with CLI 4.4.0; reject `Total: 0` |
-| `make release-apk DEVICE=<id>` | Full gate: tests + validation integration + discovered Patrol + release APK |
+| `make release-apk DEVICE=<id>` | Full gate: format-check + release-tooling tests + unit tests + validation integration + discovered Patrol + release APK |
 | `make ci-logs` | Fetch latest failed GitHub Actions run logs via `gh` |
 | `make release` | Trigger release workflow (patch bump) |
 | `make release BUMP=minor` | Trigger release workflow (minor bump) |

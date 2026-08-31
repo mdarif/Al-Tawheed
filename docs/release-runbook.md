@@ -39,7 +39,8 @@ looks like, and what to do if it doesn't go to plan.
       `KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD`. If any are missing, see
       [ci-cd.md → One-Time Setup → "Add CD Phase 2 signing
       secrets"](ci-cd.md#5-add-cd-phase-2-signing-secrets) — Step 2 will fail
-      at "Configure release signing" without them.
+      in `prepare` at "Require signing secrets" without them (in seconds,
+      before any build).
 - [ ] (One-time, CD Phase 3) Play Store secret is set —
       `gh secret list --repo mdarif/Al-Tawheed` should list
       `GOOGLE_PLAY_SERVICE_ACCOUNT`. If missing, see
@@ -61,11 +62,16 @@ On `develop`, with everything from the pre-flight checklist green:
 make release-apk DEVICE=<device_id>
 ```
 
-Runs, in order: `pub get` → `flutter analyze --fatal-warnings` →
-`flutter test` (unit/widget) → `flutter test integration_test/app_test.dart`
-(Flutter validation on-device) → `patrol test` (native scenarios — airplane
-mode, notifications, lock-screen controls; must discover at least one test) →
-`flutter build apk --release`. Play Store screenshot generators are separate
+Runs, in order: `pub get` → `dart format --set-exit-if-changed` →
+`python3 -m unittest discover -s test/tool` (release tooling) →
+`flutter analyze --fatal-warnings` → `flutter test` (unit/widget) →
+`flutter test integration_test/app_test.dart` (Flutter validation on-device)
+→ `patrol test` (native scenarios — airplane mode, notifications, lock-screen
+controls; must discover at least one test) → `flutter build apk --release`.
+
+The format and tooling checks are first because they cost seconds and
+`build-android` gates on them too — without them here, Step 1 can pass locally
+and the release still fail in CI on a stray format. Play Store screenshot generators are separate
 asset jobs and are not part of the release gate (`make screenshots
 DEVICE=<device_id>`).
 
@@ -140,7 +146,8 @@ The workflow runs a six-job graph (plus a dry-run-only summary job):
    `PLAY_FGS_MEDIA_DECLARED` secret — see the pre-flight checklist above),
    uploads the AAB to the Play Store **internal track** (CD Phase 3), commits
    the version bump to `master`, tags it, pushes both, and creates a GitHub
-   Release with the APK and an auto-generated changelog. Play "What's new"
+   Release carrying the APK, the AAB, `play-store-notes.txt` and an
+   auto-generated changelog. Play "What's new"
    notes are written for en-US/ar/ur but with the **same English text** in
    all three — release notes are authored in English only, unlike every
    other user-facing string in this app.
@@ -237,8 +244,10 @@ develop" step needed even in this fallback flow.
 - [ ] `develop` and `master` are both up to date locally:
       `git fetch origin --tags`
 - [ ] (Optional) Install the release-workflow APK on a second device to
-      confirm it launches. As of CD Phase 2 it's production-signed (same key
-      as Step 1's build) — a good final smoke test before Step 4.
+      confirm it launches. `verify-android` already did exactly this on an
+      API 34 emulator, so this is now a belt-and-braces check on real
+      hardware rather than the only one — download the `verify-evidence`
+      artifact from the run to see CI's screenshot and logcat.
 - [ ] New internal-track release is live: play.google.com/console →
       Al-Tawheed → Testing → Internal testing — confirm version `<TAG>` /
       build `<NEW_VERSION>` is present (CD Phase 3)
@@ -252,7 +261,7 @@ below.
 Not every release needs this — only do it when you're ready to push to
 production on the Play Store.
 
-CD Phase 3's `release` job already uploaded `app-release.aab` to the
+CD Phase 3's `publish` job already uploaded `app-release.aab` to the
 **internal track** (status: completed) with the auto-generated
 `play-store-notes.txt` as the "What's new" text — nothing to build or upload
 manually.
@@ -339,7 +348,7 @@ app-level grant, not time.
 **"Release job failed at 'Commit, tag, and push': 'src refspec master does not
 match any'"**
 The one-click (develop-dispatched) flow checks out the promote SHA, so the
-release job runs in **detached HEAD** — there is no local `master` branch. The
+`publish` job runs in **detached HEAD** — there is no local `master` branch. The
 step must push with `git push origin HEAD:master`, not `git push origin master`.
 Fixed in `flutter-release.yml` on the 2.3.0 release; if it regresses, check that
 step. Note: if the Play upload already ran before this failure, that versionCode
@@ -365,16 +374,19 @@ A prior run uploaded that AAB to Play (consuming versionCode N) but then failed
 N. Bump `pubspec.yaml`'s `+BUILD` (e.g. `2.2.0+15` → `+16`) so the compute step
 yields N+1, commit, push, and re-run.
 
-**"Release workflow failed at 'Configure release signing': signing secrets
-are not set"**
+**"Release workflow failed at 'Require signing secrets'"** (in the
+`prepare` job)
 One or more of `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEY_PASSWORD`,
-`STORE_PASSWORD` aren't set as repo secrets yet (CD Phase 2). See
+`STORE_PASSWORD` aren't set as repo secrets yet (CD Phase 2). This is checked
+in `prepare`, before any build — `build-android`'s "Configure release signing"
+step only decodes the keystore and no longer validates.
+Nothing has shipped at this point. See
 `docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 2 signing secrets" for the
 exact `gh secret set` commands — run them in your terminal, never paste
 secret values in chat.
 
 **"Release workflow failed at 'Require Play Store service account': secret
-is not set"**
+is not set"** (in the `prepare` job)
 `GOOGLE_PLAY_SERVICE_ACCOUNT` isn't set as a repo secret yet (CD Phase 3). See
 `docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 3 Play Store secret".
 
@@ -448,7 +460,7 @@ landed" check exists to prevent (it happened for real on 2026-06-07 — a
 `2.1.0` release went out containing only a stray "Add Play Store assets"
 commit, missing the entire offline-mode feature set). The one-click flow's
 `promote` job (which always fast-forwards `master` to `develop` before
-`release` builds) makes this much harder to hit, but if you're using the
+`build-android` builds) makes this much harder to hit, but if you're using the
 manual fallback and it happens anyway:
 1. Confirm the gap: `git log <bad-release-tag>..<your-local-master> --oneline`
    — if this lists your real commits, the release is missing them
@@ -523,6 +535,6 @@ PR review back if you want it.
 
 **"Can I require PRs on master without breaking the release bot?"**
 Not with classic branch-protection rules — they have no bypass-actor field, so
-the release bot's pushes (`promote`, `release`, `sync-develop`) would start
+the release bot's pushes (`promote`, `publish`, `sync-develop`) would start
 failing. You'd need to switch to Repository Rulesets, which do have a
 bypass-actor field, and add `github-actions[bot]` to it.

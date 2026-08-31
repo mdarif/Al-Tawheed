@@ -262,11 +262,17 @@ patrol-test:
 	exit "$$PARSE_STATUS"
 
 # Full release pipeline (local):
-#   pub get → analyze → unit/widget tests → validation integration test →
-#   Patrol (must discover tests) → release APK. Screenshot generation is not
+#   pub get → format check → release-tooling tests → analyze → unit/widget
+#   tests → validation integration test → Patrol (must discover tests) →
+#   release APK.
+# The format and tooling checks are here because CI's build-android job gates
+# on them too; without them Step 1 of the runbook can pass locally and the
+# release still fail in CI on a stray format. Screenshot generation is not
 #   part of this gate; use `make screenshots DEVICE=<id>` separately.
 # Requires android/key.properties for signing and a connected DEVICE.
 release-apk: pub-get
+	$(MAKE) format-check
+	$(MAKE) test-tooling
 	flutter analyze --fatal-warnings
 	flutter test --reporter=expanded
 	@if [ -z "$(DEVICE)" ]; then \

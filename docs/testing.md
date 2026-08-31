@@ -235,7 +235,7 @@ A real Pixel device works too. If both native toggle paths fail on an OEM-skinne
 
 ```bash
 make ci                  # analyze + unit/widget tests + debug APK (no device)
-make release-apk DEVICE=<id>   # validation + discovered Patrol gate + APK
+make release-apk DEVICE=<id>   # format + tooling + validation + discovered Patrol gate + APK
 ```
 
 `make release-apk` runs `integration_test/app_test.dart`, never the screenshot

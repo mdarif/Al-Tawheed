@@ -404,10 +404,10 @@ is portable memory: any LLM working the repo should read and extend it.
   upstream job was *legitimately* skipped (not failed) need
   `if: always() && needs.X.result == 'success'`, checked explicitly rather
   than relying on the implicit skip-on-skip default.
-- **The one-click release job runs in detached HEAD — push with `HEAD:master`,
-  not `master`.** When dispatched from `develop`, the `release` job checks out
-  the promote SHA (`ref: needs.promote.outputs.sha`), so there is no local
-  `master` branch. `git push origin master` fails with `src refspec master does
+- **The one-click release runs in detached HEAD — push with `HEAD:master`,
+  not `master`.** When dispatched from `develop`, every job checks out the
+  promote SHA (`ref: needs.prepare.outputs.ref`), so the `publish` job that
+  does the commit/tag/push has no local `master` branch. `git push origin master` fails with `src refspec master does
   not match any`; use `git push origin HEAD:master`. (Latent until the first
   release that actually reached the commit/tag/push step.)
 - **`sync-develop` pushes to protected `develop` with an admin PAT, not the bot
@@ -435,9 +435,17 @@ is portable memory: any LLM working the repo should read and extend it.
   the step dies with exit 127. Pass it via the step's `env:` block instead — env
   values are not re-parsed by the shell. (Fixed in `flutter-release.yml` for both
   the Play Store notes and GitHub Release steps.)
-- **Always dry-run a release first:** `make release-auto BUMP=minor DRY_RUN=true`.
-  It builds + signs the AAB and runs the notes generation (not dry-run-gated) but
-  publishes nothing — it caught the changelog-quoting bug above before it shipped.
+- **Always dry-run a release first:** `make release-dry BUMP=minor` (or
+  `make release-auto BUMP=minor DRY_RUN=true`). It runs `prepare`,
+  `build-android` and `verify-android` — so it signs the AAB and installs the
+  APK on an emulator — but publishes nothing.
+  **What a dry run no longer covers:** since the six-job split, changelog and
+  Play-notes generation live in `publish`, which a dry run skips entirely. The
+  changelog-quoting bug below was caught by a dry run under the old monolithic
+  job; it would NOT be caught now. Treat the notes steps as unexercised until a
+  real release runs them.
+  **And a dry run that finishes in under a minute with no artifacts is a
+  failure, not a pass** — see the `needs:`-skip landmine above.
 - **Auto-deploy stops at the Play Store *internal* track** (`status: completed`).
   Promoting internal → production is a **manual** step in Play Console, on purpose.
 - **A freshly-invited Play Store service account 403s until permission

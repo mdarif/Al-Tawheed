@@ -230,7 +230,7 @@ On-device tests (integration + Patrol) are **not** in CI yet — run locally bef
 ```sh
 make integration-test DEVICE=<device_id>
 make patrol-test DEVICE=<device_id>    # optional native scenarios
-make release-apk DEVICE=<device_id>    # full gate: tests + integration + patrol + release APK
+make release-apk DEVICE=<device_id>    # full gate: format + tooling + tests + integration + patrol + release APK
 ```
 
 See `docs/testing.md` for full test documentation.
