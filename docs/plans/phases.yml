@@ -77,10 +77,16 @@ phases:
       - lib/audio/playback_source.dart
       - lib/screens/player_screen.dart
       - lib/widgets/player
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
       - test/audio_handler_test.dart
       - test/player_notifier_skip_test.dart
       - test/player_notifier_test.dart
       - test/player_screen_test.dart
+      - docs/quality-backlog.md
+      - docs/gotchas.md
     runner: codex:gpt-5.6-terra
     review: codex:gpt-5.6-sol
 
