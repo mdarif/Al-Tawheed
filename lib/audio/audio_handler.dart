@@ -130,6 +130,34 @@ class JustAudioEngine implements AudioEngine {
   Future<void> dispose() => _player.dispose();
 }
 
+/// The audio-session events the handler needs to apply its playback policy.
+/// Keeping this narrow makes focus/noisy transitions deterministic to test.
+abstract interface class PlaybackAudioSession {
+  Future<void> configureMusic();
+  Stream<void> get becomingNoisyEvents;
+  Stream<AudioInterruptionEvent> get interruptionEvents;
+}
+
+class SystemPlaybackAudioSession implements PlaybackAudioSession {
+  SystemPlaybackAudioSession(this._session);
+
+  final AudioSession _session;
+
+  static Future<PlaybackAudioSession> create() async =>
+      SystemPlaybackAudioSession(await AudioSession.instance);
+
+  @override
+  Future<void> configureMusic() =>
+      _session.configure(const AudioSessionConfiguration.music());
+
+  @override
+  Stream<void> get becomingNoisyEvents => _session.becomingNoisyEventStream;
+
+  @override
+  Stream<AudioInterruptionEvent> get interruptionEvents =>
+      _session.interruptionEventStream;
+}
+
 class TawheedAudioHandler extends BaseAudioHandler
     with SeekHandler
     implements AudioPlayback {
@@ -140,7 +168,7 @@ class TawheedAudioHandler extends BaseAudioHandler
   // disable it and track interruption-vs-user pauses ourselves so a manual
   // pause (e.g. from the lock screen) always wins and is never overridden.
   final AudioEngine Function() _engineFactory;
-  final Future<AudioSession> Function() _sessionFactory;
+  final Future<PlaybackAudioSession> Function() _sessionFactory;
   late AudioEngine _player;
   final _playbackEvents =
       StreamController<AudioPlaybackEvent<PlaybackState>>.broadcast();
@@ -153,7 +181,12 @@ class TawheedAudioHandler extends BaseAudioHandler
       StreamController<AudioPlaybackEvent<ProcessingState>>.broadcast();
   final _errorEvents = StreamController<AudioPlaybackEvent<Object>>.broadcast();
   int _activeSessionId = 0;
-  bool _pausedByInterruption = false;
+  int _loadGeneration = 0;
+  bool _sourceReady = false;
+  bool _wantsToPlay = false;
+  bool _interruptionActive = false;
+  bool _resumeAfterInterruption = false;
+  double _speed = 1.0;
 
   // The handler is just a thin just_audio wrapper — it doesn't know about the
   // playback queue (that lives in PlayerNotifier). Lock-screen / notification
@@ -164,10 +197,10 @@ class TawheedAudioHandler extends BaseAudioHandler
 
   TawheedAudioHandler({
     AudioEngine Function()? engineFactory,
-    Future<AudioSession> Function()? sessionFactory,
+    Future<PlaybackAudioSession> Function()? sessionFactory,
     bool configureAudioSession = true,
   })  : _engineFactory = engineFactory ?? JustAudioEngine.new,
-        _sessionFactory = sessionFactory ?? (() => AudioSession.instance) {
+        _sessionFactory = sessionFactory ?? SystemPlaybackAudioSession.create {
     _player = _newEngine(0);
     if (configureAudioSession) _init();
   }
@@ -236,35 +269,39 @@ class TawheedAudioHandler extends BaseAudioHandler
 
   Future<void> _init() async {
     final session = await _sessionFactory();
-    await session.configure(const AudioSessionConfiguration.music());
+    await session.configureMusic();
 
-    session.becomingNoisyEventStream.listen((_) => pause());
+    session.becomingNoisyEvents.listen((_) => unawaited(pause()));
 
-    session.interruptionEventStream.listen((event) {
+    session.interruptionEvents.listen((event) {
       if (event.begin) {
         switch (event.type) {
           case AudioInterruptionType.duck:
-            _player.setVolume(_player.volume / 2);
+            unawaited(_player.setVolume(_player.volume / 2));
             break;
           case AudioInterruptionType.pause:
           case AudioInterruptionType.unknown:
-            if (_player.playing) {
-              _pausedByInterruption = true;
-              _player.pause();
-            }
+            _interruptionActive = true;
+            _resumeAfterInterruption = _wantsToPlay;
+            unawaited(_player.pause());
             break;
         }
       } else {
         switch (event.type) {
           case AudioInterruptionType.duck:
-            _player.setVolume(min(1.0, _player.volume * 2));
+            unawaited(_player.setVolume(min(1.0, _player.volume * 2)));
             break;
           case AudioInterruptionType.pause:
-            if (_pausedByInterruption) _player.play();
-            _pausedByInterruption = false;
+            _interruptionActive = false;
+            final resume = _resumeAfterInterruption && _wantsToPlay;
+            _resumeAfterInterruption = false;
+            if (resume) {
+              unawaited(_playIfStillDesired(_player, _loadGeneration));
+            }
             break;
           case AudioInterruptionType.unknown:
-            _pausedByInterruption = false;
+            _interruptionActive = false;
+            _resumeAfterInterruption = false;
             break;
         }
       }
@@ -283,7 +320,11 @@ class TawheedAudioHandler extends BaseAudioHandler
     String? displayTitle,
   }) async {
     final previous = _player;
+    final loadGeneration = ++_loadGeneration;
     _activeSessionId = sessionId;
+    _sourceReady = false;
+    _wantsToPlay = true;
+    if (_interruptionActive) _resumeAfterInterruption = true;
     final player = _newEngine(sessionId);
     _player = player;
     // Retiring an engine is deliberately asynchronous: just_audio may still
@@ -304,18 +345,21 @@ class TawheedAudioHandler extends BaseAudioHandler
         ? AudioSource.uri(Uri.file(localFilePath))
         : AudioSource.uri(Uri.parse(lecture.audioUrl));
 
+    await player.setSpeed(_speed);
     await player.setAudioSource(source, initialPosition: startFrom);
-    // A slower old source load must never resume over the latest request.
-    if (sessionId != _activeSessionId) return;
-    _pausedByInterruption = false;
-    await player.play();
+    // A slower old source load or a stop must never resume over the latest
+    // command. Pause/focus intent is checked separately by _playIfStillDesired.
+    if (!_isCurrentLoad(player, loadGeneration, sessionId)) return;
+    _sourceReady = true;
+    await _playIfStillDesired(player, loadGeneration);
   }
 
   // ── BaseAudioHandler overrides ─────────────────────────────────────────
   @override
   Future<void> play() {
-    _pausedByInterruption = false;
-    return _player.play();
+    _wantsToPlay = true;
+    if (_interruptionActive) _resumeAfterInterruption = true;
+    return _playIfStillDesired(_player, _loadGeneration);
   }
 
   @override
@@ -323,7 +367,8 @@ class TawheedAudioHandler extends BaseAudioHandler
     // A deliberate pause (lock screen, in-app, etc.) always wins — clear the
     // flag so a subsequent interruption-end event can't resume playback
     // behind the user's back.
-    _pausedByInterruption = false;
+    _wantsToPlay = false;
+    _resumeAfterInterruption = false;
     return _player.pause();
   }
 
@@ -337,12 +382,47 @@ class TawheedAudioHandler extends BaseAudioHandler
   Future<void> seek(Duration position) => _player.seek(position);
 
   @override
-  Future<void> setSpeed(double speed) => _player.setSpeed(speed);
+  Future<void> setSpeed(double speed) {
+    _speed = speed;
+    return _player.setSpeed(speed);
+  }
 
   @override
   Future<void> stop() async {
+    // Invalidate an in-flight setAudioSource before stopping. Otherwise it can
+    // complete after this await and resurrect playback on the retired engine.
+    _loadGeneration++;
+    _sourceReady = false;
+    _wantsToPlay = false;
+    _resumeAfterInterruption = false;
     await _player.stop();
     return super.stop();
+  }
+
+  bool _isCurrentLoad(AudioEngine player, int generation, int sessionId) =>
+      identical(player, _player) &&
+      generation == _loadGeneration &&
+      sessionId == _activeSessionId;
+
+  Future<void> _playIfStillDesired(
+    AudioEngine player,
+    int generation,
+  ) async {
+    if (!identical(player, _player) ||
+        generation != _loadGeneration ||
+        !_sourceReady ||
+        !_wantsToPlay ||
+        _interruptionActive) {
+      return;
+    }
+    await player.play();
+    // A pause/stop can arrive while a platform play call is outstanding.
+    if (!identical(player, _player) ||
+        generation != _loadGeneration ||
+        !_wantsToPlay ||
+        _interruptionActive) {
+      await player.pause();
+    }
   }
 
   Future<void> _retireEngine(AudioEngine engine) async {

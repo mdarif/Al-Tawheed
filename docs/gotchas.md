@@ -30,6 +30,13 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
+- **A load session alone cannot decide whether a source should autoplay.**
+  `setAudioSource` may finish after stop, a user pause, a noisy-route event, or
+  an audio-focus interruption. `TawheedAudioHandler` therefore keeps separate
+  load-generation, source-ready, desired-play, and interruption state; late
+  completion must re-check all of them. Test these with a pending `AudioEngine`
+  source and a mocked `PlaybackAudioSession`, never a timing delay.
+
 - **Widget tests that exercise `PlayerNotifier` must inject `AudioPlayback`,
   even when their subject is not the player.** A production
   `TawheedAudioHandler` owns a platform-backed `just_audio` engine; an offline

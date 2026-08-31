@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/audio/audio_handler.dart';
@@ -126,7 +127,128 @@ void main() {
       subscriptions.map((subscription) => subscription.cancel()),
     );
   });
+
+  test('stop invalidates a pending production source load', () async {
+    final initial = _FakeAudioEngine();
+    final pending = _FakeAudioEngine(pendingSource: Completer<void>());
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, pending]),
+      configureAudioSession: false,
+    );
+
+    final load = handler.loadLecture(_lecture('pending'), sessionId: 1);
+    await handler.stop();
+    pending.completeSourceLoad();
+    await load;
+
+    expect(pending.playCalls, 0);
+    expect(pending.stopCalls, greaterThanOrEqualTo(1));
+  });
+
+  test('reapplies the selected speed to every replacement engine', () async {
+    final initial = _FakeAudioEngine();
+    final first = _FakeAudioEngine();
+    final second = _FakeAudioEngine();
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, first, second]),
+      configureAudioSession: false,
+    );
+
+    await handler.setSpeed(1.5);
+    await handler.loadLecture(_lecture('a'), sessionId: 1);
+    await handler.loadLecture(_lecture('b'), sessionId: 2);
+
+    expect(first.speeds, [1.5]);
+    expect(second.speeds, [1.5]);
+  });
+
+  test('a direct pause while source loading prevents late autoplay', () async {
+    final initial = _FakeAudioEngine();
+    final pending = _FakeAudioEngine(pendingSource: Completer<void>());
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, pending]),
+      configureAudioSession: false,
+    );
+
+    final load = handler.loadLecture(_lecture('pending'), sessionId: 1);
+    await handler.pause();
+    pending.completeSourceLoad();
+    await load;
+
+    expect(pending.playCalls, 0);
+  });
+
+  test('noisy route change during source loading prevents late autoplay',
+      () async {
+    final initial = _FakeAudioEngine();
+    final pending = _FakeAudioEngine(pendingSource: Completer<void>());
+    final session = _FakePlaybackAudioSession();
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, pending]),
+      sessionFactory: () async => session,
+    );
+    await _flushMicrotasks();
+
+    final load = handler.loadLecture(_lecture('pending'), sessionId: 1);
+    session.emitNoisy();
+    pending.completeSourceLoad();
+    await load;
+
+    expect(pending.playCalls, 0);
+  });
+
+  test('focus interruption survives replacement; user pause wins on end',
+      () async {
+    final initial = _FakeAudioEngine();
+    final first = _FakeAudioEngine();
+    final pending = _FakeAudioEngine(pendingSource: Completer<void>());
+    final session = _FakePlaybackAudioSession();
+    final handler = TawheedAudioHandler(
+      engineFactory: _engineFactory([initial, first, pending]),
+      sessionFactory: () async => session,
+    );
+    await _flushMicrotasks();
+
+    await handler.loadLecture(_lecture('a'), sessionId: 1);
+    expect(first.playCalls, 1);
+
+    session.emitInterruption(begin: true);
+    await _flushMicrotasks();
+    final load = handler.loadLecture(_lecture('b'), sessionId: 2);
+    pending.completeSourceLoad();
+    await load;
+    expect(pending.playCalls, 0);
+
+    // A focus end may resume an interrupted user intent on the replacement.
+    session.emitInterruption(begin: false);
+    await _flushMicrotasks();
+    expect(pending.playCalls, 1);
+
+    final later = _FakeAudioEngine(pendingSource: Completer<void>());
+    final handlerWithUserPause = TawheedAudioHandler(
+      engineFactory: _engineFactory([_FakeAudioEngine(), later]),
+      sessionFactory: () async => session,
+    );
+    await _flushMicrotasks();
+    final pausedLoad =
+        handlerWithUserPause.loadLecture(_lecture('c'), sessionId: 3);
+    session.emitInterruption(begin: true);
+    await _flushMicrotasks();
+    await handlerWithUserPause.pause();
+    session.emitInterruption(begin: false);
+    later.completeSourceLoad();
+    await pausedLoad;
+    await _flushMicrotasks();
+    expect(later.playCalls, 0);
+  });
 }
+
+AudioEngine Function() _engineFactory(List<_FakeAudioEngine> engines) {
+  var index = 0;
+  return () => engines[index++];
+}
+
+Future<void> _flushMicrotasks() => Future<void>.delayed(Duration.zero);
 
 Lecture _lecture(String id) => Lecture(
       id: id,
@@ -157,6 +279,9 @@ class _FakeAudioEngine implements AudioEngine {
   double _speed = 1;
   double _volume = 1;
   int playCalls = 0;
+  int pauseCalls = 0;
+  int stopCalls = 0;
+  final speeds = <double>[];
 
   @override
   Stream<PlaybackEvent> get playbackEventStream => _events.stream;
@@ -193,15 +318,27 @@ class _FakeAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> pause() async => _playing = false;
+  Future<void> pause() async {
+    _playing = false;
+    pauseCalls++;
+  }
+
   @override
   Future<void> seek(Duration position) async => _position = position;
   @override
-  Future<void> setSpeed(double speed) async => _speed = speed;
+  Future<void> setSpeed(double speed) async {
+    _speed = speed;
+    speeds.add(speed);
+  }
+
   @override
   Future<void> setVolume(double volume) async => _volume = volume;
   @override
-  Future<void> stop() async => _playing = false;
+  Future<void> stop() async {
+    _playing = false;
+    stopCalls++;
+  }
+
   @override
   Future<void> dispose() async {}
 
@@ -213,4 +350,26 @@ class _FakeAudioEngine implements AudioEngine {
 
   void emitPlaybackError(Object error) => _events.addError(error);
   void completeSourceLoad() => pendingSource!.complete();
+}
+
+class _FakePlaybackAudioSession implements PlaybackAudioSession {
+  final _noisy = StreamController<void>.broadcast(sync: true);
+  final _interruptions =
+      StreamController<AudioInterruptionEvent>.broadcast(sync: true);
+
+  @override
+  Stream<void> get becomingNoisyEvents => _noisy.stream;
+
+  @override
+  Stream<AudioInterruptionEvent> get interruptionEvents =>
+      _interruptions.stream;
+
+  @override
+  Future<void> configureMusic() async {}
+
+  void emitNoisy() => _noisy.add(null);
+
+  void emitInterruption({required bool begin}) => _interruptions.add(
+        AudioInterruptionEvent(begin, AudioInterruptionType.pause),
+      );
 }
