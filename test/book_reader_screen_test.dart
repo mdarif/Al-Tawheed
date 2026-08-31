@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -358,6 +359,25 @@ void main() {
         ),
       );
 
+    // A geometry assertion against Ahem/default fonts would only prove that a
+    // box grew. Load the bundled face used by the Urdu edition and assert the
+    // rendered run selects it.
+    final fontLoader = FontLoader('NotoNastaliqUrdu')
+      ..addFont(rootBundle.load('assets/fonts/NotoNastaliqUrdu-Regular.ttf'));
+    await fontLoader.load();
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.noScaling),
+        child: _wrap(book, 'ch-01'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    const lineText = 'یہ نستعلیق عبارت بڑے حروف میں بھی صاف دکھائی دے گی۔';
+    final baselineRect = tester.getRect(find.text(lineText).first);
+    expect(_spanFor(tester, lineText)?.style?.fontFamily, 'NotoNastaliqUrdu');
+
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(2)),
@@ -367,9 +387,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('یہ نستعلیق عبارت بڑے حروف میں بھی صاف دکھائی دے گی۔'),
+      find.text(lineText),
       findsWidgets,
     );
+    final scaledRect = tester.getRect(find.text(lineText).first);
+    expect(scaledRect.height, greaterThan(baselineRect.height * 1.5));
+    expect(scaledRect.left, greaterThanOrEqualTo(0));
+    expect(scaledRect.right, lessThanOrEqualTo(320));
     expect(_readerScrollPosition(tester).maxScrollExtent, greaterThan(0));
     expect(tester.takeException(), isNull);
   });

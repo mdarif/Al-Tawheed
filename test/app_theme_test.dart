@@ -46,9 +46,39 @@ void main() {
 
       expect(
         _contrastRatio(semantic.secondaryText, theme.colorScheme.surface),
-        closeTo(5.3532, 0.001),
+        closeTo(5.8862, 0.001),
       );
       expect(semantic.secondaryText, theme.colorScheme.onSurfaceVariant);
+    });
+
+    test('dark secondary text meets AA on elevated chip and player strip', () {
+      final theme = AppTheme.dark;
+      final semantic = theme.extension<AppSemanticColors>()!;
+      final chipSurface = theme.colorScheme.surfaceContainerHighest;
+      final playerStripSurface = Color.alphaBlend(
+        AppColors.gold.withValues(alpha: 0.25),
+        AppColors.backgroundDark,
+      );
+
+      // These are the actual consumer backgrounds: SelectionChip uses
+      // surfaceContainerHighest and the player status strip composites its
+      // gold background at 25% over the dark scaffold.
+      expect(
+        _contrastRatio(semantic.secondaryText, chipSurface),
+        closeTo(4.7933, 0.001),
+      );
+      expect(
+        _contrastRatio(semantic.secondaryText, playerStripSurface),
+        closeTo(4.8293, 0.001),
+      );
+      expect(
+        _contrastRatio(semantic.secondaryText, chipSurface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(semantic.secondaryText, playerStripSurface),
+        greaterThanOrEqualTo(4.5),
+      );
     });
 
     test('iOS typography uses tighter title tracking than Android', () {

@@ -35,7 +35,9 @@ class AppColors {
   // previous #8E8E93 was only 4.27:1 on #2C2C2E (below WCAG AA for normal
   // text), so keep this as a full-opacity semantic role rather than applying
   // per-widget alpha.
-  static const Color onDarkSecondary = Color(0xFFA0A0A5);
+  // This also passes on elevated #3A3A3C chips and the player's alpha-gold
+  // status-strip composite, not just the base charcoal surface.
+  static const Color onDarkSecondary = Color(0xFFA8A8AD);
   static const Color onLight = Color(0xFF141416);
   // Warm grey that remains 5.96:1 on the light surface (#FFFFFF).
   static const Color onLightSecondary = Color(0xFF6C6256);

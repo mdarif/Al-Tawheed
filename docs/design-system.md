@@ -14,9 +14,11 @@ extensions in `app_theme_extensions.dart` (`brandColor`, `secondaryTextColor`,
 `groupedSurface`, and related accessors), rather than importing palette values.
 
 Secondary text is a full-opacity role. Light mode uses warm grey `#6C6256`
-and dark mode uses `#A0A0A5`; each meets the WCAG AA 4.5:1 normal-text
-threshold on its theme surface. Do not add alpha to this role at call sites.
-The exact ratios are guarded in `test/app_theme_test.dart`.
+and dark mode uses `#A8A8AD`; each meets the WCAG AA 4.5:1 normal-text
+threshold on its theme surface, elevated selection chips, and the player's
+alpha-gold status-strip background. Do not add alpha to this role at call
+sites. The exact consumer-background ratios are guarded in
+`test/app_theme_test.dart`.
 
 ## Typography
 
@@ -47,9 +49,9 @@ component already does so.
   manages a lecture's saved-audio actions.
 - `StudyStatusChip` displays the existing studied, in-progress, and not-started
   states. `ScrollToTopButton` is the reader's contextual floating action.
-- `ConfirmDialog` provides the shared informational and confirmation dialog
-  helpers. Screen-specific surfaces may still compose Material widgets around
-  these helpers.
+- `showAlertDialog` and `showConfirmDialog` provide the shared informational
+  and confirmation dialog helpers. Screen-specific surfaces may still compose
+  Material widgets around these helpers.
 
 Interactive icon controls should retain a Material tooltip (which supplies a
 screen-reader label) and at least the existing component's minimum hit area.
