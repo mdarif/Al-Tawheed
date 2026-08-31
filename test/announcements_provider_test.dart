@@ -110,7 +110,8 @@ void main() {
       expect(p.visible.single.id, 'a1');
     });
 
-    test('silently ignores a payload whose version exceeds the supported maximum',
+    test(
+        'silently ignores a payload whose version exceeds the supported maximum',
         () async {
       // AppConfig.maxSupportedAnnouncementsVersion == 1; version 2 must be dropped.
       await PreferencesService.instance.saveRemoteJson(

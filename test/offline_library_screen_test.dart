@@ -26,8 +26,18 @@ const _book = Book(
   language: 'English',
 );
 
-const _ch1 = Chapter(id: 'ch-1', number: 1, title: {'en': 'Chapter One'}, lectureCount: 3);
-const _ch2 = Chapter(id: 'ch-2', number: 2, title: {'en': 'Chapter Two'}, lectureCount: 2);
+const _ch1 = Chapter(
+  id: 'ch-1',
+  number: 1,
+  title: {'en': 'Chapter One'},
+  lectureCount: 3,
+);
+const _ch2 = Chapter(
+  id: 'ch-2',
+  number: 2,
+  title: {'en': 'Chapter Two'},
+  lectureCount: 2,
+);
 
 Lecture _lec(String id, int num, String chapterId, {int bytes = 1048576}) =>
     Lecture(
@@ -99,19 +109,26 @@ Catalog _arabicCatalog() => Catalog(
 
 // ── Widget helpers ────────────────────────────────────────────────────────────
 
-Widget _wrap(DownloadsProvider downloads,
-    {Catalog? catalog, SeriesProvider? series, Locale? locale,}) {
+Widget _wrap(
+  DownloadsProvider downloads, {
+  Catalog? catalog,
+  SeriesProvider? series,
+  Locale? locale,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(
-          create: (_) =>
-              CatalogProvider()..setCatalogForTest(catalog ?? _catalog()),),
+        create: (_) =>
+            CatalogProvider()..setCatalogForTest(catalog ?? _catalog()),
+      ),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(
-          create: (_) => ConnectivityProvider.testOnline(),),
+        create: (_) => ConnectivityProvider.testOnline(),
+      ),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false)),),
+        value: series ?? (SeriesProvider()..load(false)),
+      ),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -187,8 +204,7 @@ void main() {
       expect(find.textContaining('Download remaining'), findsOneWidget);
     });
 
-    testWidgets(
-        '"Delete chapter" chip shown when entire chapter is downloaded',
+    testWidgets('"Delete chapter" chip shown when entire chapter is downloaded',
         (tester) async {
       final downloads = DownloadsProvider()
         ..seedDownloadedForTest('l1')
@@ -202,7 +218,8 @@ void main() {
       expect(find.textContaining('Download remaining'), findsNothing);
     });
 
-    testWidgets('lectures from two chapters both appear when both have downloads',
+    testWidgets(
+        'lectures from two chapters both appear when both have downloads',
         (tester) async {
       final downloads = DownloadsProvider()
         ..seedDownloadedForTest('l1')
@@ -278,8 +295,7 @@ void main() {
   // ── Arabic series (flat list, no chapters) ──────────────────────────────
 
   group('OfflineLibraryScreen — Arabic series (flat list)', () {
-    testWidgets(
-        'shows the downloaded Arabic lecture without chapter grouping',
+    testWidgets('shows the downloaded Arabic lecture without chapter grouping',
         (tester) async {
       final downloads = DownloadsProvider()..seedDownloadedForTest('ar-1');
       final series = SeriesProvider()
@@ -287,7 +303,8 @@ void main() {
         ..setCurrentSeriesForTest(_arabicSeries);
 
       await tester.pumpWidget(
-          _wrap(downloads, catalog: _arabicCatalog(), series: series),);
+        _wrap(downloads, catalog: _arabicCatalog(), series: series),
+      );
       await tester.pumpAndSettle();
 
       // Downloaded lecture shows its Arabic title, not the English one.
@@ -308,8 +325,13 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(DownloadsProvider(),
-          catalog: _arabicCatalog(), series: series,),);
+      await tester.pumpWidget(
+        _wrap(
+          DownloadsProvider(),
+          catalog: _arabicCatalog(),
+          series: series,
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('No downloads yet'), findsOneWidget);
@@ -324,10 +346,14 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(downloads,
+      await tester.pumpWidget(
+        _wrap(
+          downloads,
           catalog: _arabicCatalog(),
           series: series,
-          locale: const Locale('ar'),),);
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline_rounded));

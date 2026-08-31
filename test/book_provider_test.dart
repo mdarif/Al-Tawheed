@@ -100,7 +100,10 @@ void main() {
     await provider.load(_arabicSeries); // e.g. Book tab re-opened
 
     expect(provider.status, BookStatus.loaded);
-    expect(provider.book, isNot(same(first))); // freshly parsed, not the stale one
+    expect(
+      provider.book,
+      isNot(same(first)),
+    ); // freshly parsed, not the stale one
     expect(provider.book!.chapters, hasLength(67));
   });
 }

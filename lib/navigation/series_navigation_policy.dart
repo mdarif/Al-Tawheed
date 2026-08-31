@@ -13,9 +13,9 @@ abstract final class SeriesNavigationPolicy {
   /// Returns tabs in their production order. Lectures and Settings are always
   /// available; Book and Study are conditional on the edition capabilities.
   static List<SeriesNavigationTab> tabsFor(SeriesConfig series) => [
-    for (final tab in SeriesNavigationTab.values)
-      if (isAvailable(series, tab)) tab,
-  ];
+        for (final tab in SeriesNavigationTab.values)
+          if (isAvailable(series, tab)) tab,
+      ];
 
   /// Whether [series] can serve the route/content represented by [tab].
   static bool isAvailable(SeriesConfig series, SeriesNavigationTab tab) =>

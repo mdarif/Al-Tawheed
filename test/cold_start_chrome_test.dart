@@ -52,7 +52,10 @@ Future<void> _seedManifest() => PreferencesService.instance.saveRemoteJson(
 /// real wiring. If app.dart's callback changes, change this with it; keeping the
 /// two in lock-step in one place is what stops the "probe reimplements the
 /// provider and drifts" bug this repo has hit before.
-LanguageProvider _chromeFor(SeriesProvider series, {bool languageFlag = false}) {
+LanguageProvider _chromeFor(
+  SeriesProvider series, {
+  bool languageFlag = false,
+}) {
   final lang = LanguageProvider()..load();
   lang.applyLanguageFeatureFlag(languageFlag);
   lang.applySeriesDefault(series.currentSeries);
@@ -85,8 +88,11 @@ void main() {
     expect(chrome.language, AppLanguage.arabic);
     expect(chrome.locale, const Locale('ar'));
     expect(chrome.isRtl, isTrue);
-    expect(chrome.hasExplicitPreference, isFalse,
-        reason: 'chrome comes from the edition default, not a saved pick',);
+    expect(
+      chrome.hasExplicitPreference,
+      isFalse,
+      reason: 'chrome comes from the edition default, not a saved pick',
+    );
   });
 
   // 5.3 — fresh install on an Arabic device. The edition auto-defaults to Arabic
@@ -104,8 +110,11 @@ void main() {
 
     // Edition + picker
     expect(series.currentSeries.id, 'tawheed-ar');
-    expect(series.hasSelectedSeries, isTrue,
-        reason: 'auto-defaulted → /choose-series must never show',);
+    expect(
+      series.hasSelectedSeries,
+      isTrue,
+      reason: 'auto-defaulted → /choose-series must never show',
+    );
 
     // Chrome
     final chrome = _chromeFor(series);

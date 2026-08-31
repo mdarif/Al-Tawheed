@@ -38,7 +38,12 @@ String _catalogJson({int version = 1, required String bookTitle}) =>
         'language': 'ur',
       },
       'chapters': [
-        {'id': 'ch-01', 'number': 1, 'title': {'en': 'One'}, 'lectureCount': 1},
+        {
+          'id': 'ch-01',
+          'number': 1,
+          'title': {'en': 'One'},
+          'lectureCount': 1,
+        },
       ],
       'lectures': [
         {

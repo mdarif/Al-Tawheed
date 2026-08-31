@@ -180,7 +180,8 @@ void main() {
       expect(infos[1].chapter.id, 'class-02');
     });
 
-    test('markChapterStudied marks the chapter studied even if parts are incomplete',
+    test(
+        'markChapterStudied marks the chapter studied even if parts are incomplete',
         () async {
       // Simulates jumping to the last part of a chapter and finishing it
       // without playing the earlier parts — only lec-004 (class-02's last

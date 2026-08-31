@@ -46,10 +46,25 @@ const _book = BookContent(
   author: 'الشيخ محمد بن عبد الوهاب',
   chapters: [
     BookChapter(id: 'ch-01', number: 1, title: 'باب فضل التوحيد', text: 'x'),
-    BookChapter(id: 'ch-04', number: 4, title: 'باب الدعاء إلى شهادة', text: 'x'),
+    BookChapter(
+      id: 'ch-04',
+      number: 4,
+      title: 'باب الدعاء إلى شهادة',
+      text: 'x',
+    ),
     BookChapter(id: 'ch-05', number: 5, title: 'باب تفسير التوحيد', text: 'x'),
-    BookChapter(id: 'ch-06', number: 6, title: 'باب من الشرك لبس الحلقة', text: 'x'),
-    BookChapter(id: 'ch-07', number: 7, title: 'باب ما جاء في الرقى', text: 'x'),
+    BookChapter(
+      id: 'ch-06',
+      number: 6,
+      title: 'باب من الشرك لبس الحلقة',
+      text: 'x',
+    ),
+    BookChapter(
+      id: 'ch-07',
+      number: 7,
+      title: 'باب ما جاء في الرقى',
+      text: 'x',
+    ),
   ],
 );
 
@@ -119,10 +134,12 @@ void main() {
   // The Urdu edition ships English (LTR) chrome by default (ADR-0002): badges on
   // the leading (left) edge, Urdu-face numerals.
   testWidgets('Urdu edition, English chrome — light', (tester) async {
-    await pumpAt(tester,
-        series: SeriesConfig.legacyUrduFallback,
-        theme: AppTheme.light,
-        chrome: const Locale('en'),);
+    await pumpAt(
+      tester,
+      series: SeriesConfig.legacyUrduFallback,
+      theme: AppTheme.light,
+      chrome: const Locale('en'),
+    );
     await expectLater(
       find.byType(BookChapterListScreen),
       matchesGoldenFile('goldens/book_chapter_list.urdu.light.png'),
@@ -130,10 +147,12 @@ void main() {
   });
 
   testWidgets('Urdu edition, English chrome — dark', (tester) async {
-    await pumpAt(tester,
-        series: SeriesConfig.legacyUrduFallback,
-        theme: AppTheme.dark,
-        chrome: const Locale('en'),);
+    await pumpAt(
+      tester,
+      series: SeriesConfig.legacyUrduFallback,
+      theme: AppTheme.dark,
+      chrome: const Locale('en'),
+    );
     await expectLater(
       find.byType(BookChapterListScreen),
       matchesGoldenFile('goldens/book_chapter_list.urdu.dark.png'),
@@ -144,10 +163,12 @@ void main() {
   // badges move to the right edge. This is the direction the mirroring bugs
   // (3ae852d, 54f2d48, f6b4ade) live on, previously unguarded.
   testWidgets('Arabic edition, Arabic chrome (RTL) — light', (tester) async {
-    await pumpAt(tester,
-        series: _arabicSeries,
-        theme: AppTheme.light,
-        chrome: const Locale('ar'),);
+    await pumpAt(
+      tester,
+      series: _arabicSeries,
+      theme: AppTheme.light,
+      chrome: const Locale('ar'),
+    );
     await expectLater(
       find.byType(BookChapterListScreen),
       matchesGoldenFile('goldens/book_chapter_list.arabic.light.png'),

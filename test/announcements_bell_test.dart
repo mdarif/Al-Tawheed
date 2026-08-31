@@ -27,9 +27,11 @@ Widget _wrap({
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(
-          value: announcements ?? AnnouncementsProvider(),),
+        value: announcements ?? AnnouncementsProvider(),
+      ),
       ChangeNotifierProvider.value(
-          value: featureFlags ?? FeatureFlagsProvider(),),
+        value: featureFlags ?? FeatureFlagsProvider(),
+      ),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     child: MaterialApp(
@@ -66,11 +68,13 @@ void main() {
     final announcements = AnnouncementsProvider()
       ..setAnnouncementsForTest(const [_announcement]);
 
-    await tester.pumpWidget(_wrap(
-      announcements: announcements,
-      featureFlags: FeatureFlagsProvider()
-        ..setFeaturesJsonForTest({'announcements': false}),
-    ),);
+    await tester.pumpWidget(
+      _wrap(
+        announcements: announcements,
+        featureFlags: FeatureFlagsProvider()
+          ..setFeaturesJsonForTest({'announcements': false}),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.notifications_none_rounded), findsNothing);

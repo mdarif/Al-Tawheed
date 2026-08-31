@@ -31,7 +31,9 @@ class StudyClassCompleteScreen extends StatelessWidget {
       try {
         chapter = catalog.chapterById(chapterId);
       } catch (e) {
-        debugPrint('StudyClassCompleteScreen: chapter $chapterId not in catalog: $e');
+        debugPrint(
+          'StudyClassCompleteScreen: chapter $chapterId not in catalog: $e',
+        );
         chapter = null;
       }
     }

@@ -21,14 +21,14 @@ abstract final class RouteGuards {
   /// list. Returning `null` means "no redirect — allow the route".
   static String? book(SeriesConfig series) =>
       SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.book)
-      ? null
-      : lectures;
+          ? null
+          : lectures;
 
   /// `/study` likewise requires the series to offer study mode.
   static String? study(SeriesConfig series) =>
       SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.study)
-      ? null
-      : lectures;
+          ? null
+          : lectures;
 
   /// `/` (welcome / splash): a returning user — one who has already seen the
   /// welcome for the current edition — skips straight to the lecture list, so

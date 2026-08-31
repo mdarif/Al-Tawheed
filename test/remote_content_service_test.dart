@@ -40,7 +40,8 @@ void main() {
       );
     });
 
-    test('serves stale cache and triggers a background refresh once age reaches the TTL',
+    test(
+        'serves stale cache and triggers a background refresh once age reaches the TTL',
         () {
       expect(
         RemoteContentService.decideCacheStrategy(
@@ -53,7 +54,8 @@ void main() {
       );
     });
 
-    test('serves stale cache and triggers a background refresh well past the TTL',
+    test(
+        'serves stale cache and triggers a background refresh well past the TTL',
         () {
       expect(
         RemoteContentService.decideCacheStrategy(
@@ -162,7 +164,8 @@ void main() {
       expect(body, contains('ok'));
     });
 
-    test('no cache + all attempts fail → NoCachedContentException after maxAttempts',
+    test(
+        'no cache + all attempts fail → NoCachedContentException after maxAttempts',
         () async {
       var calls = 0;
       final client = MockClient((_) async {

@@ -62,7 +62,8 @@ void main() {
     expect(find.text('Open dialog'), findsOneWidget);
   });
 
-  testWidgets('confirm returns true without popping parent route', (tester) async {
+  testWidgets('confirm returns true without popping parent route',
+      (tester) async {
     var confirmed = false;
 
     await pumpHost(

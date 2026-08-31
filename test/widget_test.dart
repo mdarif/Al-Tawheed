@@ -23,16 +23,21 @@ const _arabicSeries = SeriesConfig(
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
 );
 
-Widget _wrap(Widget child,
-    {ThemeMode themeMode = ThemeMode.dark, SeriesConfig? series,}) {
+Widget _wrap(
+  Widget child, {
+  ThemeMode themeMode = ThemeMode.dark,
+  SeriesConfig? series,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
-      ChangeNotifierProvider(create: (_) {
-        final provider = SeriesProvider()..load(false, definitive: true);
-        if (series != null) provider.setCurrentSeriesForTest(series);
-        return provider;
-      },),
+      ChangeNotifierProvider(
+        create: (_) {
+          final provider = SeriesProvider()..load(false, definitive: true);
+          if (series != null) provider.setCurrentSeriesForTest(series);
+          return provider;
+        },
+      ),
     ],
     child: Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) => MaterialApp(

@@ -53,7 +53,8 @@ void main() {
         throwsFormatException,
       );
       expect(
-        () => SeriesConfig.fromJson({'id': '', 'catalogUrl': 'https://x/c.json'}),
+        () =>
+            SeriesConfig.fromJson({'id': '', 'catalogUrl': 'https://x/c.json'}),
         throwsFormatException,
       );
     });

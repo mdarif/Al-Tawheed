@@ -26,8 +26,7 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason:
-          'Use showConfirmDialog (lib/widgets/confirm_dialog.dart) instead '
+      reason: 'Use showConfirmDialog (lib/widgets/confirm_dialog.dart) instead '
           'of showDialog in: ${violations.join(', ')}',
     );
   });

@@ -58,7 +58,8 @@ class BookContent {
 
   factory BookContent.fromJson(Map<String, dynamic> json) {
     final rawBook = json['book'];
-    final meta = rawBook is Map<String, dynamic> ? rawBook : const <String, dynamic>{};
+    final meta =
+        rawBook is Map<String, dynamic> ? rawBook : const <String, dynamic>{};
     final rawChapters = json['chapters'];
     final chapters = <BookChapter>[];
     if (rawChapters is List) {

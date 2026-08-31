@@ -93,46 +93,50 @@ void main() {
       chapter: chapter1,
     );
 
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: player),
-        ChangeNotifierProvider.value(value: progress),
-        ChangeNotifierProvider.value(value: catalogProvider),
-        ChangeNotifierProvider.value(value: study),
-        ChangeNotifierProvider(create: (_) => DownloadsProvider()),
-        ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOffline()),
-        ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
-        ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
-        ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
-      ],
-      child: MaterialApp.router(
-        theme: AppTheme.dark,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: GoRouter(
-          routes: [
-            GoRoute(
-              path: '/',
-              builder: (_, __) =>
-                  const Scaffold(body: Center(child: Text('Home'))),
-            ),
-            GoRoute(
-              path: '/player',
-              pageBuilder: (context, state) => const MaterialPage(
-                fullscreenDialog: true,
-                child: PlayerScreen(),
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: player),
+          ChangeNotifierProvider.value(value: progress),
+          ChangeNotifierProvider.value(value: catalogProvider),
+          ChangeNotifierProvider.value(value: study),
+          ChangeNotifierProvider(create: (_) => DownloadsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => ConnectivityProvider.testOffline(),
+          ),
+          ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+          ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+          ChangeNotifierProvider(create: (_) => SeriesProvider()..load(false)),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.dark,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: GoRouter(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (_, __) =>
+                    const Scaffold(body: Center(child: Text('Home'))),
               ),
-            ),
-            GoRoute(
-              path: '/study/complete',
-              builder: (context, state) => StudyClassCompleteScreen(
-                chapterId: state.uri.queryParameters['chapterId']!,
+              GoRoute(
+                path: '/player',
+                pageBuilder: (context, state) => const MaterialPage(
+                  fullscreenDialog: true,
+                  child: PlayerScreen(),
+                ),
               ),
-            ),
-          ],
+              GoRoute(
+                path: '/study/complete',
+                builder: (context, state) => StudyClassCompleteScreen(
+                  chapterId: state.uri.queryParameters['chapterId']!,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),);
+    );
     await tester.pumpAndSettle();
 
     unawaited(GoRouter.of(tester.element(find.text('Home'))).push('/player'));

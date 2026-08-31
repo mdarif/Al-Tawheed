@@ -59,10 +59,9 @@ class Announcement {
       validUntil: j['validUntil'] != null
           ? DateTime.tryParse(j['validUntil'] as String)
           : null,
-      platforms: (j['platforms'] as List<dynamic>?)
-              ?.whereType<String>()
-              .toList() ??
-          ['android', 'ios'],
+      platforms:
+          (j['platforms'] as List<dynamic>?)?.whereType<String>().toList() ??
+              ['android', 'ios'],
     );
   }
 

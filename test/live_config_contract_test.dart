@@ -63,21 +63,32 @@ void main() {
   // strands chrome resolution; a `hasBook: true` on the Urdu series would strand
   // installs older than the client that bundles the book asset (release-runbook
   // note; the client defaults `hasBook` itself and the manifest must NOT force it).
-  test('series.json parses, every entry declares a language, and tawheed-ur '
+  test(
+      'series.json parses, every entry declares a language, and tawheed-ur '
       'never forces hasBook', () async {
     final manifest = await getJson(AppConfig.seriesManifestUrl);
     expect(manifest, isA<Map>());
     final series = (manifest as Map)['series'];
-    expect(series, isA<List>(), reason: 'series.json must carry a `series` list');
+    expect(
+      series,
+      isA<List>(),
+      reason: 'series.json must carry a `series` list',
+    );
 
     for (final entry in series as List) {
       final e = entry as Map;
-      expect((e['language'] as String?)?.isNotEmpty, isTrue,
-          reason: 'series ${e['id']} is missing `language`',);
+      expect(
+        (e['language'] as String?)?.isNotEmpty,
+        isTrue,
+        reason: 'series ${e['id']} is missing `language`',
+      );
       if (e['id'] == 'tawheed-ur') {
-        expect(e['hasBook'], isNot(true),
-            reason: 'tawheed-ur must NOT set hasBook:true in the manifest — the '
-                'client defaults it, and forcing it here strands older installs',);
+        expect(
+          e['hasBook'],
+          isNot(true),
+          reason: 'tawheed-ur must NOT set hasBook:true in the manifest — the '
+              'client defaults it, and forcing it here strands older installs',
+        );
       }
     }
   });
@@ -88,17 +99,19 @@ void main() {
   test('app-config.json branding resolves to non-empty, https-only URLs',
       () async {
     final config = await getJson(AppConfig.appConfigUrl);
-    final brandingJson =
-        (config as Map)['branding'] as Map<String, dynamic>? ??
-            <String, dynamic>{};
+    final brandingJson = (config as Map)['branding'] as Map<String, dynamic>? ??
+        <String, dynamic>{};
     final branding = AppConfigBranding.fromJson(brandingJson);
 
     expect(branding.publisher.trim(), isNotEmpty);
     expect(branding.poweredByLabel['en'], isNotEmpty);
     for (final url in [branding.appBrandUrl, branding.publisherUrl]) {
-      expect(Uri.parse(url).scheme, 'https',
-          reason: 'branding URL "$url" must be https or the app silently '
-              'refuses to open it (safe_url_launcher allowlist)',);
+      expect(
+        Uri.parse(url).scheme,
+        'https',
+        reason: 'branding URL "$url" must be https or the app silently '
+            'refuses to open it (safe_url_launcher allowlist)',
+      );
     }
   });
 
@@ -123,9 +136,12 @@ void main() {
         }
       }
     }
-    expect(insecure, isEmpty,
-        reason: 'non-https URLs (dead per the launcher allowlist):\n'
-            '${insecure.join('\n')}',);
+    expect(
+      insecure,
+      isEmpty,
+      reason: 'non-https URLs (dead per the launcher allowlist):\n'
+          '${insecure.join('\n')}',
+    );
   });
 
   // 6.4 — ADR-0001: contentBaseUrl is compiled in, so a CDN move needs an app
@@ -138,9 +154,12 @@ void main() {
 
     for (final entry in manifest['series'] as List) {
       final catalogUrl = (entry as Map)['catalogUrl'] as String;
-      expect(Uri.parse(catalogUrl).host, baseHost,
-          reason: '${entry['id']} catalogUrl host must be $baseHost '
-              '(contentBaseUrl is compiled in — ADR-0001)',);
+      expect(
+        Uri.parse(catalogUrl).host,
+        baseHost,
+        reason: '${entry['id']} catalogUrl host must be $baseHost '
+            '(contentBaseUrl is compiled in — ADR-0001)',
+      );
     }
   });
 }

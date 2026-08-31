@@ -134,7 +134,8 @@ void main() {
     // flag would make this feature a no-op exactly where it ships.
     test('the series default applies even with the language feature flag off',
         () async {
-      final lang = await _loaded()..applyLanguageFeatureFlag(false);
+      final lang = await _loaded()
+        ..applyLanguageFeatureFlag(false);
 
       lang.applySeriesDefault(_arabicSeries);
 
@@ -195,7 +196,8 @@ void main() {
 
   group('switching editions', () {
     test('flips chrome when the user has no explicit pick', () async {
-      final lang = await _loaded()..applySeriesDefault(_arabicSeries);
+      final lang = await _loaded()
+        ..applySeriesDefault(_arabicSeries);
       expect(lang.language, AppLanguage.arabic);
 
       lang.applySeriesDefault(_urduSeries);
@@ -223,7 +225,8 @@ void main() {
   // the series default for free.
   group('resolve follows the series default', () {
     test('picks the Arabic entry on the Arabic edition', () async {
-      final lang = await _loaded()..applySeriesDefault(_arabicSeries);
+      final lang = await _loaded()
+        ..applySeriesDefault(_arabicSeries);
 
       expect(
         lang.resolve({'en': 'Powered by Al Marfa', 'ar': 'بدعم من المرفأ'}),
@@ -232,7 +235,8 @@ void main() {
     });
 
     test('falls back to English when the field has no Arabic entry', () async {
-      final lang = await _loaded()..applySeriesDefault(_arabicSeries);
+      final lang = await _loaded()
+        ..applySeriesDefault(_arabicSeries);
 
       expect(lang.resolve({'en': 'Al Marfa Duroos'}), 'Al Marfa Duroos');
     });

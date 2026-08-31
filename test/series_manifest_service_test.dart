@@ -26,8 +26,8 @@ Map<String, dynamic> _entry(String id, String language, {String? catalogUrl}) =>
       'speakerName': {'en': 'Speaker'},
     };
 
-Future<void> _seed(Object manifest) => PreferencesService.instance
-    .saveRemoteJson(_cacheKey, jsonEncode(manifest));
+Future<void> _seed(Object manifest) =>
+    PreferencesService.instance.saveRemoteJson(_cacheKey, jsonEncode(manifest));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -48,10 +48,16 @@ void main() {
     test('parses a well-formed manifest, preserving order', () async {
       await _seed({
         'series': [
-          _entry('tawheed-ur', 'ur',
-              catalogUrl: 'https://example.com/ur/catalog.json',),
-          _entry('tawheed-ar', 'ar',
-              catalogUrl: 'https://example.com/ar/catalog.json',),
+          _entry(
+            'tawheed-ur',
+            'ur',
+            catalogUrl: 'https://example.com/ur/catalog.json',
+          ),
+          _entry(
+            'tawheed-ar',
+            'ar',
+            catalogUrl: 'https://example.com/ar/catalog.json',
+          ),
         ],
       });
 
@@ -75,9 +81,15 @@ void main() {
         () async {
       await _seed({
         'series': [
-          _entry('broken', 'ar'), // no catalogUrl → SeriesConfig.fromJson throws
-          _entry('tawheed-ur', 'ur',
-              catalogUrl: 'https://example.com/ur/catalog.json',),
+          _entry(
+            'broken',
+            'ar',
+          ), // no catalogUrl → SeriesConfig.fromJson throws
+          _entry(
+            'tawheed-ur',
+            'ur',
+            catalogUrl: 'https://example.com/ur/catalog.json',
+          ),
         ],
       });
 
@@ -102,8 +114,11 @@ void main() {
         () async {
       await _seed({
         'series': [
-          _entry('tawheed-ar', 'ar',
-              catalogUrl: 'https://example.com/ar/catalog.json',),
+          _entry(
+            'tawheed-ar',
+            'ar',
+            catalogUrl: 'https://example.com/ar/catalog.json',
+          ),
         ],
       });
 

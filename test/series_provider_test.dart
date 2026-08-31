@@ -131,7 +131,9 @@ void main() {
       expect(provider.hasSelectedSeries, isTrue);
       expect(provider.currentSeries.id, SeriesConfig.legacyId);
       expect(
-          PreferencesService.instance.selectedSeriesId, SeriesConfig.legacyId,);
+        PreferencesService.instance.selectedSeriesId,
+        SeriesConfig.legacyId,
+      );
     });
 
     test('existing bookmarks alone count as legacy data', () async {
@@ -167,7 +169,8 @@ void main() {
       final provider = SeriesProvider()
         ..load(false)
         ..setAvailableSeriesForTest(
-            const [SeriesConfig.legacyUrduFallback, _arabicSeries],);
+          const [SeriesConfig.legacyUrduFallback, _arabicSeries],
+        );
 
       await provider.selectSeries(_arabicSeries);
 
@@ -230,8 +233,10 @@ void main() {
       final provider = SeriesProvider();
       await provider.loadManifest();
 
-      expect(provider.availableSeries.map((s) => s.id),
-          ['tawheed-ur', 'tawheed-ar'],);
+      expect(
+        provider.availableSeries.map((s) => s.id),
+        ['tawheed-ur', 'tawheed-ar'],
+      );
     });
 
     test('falls back to the legacy series when the manifest list is empty',
@@ -288,8 +293,7 @@ void main() {
           }),
         );
 
-    test(
-        'fresh install on an Arabic device silently selects the Arabic series',
+    test('fresh install on an Arabic device silently selects the Arabic series',
         () async {
       await seedManifest();
 
@@ -344,10 +348,13 @@ void main() {
 
       expect(provider.currentSeries.id, SeriesConfig.legacyId);
       expect(
-          PreferencesService.instance.selectedSeriesId, SeriesConfig.legacyId,);
+        PreferencesService.instance.selectedSeriesId,
+        SeriesConfig.legacyId,
+      );
     });
 
-    test('is a no-op on an Arabic device when the manifest has no Arabic series',
+    test(
+        'is a no-op on an Arabic device when the manifest has no Arabic series',
         () async {
       await PreferencesService.instance.saveRemoteJson(
         'series_manifest',

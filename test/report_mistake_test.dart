@@ -127,7 +127,8 @@ void main() {
     });
   });
 
-  testWidgets('reportBookMistake copies to the clipboard when no mail app opens',
+  testWidgets(
+      'reportBookMistake copies to the clipboard when no mail app opens',
       (tester) async {
     // Stand in for a device with no email account: the launch declines.
     final original = UrlLauncherPlatform.instance;

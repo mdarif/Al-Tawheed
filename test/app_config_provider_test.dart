@@ -88,8 +88,10 @@ void main() {
       expect(b.poweredByLabel['ar'], 'بدعم من المرفأ');
       // English readers fall back to the bundled label rather than an empty
       // string, because the remote map is merged over the default.
-      expect(LanguageProvider().resolve(b.poweredByLabel),
-          AppConfigBranding.defaults.poweredByLabel['en'],);
+      expect(
+        LanguageProvider().resolve(b.poweredByLabel),
+        AppConfigBranding.defaults.poweredByLabel['en'],
+      );
     });
   });
 
@@ -118,7 +120,8 @@ void main() {
       expect(p.config.links.website, 'https://test.example.com');
     });
 
-    test('keeps defaults and status=loaded when version exceeds the supported maximum',
+    test(
+        'keeps defaults and status=loaded when version exceeds the supported maximum',
         () async {
       // AppConfig.maxSupportedAppConfigVersion == 1; version 999 must be ignored.
       await PreferencesService.instance.saveRemoteJson(

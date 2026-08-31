@@ -72,36 +72,38 @@ Future<ProgressProvider> _pump(
   final player =
       PlayerNotifier(TawheedAudioHandler(), progress, downloads, connectivity);
 
-  await tester.pumpWidget(MultiProvider(
-    providers: [
-      ChangeNotifierProvider.value(value: progress),
-      ChangeNotifierProvider.value(value: catalog),
-      ChangeNotifierProvider.value(value: player),
-      ChangeNotifierProvider.value(value: downloads),
-      ChangeNotifierProvider.value(value: connectivity),
-      ChangeNotifierProvider.value(value: series),
-      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
-      ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
-    ],
-    child: MaterialApp.router(
-      theme: AppTheme.light,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: GoRouter(
-        initialLocation: '/bookmarks',
-        routes: [
-          GoRoute(
-            path: '/bookmarks',
-            builder: (_, __) => const BookmarksScreen(),
-          ),
-          GoRoute(
-            path: '/player',
-            builder: (_, __) => const Scaffold(body: Text('PLAYER')),
-          ),
-        ],
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: progress),
+        ChangeNotifierProvider.value(value: catalog),
+        ChangeNotifierProvider.value(value: player),
+        ChangeNotifierProvider.value(value: downloads),
+        ChangeNotifierProvider.value(value: connectivity),
+        ChangeNotifierProvider.value(value: series),
+        ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ],
+      child: MaterialApp.router(
+        theme: AppTheme.light,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: GoRouter(
+          initialLocation: '/bookmarks',
+          routes: [
+            GoRoute(
+              path: '/bookmarks',
+              builder: (_, __) => const BookmarksScreen(),
+            ),
+            GoRoute(
+              path: '/player',
+              builder: (_, __) => const Scaffold(body: Text('PLAYER')),
+            ),
+          ],
+        ),
       ),
     ),
-  ),);
+  );
   await tester.pumpAndSettle();
   return progress;
 }

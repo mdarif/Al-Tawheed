@@ -125,8 +125,7 @@ void main() {
   group('ConnectivityProvider() — wifi-to-mobile handoff', () {
     testWidgets(
         're-queries checkConnectivity after the debounce instead of '
-        'trusting a stale "none" from onConnectivityChanged',
-        (tester) async {
+        'trusting a stale "none" from onConnectivityChanged', (tester) async {
       final fake = _FakeConnectivityPlatform([ConnectivityResult.wifi]);
       ConnectivityPlatform.instance = fake;
       addTearDown(fake.close);
@@ -149,7 +148,8 @@ void main() {
       expect(provider.isWifi, isFalse);
     });
 
-    testWidgets('rapid connectivity-changed events are debounced to one refresh',
+    testWidgets(
+        'rapid connectivity-changed events are debounced to one refresh',
         (tester) async {
       final fake = _FakeConnectivityPlatform([ConnectivityResult.wifi]);
       ConnectivityPlatform.instance = fake;

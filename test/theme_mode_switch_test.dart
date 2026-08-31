@@ -61,9 +61,8 @@ void main() {
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
 
-    final provider = tester
-        .element(find.byType(ThemeModeSwitch))
-        .read<ThemeProvider>();
+    final provider =
+        tester.element(find.byType(ThemeModeSwitch)).read<ThemeProvider>();
     expect(provider.themeMode, ThemeMode.dark);
   });
 
@@ -76,9 +75,8 @@ void main() {
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
 
-    final provider = tester
-        .element(find.byType(ThemeModeSwitch))
-        .read<ThemeProvider>();
+    final provider =
+        tester.element(find.byType(ThemeModeSwitch)).read<ThemeProvider>();
     expect(provider.themeMode, ThemeMode.light);
   });
 }

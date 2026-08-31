@@ -136,4 +136,3 @@ class _StudyBody extends StatelessWidget {
     );
   }
 }
-

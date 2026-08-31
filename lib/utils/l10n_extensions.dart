@@ -58,9 +58,7 @@ extension ChromeNumerals on BuildContext {
   /// practice.
   String localizedDecimal(String text) {
     final localized = localizedDigits(text);
-    return _chromeLanguage == 'ar'
-        ? localized.replaceAll('.', '٫')
-        : localized;
+    return _chromeLanguage == 'ar' ? localized.replaceAll('.', '٫') : localized;
   }
 
   /// Face for the chrome locale's numerals, or null when Western digits are

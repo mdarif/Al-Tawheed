@@ -118,12 +118,21 @@ void main() {
           reason: '$name: ids must be ch-01…ch-67, in order, no gaps or dupes',
         );
         for (final chapter in book.chapters) {
-          expect(chapter.number, book.chapters.indexOf(chapter) + 1,
-              reason: '$name ${chapter.id}: number must match its position',);
-          expect(chapter.title.trim(), isNotEmpty,
-              reason: '$name ${chapter.id}: empty title',);
-          expect(chapter.text.trim(), isNotEmpty,
-              reason: '$name ${chapter.id}: empty text',);
+          expect(
+            chapter.number,
+            book.chapters.indexOf(chapter) + 1,
+            reason: '$name ${chapter.id}: number must match its position',
+          );
+          expect(
+            chapter.title.trim(),
+            isNotEmpty,
+            reason: '$name ${chapter.id}: empty title',
+          );
+          expect(
+            chapter.text.trim(),
+            isNotEmpty,
+            reason: '$name ${chapter.id}: empty text',
+          );
         }
       });
     });
@@ -223,9 +232,12 @@ void main() {
               '${headings.map((h) => '"${h.trim()}"').toList()}');
         }
       }
-      expect(wrong, isEmpty,
-          reason: 'each chapter must have exactly one masāʾil heading; the '
-              "reader's section split keys off it:\n${wrong.join('\n')}",);
+      expect(
+        wrong,
+        isEmpty,
+        reason: 'each chapter must have exactly one masāʾil heading; the '
+            "reader's section split keys off it:\n${wrong.join('\n')}",
+      );
     });
 
     test('the Arabic matn has no masāʾil heading', () async {
@@ -237,8 +249,11 @@ void main() {
         for (final c in arabic.chapters)
           if (c.text.split('\n').any(isMasailHeading)) c.id,
       ];
-      expect(leaked, isEmpty,
-          reason: 'unexpected masāʾil heading in the Arabic matn: $leaked',);
+      expect(
+        leaked,
+        isEmpty,
+        reason: 'unexpected masāʾil heading in the Arabic matn: $leaked',
+      );
     });
 
     // The reader paints ANY [ ... ] cyan, as a surah:ayah reference. Two
@@ -251,15 +266,17 @@ void main() {
         final prose = <String>[];
         for (final chapter in book.chapters) {
           for (final m in RegExp(r'\[([^\[\]]+)\]').allMatches(chapter.text)) {
-            if (!RegExp(r'[0-9٠-٩۰-۹]')
-                .hasMatch(m.group(1)!)) {
+            if (!RegExp(r'[0-9٠-٩۰-۹]').hasMatch(m.group(1)!)) {
               prose.add('$name ${chapter.id}: [${m.group(1)}]');
             }
           }
         }
-        expect(prose, isEmpty,
-            reason: 'bracketed runs with no number — use ﴿…﴾ for a '
-                "translator's gloss:\n${prose.join('\n')}",);
+        expect(
+          prose,
+          isEmpty,
+          reason: 'bracketed runs with no number — use ﴿…﴾ for a '
+              "translator's gloss:\n${prose.join('\n')}",
+        );
       });
     });
   });

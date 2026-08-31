@@ -21,7 +21,12 @@ Map<String, dynamic> _literal() => {
         'language': 'ur',
       },
       'chapters': [
-        {'id': 'ch-01', 'number': 1, 'title': {'en': 'One'}, 'lectureCount': 1},
+        {
+          'id': 'ch-01',
+          'number': 1,
+          'title': {'en': 'One'},
+          'lectureCount': 1,
+        },
       ],
       'lectures': [
         {
@@ -35,7 +40,11 @@ Map<String, dynamic> _literal() => {
         },
       ],
       'dailyBenefits': [
-        {'id': 'b-1', 'text': {'en': 'Benefit'}, 'source': {'en': 'Src'}},
+        {
+          'id': 'b-1',
+          'text': {'en': 'Benefit'},
+          'source': {'en': 'Src'},
+        },
       ],
     };
 
@@ -90,7 +99,10 @@ void main() {
 
     test('skips a chapter missing its id', () {
       final json = _base();
-      (json['chapters'] as List).add({'number': 2, 'title': {'en': 'Two'}});
+      (json['chapters'] as List).add({
+        'number': 2,
+        'title': {'en': 'Two'},
+      });
 
       final c = Catalog.fromJson(json);
       expect(c.chapters.map((ch) => ch.id), ['ch-01']);
@@ -98,7 +110,9 @@ void main() {
 
     test('skips a daily benefit missing its id', () {
       final json = _base();
-      (json['dailyBenefits'] as List).add({'text': {'en': 'no id'}});
+      (json['dailyBenefits'] as List).add({
+        'text': {'en': 'no id'},
+      });
 
       final c = Catalog.fromJson(json);
       expect(c.dailyBenefits.map((b) => b.id), ['b-1']);
@@ -106,7 +120,8 @@ void main() {
   });
 
   group('Catalog.fromJson — lenient field defaults', () {
-    test('a lecture with valid id+audioUrl but missing numbers still loads', () {
+    test('a lecture with valid id+audioUrl but missing numbers still loads',
+        () {
       final json = _base();
       (json['lectures'] as List).add({
         'id': 'lec-002',
