@@ -211,12 +211,12 @@ On devices running custom Android skins (OnePlus OxygenOS, Oppo/Realme ColorOS, 
 ✅ disableAirplaneMode (native)
 ```
 
-**Why**: Patrol's native automator drives the stock/AOSP Settings UI to find and tap the airplane-mode toggle. OEM skins restyle and relocate that screen (different layout, resource IDs, labels), so the automator opens "Wireless & networks" but can't locate the toggle and times out. `disableAirplaneMode` then "passes" trivially because airplane mode was never actually turned on. The phone isn't frozen — the step genuinely can't find the UI element it's looking for. `patrol: ^4.6.1` is the latest release on pub.dev as of writing, so this isn't fixed by upgrading.
+**Why**: Patrol's native automator drives the stock/AOSP Settings UI to find and tap the airplane-mode toggle. OEM skins restyle and relocate that screen (different layout, resource IDs, labels), so the automator opens "Wireless & networks" but can't locate the toggle and times out. `disableAirplaneMode` then "passes" trivially because airplane mode was never actually turned on. The phone isn't frozen — the step genuinely can't find the UI element it's looking for. The repo pins `patrol: ^4.6.1`; upgrading the package or CLI is not a workaround for this OEM issue.
 
 **Workaround**: run the native suite against a closer-to-stock Android target instead — e.g. one of the Pixel-profile AVDs already available locally:
 
 ```bash
-flutter emulators --launch flutter_emulator        # or Medium_Phone_API_36.1
+flutter emulators --launch flutter_emulator        # use a stock API 34 AVD
 flutter devices                                     # copy the emulator-XXXX id
 patrol test -t patrol_test/native_test.dart --device emulator-XXXX
 ```

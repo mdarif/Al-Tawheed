@@ -11,6 +11,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/offline_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -102,8 +103,7 @@ class _SheetOpenerState extends State<_SheetOpener> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: SizedBox.shrink());
+  Widget build(BuildContext context) => const Scaffold(body: SizedBox.shrink());
 }
 
 /// Full provider + router wrapper for offline-sheet widget tests.
@@ -120,12 +120,14 @@ Widget _wrap({
       : allLectures
           .map((l) => l.chapterId)
           .toSet()
-          .map((id) => Chapter(
-                id: id,
-                number: 1,
-                title: const {'en': 'Chapter'},
-                lectureCount: allLectures.where((l) => l.chapterId == id).length,
-              ),)
+          .map(
+            (id) => Chapter(
+              id: id,
+              number: 1,
+              title: const {'en': 'Chapter'},
+              lectureCount: allLectures.where((l) => l.chapterId == id).length,
+            ),
+          )
           .toList();
 
   final catalog = Catalog(
@@ -151,9 +153,11 @@ Widget _wrap({
       ChangeNotifierProvider.value(value: catalogProvider),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider.value(
-          value: connectivity ?? ConnectivityProvider.testOnline(),),
+        value: connectivity ?? ConnectivityProvider.testOnline(),
+      ),
       ChangeNotifierProvider.value(
-          value: series ?? (SeriesProvider()..load(false)),),
+        value: series ?? (SeriesProvider()..load(false)),
+      ),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     child: MaterialApp.router(
@@ -195,12 +199,15 @@ void main() {
     testWidgets('shows "Download lecture" when lecture not downloaded',
         (tester) async {
       final lec = _singleLec();
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: DownloadsProvider(),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: DownloadsProvider(),
+        ),
+      );
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineDownloadLecture), findsOneWidget);
       expect(find.textContaining('Download lecture'), findsOneWidget);
       expect(find.textContaining('Remove download'), findsNothing);
     });
@@ -213,6 +220,7 @@ void main() {
       await tester.pumpWidget(_wrap(lecture: lec, downloads: downloads));
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineRemoveDownload), findsOneWidget);
       expect(find.textContaining('Remove download'), findsOneWidget);
       expect(find.textContaining('Download lecture'), findsNothing);
     });
@@ -225,6 +233,7 @@ void main() {
       await tester.pumpWidget(_wrap(lecture: lec, downloads: downloads));
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineCancelDownload), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.textContaining('Cancel download'), findsOneWidget);
       expect(find.textContaining('Download lecture'), findsNothing);
@@ -234,15 +243,16 @@ void main() {
   // ── Chapter section ───────────────────────────────────────────────────────
 
   group('OfflineSheet — chapter section', () {
-    testWidgets(
-        'chapter section hidden when chapter has only one lecture',
+    testWidgets('chapter section hidden when chapter has only one lecture',
         (tester) async {
       final lec = _singleLec();
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: DownloadsProvider(),
-        allLectures: [lec], // single-lecture chapter
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: DownloadsProvider(),
+          allLectures: [lec], // single-lecture chapter
+        ),
+      );
       await tester.pumpAndSettle();
 
       // No chapter-level download/cancel chips
@@ -254,13 +264,16 @@ void main() {
         'chapter section shows "Download chapter" for multi-lecture chapter',
         (tester) async {
       final lecs = _threeLecs();
-      await tester.pumpWidget(_wrap(
-        lecture: lecs.first,
-        downloads: DownloadsProvider(),
-        allLectures: lecs,
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lecs.first,
+          downloads: DownloadsProvider(),
+          allLectures: lecs,
+        ),
+      );
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineDownloadChapter), findsOneWidget);
       expect(find.textContaining('Download chapter'), findsOneWidget);
     });
 
@@ -271,19 +284,21 @@ void main() {
       final downloads = DownloadsProvider()
         ..seedChapterDownloadingForTest(lecs.first.chapterId);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lecs.first,
-        downloads: downloads,
-        allLectures: lecs,
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lecs.first,
+          downloads: downloads,
+          allLectures: lecs,
+        ),
+      );
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineCancelChapter), findsOneWidget);
       expect(find.textContaining('Cancel chapter download'), findsOneWidget);
       expect(find.textContaining('Download chapter'), findsNothing);
     });
 
-    testWidgets(
-        'chapter section hidden when chapter is fully downloaded',
+    testWidgets('chapter section hidden when chapter is fully downloaded',
         (tester) async {
       final lecs = _threeLecs();
       final downloads = DownloadsProvider()
@@ -291,11 +306,13 @@ void main() {
         ..seedDownloadedForTest('lec-b')
         ..seedDownloadedForTest('lec-c');
 
-      await tester.pumpWidget(_wrap(
-        lecture: lecs.first,
-        downloads: downloads,
-        allLectures: lecs,
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lecs.first,
+          downloads: downloads,
+          allLectures: lecs,
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Download chapter'), findsNothing);
@@ -307,25 +324,30 @@ void main() {
 
   group('OfflineSheet — Manage downloads', () {
     testWidgets('"Manage downloads" is always visible', (tester) async {
-      await tester.pumpWidget(_wrap(
-        lecture: _singleLec(),
-        downloads: DownloadsProvider(),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: _singleLec(),
+          downloads: DownloadsProvider(),
+        ),
+      );
       await tester.pumpAndSettle();
 
+      expect(find.byKey(WidgetKeys.offlineManageDownloads), findsOneWidget);
       expect(find.text('Manage downloads'), findsOneWidget);
     });
 
     testWidgets(
         'tapping "Manage downloads" dismisses sheet and navigates to offline library',
         (tester) async {
-      await tester.pumpWidget(_wrap(
-        lecture: _singleLec(),
-        downloads: DownloadsProvider(),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: _singleLec(),
+          downloads: DownloadsProvider(),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Manage downloads'));
+      await tester.tap(find.byKey(WidgetKeys.offlineManageDownloads));
       await tester.pumpAndSettle();
 
       // Sheet is gone and the offline library screen is visible
@@ -343,14 +365,16 @@ void main() {
       final downloads = DownloadsProvider();
       await downloads.setDownloadOnWifiOnly(true);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: downloads,
-        connectivity: ConnectivityProvider.testOnlineMobile(),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: downloads,
+          connectivity: ConnectivityProvider.testOnlineMobile(),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.textContaining('Download lecture'));
+      await tester.tap(find.byKey(WidgetKeys.offlineDownloadLecture));
       await tester.pump();
 
       expect(find.byType(SnackBar), findsOneWidget);
@@ -368,12 +392,14 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: DownloadsProvider(),
-        series: series,
-        locale: const Locale('ar'),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: DownloadsProvider(),
+          series: series,
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Header shows the Arabic lecture title, not the English one.
@@ -396,18 +422,20 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: downloads,
-        series: series,
-        locale: const Locale('ar'),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: downloads,
+          series: series,
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('إزالة التنزيل'), findsOneWidget);
       expect(find.text('Remove download'), findsNothing);
 
-      await tester.tap(find.text('إزالة التنزيل'));
+      await tester.tap(find.byKey(WidgetKeys.offlineRemoveDownload));
       await tester.pumpAndSettle();
 
       // Confirm dialog title, message (lecture title), and confirm/cancel
@@ -426,12 +454,14 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: downloads,
-        series: series,
-        locale: const Locale('ar'),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: downloads,
+          series: series,
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('جارٍ التنزيل… ٥٠%'), findsOneWidget);
@@ -448,16 +478,18 @@ void main() {
         ..load(false)
         ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(_wrap(
-        lecture: lec,
-        downloads: downloads,
-        connectivity: ConnectivityProvider.testOnlineMobile(),
-        series: series,
-        locale: const Locale('ar'),
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          lecture: lec,
+          downloads: downloads,
+          connectivity: ConnectivityProvider.testOnlineMobile(),
+          series: series,
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.textContaining('تنزيل الدرس'));
+      await tester.tap(find.byKey(WidgetKeys.offlineDownloadLecture));
       await tester.pump();
 
       expect(find.text('اتصل بـ Wi-Fi للتنزيل'), findsOneWidget);

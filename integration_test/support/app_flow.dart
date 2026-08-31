@@ -3,12 +3,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart' as app;
+import 'package:myapp/models/series.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 /// Shared helpers for integration tests — real device/emulator, network required.
 ///
 /// Scenarios that need native OS control live in patrol_test/ (Patrol CLI).
+enum AppTab { lectures, book, study, settings }
+
+extension on AppTab {
+  Key get key => switch (this) {
+        AppTab.lectures => WidgetKeys.shellLecturesTab,
+        AppTab.book => WidgetKeys.shellBookTab,
+        AppTab.study => WidgetKeys.shellStudyTab,
+        AppTab.settings => WidgetKeys.shellSettingsTab,
+      };
+}
+
 class AppFlow {
   AppFlow._();
 
@@ -53,11 +65,8 @@ class AppFlow {
     // On first install with multiple series, START LISTENING pushes to
     // /choose-series instead of /lectures. Tap the first series card, then
     // confirm the dialog if one appears.
-    final seriesCard = find.byWidgetPredicate((widget) {
-      final key = widget.key;
-      return key is ValueKey<String> &&
-          key.value.startsWith('choose-series.card.');
-    });
+    final seriesCard =
+        find.byKey(WidgetKeys.chooseSeriesCard(SeriesConfig.legacyId));
     if (tester.any(seriesCard)) {
       await tester.tap(seriesCard.first);
       await pumpFrames(tester, count: 5);
@@ -104,19 +113,11 @@ class AppFlow {
     );
   }
 
-  static Future<void> navigateToTab(WidgetTester tester, String label) async {
+  static Future<void> navigateToTab(WidgetTester tester, AppTab tab) async {
     await dismissOverlays(tester);
-    final tab = find.byKey(
-      switch (label) {
-        'Lectures' => WidgetKeys.shellLecturesTab,
-        'Book' => WidgetKeys.shellBookTab,
-        'Study' => WidgetKeys.shellStudyTab,
-        'Settings' => WidgetKeys.shellSettingsTab,
-        _ => throw ArgumentError.value(label, 'label', 'Unknown tab'),
-      },
-    );
-    expect(tab, findsOneWidget);
-    await tester.tap(tab);
+    final destination = find.byKey(tab.key);
+    expect(destination, findsOneWidget);
+    await tester.tap(destination);
     await pumpFrames(tester, count: 5);
   }
 
@@ -289,7 +290,7 @@ class AppFlow {
   static Future<void> openOfflineLibraryFromSettings(
     WidgetTester tester,
   ) async {
-    await navigateToTab(tester, 'Settings');
+    await navigateToTab(tester, AppTab.settings);
     await scrollToSettingsDownloads(tester);
     final storageRow = find.byKey(WidgetKeys.settingsOfflineLibrary);
     expect(storageRow, findsOneWidget);

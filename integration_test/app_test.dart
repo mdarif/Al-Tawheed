@@ -43,13 +43,13 @@ void main() {
       // Tabs are lectures · book · study · settings — the Home tab was retired
       // (f793a78). Exercise the Book tab (this release's headline surface) and
       // Settings, then return to Lectures.
-      if (tester.any(find.widgetWithText(NavigationBar, 'Book'))) {
-        await AppFlow.navigateToTab(tester, 'Book');
+      if (tester.any(find.byKey(WidgetKeys.shellBookTab))) {
+        await AppFlow.navigateToTab(tester, AppTab.book);
       }
-      await AppFlow.navigateToTab(tester, 'Settings');
+      await AppFlow.navigateToTab(tester, AppTab.settings);
       await AppFlow.scrollToSettingsDownloads(tester);
       expect(find.text('Downloads'), findsWidgets);
-      await AppFlow.navigateToTab(tester, 'Lectures');
+      await AppFlow.navigateToTab(tester, AppTab.lectures);
 
       // ── Player opens with transport controls ────────────────────────────
       await AppFlow.openFirstLecture(tester);
@@ -59,7 +59,7 @@ void main() {
       expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
 
       // ── Streaming strip opens offline sheet ─────────────────────────────
-      if (tester.any(find.text('Streaming'))) {
+      if (tester.any(find.byKey(WidgetKeys.playerOfflineStatus))) {
         await AppFlow.openOfflineSheetFromPlayer(tester);
         expect(find.textContaining('Download lecture'), findsOneWidget);
         await AppFlow.dismissBottomSheet(tester);
@@ -104,7 +104,7 @@ void main() {
       await AppFlow.dismissOfflineLibrary(tester);
 
       // ── Remove download restores streaming strip ────────────────────────
-      await AppFlow.navigateToTab(tester, 'Lectures');
+      await AppFlow.navigateToTab(tester, AppTab.lectures);
       await AppFlow.openFirstLecture(tester);
       await AppFlow.removeDownloadFromPlayer(tester);
       expect(find.text('Saved for offline'), findsNothing);

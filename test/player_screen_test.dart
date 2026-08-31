@@ -23,6 +23,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/download_button.dart';
 
 const _arabicSeries = SeriesConfig(
@@ -57,8 +58,7 @@ Lecture _arabicLec(String id, int num) => Lecture(
     );
 
 final _lectures = List.generate(5, (i) => _lec('l${i + 1}', i + 1));
-final _arabicLectures =
-    List.generate(5, (i) => _arabicLec('l${i + 1}', i + 1));
+final _arabicLectures = List.generate(5, (i) => _arabicLec('l${i + 1}', i + 1));
 
 Catalog _arabicCatalog() => Catalog(
       version: 1,
@@ -98,7 +98,8 @@ Future<PlayerNotifier> _pumpPlayer(
 }) async {
   final progress = ProgressProvider()..load();
   final downloadsProvider = downloads ?? DownloadsProvider();
-  final connectivityProvider = connectivity ?? ConnectivityProvider.testOffline();
+  final connectivityProvider =
+      connectivity ?? ConnectivityProvider.testOffline();
   final player = PlayerNotifier(
     TawheedAudioHandler(),
     progress,
@@ -123,30 +124,34 @@ Future<PlayerNotifier> _pumpPlayer(
     catalogProvider.setCatalogForTest(catalog);
   }
 
-  await tester.pumpWidget(MultiProvider(
-    providers: [
-      ChangeNotifierProvider.value(value: player),
-      ChangeNotifierProvider.value(value: progress),
-      ChangeNotifierProvider.value(value: downloadsProvider),
-      ChangeNotifierProvider.value(value: connectivityProvider),
-      ChangeNotifierProvider.value(value: featureFlags ?? FeatureFlagsProvider()),
-      ChangeNotifierProvider.value(value: catalogProvider),
-      ChangeNotifierProvider.value(value: seriesProvider),
-      ChangeNotifierProvider(create: (_) => AppConfigProvider()),
-      ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
-    ],
-    child: MaterialApp.router(
-      theme: AppTheme.light,
-      locale: locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: GoRouter(
-        routes: [
-          GoRoute(path: '/', builder: (_, __) => const PlayerScreen()),
-        ],
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: player),
+        ChangeNotifierProvider.value(value: progress),
+        ChangeNotifierProvider.value(value: downloadsProvider),
+        ChangeNotifierProvider.value(value: connectivityProvider),
+        ChangeNotifierProvider.value(
+          value: featureFlags ?? FeatureFlagsProvider(),
+        ),
+        ChangeNotifierProvider.value(value: catalogProvider),
+        ChangeNotifierProvider.value(value: seriesProvider),
+        ChangeNotifierProvider(create: (_) => AppConfigProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ],
+      child: MaterialApp.router(
+        theme: AppTheme.light,
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, __) => const PlayerScreen()),
+          ],
+        ),
       ),
     ),
-  ),);
+  );
   await tester.pumpAndSettle();
 
   // Configured after the initial pump — the audio handler's playbackState
@@ -177,11 +182,13 @@ void main() {
   });
 
   group('PlayerScreen — no lecture loaded', () {
-    testWidgets('hides bookmark button and offline strip, disables skip controls',
+    testWidgets(
+        'hides bookmark button and offline strip, disables skip controls',
         (tester) async {
       await _pumpPlayer(tester);
 
       expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.playerClose), findsOneWidget);
       expect(find.byIcon(Icons.bookmark_outline_rounded), findsNothing);
       expect(find.byIcon(Icons.bookmark_rounded), findsNothing);
       expect(find.byType(DownloadButton), findsNothing);
@@ -222,11 +229,13 @@ void main() {
   });
 
   group('PlayerScreen — offline status strip', () {
-    testWidgets('shows "Not available offline" when streaming lecture is blocked',
+    testWidgets(
+        'shows "Not available offline" when streaming lecture is blocked',
         (tester) async {
       await _pumpPlayer(tester, lecture: _lectures[0]);
 
       expect(find.text('Not available offline'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.playerOfflineStatus), findsOneWidget);
       expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
     });
 
@@ -260,8 +269,10 @@ void main() {
       await _pumpPlayer(
         tester,
         connectivity: ConnectivityProvider.testOnline(),
-        configurePlayer: (p) =>
-            p.setPlaybackStateForTest(_lectures[0], source: PlaybackSource.stream),
+        configurePlayer: (p) => p.setPlaybackStateForTest(
+          _lectures[0],
+          source: PlaybackSource.stream,
+        ),
       );
 
       expect(find.text('Streaming'), findsOneWidget);
@@ -288,8 +299,10 @@ void main() {
       await _pumpPlayer(
         tester,
         connectivity: ConnectivityProvider.testOffline(),
-        configurePlayer: (p) =>
-            p.setPlaybackStateForTest(_lectures[0], source: PlaybackSource.stream),
+        configurePlayer: (p) => p.setPlaybackStateForTest(
+          _lectures[0],
+          source: PlaybackSource.stream,
+        ),
       );
 
       expect(find.text('No connection'), findsOneWidget);
@@ -298,13 +311,15 @@ void main() {
   });
 
   group('PlayerScreen — bookmark button', () {
-    testWidgets('toggles between outline and filled icon on tap', (tester) async {
+    testWidgets('toggles between outline and filled icon on tap',
+        (tester) async {
       await _pumpPlayer(tester, lecture: _lectures[0]);
 
+      expect(find.byKey(WidgetKeys.playerBookmark), findsOneWidget);
       expect(find.byIcon(Icons.bookmark_outline_rounded), findsOneWidget);
       expect(find.byIcon(Icons.bookmark_rounded), findsNothing);
 
-      await tester.tap(find.byIcon(Icons.bookmark_outline_rounded));
+      await tester.tap(find.byKey(WidgetKeys.playerBookmark));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.bookmark_rounded), findsOneWidget);
@@ -313,9 +328,11 @@ void main() {
   });
 
   group('PlayerScreen — download button', () {
-    testWidgets('shown when downloads feature flag is on (default)', (tester) async {
+    testWidgets('shown when downloads feature flag is on (default)',
+        (tester) async {
       await _pumpPlayer(tester, lecture: _lectures[0]);
 
+      expect(find.byKey(WidgetKeys.playerDownload), findsOneWidget);
       expect(find.byType(DownloadButton), findsOneWidget);
     });
 
@@ -323,15 +340,18 @@ void main() {
       await _pumpPlayer(
         tester,
         lecture: _lectures[0],
-        featureFlags: FeatureFlagsProvider()..setFeaturesJsonForTest({'downloads': false}),
+        featureFlags: FeatureFlagsProvider()
+          ..setFeaturesJsonForTest({'downloads': false}),
       );
 
+      expect(find.byKey(WidgetKeys.playerDownload), findsNothing);
       expect(find.byType(DownloadButton), findsNothing);
     });
   });
 
   group('PlayerScreen — transport controls', () {
-    testWidgets('skip-previous disabled and skip-next enabled for the first lecture',
+    testWidgets(
+        'skip-previous disabled and skip-next enabled for the first lecture',
         (tester) async {
       await _pumpPlayer(tester, lecture: _lectures[0]);
 
@@ -345,7 +365,8 @@ void main() {
       expect(skipNext.onPressed, isNotNull);
     });
 
-    testWidgets('skip-previous enabled for a non-first lecture', (tester) async {
+    testWidgets('skip-previous enabled for a non-first lecture',
+        (tester) async {
       await _pumpPlayer(tester, lecture: _lectures[1]);
 
       final skipPrev = tester.widget<IconButton>(
@@ -354,7 +375,8 @@ void main() {
       expect(skipPrev.onPressed, isNotNull);
     });
 
-    testWidgets('playing next while offline and undownloaded shows the blocked dialog',
+    testWidgets(
+        'playing next while offline and undownloaded shows the blocked dialog',
         (tester) async {
       final player = await _pumpPlayer(tester, lecture: _lectures[0]);
 
@@ -362,7 +384,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text("'Lecture 2' isn't saved. Download it when you're back online."),
+        find.text(
+          "'Lecture 2' isn't saved. Download it when you're back online.",
+        ),
         findsOneWidget,
       );
 
@@ -370,7 +394,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text("'Lecture 2' isn't saved. Download it when you're back online."),
+        find.text(
+          "'Lecture 2' isn't saved. Download it when you're back online.",
+        ),
         findsNothing,
       );
     });
@@ -417,7 +443,8 @@ void main() {
       expect(find.text('0:00'), findsNothing);
     });
 
-    testWidgets('shows "Streaming" offline-strip label in Arabic when playing online',
+    testWidgets(
+        'shows "Streaming" offline-strip label in Arabic when playing online',
         (tester) async {
       await _pumpPlayer(
         tester,
@@ -506,10 +533,18 @@ void main() {
       // The play/pause button is showing "play" here (offline load never
       // starts playback), so pause is absent — that's correct. Matched by
       // tooltip (which is what carries the label into the semantics tree).
-      for (final label in ['Previous lecture', 'Rewind 10 seconds', 'Play',
-        'Forward 10 seconds', 'Next lecture',]) {
-        expect(find.byTooltip(label), findsOneWidget,
-            reason: 'transport control "$label" is unlabelled',);
+      for (final label in [
+        'Previous lecture',
+        'Rewind 10 seconds',
+        'Play',
+        'Forward 10 seconds',
+        'Next lecture',
+      ]) {
+        expect(
+          find.byTooltip(label),
+          findsOneWidget,
+          reason: 'transport control "$label" is unlabelled',
+        );
       }
       handle.dispose();
     });

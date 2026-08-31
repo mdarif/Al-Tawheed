@@ -20,6 +20,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 // Both series carry an 'ur' translation in displayName that differs from the
@@ -160,6 +161,14 @@ void main() {
         find.text('Shaikh Salih al-Fawzan Hafizhahullah'),
         findsOneWidget,
       );
+      expect(
+        find.byKey(WidgetKeys.settingsSeriesOption(_seriesUrdu.id)),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(WidgetKeys.settingsSeriesOption(_seriesArabic.id)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('switching editions confirms with a language-worded dialog',
@@ -172,7 +181,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap the non-current (Arabic) edition.
-      await tester.tap(find.text('العربية'));
+      await tester.tap(
+        find.byKey(WidgetKeys.settingsSeriesOption(_seriesArabic.id)),
+      );
       await tester.pumpAndSettle();
 
       // Dialog is worded around language, not "series".
@@ -194,6 +205,10 @@ void main() {
       // No edition rows (and the manual Language picker is off by default too).
       expect(find.text('اردو'), findsNothing);
       expect(find.text('العربية'), findsNothing);
+      expect(
+        find.byKey(WidgetKeys.settingsSeriesOption(_seriesArabic.id)),
+        findsNothing,
+      );
     });
 
     testWidgets(
@@ -367,7 +382,7 @@ void main() {
       expect(find.text('No downloads yet'), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
 
-      await tester.tap(find.text('Downloads').last);
+      await tester.tap(find.byKey(WidgetKeys.settingsOfflineLibrary));
       await tester.pumpAndSettle();
 
       expect(find.text('Offline route'), findsOneWidget);

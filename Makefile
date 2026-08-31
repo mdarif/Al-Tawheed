@@ -198,24 +198,23 @@ orientation-test: pub-get
 	flutter test integration_test/orientation_test.dart -d $(DEVICE) --timeout 15m
 
 # Patrol native tests (airplane mode, notification shade, permission dialogs).
-# The pubspec pin patrol ^4.6.1 requires patrol_cli 4.4.0. The command checks
-# that Patrol discovered at least one test: Android 16/API 36 can build and
-# instrument successfully while reporting Total: 0, which is not a green gate.
+# The pubspec pin patrol ^4.6.1 requires patrol_cli 4.4.0. The command parses
+# the final summary and requires at least one discovered test: Android 16/API
+# 36 can build and instrument successfully while reporting Total: 0, which is
+# not a green gate.
 # Install the compatible CLI once: dart pub global activate patrol_cli 4.4.0
 patrol-test:
 	@PATROL_LOG=$$(mktemp /tmp/at-tawheed-patrol.XXXXXX); \
 	trap 'rm -f "$$PATROL_LOG"' 0; \
-	if ! patrol test -t patrol_test/native_test.dart \
-		$(if $(DEVICE),--device $(DEVICE),) >"$$PATROL_LOG" 2>&1; then \
-		cat "$$PATROL_LOG"; \
-		exit 1; \
-	fi; \
+	patrol test -t patrol_test/native_test.dart \
+		$(if $(DEVICE),--device $(DEVICE),) >"$$PATROL_LOG" 2>&1; \
+	STATUS=$$?; \
 	cat "$$PATROL_LOG"; \
-	if grep -Eq 'Total:[[:space:]]*0' "$$PATROL_LOG"; then \
-		echo "Error: Patrol discovered 0 tests; this cannot satisfy the release gate."; \
-		echo "Use patrol_cli 4.4.0 with patrol 4.6.1 on an Android API level below 36."; \
-		exit 1; \
-	fi
+	if [ "$$STATUS" -ne 0 ]; then \
+		dart run tool/patrol_result.dart --exit-code=$$STATUS "$$PATROL_LOG"; \
+		exit $$STATUS; \
+	fi; \
+	dart run tool/patrol_result.dart --exit-code=0 "$$PATROL_LOG"
 
 # Full release pipeline (local):
 #   pub get → analyze → unit/widget tests → validation integration test →

@@ -20,6 +20,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 const _urduSeries = SeriesConfig.legacyUrduFallback;
@@ -191,6 +192,14 @@ void main() {
 
       expect(find.text('Kitab at-Tawheed'), findsOneWidget);
       expect(find.text('كتاب التوحيد'), findsOneWidget);
+      expect(
+        find.byKey(WidgetKeys.chooseSeriesCard(_urduSeries.id)),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(WidgetKeys.chooseSeriesCard(_arabicSeries.id)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('both cards carry an Audio chip and a small language chip',
@@ -484,7 +493,8 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
 
       // Tap the Arabic card
-      await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
+      await tester
+          .tap(find.byKey(WidgetKeys.chooseSeriesCard(_arabicSeries.id)));
       await tester.pump();
 
       // After tap — spinner should be visible (in-card overlay)
@@ -534,7 +544,8 @@ void main() {
       expect(absorbBefore.any((a) => a.absorbing), isFalse);
 
       // Tap the Arabic card to start switching
-      await tester.tap(find.text('Salih al-Fawzan Hafizhahullah'));
+      await tester
+          .tap(find.byKey(WidgetKeys.chooseSeriesCard(_arabicSeries.id)));
       await tester.pump();
 
       // Now at least one AbsorbPointer should be absorbing

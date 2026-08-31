@@ -42,7 +42,8 @@ is portable memory: any LLM working the repo should read and extend it.
   `_fake.lastParams = null` in `setUp` (see `player_screen_test.dart`).
 - **`integration_test/app_test.dart` is the E2E gate and silently drifts when
   navigation changes — update it in the SAME change as any nav rework.** It
-  navigates the shell by tab *label* (`AppFlow.navigateToTab(tester, 'Home')`),
+  navigates the shell by stable tab identity (`AppFlow.navigateToTab(tester,
+  AppTab.lectures)`),
   so retiring/renaming a tab makes it fail with `Found 0 widgets with text
   "<tab>"`. The current tabs are `lectures · book · study · settings` (Home was
   retired in `f793a78`). This bit us right before the 2.4.0 release: the nav had
@@ -52,14 +53,13 @@ is portable memory: any LLM working the repo should read and extend it.
   master + nightly** — not on the `develop` push — so a nav change sitting on
   `develop` is unguarded until the release PR. Run `make integration-test
   DEVICE=<id>` locally before cutting a release.
-- **`make integration-test` runs MORE than CI does.** It runs the whole
-  `integration_test/` dir, including the **screenshot-capture** tests
-  (`screenshots_test.dart`, `screenshots_tablet_test.dart`) that CI never runs.
-  Those fail on a real device with `Failed assertion: '!_isSurfaceRendered'`
-  from `binding.convertFlutterSurfaceToImage()` (the surface can only be
-  converted once, at the right moment) — they are Play Store asset *generators*,
-  not validation, so a failure there is NOT a release blocker. Don't confuse it
-  with an `app_test.dart` failure, which is.
+- **Validation and screenshot generation are separate targets.** `make
+  integration-test` runs only `integration_test/app_test.dart`; the two
+  screenshot files are Play Store asset generators invoked by `make
+  screenshots`, not validation or release-gate tests. Running `flutter test
+  integration_test/` manually includes them, but is not the Makefile target.
+  Their surface-conversion failures are therefore not validation failures;
+  don't confuse them with an `app_test.dart` failure.
 - **Never do global setup in `test/flutter_test_config.dart` that forces the
   widget binding.** That file wraps the ENTIRE `test/` tree. Calling
   `TestWidgetsFlutterBinding.ensureInitialized()` there (e.g. to `FontLoader`

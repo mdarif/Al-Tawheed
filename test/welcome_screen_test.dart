@@ -21,6 +21,7 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 const _arabicSeries = SeriesConfig(
@@ -145,7 +146,7 @@ void main() {
       expect(find.text('Sharah Kitab at-Tawheed'), findsOneWidget);
       // Urdu native-script title shown below the English title.
       expect(find.text('شرح کتاب التوحید'), findsOneWidget);
-      expect(find.text('START LISTENING'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.welcomeStartListening), findsOneWidget);
     });
 
     testWidgets('Arabic series shows Arabic title and Arabic CTA',
@@ -158,6 +159,7 @@ void main() {
 
       expect(find.text('شرح كتاب التوحيد'), findsOneWidget);
       expect(find.text('ابدأ الاستماع'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.welcomeStartListening), findsOneWidget);
       expect(find.text('START LISTENING'), findsNothing);
     });
 
@@ -236,9 +238,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should see WelcomeScreen (not redirected)
-      expect(find.text('START LISTENING'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.welcomeStartListening), findsOneWidget);
 
-      await tester.tap(find.text('START LISTENING'));
+      await tester.tap(find.byKey(WidgetKeys.welcomeStartListening));
       await tester.pumpAndSettle();
 
       // Should go to lectures; the Urdu welcome is now marked seen so it won't
@@ -250,8 +252,7 @@ void main() {
     testWidgets(
         'user with legacy bookmarks (no progress) is still treated as existing',
         (tester) async {
-      await PreferencesService.instance
-          .saveBookmarks({'lec-001', 'lec-002'});
+      await PreferencesService.instance.saveBookmarks({'lec-001', 'lec-002'});
 
       final series = SeriesProvider()..load(true, definitive: true);
 
@@ -272,8 +273,7 @@ void main() {
     testWidgets(
         'user with studied chapters (no progress) is still treated as existing',
         (tester) async {
-      await PreferencesService.instance
-          .saveStudiedChapterIds({'ch-01'});
+      await PreferencesService.instance.saveStudiedChapterIds({'ch-01'});
 
       final series = SeriesProvider()..load(true, definitive: true);
 
@@ -292,7 +292,7 @@ void main() {
       await tester.pumpWidget(_wrapWithRouter(series: series));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('START LISTENING'));
+      await tester.tap(find.byKey(WidgetKeys.welcomeStartListening));
       await tester.pumpAndSettle();
 
       expect(series.shouldShowWelcomeForCurrentSeries, isFalse);
@@ -306,7 +306,8 @@ void main() {
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(
-            const [SeriesConfig.legacyUrduFallback, _arabicSeries],);
+          const [SeriesConfig.legacyUrduFallback, _arabicSeries],
+        );
 
       // Fresh install, multiSeries ON, no saved id → hasSelectedSeries = false
       expect(series.hasSelectedSeries, isFalse);
@@ -314,7 +315,7 @@ void main() {
       await tester.pumpWidget(_wrapWithRouter(series: series));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('START LISTENING'));
+      await tester.tap(find.byKey(WidgetKeys.welcomeStartListening));
       await tester.pumpAndSettle();
 
       // Should be on ChooseSeriesScreen, NOT lectures
@@ -332,12 +333,15 @@ void main() {
     testWidgets('tapping CTA with single series goes straight to lectures',
         (tester) async {
       await PreferencesService.instance.saveRemoteJson(
-          'catalog_tawheed-ur', jsonEncode(_catalogJson('urdu-book')),);
+        'catalog_tawheed-ur',
+        jsonEncode(_catalogJson('urdu-book')),
+      );
 
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(
-            const [SeriesConfig.legacyUrduFallback],);
+          const [SeriesConfig.legacyUrduFallback],
+        );
       // Only one series available (the fallback)
       expect(series.availableSeries.length, 1);
       expect(series.hasSelectedSeries, isFalse);
@@ -345,7 +349,7 @@ void main() {
       await tester.pumpWidget(_wrapWithRouter(series: series));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('START LISTENING'));
+      await tester.tap(find.byKey(WidgetKeys.welcomeStartListening));
       await tester.pump();
 
       await tester.runAsync(() async {
