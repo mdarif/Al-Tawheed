@@ -5,6 +5,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 // Arabic title shown on the Arabic series' card, independent of the app's
@@ -90,8 +91,9 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                         Text(
                           l10n.chooseSeriesTitle,
                           textAlign: TextAlign.center,
-                          style: context.textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: context.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -208,6 +210,7 @@ class _SeriesCardState extends State<_SeriesCard> {
 
     return Semantics(
       button: true,
+      key: WidgetKeys.chooseSeriesCard(series.id),
       child: AnimatedScale(
         scale: _pressed ? 0.985 : 1,
         duration: const Duration(milliseconds: 110),

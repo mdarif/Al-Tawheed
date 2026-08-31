@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/main.dart' as app;
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 /// Shared helpers for integration tests — real device/emulator, network required.
@@ -18,17 +19,19 @@ class AppFlow {
     final end = DateTime.now().add(const Duration(seconds: 30));
     while (DateTime.now().isBefore(end)) {
       await tester.pump(const Duration(milliseconds: 500));
-      if (tester.any(find.text('START LISTENING'))) return;
+      if (tester.any(find.byKey(WidgetKeys.welcomeStartListening))) return;
       if (tester.any(find.byType(LectureTile))) return;
     }
-    fail('Timed out after 30s waiting for welcome screen or lecture list after cold start');
+    fail(
+      'Timed out after 30s waiting for welcome screen or lecture list after cold start',
+    );
   }
 
   /// Cold start through welcome (if shown) to a loaded lecture list.
   static Future<void> goToLectureList(WidgetTester tester) async {
     await dismissOverlays(tester);
 
-    final start = find.text('START LISTENING');
+    final start = find.byKey(WidgetKeys.welcomeStartListening);
     if (tester.any(start)) {
       // The button lives inside IgnorePointer(ignoring: !isReady) and is
       // present in the tree at opacity 0 before SeriesProvider.isSeriesReady
@@ -50,8 +53,13 @@ class AppFlow {
     // On first install with multiple series, START LISTENING pushes to
     // /choose-series instead of /lectures. Tap the first series card, then
     // confirm the dialog if one appears.
-    if (tester.any(find.text('Select a series to begin learning'))) {
-      await tester.tap(find.byType(InkWell).first);
+    final seriesCard = find.byWidgetPredicate((widget) {
+      final key = widget.key;
+      return key is ValueKey<String> &&
+          key.value.startsWith('choose-series.card.');
+    });
+    if (tester.any(seriesCard)) {
+      await tester.tap(seriesCard.first);
       await pumpFrames(tester, count: 5);
       final confirmBtn = find.descendant(
         of: find.byType(AlertDialog),
@@ -84,7 +92,7 @@ class AppFlow {
   }
 
   static Future<void> scrollToSettingsDownloads(WidgetTester tester) async {
-    final wifiToggle = find.text('Download on Wi-Fi only');
+    final wifiToggle = find.byKey(WidgetKeys.settingsDownloadOnWifiOnly);
     final end = DateTime.now().add(const Duration(seconds: 15));
     while (DateTime.now().isBefore(end)) {
       if (tester.any(wifiToggle)) return;
@@ -98,9 +106,14 @@ class AppFlow {
 
   static Future<void> navigateToTab(WidgetTester tester, String label) async {
     await dismissOverlays(tester);
-    final tab = find.descendant(
-      of: find.byType(NavigationBar),
-      matching: find.text(label),
+    final tab = find.byKey(
+      switch (label) {
+        'Lectures' => WidgetKeys.shellLecturesTab,
+        'Book' => WidgetKeys.shellBookTab,
+        'Study' => WidgetKeys.shellStudyTab,
+        'Settings' => WidgetKeys.shellSettingsTab,
+        _ => throw ArgumentError.value(label, 'label', 'Unknown tab'),
+      },
     );
     expect(tab, findsOneWidget);
     await tester.tap(tab);
@@ -114,11 +127,9 @@ class AppFlow {
   }
 
   static Future<void> dismissPlayer(WidgetTester tester) async {
-    // Arabic series shows 'يُشغَّل الآن' instead of 'Now Playing'.
-    final isOpen = tester.any(find.text('Now Playing')) ||
-        tester.any(find.text('يُشغَّل الآن'));
+    final isOpen = tester.any(find.byKey(WidgetKeys.playerClose));
     if (!isOpen) return;
-    await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+    await tester.tap(find.byKey(WidgetKeys.playerClose));
     await pumpFrames(tester, count: 5);
     await waitFor(
       tester,
@@ -135,11 +146,11 @@ class AppFlow {
   }
 
   static Future<void> dismissBottomSheet(WidgetTester tester) async {
-    if (!tester.any(find.text('Manage downloads'))) return;
+    if (!tester.any(find.byKey(WidgetKeys.offlineManageDownloads))) return;
     // Tap above the sheet — avoids ambiguous ModalBarrier matches on iOS.
     await tester.tapAt(const Offset(20, 80));
     await pumpFrames(tester, count: 3);
-    if (tester.any(find.text('Manage downloads'))) {
+    if (tester.any(find.byKey(WidgetKeys.offlineManageDownloads))) {
       await tester.tapAt(const Offset(20, 80));
       await pumpFrames(tester, count: 3);
     }
@@ -158,14 +169,9 @@ class AppFlow {
   }
 
   static Future<void> waitForPlayerReady(WidgetTester tester) async {
-    // Arabic series shows 'يُشغَّل الآن' instead of 'Now Playing'.
     await waitFor(
       tester,
-      find.byWidgetPredicate(
-        (w) =>
-            w is Text &&
-            (w.data == 'Now Playing' || w.data == 'يُشغَّل الآن'),
-      ),
+      find.byKey(WidgetKeys.playerClose),
       timeout: const Duration(seconds: 30),
       reason: 'player screen',
     );
@@ -205,27 +211,17 @@ class AppFlow {
   }
 
   static Future<void> openOfflineSheetFromPlayer(WidgetTester tester) async {
-    final downloading = find.textContaining('Downloading');
-    if (tester.any(downloading)) {
-      await tester.tap(downloading);
+    final status = find.byKey(WidgetKeys.playerOfflineStatus);
+    if (tester.any(status)) {
+      await tester.tap(status);
       await pumpFrames(tester, count: 5);
-      expect(find.text('Manage downloads'), findsOneWidget);
+      expect(find.byKey(WidgetKeys.offlineManageDownloads), findsOneWidget);
       return;
     }
 
-    for (final label in ['Streaming', 'Saved for offline']) {
-      final strip = find.text(label);
-      if (tester.any(strip)) {
-        await tester.tap(strip);
-        await pumpFrames(tester, count: 5);
-        expect(find.text('Manage downloads'), findsOneWidget);
-        return;
-      }
-    }
-
-    await tester.tap(find.byTooltip('Download for offline'));
+    await tester.tap(find.byKey(WidgetKeys.playerDownload));
     await pumpFrames(tester, count: 5);
-    expect(find.text('Manage downloads'), findsOneWidget);
+    expect(find.byKey(WidgetKeys.offlineManageDownloads), findsOneWidget);
   }
 
   static Future<void> ensureLectureDownloaded(WidgetTester tester) async {
@@ -233,7 +229,7 @@ class AppFlow {
 
     await openOfflineSheetFromPlayer(tester);
 
-    final downloadRow = find.textContaining('Download lecture');
+    final downloadRow = find.byKey(WidgetKeys.offlineDownloadLecture);
     if (tester.any(downloadRow)) {
       await tester.tap(downloadRow);
       await pumpFrames(tester, count: 3);
@@ -253,7 +249,7 @@ class AppFlow {
 
   static Future<void> removeDownloadFromPlayer(WidgetTester tester) async {
     await openOfflineSheetFromPlayer(tester);
-    final remove = find.text('Remove download');
+    final remove = find.byKey(WidgetKeys.offlineRemoveDownload);
     expect(remove, findsOneWidget);
     await tester.tap(remove);
     await pumpFrames(tester, count: 3);
@@ -281,7 +277,7 @@ class AppFlow {
 
   static Future<void> openOfflineLibraryFromSheet(WidgetTester tester) async {
     await openOfflineSheetFromPlayer(tester);
-    await tester.tap(find.text('Manage downloads'));
+    await tester.tap(find.byKey(WidgetKeys.offlineManageDownloads));
     await waitFor(
       tester,
       find.widgetWithText(AppBar, 'Downloads'),
@@ -290,10 +286,12 @@ class AppFlow {
     );
   }
 
-  static Future<void> openOfflineLibraryFromSettings(WidgetTester tester) async {
+  static Future<void> openOfflineLibraryFromSettings(
+    WidgetTester tester,
+  ) async {
     await navigateToTab(tester, 'Settings');
     await scrollToSettingsDownloads(tester);
-    final storageRow = find.byIcon(Icons.storage_rounded);
+    final storageRow = find.byKey(WidgetKeys.settingsOfflineLibrary);
     expect(storageRow, findsOneWidget);
 
     // scrollToSettingsDownloads only checks the element tree, not the
@@ -329,7 +327,7 @@ class AppFlow {
 
   static Future<void> cancelDownloadFromPlayer(WidgetTester tester) async {
     await openOfflineSheetFromPlayer(tester);
-    final cancel = find.text('Cancel download');
+    final cancel = find.byKey(WidgetKeys.offlineCancelDownload);
     if (!tester.any(cancel)) {
       await dismissBottomSheet(tester);
       return;
@@ -397,49 +395,36 @@ class AppFlow {
   /// so it works regardless of which series is currently active.
   static Future<void> navigateToSettingsTab(WidgetTester tester) async {
     await dismissOverlays(tester);
-    for (final label in ['Settings', 'الإعدادات']) {
-      final tab = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text(label),
-      );
-      if (tester.any(tab)) {
-        await tester.tap(tab);
-        await pumpFrames(tester, count: 5);
-        return;
-      }
+    final tab = find.byKey(WidgetKeys.shellSettingsTab);
+    if (tester.any(tab)) {
+      await tester.tap(tab);
+      await pumpFrames(tester, count: 5);
+      return;
     }
+    fail('Settings tab is not available');
   }
 
   /// Navigates to the Lectures tab regardless of current series language.
   static Future<void> navigateToLecturesTab(WidgetTester tester) async {
     await dismissOverlays(tester);
-    for (final label in ['Lectures', 'الدروس']) {
-      final tab = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text(label),
-      );
-      if (tester.any(tab)) {
-        await tester.tap(tab);
-        await pumpFrames(tester, count: 5);
-        return;
-      }
+    final tab = find.byKey(WidgetKeys.shellLecturesTab);
+    if (tester.any(tab)) {
+      await tester.tap(tab);
+      await pumpFrames(tester, count: 5);
+      return;
     }
+    fail('Lectures tab is not available');
   }
 
   /// Taps the Book tab. Returns false if the tab is absent (Urdu series has no
   /// Book tab).
   static Future<bool> navigateToBookTab(WidgetTester tester) async {
     await dismissOverlays(tester);
-    for (final label in ['Book', 'الكتاب']) {
-      final tab = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text(label),
-      );
-      if (tester.any(tab)) {
-        await tester.tap(tab);
-        await pumpFrames(tester, count: 5);
-        return true;
-      }
+    final tab = find.byKey(WidgetKeys.shellBookTab);
+    if (tester.any(tab)) {
+      await tester.tap(tab);
+      await pumpFrames(tester, count: 5);
+      return true;
     }
     return false;
   }
@@ -479,7 +464,16 @@ class AppFlow {
       timeout: const Duration(seconds: 5),
       reason: 'series option "$displayName" in picker sheet',
     );
-    await tester.tap(seriesOption);
+    // Use the row's stable series-id key for the action. The display name is
+    // used only to locate the requested remote edition in the picker.
+    final optionRow = find.ancestor(
+      of: seriesOption,
+      matching: find.byType(ListTile),
+    );
+    expect(optionRow, findsOneWidget);
+    final optionKey = tester.widget<ListTile>(optionRow).key;
+    expect(optionKey, isNotNull);
+    await tester.tap(find.byKey(optionKey!));
     await pumpFrames(tester, count: 3);
 
     // Confirm dialog — target the FilledButton regardless of its label locale.

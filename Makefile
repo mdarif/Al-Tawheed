@@ -19,10 +19,10 @@ help:
 	@echo "CI / CD:"
 	@echo "  make ci                   - Run full CI pipeline locally (analyze + test + build)"
 	@echo "  make release-apk          - Release pipeline: pub get, tests, integration, release APK"
-	@echo "  make integration-test     - Run integration_test on device (DEVICE required)"
+	@echo "  make integration-test     - Run validation app_test.dart on device (DEVICE required)"
 	@echo "  make orientation-test     - Run orientation flip test on device (DEVICE required)"
-	@echo "  make screenshots          - Capture + frame Play Store screenshots (DEVICE required)"
-	@echo "  make patrol-test          - Run Patrol native tests on device (DEVICE optional)"
+	@echo "  make screenshots          - Generate + frame Play Store assets (not validation)"
+	@echo "  make patrol-test          - Run Patrol 4.6.1/CLI 4.4.0 native gate"
 	@echo "  make ci-logs              - Fetch latest failed GitHub Actions run logs"
 	@echo "  make setup-release-secrets - One-time: push signing + Play Store creds to GitHub secrets"
 	@echo "  make release              - Trigger release workflow (BUMP=patch|minor|major), from master"
@@ -143,7 +143,9 @@ integration-test: pub-get
 		echo "  make integration-test DEVICE=<device_id>"; \
 		exit 1; \
 	fi
-	flutter test integration_test/ -d $(DEVICE) --timeout 15m
+	# Validation only: screenshot capture tests are a separate asset-generation
+	# target (`make screenshots`) and are intentionally not a release gate.
+	flutter test integration_test/app_test.dart -d $(DEVICE) --timeout 15m
 
 # On-device frame-timing benchmarks (lecture list + book reader scroll/paging).
 # MUST be a real device in --profile mode: debug build times are inflated and a
@@ -196,13 +198,29 @@ orientation-test: pub-get
 	flutter test integration_test/orientation_test.dart -d $(DEVICE) --timeout 15m
 
 # Patrol native tests (airplane mode, notification shade, permission dialogs).
-# Install CLI once: dart pub global activate patrol_cli
+# The pubspec pin patrol ^4.6.1 requires patrol_cli 4.4.0. The command checks
+# that Patrol discovered at least one test: Android 16/API 36 can build and
+# instrument successfully while reporting Total: 0, which is not a green gate.
+# Install the compatible CLI once: dart pub global activate patrol_cli 4.4.0
 patrol-test:
-	patrol test -t patrol_test/native_test.dart \
-		$(if $(DEVICE),--device $(DEVICE),)
+	@PATROL_LOG=$$(mktemp /tmp/at-tawheed-patrol.XXXXXX); \
+	trap 'rm -f "$$PATROL_LOG"' 0; \
+	if ! patrol test -t patrol_test/native_test.dart \
+		$(if $(DEVICE),--device $(DEVICE),) >"$$PATROL_LOG" 2>&1; then \
+		cat "$$PATROL_LOG"; \
+		exit 1; \
+	fi; \
+	cat "$$PATROL_LOG"; \
+	if grep -Eq 'Total:[[:space:]]*0' "$$PATROL_LOG"; then \
+		echo "Error: Patrol discovered 0 tests; this cannot satisfy the release gate."; \
+		echo "Use patrol_cli 4.4.0 with patrol 4.6.1 on an Android API level below 36."; \
+		exit 1; \
+	fi
 
 # Full release pipeline (local):
-#   pub get → analyze → unit/widget tests → integration tests → patrol tests → release APK
+#   pub get → analyze → unit/widget tests → validation integration test →
+#   Patrol (must discover tests) → release APK. Screenshot generation is not
+#   part of this gate; use `make screenshots DEVICE=<id>` separately.
 # Requires android/key.properties for signing and a connected DEVICE.
 release-apk: pub-get
 	flutter analyze --fatal-warnings
@@ -213,8 +231,8 @@ release-apk: pub-get
 		echo "  make release-apk DEVICE=<device_id>"; \
 		exit 1; \
 	fi
-	flutter test integration_test/ -d $(DEVICE) --timeout 15m
-	patrol test -t patrol_test/native_test.dart --device $(DEVICE)
+	flutter test integration_test/app_test.dart -d $(DEVICE) --timeout 15m
+	$(MAKE) patrol-test DEVICE=$(DEVICE)
 	flutter build apk --release
 	@echo "✓ Release APK: build/app/outputs/flutter-apk/app-release.apk"
 

@@ -19,6 +19,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 const _arabicSeries = SeriesConfig(
@@ -166,8 +167,9 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('shows 3 tabs (Lectures, Book, Study) for the Urdu series',
-      (tester) async {
+  testWidgets('shows 3 tabs (Lectures, Book, Study) for the Urdu series', (
+    tester,
+  ) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
@@ -182,6 +184,10 @@ void main() {
     expect(find.text('Study'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget); // nav destination label
     expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byKey(WidgetKeys.shellLecturesTab), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellBookTab), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellStudyTab), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellSettingsTab), findsOneWidget);
   });
 
   testWidgets('Settings is the LAST tab', (tester) async {
@@ -197,8 +203,9 @@ void main() {
     expect(labels, ['Lectures', 'Book', 'Study', 'Settings']);
   });
 
-  testWidgets('shows 3 tabs (Lectures, Book, Settings) for the Arabic series',
-      (tester) async {
+  testWidgets('shows 3 tabs (Lectures, Book, Settings) for the Arabic series', (
+    tester,
+  ) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
@@ -213,8 +220,9 @@ void main() {
     expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
-  testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI',
-      (tester) async {
+  testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI', (
+    tester,
+  ) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
@@ -229,8 +237,9 @@ void main() {
     expect(find.text('الرئيسية'), findsNothing);
   });
 
-  testWidgets('hides and restores bottom navigation chrome on request',
-      (tester) async {
+  testWidgets('hides and restores bottom navigation chrome on request', (
+    tester,
+  ) async {
     final series = SeriesProvider()..load(false);
 
     await tester.pumpWidget(_wrap(series: series));
@@ -254,47 +263,48 @@ void main() {
 
   group('ShellScreen — mini player', () {
     testWidgets(
-        'shows the Arabic lecture title for the Arabic series, with l10n nav unchanged',
-        (tester) async {
-      final progress = ProgressProvider()..load();
-      final downloads = DownloadsProvider();
-      final connectivity = ConnectivityProvider.testOffline();
-      final player = PlayerNotifier(
-        TawheedAudioHandler(),
-        progress,
-        downloads,
-        connectivity,
-      );
-      addTearDown(player.dispose);
+      'shows the Arabic lecture title for the Arabic series, with l10n nav unchanged',
+      (tester) async {
+        final progress = ProgressProvider()..load();
+        final downloads = DownloadsProvider();
+        final connectivity = ConnectivityProvider.testOffline();
+        final player = PlayerNotifier(
+          TawheedAudioHandler(),
+          progress,
+          downloads,
+          connectivity,
+        );
+        addTearDown(player.dispose);
 
-      final lec = _arabicLec();
-      await player.loadAndPlay(lec, [lec]);
+        final lec = _arabicLec();
+        await player.loadAndPlay(lec, [lec]);
 
-      final series = SeriesProvider()
-        ..load(false)
-        ..setCurrentSeriesForTest(_arabicSeries);
+        final series = SeriesProvider()
+          ..load(false)
+          ..setCurrentSeriesForTest(_arabicSeries);
 
-      await tester.pumpWidget(
-        _wrap(
-          series: series,
-          catalog: _arabicCatalog(),
-          player: player,
-          progress: progress,
-          downloads: downloads,
-          connectivity: connectivity,
-          locale: const Locale('ar'),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          _wrap(
+            series: series,
+            catalog: _arabicCatalog(),
+            player: player,
+            progress: progress,
+            downloads: downloads,
+            connectivity: connectivity,
+            locale: const Locale('ar'),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Content (mini-player track title) is Arabic per edition, regardless of UI.
-      expect(find.text('الدرس 2'), findsOneWidget);
-      expect(find.text('Dars 02'), findsNothing);
+        // Content (mini-player track title) is Arabic per edition, regardless of UI.
+        expect(find.text('الدرس 2'), findsOneWidget);
+        expect(find.text('Dars 02'), findsNothing);
 
-      // Bottom nav is Arabic because the UI locale is Arabic.
-      expect(find.text('Lectures'), findsOneWidget); // page body only
-      expect(find.text('الدروس'), findsOneWidget);
-      expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
-    });
+        // Bottom nav is Arabic because the UI locale is Arabic.
+        expect(find.text('Lectures'), findsOneWidget); // page body only
+        expect(find.text('الدروس'), findsOneWidget);
+        expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
+      },
+    );
   });
 }

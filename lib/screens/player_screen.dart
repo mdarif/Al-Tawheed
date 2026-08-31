@@ -14,6 +14,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/lecture_share.dart';
@@ -36,6 +37,7 @@ class PlayerScreen extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             leading: IconButton(
+              key: WidgetKeys.playerClose,
               // Collapses the full-screen player. Labelled for screen readers
               // via the framework's already-localised "Close" string.
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
@@ -75,7 +77,10 @@ class PlayerScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   const PlayerSeekBar(),
                   const SizedBox(height: 28),
-                  const PlayerTransportControls(),
+                  const KeyedSubtree(
+                    key: WidgetKeys.playerTransportControls,
+                    child: PlayerTransportControls(),
+                  ),
                   const SizedBox(height: 24),
                   const PlaybackSpeedSelectorCompact(),
                   const SizedBox(height: 16),
@@ -266,6 +271,7 @@ class _OfflineStatusStrip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: GestureDetector(
+        key: WidgetKeys.playerOfflineStatus,
         onTap: snapshot.lecture != null
             ? () => showOfflineSheet(context, snapshot.lecture!)
             : null,
@@ -433,9 +439,10 @@ class _CoverArt extends StatelessWidget {
     final catalog = context.watch<CatalogProvider>().catalog;
     // Watch the language so the wordmark refreshes on a UI-language change.
     final wordmark = series.isRtl && catalog != null
-        ? context
-            .watch<LanguageProvider>()
-            .resolveForSeries(catalog.book.title, series)
+        ? context.watch<LanguageProvider>().resolveForSeries(
+              catalog.book.title,
+              series,
+            )
         : 'شرح كتاب التوحيد';
 
     return Container(
@@ -565,6 +572,7 @@ class _BookmarkButton extends StatelessWidget {
     );
     final l10n = context.l10n;
     return IconButton(
+      key: WidgetKeys.playerBookmark,
       tooltip: isBookmarked ? l10n.removeBookmark : l10n.bookmark,
       icon: Icon(
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
@@ -581,11 +589,12 @@ class _PlayerDownloadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lecture = context.select<PlayerNotifier, Lecture?>(
-      (p) => p.current,
-    );
+    final lecture = context.select<PlayerNotifier, Lecture?>((p) => p.current);
     if (lecture == null) return const SizedBox.shrink();
-    return DownloadButton(lecture: lecture, size: 22);
+    return KeyedSubtree(
+      key: WidgetKeys.playerDownload,
+      child: DownloadButton(lecture: lecture, size: 22),
+    );
   }
 }
 
@@ -594,12 +603,11 @@ class _PlayerShareButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lecture = context.select<PlayerNotifier, Lecture?>(
-      (p) => p.current,
-    );
+    final lecture = context.select<PlayerNotifier, Lecture?>((p) => p.current);
     if (lecture == null) return const SizedBox.shrink();
     final l10n = context.l10n;
     return IconButton(
+      key: WidgetKeys.playerShare,
       tooltip: l10n.shareLecture,
       icon: Icon(Icons.share_rounded, color: context.primaryTextColor),
       // Shares a link to the lecture's page on the website — chosen over the
@@ -618,7 +626,9 @@ class _PlayerShareButton extends StatelessWidget {
           websiteBase: context.read<AppConfigProvider>().config.links.website,
         );
         SharePlus.instance.share(
-          ShareParams(text: lectureShareText(title: title, url: url)),
+          ShareParams(
+            text: lectureShareText(title: title, url: url),
+          ),
         );
       },
     );

@@ -5,6 +5,7 @@ import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/all_lectures_complete_listener.dart';
 import 'package:myapp/widgets/mini_player.dart';
@@ -24,21 +25,25 @@ extension on _Tab {
 
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
         _Tab.lectures => NavigationDestination(
+            key: WidgetKeys.shellLecturesTab,
             icon: const Icon(Icons.headphones_outlined),
             selectedIcon: const Icon(Icons.headphones_rounded),
             label: l10n.tabLectures,
           ),
         _Tab.book => NavigationDestination(
+            key: WidgetKeys.shellBookTab,
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
             label: l10n.tabBook,
           ),
         _Tab.study => NavigationDestination(
+            key: WidgetKeys.shellStudyTab,
             icon: const Icon(Icons.school_outlined),
             selectedIcon: const Icon(Icons.school_rounded),
             label: l10n.tabStudyMode,
           ),
         _Tab.settings => NavigationDestination(
+            key: WidgetKeys.shellSettingsTab,
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings_rounded),
             label: l10n.tabSettings,
@@ -86,9 +91,7 @@ class ShellScreen extends StatelessWidget {
               NavigationBar(
                 selectedIndex: _selectedIndex(context, tabs),
                 onDestinationSelected: (i) => context.go(tabs[i].path),
-                destinations: [
-                  for (final tab in tabs) tab.destination(l10n),
-                ],
+                destinations: [for (final tab in tabs) tab.destination(l10n)],
               ),
             ],
           ),

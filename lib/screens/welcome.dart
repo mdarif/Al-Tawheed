@@ -8,6 +8,7 @@ import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
 // Arabic tagline shown when the series includes a companion book.
@@ -134,8 +135,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           Expanded(
                             child: Center(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 32),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -291,9 +293,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
+                                key: WidgetKeys.welcomeStartListening,
                                 style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 18),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
                                   textStyle: context.textTheme.labelLarge
                                       ?.copyWith(color: semantic.onBrand),
                                   shape: RoundedRectangleBorder(

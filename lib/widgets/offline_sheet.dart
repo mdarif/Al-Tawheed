@@ -7,6 +7,7 @@ import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
@@ -59,12 +60,14 @@ class _OfflineSheetContent extends StatelessWidget {
     final status = downloads.statusFor(lecture.id);
     final isDownloaded = status == DownloadStatus.downloaded;
     final isDownloading = status == DownloadStatus.downloading;
-    final isChapterDownloading =
-        downloads.isChapterDownloading(lecture.chapterId);
+    final isChapterDownloading = downloads.isChapterDownloading(
+      lecture.chapterId,
+    );
     final chapterFull = downloads.isChapterFullyDownloaded(chapterLectures);
     final sizeMb = _sizeMb(lecture.fileSizeBytes);
-    final chapterTotalMb =
-        _sizeMb(downloads.chapterTotalBytes(chapterLectures));
+    final chapterTotalMb = _sizeMb(
+      downloads.chapterTotalBytes(chapterLectures),
+    );
 
     return SafeArea(
       child: Padding(
@@ -82,6 +85,7 @@ class _OfflineSheetContent extends StatelessWidget {
               _ProgressRow(lectureId: lecture.id),
               const SizedBox(height: 4),
               _SheetTile(
+                key: WidgetKeys.offlineCancelDownload,
                 icon: Icons.cancel_outlined,
                 label: l10n.offlineCancelDownload,
                 color: context.colorScheme.error,
@@ -92,6 +96,7 @@ class _OfflineSheetContent extends StatelessWidget {
               ),
             ] else if (isDownloaded) ...[
               _SheetTile(
+                key: WidgetKeys.offlineRemoveDownload,
                 icon: Icons.delete_outline_rounded,
                 label: l10n.offlineRemoveDownload,
                 color: context.colorScheme.error,
@@ -99,6 +104,7 @@ class _OfflineSheetContent extends StatelessWidget {
               ),
             ] else ...[
               _SheetTile(
+                key: WidgetKeys.offlineDownloadLecture,
                 icon: Icons.download_rounded,
                 label: l10n.offlineDownloadLecture(sizeMb),
                 onTap: () => _startDownload(context, downloads, connectivity),
@@ -109,6 +115,7 @@ class _OfflineSheetContent extends StatelessWidget {
             if (chapterLectures.length > 1) ...[
               if (isChapterDownloading) ...[
                 _SheetTile(
+                  key: WidgetKeys.offlineCancelChapter,
                   icon: Icons.stop_circle_outlined,
                   label: l10n.cancelChapterDownload,
                   color: context.colorScheme.error,
@@ -119,6 +126,7 @@ class _OfflineSheetContent extends StatelessWidget {
                 ),
               ] else if (!chapterFull) ...[
                 _SheetTile(
+                  key: WidgetKeys.offlineDownloadChapter,
                   icon: Icons.download_for_offline_outlined,
                   label: l10n.downloadChapterAll(chapterTotalMb),
                   onTap: () =>
@@ -129,6 +137,7 @@ class _OfflineSheetContent extends StatelessWidget {
 
             const SizedBox(height: 4),
             _SheetTile(
+              key: WidgetKeys.offlineManageDownloads,
               icon: Icons.folder_open_rounded,
               label: l10n.offlineManageDownloads,
               color: context.secondaryTextColor,
@@ -202,9 +211,10 @@ class _OfflineSheetContent extends StatelessWidget {
 
   Widget _header(BuildContext context, bool isDownloaded) {
     final series = context.read<SeriesProvider>().currentSeries;
-    final title = context
-        .read<LanguageProvider>()
-        .resolveForSeries(lecture.title, series);
+    final title = context.read<LanguageProvider>().resolveForSeries(
+          lecture.title,
+          series,
+        );
     final titleWidget = Text(
       title,
       style: context.textTheme.titleSmall,
@@ -240,9 +250,10 @@ class _OfflineSheetContent extends StatelessWidget {
   ) {
     final series = context.read<SeriesProvider>().currentSeries;
     final l10n = context.l10n;
-    final title = context
-        .read<LanguageProvider>()
-        .resolveForSeries(lecture.title, series);
+    final title = context.read<LanguageProvider>().resolveForSeries(
+          lecture.title,
+          series,
+        );
     showConfirmDialog(
       context,
       title: l10n.offlineRemoveDownload,
@@ -284,8 +295,9 @@ class _ProgressRow extends StatelessWidget {
         children: [
           Text(
             context.localizedDigits(l10n.offlineDownloading(percent)),
-            style: context.textTheme.bodySmall
-                ?.copyWith(color: context.secondaryTextColor),
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.secondaryTextColor,
+            ),
           ),
           const SizedBox(height: 6),
           LinearProgressIndicator(
@@ -305,6 +317,7 @@ class _SheetTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _SheetTile({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,

@@ -13,8 +13,9 @@ have actually shipped here.
 | Layer | Command | Needs device |
 |-------|---------|--------------|
 | Unit + widget | `flutter test` or `make test` | No |
-| Integration (Flutter UI) | `make integration-test DEVICE=<id>` | Yes |
-| Patrol (native OS) | `make patrol-test` or `patrol test -t patrol_test/native_test.dart` | Yes |
+| Integration validation (Flutter UI) | `make integration-test DEVICE=<id>` | Yes |
+| Screenshot asset generation | `make screenshots DEVICE=<id>` | Yes |
+| Patrol (native OS) | `make patrol-test DEVICE=<id>` | Yes |
 | Full local release gate | `make release-apk DEVICE=<id>` | Yes |
 
 List devices: `flutter devices`
@@ -62,9 +63,13 @@ make integration-test DEVICE=<simulator_id>
 2. **iOS** — plug in via USB/network, trust the computer on the device, and make sure the device is registered to a signing team in Xcode (`open ios/Runner.xcworkspace` → Signing & Capabilities).
 3. Confirm it shows up: `flutter devices`, then use its ID with `-d` / `DEVICE=`.
 
-Real devices are **required** (not optional) for:
-- Patrol's native automator features — airplane mode toggling and the notification shade are unreliable or unsupported on emulators/simulators in our experience; always verify these on a physical phone before trusting a green run.
-- Realistic download/Wi-Fi-only testing — emulators proxy network through the host, which can mask real connectivity-state transitions.
+For final confidence, verify Patrol's native automator features on a physical
+stock-Android device when available. The current release gate also supports a
+stock Android API 34 emulator (and specifically requires that older target for
+Patrol discovery; Android 16/API 36 reports zero tests). OEM-skinned phones
+can still make airplane-mode automation unreliable, so treat those scenarios
+as manual checks there. Realistic download/Wi-Fi-only testing is best on a
+physical device because emulators proxy network through the host.
 
 ### Network
 
@@ -96,10 +101,10 @@ CI runs the same command on every push/PR (`flutter-ci.yml`).
 
 Flutter SDK `integration_test` — same `WidgetTester` API as widget tests, runs on a real device or emulator. Covers all **in-app** flows without touching native OS UI.
 
-**Scenarios covered**
+**Validation scenarios covered**
 
 - Welcome → catalog → lecture list  
-- Shell tabs (Home, Settings, Lectures)  
+- Shell tabs (Lectures, Book/Study when available, Settings)
 - Player + mini player  
 - Offline sheet, download, local playback  
 - Offline library (sheet + Settings)  
@@ -112,6 +117,11 @@ flutter test integration_test/app_test.dart -d <device_id> --timeout 15m
 # or
 make integration-test DEVICE=<device_id>
 ```
+
+`integration_test/app_test.dart` is the validation gate. The Play Store
+screenshot generators (`screenshots_test.dart` and
+`screenshots_tablet_test.dart`) are asset-generation jobs, not validation, and
+run only through `make screenshots DEVICE=<device_id>`.
 
 **Notes**
 
@@ -130,8 +140,8 @@ make integration-test DEVICE=<device_id>
 ### One-time setup
 
 ```bash
-# 1. Patrol CLI (once per machine)
-dart pub global activate patrol_cli
+# 1. Patrol CLI (once per machine; this exact version matches pubspec.yaml)
+dart pub global activate patrol_cli 4.4.0
 
 # 2. Add pub global bin to PATH (required — otherwise: command not found: patrol)
 echo 'export PATH="$PATH:$HOME/.pub-cache/bin"' >> ~/.zshrc
@@ -168,13 +178,23 @@ patrol doctor
 ### Run
 
 ```bash
-patrol test -t patrol_test/native_test.dart
-# specific device
-patrol test -t patrol_test/native_test.dart --device <device_id>
-# or
+# The release-gate wrapper captures output and rejects Total: 0.
 make patrol-test
 make patrol-test DEVICE=<device_id>
 ```
+
+For exploratory debugging you can invoke `patrol test` directly, but use
+`make patrol-test` when deciding whether the native gate passed.
+
+The app pins `patrol: ^4.6.1`; Patrol's compatibility check requires
+`patrol_cli 4.4.0`. The native command is a release-gate check, not merely a
+build check: it fails if Patrol reports `Total: 0`. On Android 16/API 36,
+Patrol 4.4.0 currently builds and starts instrumentation but discovers zero
+tests, so that device cannot produce a green native gate. Use a stock Android
+target below API 36 (the API 34 emulator is suitable), or deliberately treat
+the native scenarios as a separately documented manual check while keeping
+the Flutter validation gate green. CLI 4.5.1 refuses the 4.6.1 package and is
+not a workaround.
 
 > `patrol test` has **no `--timeout` CLI flag** (only `--web-timeout`/`--web-global-timeout` for web runs — passing `--timeout` errors with `Could not find an option named "--timeout"`). The 10-minute per-test timeout is already set in code via `timeout: patrolTimeout` in `patrol_test/support/patrol_flow.dart`.
 
@@ -209,8 +229,13 @@ A real Pixel device works too. If you must validate on an OEM-skinned phone, tre
 
 ```bash
 make ci                  # analyze + unit/widget tests + debug APK (no device)
-make release-apk DEVICE=<id>   # full gate before Play Store upload
+make release-apk DEVICE=<id>   # validation + discovered Patrol gate + APK
 ```
+
+`make release-apk` runs `integration_test/app_test.dart`, never the screenshot
+generators, then runs Patrol and requires at least one discovered test. A
+successful process with `Total: 0` is intentionally rejected; Android 16/API
+36 therefore cannot satisfy this release gate with the current Patrol pins.
 
 Pre-push hook (`.githooks/pre-push`): `flutter analyze` + `flutter test` — no device tests.
 

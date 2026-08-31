@@ -315,7 +315,8 @@ CI runs on the PR. Merge when green.
 > summary below is just the shape of it.
 
 ```
-1. Run the local release gate (builds + tests + signed APK on a real device):
+1. Run the local release gate (builds + tests + signed APK on a supported
+   device; Patrol must discover tests):
      make release-apk DEVICE=<device_id>
 2. Trigger the one-click release from develop:
      make release-auto BUMP=patch     # or BUMP=minor / BUMP=major
@@ -342,9 +343,10 @@ CI runs on the PR. Merge when green.
 |---|---|
 | `make setup-hooks` | Activate `.githooks/pre-push` for this clone |
 | `make ci` | Run CI locally: analyze + unit/widget tests + debug APK |
-| `make integration-test DEVICE=<id>` | Run `integration_test/` on a device |
-| `make patrol-test` | Run Patrol native tests (`patrol_test/native_test.dart`) |
-| `make release-apk DEVICE=<id>` | Full release gate: tests + integration + patrol + release APK |
+| `make integration-test DEVICE=<id>` | Run validation `integration_test/app_test.dart` on a device |
+| `make screenshots DEVICE=<id>` | Generate Play Store assets (not validation) |
+| `make patrol-test DEVICE=<id>` | Run Patrol 4.6.1 native tests with CLI 4.4.0; reject `Total: 0` |
+| `make release-apk DEVICE=<id>` | Full gate: tests + validation integration + discovered Patrol + release APK |
 | `make ci-logs` | Fetch latest failed GitHub Actions run logs via `gh` |
 | `make release` | Trigger release workflow (patch bump) |
 | `make release BUMP=minor` | Trigger release workflow (minor bump) |
@@ -355,6 +357,17 @@ CI runs on the PR. Merge when green.
 ---
 
 ## Known Constraints
+
+### Patrol version and Android 16 discovery
+
+`pubspec.yaml` pins `patrol: ^4.6.1`, which requires `patrol_cli 4.4.0`.
+Patrol CLI 4.5.1 refuses that package. On Android 16/API 36, CLI 4.4.0 can
+successfully build and start instrumentation while discovering `Total: 0`
+tests; the Makefile rejects that result, so it is not a release-gate pass.
+Use a stock Android target below API 36 (API 34 is the recommended emulator)
+for the native gate. The Flutter `integration_test/app_test.dart` validation
+target remains independent, and screenshot capture remains an asset-generation
+target (`make screenshots`), never part of `make release-apk`.
 
 | Constraint | Reason | Resolution |
 |---|---|---|
@@ -403,11 +416,13 @@ gh workflow run flutter-release.yml --ref develop \
   -f bump=patch -f confirm_promote=true
 ```
 
-...does everything: promotes, runs unit *and* on-device tests, builds a signed
-APK + AAB, tags, creates the GitHub Release, uploads to the Play Store
-internal track, and syncs `develop`. What stays manual by design: promoting
-internal → production in Play Console, and reviewing the auto-generated
-"What's new" text.
+...promotes, runs analyze/unit tests, builds a signed APK + AAB, tags, creates
+the GitHub Release, uploads to the Play Store internal track, and syncs
+`develop`. It does not have a connected-device step: run the local
+`make release-apk DEVICE=<id>` gate first (including discovered Patrol tests).
+The Android emulator validation workflow is non-blocking until CD Phase 4b is
+adopted. What stays manual by design: promoting internal → production in Play
+Console, and reviewing the auto-generated "What's new" text.
 
 ### Future improvements
 

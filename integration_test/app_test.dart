@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
 import 'support/app_flow.dart';
@@ -23,8 +24,8 @@ void main() {
       await AppFlow.launchApp(tester);
       // WelcomeScreen is only shown on first install; returning users land
       // directly on /lectures (onboarding flag persisted in prefs).
-      if (tester.any(find.text('START LISTENING'))) {
-        expect(find.text('START LISTENING'), findsOneWidget);
+      if (tester.any(find.byKey(WidgetKeys.welcomeStartListening))) {
+        expect(find.byKey(WidgetKeys.welcomeStartListening), findsOneWidget);
         expect(find.textContaining('Kitab at-Tawheed'), findsWidgets);
       }
 

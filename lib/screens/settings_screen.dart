@@ -9,6 +9,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
@@ -71,8 +72,9 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabSettings)),
       body: ListView(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 92),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom + 92,
+        ),
         children: [
           _SectionHeader(l10n.settingsAppearance),
           const _SettingsCard(child: ThemeModeSwitch()),
@@ -148,9 +150,9 @@ class SettingsScreen extends StatelessWidget {
                       leading: const Icon(Icons.play_circle_outline_rounded),
                       title: Text(l10n.settingsYouTubeChannel),
                       subtitle: Text(
-                        context
-                            .watch<LanguageProvider>()
-                            .resolve(config.branding.appBrand),
+                        context.watch<LanguageProvider>().resolve(
+                              config.branding.appBrand,
+                            ),
                       ),
                       onTap: () => _launchOrNotify(
                         context,
@@ -280,6 +282,7 @@ class _DownloadsSection extends StatelessWidget {
             children: [
               // Wi-Fi only toggle
               SwitchListTile(
+                key: WidgetKeys.settingsDownloadOnWifiOnly,
                 secondary: const Icon(Icons.wifi_rounded),
                 title: Text(l10n.downloadOnWifiOnly),
                 subtitle: Text(
@@ -294,6 +297,7 @@ class _DownloadsSection extends StatelessWidget {
 
               // Storage summary + library link
               ListTile(
+                key: WidgetKeys.settingsOfflineLibrary,
                 leading: const Icon(Icons.storage_rounded),
                 title: Text(l10n.offlineLibrary),
                 subtitle: Text(
@@ -399,8 +403,9 @@ class _SeriesLanguageSelector extends StatelessWidget {
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.changeSeriesConfirmTitle,
-      message: l10n
-          .changeSeriesConfirmMessage(_seriesLanguageLabel(context, target)),
+      message: l10n.changeSeriesConfirmMessage(
+        _seriesLanguageLabel(context, target),
+      ),
       confirmLabel: l10n.changeSeriesConfirm,
       filledConfirm: true,
     );
@@ -430,6 +435,7 @@ class _SeriesLanguageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      key: WidgetKeys.settingsSeriesOption(series.id),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       title: Text(
         _seriesLanguageLabel(context, series),

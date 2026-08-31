@@ -29,8 +29,11 @@ looks like, and what to do if it doesn't go to plan.
       `gh run list --branch develop --limit 1`
 - [ ] No uncommitted changes anywhere you're about to switch branches from:
       `git status`
-- [ ] An Android device is connected and authorized: `flutter devices`
-      (required for Step 1 — the on-device test gate)
+- [ ] A supported Android device is connected and authorized: `flutter devices`
+      (required for Step 1 — Flutter validation plus the Patrol discovery gate).
+      For the current `patrol 4.6.1` pin, use `patrol_cli 4.4.0` on a stock
+      Android target below API 36; Android 16/API 36 currently discovers zero
+      Patrol tests and cannot satisfy this gate.
 - [ ] (One-time, CD Phase 2) Signing secrets are set —
       `gh secret list --repo mdarif/Al-Tawheed` should list `KEYSTORE_BASE64`,
       `KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD`. If any are missing, see
@@ -53,11 +56,15 @@ make release-apk DEVICE=<device_id>
 ```
 
 Runs, in order: `pub get` → `flutter analyze --fatal-warnings` →
-`flutter test` (unit/widget) → `flutter test integration_test/` (on-device,
-~1 min) → `patrol test` (on-device native scenarios — airplane mode,
-notifications, lock-screen controls) → `flutter build apk --release`.
+`flutter test` (unit/widget) → `flutter test integration_test/app_test.dart`
+(Flutter validation on-device) → `patrol test` (native scenarios — airplane
+mode, notifications, lock-screen controls; must discover at least one test) →
+`flutter build apk --release`. Play Store screenshot generators are separate
+asset jobs and are not part of the release gate (`make screenshots
+DEVICE=<device_id>`).
 
-**Success** looks like the final line:
+**Success** looks like the final line (and requires Patrol to report a non-zero
+discovered test count):
 ```
 ✓ Release APK: build/app/outputs/flutter-apk/app-release.apk
 ```
