@@ -250,6 +250,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get retry => 'دوبارہ کوشش کریں';
 
   @override
+  String get playbackError => 'پلے بیک جاری نہیں رہ سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
   String get catalogConnectToLoadTitle =>
       'دروس لوڈ کرنے کے لیے انٹرنیٹ سے جڑیں';
 
@@ -821,6 +824,10 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get retry => 'Dobara koshish karein';
+
+  @override
+  String get playbackError =>
+      'Playback jari nahin reh saka. Dobara koshish karein.';
 
   @override
   String get catalogConnectToLoadTitle =>

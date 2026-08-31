@@ -1,0 +1,125 @@
+import 'dart:async';
+
+import 'package:audio_service/audio_service.dart';
+import 'package:just_audio/just_audio.dart' show ProcessingState;
+import 'package:myapp/audio/audio_handler.dart';
+import 'package:myapp/models/catalog.dart';
+
+/// Controllable implementation of the production [AudioPlayback] seam.
+///
+/// Tests use its public event methods to model backend events; they never set
+/// notifier state directly, so every assertion exercises PlayerNotifier's
+/// production subscriptions and commands.
+class FakeAudioPlayback implements AudioPlayback {
+  final _states = StreamController<PlaybackState>.broadcast(sync: true);
+  final _positions = StreamController<Duration>.broadcast(sync: true);
+  final _durations = StreamController<Duration?>.broadcast(sync: true);
+  final _processing = StreamController<ProcessingState>.broadcast(sync: true);
+  final _errors = StreamController<Object>.broadcast(sync: true);
+
+  final List<LoadCall> loads = [];
+  int playCalls = 0;
+  int pauseCalls = 0;
+  int stopCalls = 0;
+  final List<Duration> seeks = [];
+  final List<double> speeds = [];
+  Object? failNextLoad;
+  Completer<void>? pendingLoad;
+
+  @override
+  Future<void> Function()? onSkipToNext;
+
+  @override
+  Future<void> Function()? onSkipToPrevious;
+
+  @override
+  Stream<PlaybackState> get playbackState => _states.stream;
+
+  @override
+  Stream<Duration> get positionStream => _positions.stream;
+
+  @override
+  Stream<Duration?> get durationStream => _durations.stream;
+
+  @override
+  Stream<ProcessingState> get processingStateStream => _processing.stream;
+
+  @override
+  Stream<Object> get errorStream => _errors.stream;
+
+  @override
+  Future<void> loadLecture(
+    Lecture lecture, {
+    Duration startFrom = Duration.zero,
+    String? localFilePath,
+    String artist = '',
+    String? displayTitle,
+  }) async {
+    loads.add(
+      LoadCall(
+        lecture: lecture,
+        startFrom: startFrom,
+        localFilePath: localFilePath,
+      ),
+    );
+    final error = failNextLoad;
+    failNextLoad = null;
+    if (error != null) throw error;
+    await pendingLoad?.future;
+  }
+
+  @override
+  Future<void> pause() async => pauseCalls++;
+
+  @override
+  Future<void> play() async => playCalls++;
+
+  @override
+  Future<void> seek(Duration position) async => seeks.add(position);
+
+  @override
+  Future<void> setSpeed(double speed) async => speeds.add(speed);
+
+  @override
+  Future<void> stop() async => stopCalls++;
+
+  void emitPlaybackState({
+    bool playing = false,
+    AudioProcessingState processingState = AudioProcessingState.ready,
+    double speed = 1.0,
+  }) =>
+      _states.add(
+        PlaybackState(
+          processingState: processingState,
+          playing: playing,
+          speed: speed,
+        ),
+      );
+
+  void emitPosition(Duration position) => _positions.add(position);
+  void emitDuration(Duration? duration) => _durations.add(duration);
+  void emitCompleted() => _processing.add(ProcessingState.completed);
+  void emitError(Object error) => _errors.add(error);
+  Future<void> triggerNext() => onSkipToNext?.call() ?? Future.value();
+  Future<void> triggerPrevious() => onSkipToPrevious?.call() ?? Future.value();
+
+  Future<void> dispose() async {
+    await _states.close();
+    await _positions.close();
+    await _durations.close();
+    await _processing.close();
+    await _errors.close();
+  }
+}
+
+class LoadCall {
+  const LoadCall({
+    required this.lecture,
+    required this.startFrom,
+    required this.localFilePath,
+  });
+
+  final Lecture lecture;
+  final Duration startFrom;
+  final String? localFilePath;
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -7,7 +8,38 @@ import 'package:just_audio/just_audio.dart';
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/catalog.dart';
 
-class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
+/// The small portion of the audio backend that owns playback policy needs.
+///
+/// [TawheedAudioHandler] is the production implementation. Keeping this at
+/// the app boundary lets [PlayerNotifier] react to real backend events without
+/// depending on a platform-backed [AudioPlayer] in its tests.
+abstract interface class AudioPlayback {
+  Stream<PlaybackState> get playbackState;
+  Stream<Duration> get positionStream;
+  Stream<Duration?> get durationStream;
+  Stream<ProcessingState> get processingStateStream;
+  Stream<Object> get errorStream;
+
+  set onSkipToNext(Future<void> Function()? callback);
+  set onSkipToPrevious(Future<void> Function()? callback);
+
+  Future<void> loadLecture(
+    Lecture lecture, {
+    Duration startFrom = Duration.zero,
+    String? localFilePath,
+    String artist = AppConfig.appTitle,
+    String? displayTitle,
+  });
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+  Future<void> setSpeed(double speed);
+  Future<void> stop();
+}
+
+class TawheedAudioHandler extends BaseAudioHandler
+    with SeekHandler
+    implements AudioPlayback {
   // just_audio's own `handleInterruptions` can race with a user-initiated
   // pause: if a focus interruption "begin" event lands while we're playing,
   // it pauses internally and arms its `_playInterrupted` flag, then an
@@ -15,6 +47,7 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
   // disable it and track interruption-vs-user pauses ourselves so a manual
   // pause (e.g. from the lock screen) always wins and is never overridden.
   final AudioPlayer _player = AudioPlayer(handleInterruptions: false);
+  final _errors = StreamController<Object>.broadcast();
   bool _pausedByInterruption = false;
 
   // The handler is just a thin just_audio wrapper — it doesn't know about the
@@ -31,12 +64,29 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
     // would permanently lock `playbackState` against direct `.add()` calls
     // (e.g. from `super.stop()`) for as long as the player's event stream
     // stays open, which is its entire lifetime.
-    _player.playbackEventStream
-        .map(_stateFromEvent)
-        .listen(playbackState.add, onError: playbackState.addError);
+    _player.playbackEventStream.map(_stateFromEvent).listen(
+      playbackState.add,
+      onError: (Object error, StackTrace stackTrace) {
+        _errors.add(error);
+        playbackState.addError(error, stackTrace);
+      },
+    );
   }
 
   AudioPlayer get player => _player;
+
+  @override
+  Stream<Duration> get positionStream => _player.positionStream;
+
+  @override
+  Stream<Duration?> get durationStream => _player.durationStream;
+
+  @override
+  Stream<ProcessingState> get processingStateStream =>
+      _player.processingStateStream;
+
+  @override
+  Stream<Object> get errorStream => _errors.stream;
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
@@ -77,6 +127,7 @@ class TawheedAudioHandler extends BaseAudioHandler with SeekHandler {
 
   /// Load a lecture and begin playing, optionally resuming from [startFrom].
   /// If [localFilePath] is provided and exists on disk, plays offline.
+  @override
   Future<void> loadLecture(
     Lecture lecture, {
     Duration startFrom = Duration.zero,

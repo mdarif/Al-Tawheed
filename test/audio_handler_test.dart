@@ -11,6 +11,12 @@ import 'package:myapp/audio/audio_handler.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('is the production implementation of the notifier audio seam', () {
+    final handler = TawheedAudioHandler();
+
+    expect(handler, isA<AudioPlayback>());
+  });
+
   group('skipToNext', () {
     test('invokes onSkipToNext when set', () async {
       final handler = TawheedAudioHandler();

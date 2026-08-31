@@ -246,6 +246,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'إعادة المحاولة';
 
   @override
+  String get playbackError => 'تعذّر استمرار التشغيل. حاول مرة أخرى.';
+
+  @override
   String get catalogConnectToLoadTitle => 'اتصل بالإنترنت لتحميل الدروس';
 
   @override

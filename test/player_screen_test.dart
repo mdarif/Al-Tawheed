@@ -26,6 +26,8 @@ import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/download_button.dart';
 
+import 'support/fake_audio_playback.dart';
+
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
   catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
@@ -93,6 +95,7 @@ Future<PlayerNotifier> _pumpPlayer(
   SeriesConfig? series,
   Catalog? catalog,
   Locale? locale,
+  AudioPlayback? audioPlayback,
   void Function(DownloadsProvider)? seedAfterLoad,
   void Function(PlayerNotifier)? configurePlayer,
 }) async {
@@ -101,7 +104,7 @@ Future<PlayerNotifier> _pumpPlayer(
   final connectivityProvider =
       connectivity ?? ConnectivityProvider.testOffline();
   final player = PlayerNotifier(
-    TawheedAudioHandler(),
+    audioPlayback ?? TawheedAudioHandler(),
     progress,
     downloadsProvider,
     connectivityProvider,
@@ -152,7 +155,14 @@ Future<PlayerNotifier> _pumpPlayer(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  // A controllable backend completes loads synchronously, which starts the
+  // notifier's real periodic progress timer. One frame is enough for this
+  // test harness; pumpAndSettle would keep advancing that live timer forever.
+  if (audioPlayback == null) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
 
   // Configured after the initial pump — the audio handler's playbackState
   // stream emits its initial (idle) value asynchronously, which would
@@ -229,6 +239,31 @@ void main() {
   });
 
   group('PlayerScreen — offline status strip', () {
+    testWidgets('shows a localized retry action after a playback backend error',
+        (tester) async {
+      final audio = FakeAudioPlayback();
+      addTearDown(audio.dispose);
+      final player = await _pumpPlayer(
+        tester,
+        lecture: _lectures[0],
+        connectivity: ConnectivityProvider.testOnline(),
+        audioPlayback: audio,
+      );
+
+      audio.emitError(StateError('stream failed'));
+      await tester.pump();
+      expect(
+        find.text("Playback couldn't continue. Try again."),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      expect(audio.loads, hasLength(2));
+      player.dispose();
+    });
+
     testWidgets(
         'shows "Not available offline" when streaming lecture is blocked',
         (tester) async {

@@ -19,9 +19,14 @@ sequencing; this page records the quality truth that active docs should use.
 - **Offline playback:** connectivity is observable; local playback, blocked
   streaming, next-part guards, download progress, cancellation, and the Offline
   Library are implemented and covered by focused tests.
+- **Player reliability:** `PlayerNotifier` consumes the narrow `AudioPlayback`
+  interface implemented by `TawheedAudioHandler`. Its direct tests drive real
+  notifier transitions for resume boundaries, sources, buffering/reconnect,
+  backend errors and retry, completion, deletion, queue policy, persistence,
+  and stale callbacks without a platform audio backend.
 - **Navigation:** tabs come from `SeriesConfig.hasBook` and
   `SeriesConfig.hasStudyMode`; route guards enforce the same capabilities.
-- **Release evidence:** the current baseline is **511 passing unit/widget
+- **Release evidence:** the current baseline is **557 passing unit/widget
   tests**, with two intentional skips. Goldens are macOS-only and skipped by
   default; live CDN contract tests are tagged and run separately.
 - **Design accessibility:** secondary text now uses semantic theme roles with
@@ -39,7 +44,6 @@ sequencing; this page records the quality truth that active docs should use.
 |---|---|---|
 | P1 | Stable keys for high-value E2E controls; separate validation tests from screenshot generation; document Patrol/Android 16 discovery limits; make the release gate truthful. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
 | P2 | Atomic `.part` audio downloads with integrity/transfer/cancellation failure types. | [P2](plans/maintenance-roadmap.md#p2--verified-atomic-audio-downloads) |
-| P3 | Injectable player seam and direct coverage for buffering, retry, completion, queue boundaries, local deletion, and disposal. | [P3](plans/maintenance-roadmap.md#p3--player-reliability) |
 | P4 | Semantic status colors, accessibility/large-text coverage, component vocabulary, and broader multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
 | P5 | Physical-device performance baseline, cold-start measurement, and centralized local navigation capability checks. | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
 

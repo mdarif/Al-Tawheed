@@ -527,6 +527,12 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @playbackError.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback couldn\'t continue. Try again.'**
+  String get playbackError;
+
   /// No description provided for @catalogConnectToLoadTitle.
   ///
   /// In en, this message translates to:

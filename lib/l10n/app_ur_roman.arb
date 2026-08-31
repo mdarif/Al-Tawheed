@@ -75,6 +75,7 @@
   "bookLegendCitation": "Hawala (surat:ayat)",
   "bookLegendHadith": "Hadith",
   "retry": "Dobara koshish karein",
+  "playbackError": "Playback jari nahin reh saka. Dobara koshish karein.",
   "catalogConnectToLoadTitle": "Dars load karne ke liye internet se judein",
   "catalogConnectToLoadMessage": "Ek bar internet se judein aur app kholen taake dars ke unwan aur audio links load ho saken. Pehle se mahfooz audio offline chalegi.",
 

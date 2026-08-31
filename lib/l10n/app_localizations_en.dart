@@ -249,6 +249,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get playbackError => 'Playback couldn\'t continue. Try again.';
+
+  @override
   String get catalogConnectToLoadTitle => 'Connect to load lectures';
 
   @override

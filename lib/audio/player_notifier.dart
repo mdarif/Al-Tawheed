@@ -14,11 +14,13 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 class PlayerNotifier extends ChangeNotifier {
-  final TawheedAudioHandler _handler;
+  final AudioPlayback _handler;
   final ProgressProvider _progress;
   final DownloadsProvider _downloads;
   final ConnectivityProvider _connectivity;
   final CatalogProvider? _catalog;
+  final Duration _saveInterval;
+  final Duration _stuckBufferingDelay;
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _saveTimer;
   Timer? _stuckBufferingTimer;
@@ -40,6 +42,9 @@ class PlayerNotifier extends ChangeNotifier {
   String? _pendingNextBlockedTitle;
   Lecture? _pendingNextBlockedLecture;
   bool _pendingAllLecturesComplete = false;
+  Object? _playbackError;
+  int _loadEpoch = 0;
+  bool _disposed = false;
 
   PlayerNotifier(
     this._handler,
@@ -47,7 +52,29 @@ class PlayerNotifier extends ChangeNotifier {
     this._downloads,
     this._connectivity, [
     this._catalog,
-  ]) {
+  ])  : _saveInterval = const Duration(seconds: 5),
+        _stuckBufferingDelay = const Duration(seconds: 8) {
+    _initialize();
+  }
+
+  /// Test-only construction keeps timing deterministic while all state changes
+  /// still come from the production notifier and injected audio backend.
+  @visibleForTesting
+  PlayerNotifier.forTesting(
+    this._handler,
+    this._progress,
+    this._downloads,
+    this._connectivity, {
+    CatalogProvider? catalog,
+    Duration saveInterval = const Duration(seconds: 5),
+    Duration stuckBufferingDelay = const Duration(seconds: 8),
+  })  : _catalog = catalog,
+        _saveInterval = saveInterval,
+        _stuckBufferingDelay = stuckBufferingDelay {
+    _initialize();
+  }
+
+  void _initialize() {
     final savedSpeed = PreferencesService.instance.playbackSpeed;
     if (savedSpeed != 1.0) {
       _speed = savedSpeed;
@@ -62,6 +89,7 @@ class PlayerNotifier extends ChangeNotifier {
     _handler.onSkipToPrevious = playPrevious;
     _subs.addAll([
       _handler.playbackState.listen((state) {
+        if (_disposed) return;
         final wasLoading = _loading;
         final wasPlaying = _playing;
         _playing = state.playing;
@@ -78,7 +106,8 @@ class PlayerNotifier extends ChangeNotifier {
         if (wasPlaying && !_playing) _saveCurrentPosition();
         notifyListeners();
       }),
-      _handler.player.positionStream.listen((pos) {
+      _handler.positionStream.listen((pos) {
+        if (_disposed) return;
         _position = pos;
         final now = DateTime.now();
         if (_lastPositionNotify == null ||
@@ -88,15 +117,17 @@ class PlayerNotifier extends ChangeNotifier {
           notifyListeners();
         }
       }),
-      _handler.player.durationStream.listen((dur) {
+      _handler.durationStream.listen((dur) {
+        if (_disposed) return;
         if (dur != null) {
           _duration = dur;
           notifyListeners();
         }
       }),
-      _handler.player.processingStateStream.listen((state) {
-        if (state == ProcessingState.completed) _onCompleted();
+      _handler.processingStateStream.listen((state) {
+        if (!_disposed && state == ProcessingState.completed) _onCompleted();
       }),
+      _handler.errorStream.listen(_handlePlaybackError),
     ]);
   }
 
@@ -117,6 +148,7 @@ class PlayerNotifier extends ChangeNotifier {
   String? get pendingNextBlockedTitle => _pendingNextBlockedTitle;
   Lecture? get pendingNextBlockedLecture => _pendingNextBlockedLecture;
   bool get pendingAllLecturesComplete => _pendingAllLecturesComplete;
+  bool get hasPlaybackError => _playbackError != null;
 
   String? get studyContextLabel => formatStudyContextLabel(
         mode: _playbackMode,
@@ -154,6 +186,7 @@ class PlayerNotifier extends ChangeNotifier {
     PlaybackMode? mode,
     Chapter? studyChapter,
   }) async {
+    final loadEpoch = ++_loadEpoch;
     if (mode != null) {
       _playbackMode = mode;
       _studyChapter = studyChapter;
@@ -172,6 +205,7 @@ class PlayerNotifier extends ChangeNotifier {
     _position = Duration.zero;
     _duration = Duration(seconds: lecture.durationSeconds);
     _isStuckBuffering = false;
+    _playbackError = null;
 
     final localPath = _downloads.localPathIfDownloaded(lecture.id);
 
@@ -186,6 +220,9 @@ class PlayerNotifier extends ChangeNotifier {
         localPath != null ? PlaybackSource.local : PlaybackSource.stream;
     _loading = true;
     notifyListeners();
+    // A backend may stay in its initial loading state without emitting a
+    // false → true transition, so begin observing the load here as well.
+    _startStuckBufferingTimer();
 
     final saved = _progress.getPositionSeconds(lecture.id);
     final resumeAt = saved > 30 && saved < lecture.durationSeconds - 30
@@ -196,26 +233,33 @@ class PlayerNotifier extends ChangeNotifier {
     final displayTitle = lecture.title.forLanguage(lang);
     final speaker = _catalog?.catalog?.book.speaker.forLanguage(lang);
 
-    await _handler.loadLecture(
-      lecture,
-      startFrom: resumeAt,
-      localFilePath: localPath,
-      artist: speaker?.isNotEmpty == true ? speaker! : AppConfig.appTitle,
-      displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
-    );
-    _startSaveTimer();
+    try {
+      await _handler.loadLecture(
+        lecture,
+        startFrom: resumeAt,
+        localFilePath: localPath,
+        artist: speaker?.isNotEmpty == true ? speaker! : AppConfig.appTitle,
+        displayTitle: displayTitle.isNotEmpty ? displayTitle : null,
+      );
+      if (_disposed || loadEpoch != _loadEpoch) return;
+      _startSaveTimer();
+    } catch (error) {
+      if (_disposed || loadEpoch != _loadEpoch) return;
+      _handlePlaybackError(error);
+    }
   }
 
   Future<void> playPause() async {
     if (_playing) {
       _saveCurrentPosition();
-      await _handler.pause();
+      await _runPlaybackCommand(_handler.pause);
     } else {
-      await _handler.play();
+      await _runPlaybackCommand(_handler.play);
     }
   }
 
-  Future<void> seek(Duration position) => _handler.seek(position);
+  Future<void> seek(Duration position) =>
+      _runPlaybackCommand(() => _handler.seek(position));
 
   Future<void> skipForward() {
     final next = _position + const Duration(seconds: 10);
@@ -260,8 +304,26 @@ class PlayerNotifier extends ChangeNotifier {
   }
 
   Future<void> setSpeed(double s) async {
-    await _handler.setSpeed(s);
+    try {
+      await _handler.setSpeed(s);
+    } catch (error) {
+      _handlePlaybackError(error);
+      return;
+    }
     await PreferencesService.instance.savePlaybackSpeed(s);
+  }
+
+  /// Retries the same lecture through the same load path used by first play.
+  /// This preserves the source choice (local versus stream) and resume policy.
+  Future<void> retryPlayback() async {
+    final current = _current;
+    if (current == null) return;
+    await loadAndPlay(
+      current,
+      _queue,
+      mode: _playbackMode,
+      studyChapter: _studyChapter,
+    );
   }
 
   Future<void> stop() async {
@@ -278,6 +340,7 @@ class PlayerNotifier extends ChangeNotifier {
     _pendingNextBlockedLecture = null;
     _playbackSource = PlaybackSource.stream;
     _isStuckBuffering = false;
+    _playbackError = null;
     notifyListeners();
   }
 
@@ -324,6 +387,7 @@ class PlayerNotifier extends ChangeNotifier {
   // ── Connectivity recovery ────────────────────────────────────────────────
 
   void _onConnectivityChanged() {
+    if (_disposed) return;
     if (_connectivity.isOnline && _isStuckBuffering && _current != null) {
       // Network came back while we were buffering — reload and resume.
       _isStuckBuffering = false;
@@ -353,6 +417,7 @@ class PlayerNotifier extends ChangeNotifier {
   }
 
   void _onDownloadsChanged() {
+    if (_disposed) return;
     final id = _current?.id;
     if (id == null || _downloads.isDownloaded(id)) return;
 
@@ -361,14 +426,14 @@ class PlayerNotifier extends ChangeNotifier {
     _playbackSource = _connectivity.isOffline
         ? PlaybackSource.blocked
         : PlaybackSource.stream;
-    unawaited(_handler.pause());
+    unawaited(_runPlaybackCommand(_handler.pause));
     notifyListeners();
   }
 
   // ── Progress persistence ─────────────────────────────────────────────────
 
   void _startSaveTimer() {
-    _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _saveTimer = Timer.periodic(_saveInterval, (_) {
       if (_playing) _saveCurrentPosition(notify: false);
     });
   }
@@ -380,8 +445,8 @@ class PlayerNotifier extends ChangeNotifier {
 
   void _startStuckBufferingTimer() {
     _stuckBufferingTimer?.cancel();
-    _stuckBufferingTimer = Timer(const Duration(seconds: 8), () {
-      if (_loading) {
+    _stuckBufferingTimer = Timer(_stuckBufferingDelay, () {
+      if (!_disposed && _loading) {
         _isStuckBuffering = true;
         notifyListeners();
       }
@@ -405,7 +470,27 @@ class PlayerNotifier extends ChangeNotifier {
     }
   }
 
+  Future<void> _runPlaybackCommand(Future<void> Function() command) async {
+    try {
+      await command();
+    } catch (error) {
+      _handlePlaybackError(error);
+    }
+  }
+
+  void _handlePlaybackError(Object error) {
+    if (_disposed) return;
+    _playbackError = error;
+    _loading = false;
+    _playing = false;
+    _isStuckBuffering = false;
+    _cancelStuckBufferingTimer();
+    _saveCurrentPosition();
+    notifyListeners();
+  }
+
   void _onCompleted() {
+    if (_disposed) return;
     final id = _current?.id;
     final total = _current?.durationSeconds;
     if (id != null && total != null) {
@@ -449,6 +534,9 @@ class PlayerNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _loadEpoch++;
     _connectivity.removeListener(_onConnectivityChanged);
     _downloads.removeListener(_onDownloadsChanged);
     _saveCurrentPosition();

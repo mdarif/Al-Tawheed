@@ -114,6 +114,7 @@
   "bookLegendCitation": "مرجع (سورة:آية)",
   "bookLegendHadith": "حديث",
   "retry": "إعادة المحاولة",
+  "playbackError": "تعذّر استمرار التشغيل. حاول مرة أخرى.",
   "catalogConnectToLoadTitle": "اتصل بالإنترنت لتحميل الدروس",
   "catalogConnectToLoadMessage": "افتح التطبيق مرة واحدة مع الإنترنت لتنزيل عناوين الدروس وروابط الصوت. ستعمل الدروس التي حفظتها على جهازك دون اتصال.",
 

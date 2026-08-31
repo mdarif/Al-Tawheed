@@ -135,8 +135,10 @@ class _NextBlockedListenerState extends State<_NextBlockedListener> {
     Lecture? next,
   ) async {
     final l10n = context.l10n;
-    final downloadsEnabled =
-        context.read<FeatureFlagsProvider>().features.downloads;
+    final downloadsEnabled = context
+        .read<FeatureFlagsProvider>()
+        .features
+        .downloads;
 
     if (!downloadsEnabled || next == null) {
       await showAlertDialog(
@@ -240,12 +242,56 @@ class _OfflineStatusStrip extends StatelessWidget {
       (p) => _OfflineSnapshot(
         source: p.playbackSource,
         isStuck: p.isStuckBuffering,
+        hasError: p.hasPlaybackError,
         lectureId: p.current?.id,
         lecture: p.current,
       ),
     );
 
     if (snapshot.lectureId == null) return const SizedBox.shrink();
+
+    if (snapshot.hasError) {
+      final l10n = context.l10n;
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Semantics(
+          liveRegion: true,
+          child: Container(
+            padding: const EdgeInsetsDirectional.only(start: 12, end: 4),
+            decoration: BoxDecoration(
+              color: context.colorScheme.error.withValues(
+                alpha: context.isDarkTheme ? 0.25 : 0.12,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 16,
+                  color: context.colorScheme.error,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    l10n.playbackError,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: context.colorScheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: context.read<PlayerNotifier>().retryPlayback,
+                  child: Text(l10n.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     final isOffline = context.select<ConnectivityProvider, bool>(
       (c) => c.isOffline,
@@ -264,8 +310,9 @@ class _OfflineStatusStrip extends StatelessWidget {
       dlStatus: dlStatus,
       dlProgress: dlProgress,
     );
-    final strip =
-        resolution == null ? null : _stripFromResolution(context, resolution);
+    final strip = resolution == null
+        ? null
+        : _stripFromResolution(context, resolution);
     if (strip == null) return const SizedBox.shrink();
 
     return Padding(
@@ -338,50 +385,50 @@ class _OfflineStatusStrip extends StatelessWidget {
 
     return switch (resolution.kind) {
       OfflineStripKind.downloading => _StripConfig(
-          icon: Icons.download_rounded,
-          label: context.localizedDigits(
-            l10n.offlineDownloading(resolution.downloadPercent),
-          ),
-          fgColor: context.brandColor,
-          bgColor: context.brandColor,
-          showProgress: true,
-          tappable: true,
+        icon: Icons.download_rounded,
+        label: context.localizedDigits(
+          l10n.offlineDownloading(resolution.downloadPercent),
         ),
+        fgColor: context.brandColor,
+        bgColor: context.brandColor,
+        showProgress: true,
+        tappable: true,
+      ),
       OfflineStripKind.saved => _StripConfig(
-          icon: Icons.check_circle_outline_rounded,
-          label: l10n.offlineSourceSaved,
-          fgColor: const Color(0xFF2E7D32),
-          bgColor: const Color(0xFF2E7D32),
-          tappable: true,
-        ),
+        icon: Icons.check_circle_outline_rounded,
+        label: l10n.offlineSourceSaved,
+        fgColor: const Color(0xFF2E7D32),
+        bgColor: const Color(0xFF2E7D32),
+        tappable: true,
+      ),
       OfflineStripKind.streaming => _StripConfig(
-          icon: Icons.podcasts_rounded,
-          label: l10n.offlineSourceStreaming,
-          fgColor: context.secondaryTextColor,
-          bgColor: context.brandColor,
-          tappable: true,
-        ),
+        icon: Icons.podcasts_rounded,
+        label: l10n.offlineSourceStreaming,
+        fgColor: context.secondaryTextColor,
+        bgColor: context.brandColor,
+        tappable: true,
+      ),
       OfflineStripKind.connectionLost => _StripConfig(
-          icon: Icons.wifi_off_rounded,
-          label: l10n.offlineConnectionLost,
-          fgColor: context.colorScheme.error,
-          bgColor: context.colorScheme.error,
-          tappable: true,
-        ),
+        icon: Icons.wifi_off_rounded,
+        label: l10n.offlineConnectionLost,
+        fgColor: context.colorScheme.error,
+        bgColor: context.colorScheme.error,
+        tappable: true,
+      ),
       OfflineStripKind.noConnection => _StripConfig(
-          icon: Icons.wifi_off_rounded,
-          label: l10n.offlineNoConnection,
-          fgColor: const Color(0xFFE65100),
-          bgColor: const Color(0xFFE65100),
-          tappable: true,
-        ),
+        icon: Icons.wifi_off_rounded,
+        label: l10n.offlineNoConnection,
+        fgColor: const Color(0xFFE65100),
+        bgColor: const Color(0xFFE65100),
+        tappable: true,
+      ),
       OfflineStripKind.notAvailableOffline => _StripConfig(
-          icon: Icons.cloud_off_rounded,
-          label: l10n.offlineNotAvailableOffline,
-          fgColor: const Color(0xFFE65100),
-          bgColor: const Color(0xFFE65100),
-          tappable: true,
-        ),
+        icon: Icons.cloud_off_rounded,
+        label: l10n.offlineNotAvailableOffline,
+        fgColor: const Color(0xFFE65100),
+        bgColor: const Color(0xFFE65100),
+        tappable: true,
+      ),
     };
   }
 }
@@ -389,12 +436,14 @@ class _OfflineStatusStrip extends StatelessWidget {
 class _OfflineSnapshot {
   final PlaybackSource source;
   final bool isStuck;
+  final bool hasError;
   final String? lectureId;
   final Lecture? lecture;
 
   const _OfflineSnapshot({
     required this.source,
     required this.isStuck,
+    required this.hasError,
     required this.lectureId,
     required this.lecture,
   });
@@ -404,10 +453,11 @@ class _OfflineSnapshot {
       other is _OfflineSnapshot &&
       other.source == source &&
       other.isStuck == isStuck &&
+      other.hasError == hasError &&
       other.lectureId == lectureId;
 
   @override
-  int get hashCode => Object.hash(source, isStuck, lectureId);
+  int get hashCode => Object.hash(source, isStuck, hasError, lectureId);
 }
 
 class _StripConfig {
@@ -440,9 +490,9 @@ class _CoverArt extends StatelessWidget {
     // Watch the language so the wordmark refreshes on a UI-language change.
     final wordmark = series.isRtl && catalog != null
         ? context.watch<LanguageProvider>().resolveForSeries(
-              catalog.book.title,
-              series,
-            )
+            catalog.book.title,
+            series,
+          )
         : 'شرح كتاب التوحيد';
 
     return Container(
@@ -501,7 +551,8 @@ class _TrackInfo extends StatelessWidget {
         final speaker = catalog != null
             ? lang.resolveForSeries(catalog.book.speaker, series)
             : '';
-        final title = snapshot.studyLabel ??
+        final title =
+            snapshot.studyLabel ??
             lang.resolveForSeries(snapshot.title, series);
 
         final content = Column(
@@ -617,9 +668,9 @@ class _PlayerShareButton extends StatelessWidget {
       onPressed: () {
         final series = context.read<SeriesProvider>().currentSeries;
         final title = context.read<LanguageProvider>().resolveForSeries(
-              lecture.title,
-              series,
-            );
+          lecture.title,
+          series,
+        );
         final url = lectureWebUrl(
           lecture,
           series,
