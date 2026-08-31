@@ -1,0 +1,108 @@
+plan: docs/plans/maintenance-roadmap.md
+
+phases:
+  P0:
+    title: Documentation truth pass
+    needs: []
+    owns:
+      - README.md
+      - AGENTS.md
+      - docs/README.md
+      - docs/quality-backlog.md
+      - docs/offline-mode-plan.md
+      - docs/test-plan.md
+      - docs/remote-content-strategy.md
+      - docs/onboarding-flows.md
+      - docs/todo-feature-flag-navigation.md
+      - docs/play-store-listing.md
+    runner: codex:gpt-5.6-luna
+    review: codex:gpt-5.6-sol
+
+  P1:
+    title: Stable E2E and truthful release gate
+    needs: []
+    owns:
+      - lib/testing/widget_keys.dart
+      - lib/screens/welcome.dart
+      - lib/screens/shell_screen.dart
+      - lib/screens/choose_series_screen.dart
+      - lib/screens/player_screen.dart
+      - lib/screens/settings_screen.dart
+      - lib/widgets/offline_sheet.dart
+      - integration_test/app_test.dart
+      - integration_test/support/app_flow.dart
+      - test/widget_keys_test.dart
+      - test/shell_screen_test.dart
+      - Makefile
+      - docs/testing.md
+      - docs/release-runbook.md
+      - docs/ci-cd.md
+    runner: codex:gpt-5.6-luna
+    review: codex:gpt-5.6-sol
+
+  P2:
+    title: Verified atomic audio downloads
+    needs: []
+    owns:
+      - lib/services/download_service.dart
+      - lib/providers/downloads_provider.dart
+      - lib/models/catalog.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - lib/widgets/download_button.dart
+      - test/download_service_test.dart
+      - test/downloads_provider_test.dart
+      - test/download_cancellation_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+    note: Avoid adding SHA-256 unless the current catalogue can supply it. Exact expected bytes or response Content-Length is sufficient for this phase.
+
+  P3:
+    title: Player reliability
+    needs: [P2]
+    owns:
+      - lib/audio/audio_handler.dart
+      - lib/audio/player_notifier.dart
+      - lib/audio/playback_source.dart
+      - lib/screens/player_screen.dart
+      - lib/widgets/player
+      - test/audio_handler_test.dart
+      - test/player_notifier_skip_test.dart
+      - test/player_notifier_test.dart
+      - test/player_screen_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  P4:
+    title: Design accessibility and goldens
+    needs: [P1, P3]
+    owns:
+      - docs/design-system.md
+      - lib/theme
+      - lib/widgets/status_pill.dart
+      - lib/widgets/app_notice.dart
+      - lib/screens/player_screen.dart
+      - lib/screens/book_reader_screen.dart
+      - test/app_theme_test.dart
+      - test/player_screen_test.dart
+      - test/book_reader_screen_test.dart
+      - test/golden
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  P5:
+    title: Performance and navigation policy
+    needs: [P1]
+    owns:
+      - lib/navigation
+      - lib/screens/shell_screen.dart
+      - integration_test/performance_test.dart
+      - test/route_guards_test.dart
+      - test/shell_screen_test.dart
+      - docs/performance-baseline.md
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+    gate: human
+    gate_reason: Final thresholds require a profile-mode run on a physical device.
