@@ -31,6 +31,10 @@ void main() {
     test('rejects malformed or negative measurements', () {
       expect(StartupMeasurement.tryParse('ordinary log line'), isNull);
       expect(
+        StartupMeasurement.tryParse('--------- beginning of main'),
+        isNull,
+      );
+      expect(
         StartupMeasurement.tryParse(
           'COLD_START_INTERACTIVE surface=welcome elapsed_ms=-1',
         ),

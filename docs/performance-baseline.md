@@ -60,7 +60,8 @@ series once before the returning-user cohort; an unseeded install is rejected
 instead of being mislabeled as returning. It clears `com.almarfa.tawheed` app data before **every**
 fresh-install sample, so no sample silently becomes a returning-user run. It
 captures the native logcat marker, keeps each raw drive log under
-`build/cold-start/`, and prints a median/min/max summary. Keep the cohorts and
+`build/cold-start/`, including raw drive and logcat logs, and prints a
+median/min/max summary. Keep the cohorts and
 their summaries separate; never combine them into one startup number.
 
 For a manual physical profile-mode run, use the same cohort rules and fill the

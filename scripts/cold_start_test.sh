@@ -54,14 +54,26 @@ for sample in $(seq 1 "$samples"); do
     exit "$drive_status"
   fi
 
-  native_log=$(adb -s "$device_id" logcat -d -v brief -s 'TawheedStartup:I' '*:S')
+  logcat_file="${output_dir}/sample-${sample}-logcat.log"
+  if ! adb -s "$device_id" logcat -d -v brief -s 'TawheedStartup:I' '*:S' \
+    > "$logcat_file"; then
+    echo "adb logcat failed for $cohort sample $sample" >&2
+    exit 1
+  fi
+  # Android logcat emits section headers (for example,
+  # "--------- beginning of main") even with tag filters. Only marker records
+  # may reach the strict parser; malformed marker records remain visible to it.
+  if ! native_log=$(awk '/COLD_START_INTERACTIVE/ { print }' "$logcat_file"); then
+    echo "Failed to filter adb logcat for $cohort sample $sample" >&2
+    exit 1
+  fi
   if [[ -z "$native_log" ]]; then
     echo "No native COLD_START_INTERACTIVE marker for sample $sample" >&2
     echo "The app did not reach a verified interactive surface." >&2
     exit 1
   fi
-  # Keep every line from the dedicated tag. The report parser rejects any
-  # malformed, duplicate, wrong-cohort, or wrong-surface sample.
+  # The report parser rejects any malformed, duplicate, wrong-cohort, or
+  # wrong-surface sample, and enforces the exact requested count.
   printf '%s\n' "$native_log" | tee -a "$markers_file"
 done
 
