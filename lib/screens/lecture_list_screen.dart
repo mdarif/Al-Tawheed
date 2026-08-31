@@ -8,6 +8,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/announcements_bell.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
@@ -15,6 +16,7 @@ import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/continue_listening_banner.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
+import 'package:myapp/utils/startup_metrics.dart';
 
 class LectureListScreen extends StatefulWidget {
   const LectureListScreen({super.key});
@@ -59,7 +61,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
             CatalogStatus.error => provider.needsOnlineToLoad
                 ? _buildConnectRequired(provider)
                 : _buildError(provider.error!, provider),
-            CatalogStatus.loaded => _buildList(provider.catalog!),
+            CatalogStatus.loaded => StartupInteractiveMarker(
+                key: WidgetKeys.startupInteractiveMarker,
+                surface: 'lectures',
+                child: _buildList(provider.catalog!),
+              ),
           };
         },
       ),

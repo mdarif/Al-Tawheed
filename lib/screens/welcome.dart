@@ -10,6 +10,7 @@ import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/utils/startup_metrics.dart';
 
 // Arabic tagline shown when the series includes a companion book.
 const _arTagline = 'شرح صوتي مع متن الكتاب';
@@ -127,208 +128,236 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: AnimatedOpacity(
                     opacity: isReady ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
-                    child: SafeArea(
-                      child: Column(
-                        children: [
-                          // All content centred as one group — photo, name, title,
-                          // tagline all move together when the screen height changes.
-                          Expanded(
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isRtl) ...[
-                                      // Circular sheikh photo with graceful fade-in.
-                                      Container(
-                                        width: 108,
-                                        height: 108,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white24,
-                                            width: 2,
-                                          ),
+                    child: isReady
+                        ? StartupInteractiveMarker(
+                            key: WidgetKeys.startupInteractiveMarker,
+                            surface: 'welcome',
+                            child: SafeArea(
+                              child: Column(
+                                children: [
+                                  // All content centred as one group — photo, name, title,
+                                  // tagline all move together when the screen height changes.
+                                  Expanded(
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 32,
                                         ),
-                                        child: ClipOval(
-                                          child: Image.asset(
-                                            'assets/images/sheikh_fawzan.png',
-                                            width: 104,
-                                            height: 104,
-                                            fit: BoxFit.cover,
-                                            frameBuilder:
-                                                (ctx, child, frame, sync) {
-                                              if (sync) return child;
-                                              return AnimatedOpacity(
-                                                opacity:
-                                                    frame == null ? 0.0 : 1.0,
-                                                duration: const Duration(
-                                                  milliseconds: 400,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (isRtl) ...[
+                                              // Circular sheikh photo with graceful fade-in.
+                                              Container(
+                                                width: 108,
+                                                height: 108,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white24,
+                                                    width: 2,
+                                                  ),
                                                 ),
-                                                curve: Curves.easeIn,
-                                                child: child,
-                                              );
-                                            },
-                                            errorBuilder: (_, __, ___) =>
-                                                const Icon(
-                                              Icons.person_rounded,
-                                              color: Colors.white38,
-                                              size: 52,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ] else ...[
-                                      Container(
-                                        width: 108,
-                                        height: 108,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white24,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: ClipOval(
-                                          child: Image.asset(
-                                            'assets/images/kitab_at_tawheed.png',
-                                            width: 104,
-                                            height: 104,
-                                            fit: BoxFit.cover,
-                                            frameBuilder:
-                                                (ctx, child, frame, sync) {
-                                              if (sync) return child;
-                                              return AnimatedOpacity(
-                                                opacity:
-                                                    frame == null ? 0.0 : 1.0,
-                                                duration: const Duration(
-                                                  milliseconds: 400,
+                                                child: ClipOval(
+                                                  child: Image.asset(
+                                                    'assets/images/sheikh_fawzan.png',
+                                                    width: 104,
+                                                    height: 104,
+                                                    fit: BoxFit.cover,
+                                                    frameBuilder: (ctx, child,
+                                                        frame, sync) {
+                                                      if (sync) return child;
+                                                      return AnimatedOpacity(
+                                                        opacity: frame == null
+                                                            ? 0.0
+                                                            : 1.0,
+                                                        duration:
+                                                            const Duration(
+                                                          milliseconds: 400,
+                                                        ),
+                                                        curve: Curves.easeIn,
+                                                        child: child,
+                                                      );
+                                                    },
+                                                    errorBuilder:
+                                                        (_, __, ___) =>
+                                                            const Icon(
+                                                      Icons.person_rounded,
+                                                      color: Colors.white38,
+                                                      size: 52,
+                                                    ),
+                                                  ),
                                                 ),
-                                                curve: Curves.easeIn,
-                                                child: child,
-                                              );
-                                            },
-                                            errorBuilder: (_, __, ___) =>
-                                                const Icon(
-                                              Icons.auto_stories_rounded,
-                                              color: Colors.white38,
-                                              size: 52,
+                                              ),
+                                            ] else ...[
+                                              Container(
+                                                width: 108,
+                                                height: 108,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white24,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: ClipOval(
+                                                  child: Image.asset(
+                                                    'assets/images/kitab_at_tawheed.png',
+                                                    width: 104,
+                                                    height: 104,
+                                                    fit: BoxFit.cover,
+                                                    frameBuilder: (ctx, child,
+                                                        frame, sync) {
+                                                      if (sync) return child;
+                                                      return AnimatedOpacity(
+                                                        opacity: frame == null
+                                                            ? 0.0
+                                                            : 1.0,
+                                                        duration:
+                                                            const Duration(
+                                                          milliseconds: 400,
+                                                        ),
+                                                        curve: Curves.easeIn,
+                                                        child: child,
+                                                      );
+                                                    },
+                                                    errorBuilder:
+                                                        (_, __, ___) =>
+                                                            const Icon(
+                                                      Icons
+                                                          .auto_stories_rounded,
+                                                      color: Colors.white38,
+                                                      size: 52,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 12),
+                                            // Speaker name only for the Arabic series — the Urdu
+                                            // screen is shown before a language is selected.
+                                            if (isRtl &&
+                                                speaker.isNotEmpty) ...[
+                                              Text(
+                                                speaker,
+                                                textAlign: TextAlign.center,
+                                                textDirection:
+                                                    TextDirection.rtl,
+                                                style: context
+                                                    .textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  color: Colors.white70,
+                                                  letterSpacing: 0,
+                                                  fontFamily: 'NotoNaskhArabic',
+                                                ),
+                                              ),
+                                              const SizedBox(height: 28),
+                                            ],
+                                            // Hero title.
+                                            Text(
+                                              isRtl ? native : _enWelcomeTitle,
+                                              textAlign: TextAlign.center,
+                                              textDirection: isRtl
+                                                  ? TextDirection.rtl
+                                                  : TextDirection.ltr,
+                                              style: context
+                                                  .textTheme.displayLarge
+                                                  ?.copyWith(
+                                                color: semantic.onScrim,
+                                                fontSize: 38,
+                                                letterSpacing: isRtl ? 0 : null,
+                                                fontFamily: isRtl
+                                                    ? 'NotoNaskhArabic'
+                                                    : null,
+                                              ),
                                             ),
-                                          ),
+                                            if (!isRtl &&
+                                                native.isNotEmpty) ...[
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                native,
+                                                textAlign: TextAlign.center,
+                                                textDirection:
+                                                    TextDirection.rtl,
+                                                style: context
+                                                    .textTheme.titleLarge
+                                                    ?.copyWith(
+                                                  color: Colors.white70,
+                                                  letterSpacing: 0,
+                                                  fontFamily: 'NotoNaskhArabic',
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 8),
+                                            if (tagline != null)
+                                              Text(
+                                                tagline,
+                                                textAlign: TextAlign.center,
+                                                textDirection:
+                                                    TextDirection.rtl,
+                                                style: context
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                  fontSize: 17,
+                                                  color: context.brandColor,
+                                                  letterSpacing: 0,
+                                                  fontFamily: 'NotoNaskhArabic',
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 12),
-                                    // Speaker name only for the Arabic series — the Urdu
-                                    // screen is shown before a language is selected.
-                                    if (isRtl && speaker.isNotEmpty) ...[
-                                      Text(
-                                        speaker,
-                                        textAlign: TextAlign.center,
-                                        textDirection: TextDirection.rtl,
-                                        style: context.textTheme.bodyLarge
-                                            ?.copyWith(
-                                          color: Colors.white70,
-                                          letterSpacing: 0,
-                                          fontFamily: 'NotoNaskhArabic',
-                                        ),
-                                      ),
-                                      const SizedBox(height: 28),
-                                    ],
-                                    // Hero title.
-                                    Text(
-                                      isRtl ? native : _enWelcomeTitle,
-                                      textAlign: TextAlign.center,
-                                      textDirection: isRtl
-                                          ? TextDirection.rtl
-                                          : TextDirection.ltr,
-                                      style: context.textTheme.displayLarge
-                                          ?.copyWith(
-                                        color: semantic.onScrim,
-                                        fontSize: 38,
-                                        letterSpacing: isRtl ? 0 : null,
-                                        fontFamily:
-                                            isRtl ? 'NotoNaskhArabic' : null,
                                       ),
                                     ),
-                                    if (!isRtl && native.isNotEmpty) ...[
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        native,
-                                        textAlign: TextAlign.center,
-                                        textDirection: TextDirection.rtl,
-                                        style: context.textTheme.titleLarge
-                                            ?.copyWith(
-                                          color: Colors.white70,
-                                          letterSpacing: 0,
-                                          fontFamily: 'NotoNaskhArabic',
-                                        ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 8),
-                                    if (tagline != null)
-                                      Text(
-                                        tagline,
-                                        textAlign: TextAlign.center,
-                                        textDirection: TextDirection.rtl,
-                                        style: context.textTheme.titleMedium
-                                            ?.copyWith(
-                                          fontSize: 17,
-                                          color: context.brandColor,
-                                          letterSpacing: 0,
-                                          fontFamily: 'NotoNaskhArabic',
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                                  ),
 
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                key: WidgetKeys.welcomeStartListening,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        32, 0, 32, 48),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        key: WidgetKeys.welcomeStartListening,
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 18,
+                                          ),
+                                          textStyle: context
+                                              .textTheme.labelLarge
+                                              ?.copyWith(
+                                                  color: semantic.onBrand),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                          ),
+                                        ),
+                                        icon: Icon(
+                                          Icons.headphones_rounded,
+                                          size: 22,
+                                          color: semantic.onBrand,
+                                        ),
+                                        label: Text(
+                                          // Arabic series shows the localized label;
+                                          // the pre-selection Urdu screen keeps a
+                                          // neutral English CTA.
+                                          isRtl
+                                              ? arabicL10n.startListening
+                                              : 'START LISTENING',
+                                          style: TextStyle(
+                                            color: semantic.onBrand,
+                                            fontSize: isRtl ? 20 : null,
+                                            letterSpacing: isRtl ? 0 : null,
+                                          ),
+                                        ),
+                                        onPressed: () =>
+                                            _startListening(context),
+                                      ),
+                                    ),
                                   ),
-                                  textStyle: context.textTheme.labelLarge
-                                      ?.copyWith(color: semantic.onBrand),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                icon: Icon(
-                                  Icons.headphones_rounded,
-                                  size: 22,
-                                  color: semantic.onBrand,
-                                ),
-                                label: Text(
-                                  // Arabic series shows the localized label;
-                                  // the pre-selection Urdu screen keeps a
-                                  // neutral English CTA.
-                                  isRtl
-                                      ? arabicL10n.startListening
-                                      : 'START LISTENING',
-                                  style: TextStyle(
-                                    color: semantic.onBrand,
-                                    fontSize: isRtl ? 20 : null,
-                                    letterSpacing: isRtl ? 0 : null,
-                                  ),
-                                ),
-                                onPressed: () => _startListening(context),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
               ],

@@ -8,6 +8,9 @@ abstract final class WidgetKeys {
   static const welcomeStartListening = ValueKey<String>(
     'welcome.start-listening',
   );
+  static const startupInteractiveMarker = ValueKey<String>(
+    'startup.interactive-marker',
+  );
 
   static ValueKey<String> chooseSeriesCard(String seriesId) =>
       ValueKey<String>('choose-series.card.$seriesId');

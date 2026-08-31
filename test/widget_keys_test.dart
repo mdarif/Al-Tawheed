@@ -6,6 +6,7 @@ void main() {
   test('high-value controls have stable, distinct key values', () {
     final keys = <ValueKey<String>>[
       WidgetKeys.welcomeStartListening,
+      WidgetKeys.startupInteractiveMarker,
       WidgetKeys.shellLecturesTab,
       WidgetKeys.shellBookTab,
       WidgetKeys.shellStudyTab,

@@ -163,6 +163,20 @@ perf-test: pub-get
 		--target=integration_test/performance_test.dart \
 		--profile -d $(DEVICE)
 
+# Repeated Android cold-start measurement. The runner clears app data before
+# EVERY fresh-install sample, while returning samples preserve data and only
+# force-stop the process. It consumes the native Activity.onCreate → Flutter
+# interactive marker from logcat and prints a median/min/max summary.
+COLD_START_COHORT ?= returning
+COLD_START_SAMPLES ?= 3
+cold-start-test: pub-get
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Error: DEVICE is required (an Android emulator/device)."; \
+		echo "  make cold-start-test DEVICE=<android_id> COLD_START_COHORT=returning"; \
+		exit 1; \
+	fi
+	./scripts/cold_start_test.sh "$(DEVICE)" "$(COLD_START_COHORT)" "$(COLD_START_SAMPLES)"
+
 # Capture + frame the Play Store screenshot set (v3, Arabic-led). Runs the
 # on-device capture harness, then composites clean device frames on the brand
 # background. Output: docs/play-store/v3/framed/ + preview.png. Needs DEVICE

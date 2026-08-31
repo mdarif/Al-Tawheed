@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:myapp/utils/startup_metrics.dart';
 
 import 'package:myapp/widgets/lecture_tile.dart';
 import 'support/app_flow.dart';
@@ -25,6 +26,14 @@ import 'support/app_flow.dart';
 /// ceilings sit well above it so a healthy build always passes.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  const coldStartCohort = String.fromEnvironment(
+    'COLD_START_COHORT',
+    defaultValue: 'unspecified',
+  );
+  const coldStartOnly = bool.fromEnvironment(
+    'COLD_START_ONLY',
+    defaultValue: false,
+  );
 
   // Generous: ~2 frames of build headroom, ~2.5 of raster. Real profile
   // numbers on a mid device sit far under this; only real jank trips it.
@@ -110,7 +119,18 @@ void main() {
   }
 
   testWidgets('reader + lists hold their frame budget', (tester) async {
+    // This is set before app.main() so the native marker includes the cohort
+    // label. The clock itself began when startup_metrics.dart loaded, before
+    // plugin/provider initialization.
+    StartupMetrics.setCohortForTest(coldStartCohort);
     await AppFlow.launchApp(tester);
+    final startup = await StartupMetrics.interactive;
+    // Keep a line in the Flutter driver output for local runs. The automated
+    // cold-start runner consumes the Android logcat line emitted by MainActivity,
+    // whose elapsed time starts at Activity.onCreate rather than app.main().
+    // ignore: avoid_print
+    print(startup.machineLine);
+    if (coldStartOnly) return;
     await AppFlow.goToLectureList(tester);
     await AppFlow.waitForCatalog(tester);
     expect(find.byType(LectureTile), findsWidgets);

@@ -32,36 +32,51 @@ being collected.
 | **pending physical profile run** | — | — | `book_reader_scroll` | — | — | — | — |
 | **pending physical profile run** | — | — | `book_page_turn` | — | — | — | — |
 
-The Book scenarios may be absent when the selected edition has no Book. Run a
-second profile session with the Urdu edition when both Book and Study are
-needed for comparison.
+The Book scenarios may be absent when the selected edition has no Book. The
+performance harness does not measure Study Mode; do not record a Study result
+under this baseline until a dedicated Study interaction is instrumented.
 
 ## Cold-start-to-interactive measurement
 
-`performance_test.dart` intentionally does not report a cold-start duration.
-The integration test starts after the Flutter test process is already alive,
-and `AppFlow.launchApp` waits on either onboarding or a catalog-backed lecture
-tile. That endpoint changes with persisted onboarding state, manifest/catalog
-cache state, and network latency. A stopwatch around `app.main()` would
-therefore measure initialization of the test isolate, not a repeatable
-user-visible cold start. The existing frame-timing harness is left unchanged.
+`performance_test.dart` emits a stable `COLD_START_INTERACTIVE` marker. On
+Android, `MainActivity` records `SystemClock.elapsedRealtime()` in
+`onCreate()` and logs the duration when the marker's first painted, interactive
+landing surface appears (`welcome` for a fresh install, `lectures` for a
+returning user). This avoids treating `am start -W`'s Activity `TotalTime` as
+Flutter readiness.
 
-When a stable first-interactive marker is added, use this physical profile-mode
-protocol and fill the pending fields below:
+Use the automated Android profile-mode runner for a cohort:
+
+```sh
+make cold-start-test DEVICE=<android-emulator-or-device> \
+  COLD_START_COHORT=returning COLD_START_SAMPLES=3
+make cold-start-test DEVICE=<android-emulator-or-device> \
+  COLD_START_COHORT=fresh-install COLD_START_SAMPLES=3
+```
+
+The runner force-stops the app between returning-user samples while retaining
+app data, and verifies that the marker surface is `lectures`. Seed/select a
+series once before the returning-user cohort; an unseeded install is rejected
+instead of being mislabeled as returning. It clears `com.almarfa.tawheed` app data before **every**
+fresh-install sample, so no sample silently becomes a returning-user run. It
+captures the native logcat marker, keeps each raw drive log under
+`build/cold-start/`, and prints a median/min/max summary. Keep the cohorts and
+their summaries separate; never combine them into one startup number.
+
+For a manual physical profile-mode run, use the same cohort rules and fill the
+pending fields below:
 
 1. Install the profile build on a physical device. For Android, use package
    `com.almarfa.tawheed` and launch activity
    `com.almarfa.tawheed/.MainActivity`.
-2. Define the marker before collecting numbers: the first frame in which the
-   intended landing surface is painted and accepts input. Use separate
-   returning-user (cached `/lectures`) and fresh-install (welcome) cohorts;
-   never mix them in one number.
+2. Use separate returning-user (cached `/lectures`) and fresh-install
+   (welcome) cohorts; never mix them in one number.
 3. For a returning-user run, force-stop the app between samples while
-   preserving app data. For a fresh-install run, clear app data once before
-   the cohort, then repeat force-stop launches without clearing it. Keep the
-   same catalog/cache and network conditions within a cohort.
-4. Start timing immediately before the OS launch command, stop at the marker,
-   and collect at least three launches after one warm-up. Record median and
+   preserving app data. For a fresh-install run, clear app data before
+   **each** sample. Keep the same catalog/cache and network conditions within
+   a cohort.
+4. Start timing at Activity `onCreate` and stop at the native logcat marker.
+   Collect at least three launches after one warm-up. Record median and
    min/max, plus device, OS, refresh rate, app commit, profile build type,
    cohort, and network/cache state.
 
