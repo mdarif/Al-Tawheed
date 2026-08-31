@@ -13,18 +13,38 @@ import 'package:myapp/models/catalog.dart';
 /// [TawheedAudioHandler] is the production implementation. Keeping this at
 /// the app boundary lets [PlayerNotifier] react to real backend events without
 /// depending on a platform-backed [AudioPlayer] in its tests.
+class AudioPlaybackEvent<T> {
+  const AudioPlaybackEvent(this.sessionId, this.value);
+
+  final int sessionId;
+  final T value;
+}
+
+/// An error from the backend's playback-state stream tagged with the source
+/// load that produced it. Stream errors otherwise carry no correlation data.
+class AudioPlaybackFailure implements Exception {
+  const AudioPlaybackFailure(this.sessionId, this.error);
+
+  final int sessionId;
+  final Object error;
+}
+
 abstract interface class AudioPlayback {
-  Stream<PlaybackState> get playbackState;
-  Stream<Duration> get positionStream;
-  Stream<Duration?> get durationStream;
-  Stream<ProcessingState> get processingStateStream;
-  Stream<Object> get errorStream;
+  /// Raw audio_service state stream. Its error channel is intentionally part
+  /// of the contract because backend failures are delivered there too.
+  Stream<PlaybackState> get rawPlaybackState;
+  Stream<AudioPlaybackEvent<PlaybackState>> get playbackEvents;
+  Stream<AudioPlaybackEvent<Duration>> get positionEvents;
+  Stream<AudioPlaybackEvent<Duration?>> get durationEvents;
+  Stream<AudioPlaybackEvent<ProcessingState>> get processingEvents;
+  Stream<AudioPlaybackEvent<Object>> get errorEvents;
 
   set onSkipToNext(Future<void> Function()? callback);
   set onSkipToPrevious(Future<void> Function()? callback);
 
   Future<void> loadLecture(
     Lecture lecture, {
+    required int sessionId,
     Duration startFrom = Duration.zero,
     String? localFilePath,
     String artist = AppConfig.appTitle,
@@ -47,7 +67,17 @@ class TawheedAudioHandler extends BaseAudioHandler
   // disable it and track interruption-vs-user pauses ourselves so a manual
   // pause (e.g. from the lock screen) always wins and is never overridden.
   final AudioPlayer _player = AudioPlayer(handleInterruptions: false);
-  final _errors = StreamController<Object>.broadcast();
+  final _playbackEvents =
+      StreamController<AudioPlaybackEvent<PlaybackState>>.broadcast();
+  final _rawPlaybackStates = StreamController<PlaybackState>.broadcast();
+  final _positionEvents =
+      StreamController<AudioPlaybackEvent<Duration>>.broadcast();
+  final _durationEvents =
+      StreamController<AudioPlaybackEvent<Duration?>>.broadcast();
+  final _processingEvents =
+      StreamController<AudioPlaybackEvent<ProcessingState>>.broadcast();
+  final _errorEvents = StreamController<AudioPlaybackEvent<Object>>.broadcast();
+  int _activeSessionId = 0;
   bool _pausedByInterruption = false;
 
   // The handler is just a thin just_audio wrapper — it doesn't know about the
@@ -65,28 +95,57 @@ class TawheedAudioHandler extends BaseAudioHandler
     // (e.g. from `super.stop()`) for as long as the player's event stream
     // stays open, which is its entire lifetime.
     _player.playbackEventStream.map(_stateFromEvent).listen(
-      playbackState.add,
-      onError: (Object error, StackTrace stackTrace) {
-        _errors.add(error);
-        playbackState.addError(error, stackTrace);
+      (state) {
+        playbackState.add(state);
+        _rawPlaybackStates.add(state);
+        _playbackEvents.add(AudioPlaybackEvent(_activeSessionId, state));
       },
+      onError: (Object error, StackTrace stackTrace) {
+        _errorEvents.add(AudioPlaybackEvent(_activeSessionId, error));
+        playbackState.addError(error, stackTrace);
+        _rawPlaybackStates.addError(
+          AudioPlaybackFailure(_activeSessionId, error),
+          stackTrace,
+        );
+      },
+    );
+    _player.positionStream.listen(
+      (position) =>
+          _positionEvents.add(AudioPlaybackEvent(_activeSessionId, position)),
+    );
+    _player.durationStream.listen(
+      (duration) =>
+          _durationEvents.add(AudioPlaybackEvent(_activeSessionId, duration)),
+    );
+    _player.processingStateStream.listen(
+      (state) =>
+          _processingEvents.add(AudioPlaybackEvent(_activeSessionId, state)),
     );
   }
 
   AudioPlayer get player => _player;
 
   @override
-  Stream<Duration> get positionStream => _player.positionStream;
+  Stream<PlaybackState> get rawPlaybackState => _rawPlaybackStates.stream;
 
   @override
-  Stream<Duration?> get durationStream => _player.durationStream;
+  Stream<AudioPlaybackEvent<PlaybackState>> get playbackEvents =>
+      _playbackEvents.stream;
 
   @override
-  Stream<ProcessingState> get processingStateStream =>
-      _player.processingStateStream;
+  Stream<AudioPlaybackEvent<Duration>> get positionEvents =>
+      _positionEvents.stream;
 
   @override
-  Stream<Object> get errorStream => _errors.stream;
+  Stream<AudioPlaybackEvent<Duration?>> get durationEvents =>
+      _durationEvents.stream;
+
+  @override
+  Stream<AudioPlaybackEvent<ProcessingState>> get processingEvents =>
+      _processingEvents.stream;
+
+  @override
+  Stream<AudioPlaybackEvent<Object>> get errorEvents => _errorEvents.stream;
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
@@ -130,11 +189,13 @@ class TawheedAudioHandler extends BaseAudioHandler
   @override
   Future<void> loadLecture(
     Lecture lecture, {
+    required int sessionId,
     Duration startFrom = Duration.zero,
     String? localFilePath,
     String artist = AppConfig.appTitle,
     String? displayTitle,
   }) async {
+    _activeSessionId = sessionId;
     mediaItem.add(
       MediaItem(
         id: lecture.id,
@@ -150,6 +211,8 @@ class TawheedAudioHandler extends BaseAudioHandler
         : AudioSource.uri(Uri.parse(lecture.audioUrl));
 
     await _player.setAudioSource(source, initialPosition: startFrom);
+    // A slower old source load must never resume over the latest request.
+    if (sessionId != _activeSessionId) return;
     await play();
   }
 

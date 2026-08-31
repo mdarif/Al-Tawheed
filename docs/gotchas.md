@@ -30,13 +30,15 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Testing
 
-- **PlayerNotifier tests must drive `AudioPlayback`, never notifier state.**
-  `TawheedAudioHandler` implements the narrow audio boundary; its controllable
-  test implementation emits the same playback/position/duration/completion/error
-  streams that production subscribes to. This catches removed production wiring
-  while avoiding `just_audio` platform channels. Pass the notifier's injectable
-  buffering/save durations in tests instead of waiting for the production 8s/5s
-  timers.
+- **PlayerNotifier tests must drive tagged `AudioPlayback` events, never notifier
+  state.** `TawheedAudioHandler` tags playback/position/duration/completion/error
+  callbacks with the load session that produced them; the notifier rejects an
+  old session after another load, stop, or dispose. The controllable test
+  implementation must model both the typed error event and the underlying
+  `playbackState` error fan-out, because production emits both. This catches
+  removed production wiring while avoiding `just_audio` platform channels. Pass
+  injectable buffering/save durations instead of waiting for the production
+  8s/5s timers.
 
 - **`SharePlus.instance` caches the `SharePlatform` at first access — one shared
   fake per test file, not one per test.** To assert what a widget shared, tests

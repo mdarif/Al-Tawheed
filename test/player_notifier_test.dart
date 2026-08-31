@@ -112,6 +112,7 @@ void main() {
       await player.loadAndPlay(_queue[2], _queue);
       expect(player.playbackSource, PlaybackSource.blocked);
       expect(audio.loads, hasLength(2));
+      expect(audio.stopCalls, 1, reason: 'blocked request stops old audio');
     });
   });
 
@@ -148,6 +149,24 @@ void main() {
     expect(audio.loads.last.startFrom, const Duration(seconds: 42));
   });
 
+  test(
+      'one production handler error fan-out is handled once without a zone error',
+      () async {
+    await player.loadAndPlay(_queue[0], _queue);
+    var notifications = 0;
+    player.addListener(() => notifications++);
+    final error = StateError('backend failure');
+
+    audio.emitHandlerError(error);
+
+    expect(player.hasPlaybackError, isTrue);
+    expect(
+      notifications,
+      1,
+      reason: 'playbackState.onError and errorEvents share one failure',
+    );
+  });
+
   test('a failed load can be retried without exposing an async exception',
       () async {
     audio.failNextLoad = StateError('bad source');
@@ -181,8 +200,7 @@ void main() {
     );
   });
 
-  test('deleting the active local file pauses and falls back to streaming',
-      () async {
+  test('deleting the active local file reloads it from streaming', () async {
     final directory = await Directory.systemTemp.createTemp('tawheed-player');
     addTearDown(() => directory.delete(recursive: true));
     DownloadService.resetForTest(directory.path);
@@ -192,15 +210,22 @@ void main() {
     expect(player.playbackSource, PlaybackSource.local);
 
     await downloads.delete('1');
+    await Future<void>.delayed(Duration.zero);
     expect(player.playbackSource, PlaybackSource.stream);
-    expect(audio.pauseCalls, 1);
+    expect(
+      audio.loads.last.localFilePath,
+      isNull,
+      reason: 'the fallback goes through the real load path',
+    );
 
     connectivity.setOnlineForTest(false);
     downloads.seedDownloadedForTest('1');
     await File(DownloadService.localPath('1')).create(recursive: true);
     await player.loadAndPlay(_queue[0], _queue);
     await downloads.delete('1');
+    await Future<void>.delayed(Duration.zero);
     expect(player.playbackSource, PlaybackSource.blocked);
+    expect(audio.stopCalls, greaterThanOrEqualTo(1));
   });
 
   test('in-app and lock-screen queue controls share boundaries and guards',
@@ -279,6 +304,8 @@ void main() {
     audio.pendingLoad = pending;
     final load = player.loadAndPlay(_queue[0], _queue);
     player.dispose();
+    expect(audio.onSkipToNext, isNull);
+    expect(audio.onSkipToPrevious, isNull);
     pending.complete();
     await load;
     audio.emitPlaybackState(
@@ -286,7 +313,43 @@ void main() {
       processingState: AudioProcessingState.buffering,
     );
     audio.emitCompleted();
+    await audio.triggerNext();
     expect(audio.loads, hasLength(1));
     expect(progress.getPositionSeconds('1'), 0);
+  });
+
+  test('overlapping loads ignore stale duration, completion, and error events',
+      () async {
+    final pending = Completer<void>();
+    audio.pendingLoad = pending;
+    final first = player.loadAndPlay(_queue[0], _queue);
+    final firstSession = audio.loads.single.sessionId;
+    final second = player.loadAndPlay(_queue[1], _queue);
+    final secondSession = audio.loads.last.sessionId;
+    expect(secondSession, isNot(firstSession));
+    expect(player.current?.id, '2');
+
+    audio.emitDuration(const Duration(seconds: 1), sessionId: firstSession);
+    audio.emitCompleted(sessionId: firstSession);
+    audio.emitHandlerError(StateError('old stream'), sessionId: firstSession);
+    expect(player.current?.id, '2');
+    expect(player.duration, const Duration(seconds: 600));
+    expect(player.hasPlaybackError, isFalse);
+    expect(audio.loads, hasLength(2));
+
+    pending.complete();
+    await Future.wait([first, second]);
+    audio.emitDuration(const Duration(seconds: 599), sessionId: secondSession);
+    expect(player.duration, const Duration(seconds: 599));
+
+    await player.stop();
+    audio.emitDuration(const Duration(seconds: 1), sessionId: secondSession);
+    audio.emitCompleted(sessionId: secondSession);
+    audio.emitHandlerError(
+      StateError('stopped stream'),
+      sessionId: secondSession,
+    );
+    expect(player.current, isNull);
+    expect(player.hasPlaybackError, isFalse);
   });
 }

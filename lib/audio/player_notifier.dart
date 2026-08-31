@@ -44,6 +44,8 @@ class PlayerNotifier extends ChangeNotifier {
   bool _pendingAllLecturesComplete = false;
   Object? _playbackError;
   int _loadEpoch = 0;
+  int _activeSessionId = 0;
+  int? _errorSessionId;
   bool _disposed = false;
 
   PlayerNotifier(
@@ -88,8 +90,9 @@ class PlayerNotifier extends ChangeNotifier {
     _handler.onSkipToNext = playNext;
     _handler.onSkipToPrevious = playPrevious;
     _subs.addAll([
-      _handler.playbackState.listen((state) {
-        if (_disposed) return;
+      _handler.playbackEvents.listen((event) {
+        if (!_accepts(event.sessionId)) return;
+        final state = event.value;
         final wasLoading = _loading;
         final wasPlaying = _playing;
         _playing = state.playing;
@@ -106,8 +109,9 @@ class PlayerNotifier extends ChangeNotifier {
         if (wasPlaying && !_playing) _saveCurrentPosition();
         notifyListeners();
       }),
-      _handler.positionStream.listen((pos) {
-        if (_disposed) return;
+      _handler.positionEvents.listen((event) {
+        if (!_accepts(event.sessionId)) return;
+        final pos = event.value;
         _position = pos;
         final now = DateTime.now();
         if (_lastPositionNotify == null ||
@@ -117,17 +121,39 @@ class PlayerNotifier extends ChangeNotifier {
           notifyListeners();
         }
       }),
-      _handler.durationStream.listen((dur) {
-        if (_disposed) return;
+      _handler.durationEvents.listen((event) {
+        if (!_accepts(event.sessionId)) return;
+        final dur = event.value;
         if (dur != null) {
           _duration = dur;
           notifyListeners();
         }
       }),
-      _handler.processingStateStream.listen((state) {
-        if (!_disposed && state == ProcessingState.completed) _onCompleted();
+      _handler.processingEvents.listen((event) {
+        if (_accepts(event.sessionId) &&
+            event.value == ProcessingState.completed) {
+          _onCompleted();
+        }
       }),
-      _handler.errorStream.listen(_handlePlaybackError),
+      // TawheedAudioHandler intentionally emits a backend failure through both
+      // audio_service playbackState and its typed error stream. Handle both;
+      // _handlePlaybackError de-duplicates that one backend failure.
+      _handler.rawPlaybackState.listen(
+        (_) {},
+        onError: (Object error, StackTrace _) {
+          if (error is AudioPlaybackFailure) {
+            _handlePlaybackError(error.error, sessionId: error.sessionId);
+          } else {
+            _handlePlaybackError(error, sessionId: _activeSessionId);
+          }
+        },
+      ),
+      _handler.errorEvents.listen(
+        (event) => _handlePlaybackError(
+          event.value,
+          sessionId: event.sessionId,
+        ),
+      ),
     ]);
   }
 
@@ -186,7 +212,9 @@ class PlayerNotifier extends ChangeNotifier {
     PlaybackMode? mode,
     Chapter? studyChapter,
   }) async {
+    if (_disposed) return;
     final loadEpoch = ++_loadEpoch;
+    _activeSessionId = loadEpoch;
     if (mode != null) {
       _playbackMode = mode;
       _studyChapter = studyChapter;
@@ -206,12 +234,16 @@ class PlayerNotifier extends ChangeNotifier {
     _duration = Duration(seconds: lecture.durationSeconds);
     _isStuckBuffering = false;
     _playbackError = null;
+    _errorSessionId = null;
 
     final localPath = _downloads.localPathIfDownloaded(lecture.id);
 
     if (_connectivity.isOffline && localPath == null) {
       _playbackSource = PlaybackSource.blocked;
       _loading = false;
+      // Do not leave the previous stream playing behind a blocked request.
+      await _runPlaybackCommand(_handler.stop, sessionId: loadEpoch);
+      if (!_accepts(loadEpoch)) return;
       notifyListeners();
       return;
     }
@@ -236,6 +268,7 @@ class PlayerNotifier extends ChangeNotifier {
     try {
       await _handler.loadLecture(
         lecture,
+        sessionId: loadEpoch,
         startFrom: resumeAt,
         localFilePath: localPath,
         artist: speaker?.isNotEmpty == true ? speaker! : AppConfig.appTitle,
@@ -327,10 +360,13 @@ class PlayerNotifier extends ChangeNotifier {
   }
 
   Future<void> stop() async {
+    final stopSessionId = ++_loadEpoch;
+    _activeSessionId = stopSessionId;
     _saveCurrentPosition();
     _cancelSaveTimer();
     _cancelStuckBufferingTimer();
-    await _handler.stop();
+    await _runPlaybackCommand(_handler.stop, sessionId: stopSessionId);
+    if (!_accepts(stopSessionId)) return;
     _current = null;
     _playbackMode = PlaybackMode.casual;
     _studyChapter = null;
@@ -341,6 +377,7 @@ class PlayerNotifier extends ChangeNotifier {
     _playbackSource = PlaybackSource.stream;
     _isStuckBuffering = false;
     _playbackError = null;
+    _errorSessionId = null;
     notifyListeners();
   }
 
@@ -423,11 +460,7 @@ class PlayerNotifier extends ChangeNotifier {
 
     if (_playbackSource != PlaybackSource.local) return;
 
-    _playbackSource = _connectivity.isOffline
-        ? PlaybackSource.blocked
-        : PlaybackSource.stream;
-    unawaited(_runPlaybackCommand(_handler.pause));
-    notifyListeners();
+    unawaited(_reloadAfterActiveLocalDeletion());
   }
 
   // ── Progress persistence ─────────────────────────────────────────────────
@@ -470,23 +503,56 @@ class PlayerNotifier extends ChangeNotifier {
     }
   }
 
-  Future<void> _runPlaybackCommand(Future<void> Function() command) async {
+  bool _accepts(int sessionId) => !_disposed && sessionId == _activeSessionId;
+
+  Future<void> _runPlaybackCommand(
+    Future<void> Function() command, {
+    int? sessionId,
+  }) async {
     try {
       await command();
     } catch (error) {
-      _handlePlaybackError(error);
+      _handlePlaybackError(error, sessionId: sessionId);
     }
   }
 
-  void _handlePlaybackError(Object error) {
-    if (_disposed) return;
+  void _handlePlaybackError(Object error, {int? sessionId}) {
+    final effectiveSessionId = sessionId ?? _activeSessionId;
+    if (!_accepts(effectiveSessionId)) return;
+    if (_playbackError != null &&
+        _errorSessionId == effectiveSessionId &&
+        identical(_playbackError, error)) {
+      return;
+    }
     _playbackError = error;
+    _errorSessionId = effectiveSessionId;
     _loading = false;
     _playing = false;
     _isStuckBuffering = false;
     _cancelStuckBufferingTimer();
     _saveCurrentPosition();
     notifyListeners();
+  }
+
+  Future<void> _reloadAfterActiveLocalDeletion() async {
+    final current = _current;
+    if (current == null || _playbackSource != PlaybackSource.local) return;
+    if (_connectivity.isOffline) {
+      final deletionSessionId = ++_loadEpoch;
+      _activeSessionId = deletionSessionId;
+      _playbackSource = PlaybackSource.blocked;
+      _loading = false;
+      await _runPlaybackCommand(_handler.stop, sessionId: deletionSessionId);
+      if (!_accepts(deletionSessionId)) return;
+      notifyListeners();
+      return;
+    }
+    await loadAndPlay(
+      current,
+      _queue,
+      mode: _playbackMode,
+      studyChapter: _studyChapter,
+    );
   }
 
   void _onCompleted() {
@@ -536,7 +602,7 @@ class PlayerNotifier extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
-    _loadEpoch++;
+    _activeSessionId = ++_loadEpoch;
     _connectivity.removeListener(_onConnectivityChanged);
     _downloads.removeListener(_onDownloadsChanged);
     _saveCurrentPosition();
@@ -545,6 +611,10 @@ class PlayerNotifier extends ChangeNotifier {
     for (final s in _subs) {
       s.cancel();
     }
+    // The handler outlives this notifier (it is the app-wide audio_service
+    // singleton), so callbacks must not keep a disposed notifier alive.
+    _handler.onSkipToNext = null;
+    _handler.onSkipToPrevious = null;
     super.dispose();
   }
 }
