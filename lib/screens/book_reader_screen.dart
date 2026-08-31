@@ -52,11 +52,9 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
       final book = context.read<BookProvider>().book;
       if (book == null) return;
       _chapters = book.chapters;
-      _currentIndex =
-          _chapters.indexWhere((c) => c.id == widget.chapterId).clamp(
-                0,
-                _chapters.length - 1,
-              );
+      _currentIndex = _chapters
+          .indexWhere((c) => c.id == widget.chapterId)
+          .clamp(0, _chapters.length - 1);
       _pageController = PageController(initialPage: _currentIndex);
     }
   }
@@ -189,16 +187,27 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                     fontFamily: fontFamily,
                   ),
                 ),
-                Text(
-                  '${localizedDigitsInString('${_currentIndex + 1}', language)}'
-                  ' / '
-                  '${localizedDigitsInString('${_chapters.length}', language)}',
-                  textAlign: TextAlign.right,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: context.secondaryTextColor.withValues(alpha: 0.72),
-                    fontFamily: fontFamily,
-                    fontSize: 10,
-                    height: 0.95,
+                Semantics(
+                  // Keep the visible, edition-localised counter while making
+                  // the whole value one useful announcement for TalkBack and
+                  // VoiceOver (rather than three separate text fragments).
+                  container: true,
+                  label:
+                      '${localizedDigitsInString('${_currentIndex + 1}', language)}'
+                      ' / '
+                      '${localizedDigitsInString('${_chapters.length}', language)}',
+                  excludeSemantics: true,
+                  child: Text(
+                    '${localizedDigitsInString('${_currentIndex + 1}', language)}'
+                    ' / '
+                    '${localizedDigitsInString('${_chapters.length}', language)}',
+                    textAlign: TextAlign.right,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: context.secondaryTextColor,
+                      fontFamily: fontFamily,
+                      fontSize: 10,
+                      height: 0.95,
+                    ),
                   ),
                 ),
               ],
@@ -216,9 +225,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                     _showColorKey(context);
                   case _ReaderAction.share:
                     SharePlus.instance.share(
-                      ShareParams(
-                        text: '${chapter.title}\n\n${chapter.text}',
-                      ),
+                      ShareParams(text: '${chapter.title}\n\n${chapter.text}'),
                     );
                   case _ReaderAction.report:
                     reportBookMistake(
@@ -464,9 +471,7 @@ class _BookBodyState extends State<_BookBody> {
   // does, so a line's script is unambiguous. Arabic (verses, hadith, narrator
   // prose) renders in Naskh; Urdu (translation, sharah, masā'il) in the series
   // font (Nastaliq), which also needs a larger size and more generous leading.
-  static final _urduLetters = RegExp(
-    r'[کگچپژٹڈڑںھہیے]',
-  );
+  static final _urduLetters = RegExp(r'[کگچپژٹڈڑںھہیے]');
 
   // Noto Nastaliq Urdu renders visually larger than Noto Naskh Arabic at the
   // same point size, so Urdu is scaled to sit level with the Arabic matn.
@@ -511,22 +516,48 @@ class _BookBodyState extends State<_BookBody> {
       }
 
       widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                for (final (text, type) in runs)
-                  _runSpan(text, type, fontSize, height, template, colors),
-              ],
+        Semantics(
+          // The ornaments and guillemets are useful visual typography, but
+          // announcing every bracket makes a long chapter needlessly noisy.
+          // Replace the rendered descendants with the source words while
+          // retaining all colour and script styling on screen.
+          container: true,
+          excludeSemantics: true,
+          label: _semanticText(runs),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  for (final (text, type) in runs)
+                    _runSpan(text, type, fontSize, height, template, colors),
+                ],
+              ),
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
             ),
-            textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
           ),
         ),
       );
     }
     return widgets;
+  }
+
+  /// Returns the words a screen reader should announce for a visual line.
+  ///
+  /// The source uses braces/double parentheses as markup; [_parseLine] turns
+  /// those into ornate Qur'an brackets and guillemets for print-like display.
+  /// They are not content, so omit the resulting punctuation from semantics.
+  String _semanticText(List<(String, int)> runs) {
+    return runs
+        .map(
+          (run) => run.$1
+              .replaceAll(_ornateOpen, '')
+              .replaceAll(_ornateClose, '')
+              .replaceAll(_hadithOpen, '')
+              .replaceAll(_hadithClose, ''),
+        )
+        .join();
   }
 
   // Font & size are chosen per run by its OWN script — Arabic (Qur'anic āyāt)
@@ -760,12 +791,7 @@ class _ColorKeyRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            label,
-            style: context.textTheme.bodyLarge,
-          ),
-        ),
+        Expanded(child: Text(label, style: context.textTheme.bodyLarge)),
       ],
     );
   }

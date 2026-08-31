@@ -31,9 +31,13 @@ class AppColors {
 
   // ── Text ────────────────────────────────────────────────────────────────
   static const Color onDark = Color(0xFFEBEBF5); // primary text on dark
-  static const Color onDarkSecondary =
-      Color(0xFF8E8E93); // secondary/hint on dark
+  // Secondary text must remain readable on the app's charcoal surface. The
+  // previous #8E8E93 was only 4.27:1 on #2C2C2E (below WCAG AA for normal
+  // text), so keep this as a full-opacity semantic role rather than applying
+  // per-widget alpha.
+  static const Color onDarkSecondary = Color(0xFFA0A0A5);
   static const Color onLight = Color(0xFF141416);
+  // Warm grey that remains 5.96:1 on the light surface (#FFFFFF).
   static const Color onLightSecondary = Color(0xFF6C6256);
 
   // ── Semantic ────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   final Color brandSubtle;
   final Color brandEmphasis;
   final Color onBrand;
+  final Color secondaryText;
   final Color groupedSurface;
   final Color groupedBorder;
   final Color elevatedSurface;
@@ -29,6 +30,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     required this.brandSubtle,
     required this.brandEmphasis,
     required this.onBrand,
+    required this.secondaryText,
     required this.groupedSurface,
     required this.groupedBorder,
     required this.elevatedSurface,
@@ -50,6 +52,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
         brandSubtle: scheme.primary.withValues(alpha: 0.12),
         brandEmphasis: AppColors.goldDark,
         onBrand: scheme.onPrimary,
+        secondaryText: scheme.onSurfaceVariant,
         groupedSurface: scheme.surface,
         groupedBorder: AppColors.surfaceContainerDark,
         elevatedSurface: scheme.surfaceContainerHighest,
@@ -71,6 +74,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
         brandSubtle: AppColors.brandSubtleLight,
         brandEmphasis: AppColors.goldLightThemeDark,
         onBrand: scheme.onPrimary,
+        secondaryText: scheme.onSurfaceVariant,
         groupedSurface: scheme.surface,
         groupedBorder: AppColors.surfaceContainerLight,
         elevatedSurface: scheme.surfaceContainerHighest,
@@ -93,6 +97,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     Color? brandSubtle,
     Color? brandEmphasis,
     Color? onBrand,
+    Color? secondaryText,
     Color? groupedSurface,
     Color? groupedBorder,
     Color? elevatedSurface,
@@ -113,6 +118,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       brandSubtle: brandSubtle ?? this.brandSubtle,
       brandEmphasis: brandEmphasis ?? this.brandEmphasis,
       onBrand: onBrand ?? this.onBrand,
+      secondaryText: secondaryText ?? this.secondaryText,
       groupedSurface: groupedSurface ?? this.groupedSurface,
       groupedBorder: groupedBorder ?? this.groupedBorder,
       elevatedSurface: elevatedSurface ?? this.elevatedSurface,
@@ -138,17 +144,27 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       brandSubtle: Color.lerp(brandSubtle, other.brandSubtle, t)!,
       brandEmphasis: Color.lerp(brandEmphasis, other.brandEmphasis, t)!,
       onBrand: Color.lerp(onBrand, other.onBrand, t)!,
+      secondaryText: Color.lerp(secondaryText, other.secondaryText, t)!,
       groupedSurface: Color.lerp(groupedSurface, other.groupedSurface, t)!,
       groupedBorder: Color.lerp(groupedBorder, other.groupedBorder, t)!,
       elevatedSurface: Color.lerp(elevatedSurface, other.elevatedSurface, t)!,
       progressTrack: Color.lerp(progressTrack, other.progressTrack, t)!,
       surfaceTint: Color.lerp(surfaceTint, other.surfaceTint, t)!,
-      accentGradientStart:
-          Color.lerp(accentGradientStart, other.accentGradientStart, t)!,
-      accentGradientEnd:
-          Color.lerp(accentGradientEnd, other.accentGradientEnd, t)!,
-      accentGradientBorder:
-          Color.lerp(accentGradientBorder, other.accentGradientBorder, t)!,
+      accentGradientStart: Color.lerp(
+        accentGradientStart,
+        other.accentGradientStart,
+        t,
+      )!,
+      accentGradientEnd: Color.lerp(
+        accentGradientEnd,
+        other.accentGradientEnd,
+        t,
+      )!,
+      accentGradientBorder: Color.lerp(
+        accentGradientBorder,
+        other.accentGradientBorder,
+        t,
+      )!,
       scrimOverlay: Color.lerp(scrimOverlay, other.scrimOverlay, t)!,
       onScrim: Color.lerp(onScrim, other.onScrim, t)!,
       onScrimMuted: Color.lerp(onScrimMuted, other.onScrimMuted, t)!,

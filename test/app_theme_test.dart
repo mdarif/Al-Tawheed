@@ -27,6 +27,30 @@ void main() {
       expect(AppTheme.dark.colorScheme.primary, AppColors.gold);
     });
 
+    test('secondary text meets WCAG AA on the light surface', () {
+      final theme = AppTheme.light;
+      final semantic = theme.extension<AppSemanticColors>()!;
+
+      // This is intentionally an exact ratio check, not a snapshot: the old
+      // muted grey was below the 4.5:1 normal-text threshold.
+      expect(
+        _contrastRatio(semantic.secondaryText, theme.colorScheme.surface),
+        closeTo(5.9675, 0.001),
+      );
+      expect(semantic.secondaryText, theme.colorScheme.onSurfaceVariant);
+    });
+
+    test('secondary text meets WCAG AA on the dark surface', () {
+      final theme = AppTheme.dark;
+      final semantic = theme.extension<AppSemanticColors>()!;
+
+      expect(
+        _contrastRatio(semantic.secondaryText, theme.colorScheme.surface),
+        closeTo(5.3532, 0.001),
+      );
+      expect(semantic.secondaryText, theme.colorScheme.onSurfaceVariant);
+    });
+
     test('iOS typography uses tighter title tracking than Android', () {
       final ios = AppTypography.create(
         brightness: Brightness.light,
@@ -45,4 +69,14 @@ void main() {
       );
     });
   });
+}
+
+double _contrastRatio(Color foreground, Color background) {
+  final lighter = foreground.computeLuminance() > background.computeLuminance()
+      ? foreground.computeLuminance()
+      : background.computeLuminance();
+  final darker = foreground.computeLuminance() > background.computeLuminance()
+      ? background.computeLuminance()
+      : foreground.computeLuminance();
+  return (lighter + 0.05) / (darker + 0.05);
 }

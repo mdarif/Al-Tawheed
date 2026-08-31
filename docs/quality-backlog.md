@@ -24,6 +24,11 @@ sequencing; this page records the quality truth that active docs should use.
 - **Release evidence:** the current baseline is **511 passing unit/widget
   tests**, with two intentional skips. Goldens are macOS-only and skipped by
   default; live CDN contract tests are tagged and run separately.
+- **Design accessibility:** secondary text now uses semantic theme roles with
+  WCAG AA contrast in both themes; the book reader exposes clean line semantics
+  (ornate print punctuation is visual only) and covers 2.0 text scaling. See
+  [design-system.md](design-system.md), `test/app_theme_test.dart`, and
+  `test/book_reader_screen_test.dart`.
 
 ## Open work
 

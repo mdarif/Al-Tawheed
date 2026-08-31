@@ -16,9 +16,9 @@ extension AppThemeContext on BuildContext {
 
   Color get primaryTextColor => colorScheme.onSurface;
 
-  Color get secondaryTextColor => colorScheme.onSurfaceVariant;
+  Color get secondaryTextColor => semantic.secondaryText;
 
-  Color get mutedIconColor => colorScheme.onSurfaceVariant;
+  Color get mutedIconColor => semantic.secondaryText;
 
   Color get groupedSurface => semantic.groupedSurface;
 
@@ -28,7 +28,7 @@ extension AppThemeContext on BuildContext {
 
   Color get chipUnselectedBackground => semantic.elevatedSurface;
 
-  Color get chipUnselectedText => colorScheme.onSurfaceVariant;
+  Color get chipUnselectedText => semantic.secondaryText;
 
   Color get dividerColor => semantic.groupedBorder;
 

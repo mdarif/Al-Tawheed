@@ -110,9 +110,8 @@ Widget _wrap(BookProvider book, String chapterId, {ReadingProvider? reading}) {
         routes: [
           GoRoute(
             path: '/book/:chapterId',
-            builder: (context, state) => BookReaderScreen(
-              chapterId: state.pathParameters['chapterId']!,
-            ),
+            builder: (context, state) =>
+                BookReaderScreen(chapterId: state.pathParameters['chapterId']!),
           ),
         ],
       ),
@@ -203,8 +202,9 @@ void main() {
       ],
     );
 
-    testWidgets('is set off by a rule and rendered in the brand colour',
-        (tester) async {
+    testWidgets('is set off by a rule and rendered in the brand colour', (
+      tester,
+    ) async {
       final book = BookProvider()..setBookForTest(masailBook);
       await tester.pumpWidget(_wrap(book, 'ch-01'));
       await tester.pumpAndSettle();
@@ -220,8 +220,9 @@ void main() {
       expect(span.style?.fontWeight, FontWeight.w700);
     });
 
-    testWidgets('a masʾala item using the word مسائل is NOT treated as one',
-        (tester) async {
+    testWidgets('a masʾala item using the word مسائل is NOT treated as one', (
+      tester,
+    ) async {
       final book = BookProvider()..setBookForTest(masailBook);
       await tester.pumpWidget(_wrap(book, 'ch-02'));
       await tester.pumpAndSettle();
@@ -230,8 +231,9 @@ void main() {
       expect(find.byType(Divider), findsOneWidget);
     });
 
-    testWidgets('recognises the print\'s longer heading variant',
-        (tester) async {
+    testWidgets('recognises the print\'s longer heading variant', (
+      tester,
+    ) async {
       final book = BookProvider()..setBookForTest(masailBook);
       await tester.pumpWidget(_wrap(book, 'ch-03'));
       await tester.pumpAndSettle();
@@ -293,8 +295,88 @@ void main() {
     expect(find.text('نص الباب الأول'), findsOneWidget);
   });
 
-  testWidgets('first visible line sits close under the reader app bar',
-      (tester) async {
+  testWidgets('book text exposes useful semantics without ornate punctuation', (
+    tester,
+  ) async {
+    final book = BookProvider()
+      ..setBookForTest(
+        const BookContent(
+          title: 'كتاب التوحيد',
+          author: 'مصنف',
+          chapters: [
+            BookChapter(
+              id: 'ch-01',
+              number: 1,
+              title: 'باب',
+              text: 'تمہید {الحمد لله} ((قال رسول الله))',
+            ),
+          ],
+        ),
+      );
+
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(_wrap(book, 'ch-01'));
+    await tester.pumpAndSettle();
+
+    // Braces and double parentheses become print ornaments on screen, but
+    // remain markup rather than words a screen reader should announce.
+    expect(
+      find.bySemanticsLabel('تمہید الحمد لله قال رسول الله'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel(RegExp('﴾')), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('«')), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('Nastaliq reader remains scrollable at 2x text scale', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final book = BookProvider()
+      ..setBookForTest(
+        BookContent(
+          title: 'کتاب التوحید',
+          author: 'مصنف',
+          chapters: [
+            BookChapter(
+              id: 'ch-01',
+              number: 1,
+              title: 'باب',
+              text: List.filled(
+                18,
+                'یہ نستعلیق عبارت بڑے حروف میں بھی صاف دکھائی دے گی۔',
+              ).join('\n'),
+            ),
+          ],
+        ),
+      );
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: _wrap(book, 'ch-01'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('یہ نستعلیق عبارت بڑے حروف میں بھی صاف دکھائی دے گی۔'),
+      findsWidgets,
+    );
+    expect(_readerScrollPosition(tester).maxScrollExtent, greaterThan(0));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('first visible line sits close under the reader app bar', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-01'));
@@ -306,33 +388,39 @@ void main() {
     expect(bodyTop - appBarBottom, lessThanOrEqualTo(24));
   });
 
-  testWidgets('hides reader chrome on scroll down and restores it on scroll up',
-      (tester) async {
-    final book = BookProvider()..setBookForTest(_longReaderBook);
+  testWidgets(
+    'hides reader chrome on scroll down and restores it on scroll up',
+    (tester) async {
+      final book = BookProvider()..setBookForTest(_longReaderBook);
 
-    await tester.pumpWidget(_wrap(book, 'ch-long'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_wrap(book, 'ch-long'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('باب طويل'), findsOneWidget);
-    expect(_readerAppBarSlide(tester).offset, Offset.zero);
+      expect(find.text('باب طويل'), findsOneWidget);
+      expect(_readerAppBarSlide(tester).offset, Offset.zero);
 
-    await tester.drag(
-      find.byType(SingleChildScrollView),
-      const Offset(0, -450),
-    );
-    await tester.pumpAndSettle();
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -450),
+      );
+      await tester.pumpAndSettle();
 
-    expect(_readerAppBarSlide(tester).offset, const Offset(0, -1));
+      expect(_readerAppBarSlide(tester).offset, const Offset(0, -1));
 
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 220));
-    await tester.pumpAndSettle();
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, 220),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('باب طويل'), findsOneWidget);
-    expect(_readerAppBarSlide(tester).offset, Offset.zero);
-  });
+      expect(find.text('باب طويل'), findsOneWidget);
+      expect(_readerAppBarSlide(tester).offset, Offset.zero);
+    },
+  );
 
-  testWidgets('pulling down at the chapter start does not rubber-band',
-      (tester) async {
+  testWidgets('pulling down at the chapter start does not rubber-band', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_longReaderBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-long'));
@@ -342,17 +430,15 @@ void main() {
 
     expect(position.pixels, 0);
 
-    await tester.drag(
-      find.byType(SingleChildScrollView),
-      const Offset(0, 320),
-    );
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 320));
     await tester.pump();
 
     expect(position.pixels, 0);
   });
 
-  testWidgets('opens a chapter at the top even when an old offset was saved',
-      (tester) async {
+  testWidgets('opens a chapter at the top even when an old offset was saved', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_longReaderBook);
     final reading = ReadingProvider()..load();
     await reading.setBookScrollOffset('ch-long', 900);
@@ -363,8 +449,9 @@ void main() {
     expect(_readerScrollPosition(tester).pixels, 0);
   });
 
-  testWidgets('last reader line stays above the bottom safe area',
-      (tester) async {
+  testWidgets('last reader line stays above the bottom safe area', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_bottomClearanceBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-bottom'));
@@ -382,8 +469,9 @@ void main() {
     expect(lastLineBottom, lessThan(viewportBottom - 20));
   });
 
-  testWidgets('moving to another chapter starts at its own top offset',
-      (tester) async {
+  testWidgets('moving to another chapter starts at its own top offset', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_twoLongChaptersBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-long-1'));
@@ -455,22 +543,23 @@ void main() {
   });
 
   testWidgets(
-      'share, from the overflow menu, shares the chapter title and text',
-      (tester) async {
-    final sharePlatform = _FakeSharePlatform();
-    SharePlatform.instance = sharePlatform;
-    final book = BookProvider()..setBookForTest(_testBook);
+    'share, from the overflow menu, shares the chapter title and text',
+    (tester) async {
+      final sharePlatform = _FakeSharePlatform();
+      SharePlatform.instance = sharePlatform;
+      final book = BookProvider()..setBookForTest(_testBook);
 
-    await tester.pumpWidget(_wrap(book, 'ch-01'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.more_vert_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Share chapter').last);
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.more_vert_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Share chapter').last);
+      await tester.pumpAndSettle();
 
-    expect(sharePlatform.lastParams?.text, 'الباب الأول\n\nنص الباب الأول');
-  });
+      expect(sharePlatform.lastParams?.text, 'الباب الأول\n\nنص الباب الأول');
+    },
+  );
 
   testWidgets('the overflow menu offers Report a mistake', (tester) async {
     final book = BookProvider()..setBookForTest(_testBook);
@@ -515,8 +604,9 @@ void main() {
     expect((ReadingProvider()..load()).bookFontSize, reading.bookFontSize);
   });
 
-  testWidgets('the scroll-to-top button is present but hidden at the top',
-      (tester) async {
+  testWidgets('the scroll-to-top button is present but hidden at the top', (
+    tester,
+  ) async {
     final book = BookProvider()..setBookForTest(_testBook);
 
     await tester.pumpWidget(_wrap(book, 'ch-01'));
