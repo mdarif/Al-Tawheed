@@ -31,6 +31,7 @@ phases:
       - lib/widgets/offline_sheet.dart
       - integration_test/app_test.dart
       - integration_test/support/app_flow.dart
+      - patrol_test/support/patrol_flow.dart
       - test/widget_keys_test.dart
       - test/patrol_result_test.dart
       - test/shell_screen_test.dart
