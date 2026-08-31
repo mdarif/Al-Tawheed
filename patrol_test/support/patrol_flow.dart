@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
@@ -14,6 +16,16 @@ class PatrolFlow {
   /// support the toggle normally.
   static const _controlCenterUnavailable =
       'Control Center is not available on Simulator';
+
+  // Patrol 4.6.1 drives ACTION_AIRPLANE_MODE_SETTINGS and expects the stock
+  // Android text label. Android 35 can expose that screen without the label,
+  // returning a native 404 even on an otherwise healthy emulator. The shell
+  // backed connectivity toggles are exposed by Patrol itself and do not
+  // depend on the Settings UI hierarchy.
+  static bool _canUseConnectivityFallback(String message) =>
+      Platform.isAndroid &&
+      (message.contains('404') ||
+          message.contains('Could not find airplane mode toggle'));
 
   static Future<void> grantNotificationsIfPrompted(
     PatrolIntegrationTester $,
@@ -53,6 +65,7 @@ class PatrolFlow {
     PatrolIntegrationTester $,
     Future<void> Function() body,
   ) async {
+    var usedConnectivityFallback = false;
     try {
       await $.platform.mobile.enableAirplaneMode();
     } on PatrolActionException catch (e) {
@@ -62,7 +75,24 @@ class PatrolFlow {
         // It still runs on Android and on real iOS devices.
         return;
       }
-      rethrow;
+      if (!_canUseConnectivityFallback(e.message)) rethrow;
+
+      // Disabling both transports gives the app the same offline contract as
+      // airplane mode while remaining reliable on Android 35/AOSP variants.
+      var wifiDisabled = false;
+      try {
+        await $.platform.mobile.disableWifi();
+        wifiDisabled = true;
+        await $.platform.mobile.disableCellular();
+        usedConnectivityFallback = true;
+      } catch (_) {
+        try {
+          await $.platform.mobile.enableCellular();
+        } finally {
+          if (wifiDisabled) await $.platform.mobile.enableWifi();
+        }
+        rethrow;
+      }
     }
 
     try {
@@ -70,7 +100,15 @@ class PatrolFlow {
       await body();
     } finally {
       try {
-        await $.platform.mobile.disableAirplaneMode();
+        if (usedConnectivityFallback) {
+          try {
+            await $.platform.mobile.enableCellular();
+          } finally {
+            await $.platform.mobile.enableWifi();
+          }
+        } else {
+          await $.platform.mobile.disableAirplaneMode();
+        }
       } on PatrolActionException catch (e) {
         if (!e.message.contains(_controlCenterUnavailable)) rethrow;
       }
