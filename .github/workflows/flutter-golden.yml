@@ -11,18 +11,35 @@
 # layout regressions move whole blocks and still fail.
 #
 # Runs on:
-#   • PRs into master that touch UI, theme, fonts, or the goldens — a release
-#     gate for visual regressions.
-#   • Nightly — catches drift on develop.
+#   • Pushes to develop that touch UI, theme, fonts, or the goldens.
+#   • PRs into master touching the same paths.
 #   • Manual dispatch.
 #
-# NOT on every develop push (macOS runners are ~10× ubuntu; the fast ubuntu
-# gate in flutter-ci.yml covers those). Tagged `golden` + skipped by default,
-# so this is the only job that runs them (via --run-skipped).
+# Why push-with-a-paths-filter rather than nightly: this repo does not use
+# PRs, so the pull_request trigger above effectively never fires, and a
+# nightly burns a 10x-billed macOS runner every day whether or not any UI
+# changed. The paths filter means goldens run when — and only when — something
+# that could move a pixel changed. Tagged `golden` + skipped by default, so
+# this is the only job that runs them (via --run-skipped).
+#
+# History: the nightly failed four runs straight (2026-08) with
+# ProviderNotFoundException<ShellChromeProvider>. That was never a golden
+# problem — the harness fix (3c9e27d) sat unpushed while the nightly kept
+# testing an older origin/develop. Red nightlies nobody can act on train you
+# to ignore them; this trigger only fires on code that actually landed.
 
 name: Flutter Golden
 
 on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'lib/**'
+      - 'assets/fonts/**'
+      - 'test/golden/**'
+      - 'test/flutter_test_config.dart'
+      - '.github/workflows/flutter-golden.yml'
   pull_request:
     branches:
       - master
@@ -32,12 +49,6 @@ on:
       - 'test/golden/**'
       - 'test/flutter_test_config.dart'
       - '.github/workflows/flutter-golden.yml'
-  # Nightly schedule removed 2026-08-31: these ran at 02:00 UTC and failed
-  # 11 of the last 15 scheduled runs between them, burning free-tier quota
-  # (Regression and Golden bill at the 10x macOS rate) while producing no
-  # usable signal. Still runnable on demand via workflow_dispatch — do that
-  # before a release. Restore the schedule once the underlying failures are
-  # fixed; a red nightly nobody acts on is worse than no nightly.
   workflow_dispatch:
 
 concurrency:

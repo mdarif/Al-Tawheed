@@ -404,6 +404,16 @@ is portable memory: any LLM working the repo should read and extend it.
   upstream job was *legitimately* skipped (not failed) need
   `if: always() && needs.X.result == 'success'`, checked explicitly rather
   than relying on the implicit skip-on-skip default.
+- **A scheduled workflow tests `origin`, not your laptop — an unpushed fix
+  looks like a permanent failure.** The nightly golden job failed four runs
+  straight with `ProviderNotFoundException<ShellChromeProvider>` while
+  `make test-goldens` passed locally on the same machine. The harness fix
+  (`3c9e27d`) was committed but never pushed, so every nightly kept testing an
+  older `origin/develop`. Before debugging a red scheduled run, check
+  `git log origin/<branch>..HEAD` — if the fix is sitting local, there is no
+  bug to find. Corollary: schedules on a branch you push to rarely will
+  reliably lie to you, which is one reason golden now runs on push with a
+  paths filter instead of nightly.
 - **The one-click release runs in detached HEAD — push with `HEAD:master`,
   not `master`.** When dispatched from `develop`, every job checks out the
   promote SHA (`ref: needs.prepare.outputs.ref`), so the `publish` job that

@@ -34,6 +34,15 @@ looks like, and what to do if it doesn't go to plan.
       For the current `patrol 4.6.1` pin, use `patrol_cli 4.4.0` on a stock
       Android target below API 36; Android 16/API 36 currently discovers zero
       Patrol tests and cannot satisfy this gate.
+- [ ] Golden (pixel-snapshot) tests are green on `develop`:
+      `gh run list --workflow flutter-golden.yml --branch develop --limit 1`.
+      They run automatically on any push to `develop` touching `lib/**`,
+      `assets/fonts/**` or `test/golden/**`; if your release contains no UI
+      change there may be no recent run, which is fine — dispatch one with
+      `gh workflow run flutter-golden.yml --ref develop` if you want the
+      check. On a Mac you can also just run `make test-goldens` locally.
+      **Goldens are macOS-only** and are NOT part of the release workflow, so
+      this is the only thing standing between a UI regression and the store.
 - [ ] (One-time, CD Phase 2) Signing secrets are set —
       `gh secret list --repo mdarif/Al-Tawheed` should list `KEYSTORE_BASE64`,
       `KEY_ALIAS`, `KEY_PASSWORD`, `STORE_PASSWORD`. If any are missing, see
@@ -71,7 +80,16 @@ controls; must discover at least one test) → `flutter build apk --release`.
 
 The format and tooling checks are first because they cost seconds and
 `build-android` gates on them too — without them here, Step 1 can pass locally
-and the release still fail in CI on a stray format. Play Store screenshot generators are separate
+and the release still fail in CI on a stray format.
+
+**Not covered by this gate:** golden tests. They are tagged `golden` and
+skipped by every ordinary `flutter test` (see `dart_test.yaml`), so neither
+Step 1 nor the release workflow runs them. On a Mac, run them yourself before
+a UI-bearing release:
+```sh
+make test-goldens          # verify
+make goldens-update        # re-bake masters after a REVIEWED intentional change
+``` Play Store screenshot generators are separate
 asset jobs and are not part of the release gate (`make screenshots
 DEVICE=<device_id>`).
 
