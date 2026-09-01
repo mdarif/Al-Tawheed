@@ -297,10 +297,18 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
-            return Directionality(
-              textDirection:
-                  langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
-              child: child ?? const SizedBox.shrink(),
+            // MaterialApp swaps theme/darkTheme instantly with no transition,
+            // which reads as a hard flash when the system or in-app toggle
+            // changes it. AnimatedTheme crossfades the resolved ThemeData
+            // across rebuilds instead.
+            return AnimatedTheme(
+              data: Theme.of(context),
+              duration: const Duration(milliseconds: 200),
+              child: Directionality(
+                textDirection:
+                    langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
         ),
