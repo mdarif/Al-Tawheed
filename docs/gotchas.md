@@ -562,6 +562,15 @@ is portable memory: any LLM working the repo should read and extend it.
   Unknown keys fall back to the Dart defaults (`FeatureFlags.fromJson`), so
   shipping either on needs no content change.
 
+## UI polish
+
+- **`MaterialApp` snaps `theme`/`darkTheme` instantly — no built-in
+  transition.** Toggling dark/light (system change or in-app) reads as a hard
+  flash/jerk, the same symptom reported in the sibling Al Quran app. Fixed by
+  wrapping the app content in `AnimatedTheme(data: Theme.of(context), ...)`
+  inside `MaterialApp.router`'s `builder:` — it crossfades the resolved
+  `ThemeData` across rebuilds instead of snapping. See `lib/app.dart`.
+
 ## Security
 
 - Remote-sourced URLs are launched through an https/mailto allowlist
