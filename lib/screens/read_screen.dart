@@ -38,32 +38,35 @@ class _ReadScreenState extends State<ReadScreen> {
     return Column(
       children: [
         if (showToggle)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CompactToggleChip(
-                    label: l10n.tabBook,
-                    selected: selected == 0,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selected = 0);
-                    },
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CompactToggleChip(
+                      label: l10n.tabBook,
+                      selected: selected == 0,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selected = 0);
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: CompactToggleChip(
-                    label: l10n.tabStudyMode,
-                    selected: selected == 1,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selected = 1);
-                    },
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CompactToggleChip(
+                      label: l10n.tabStudyMode,
+                      selected: selected == 1,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selected = 1);
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         Expanded(
