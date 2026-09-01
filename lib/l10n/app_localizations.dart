@@ -851,6 +851,12 @@ abstract class AppLocalizations {
   /// **'Choose Your Series'**
   String get chooseSeriesTitle;
 
+  /// No description provided for @chooseSeriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a series to begin learning'**
+  String get chooseSeriesSubtitle;
+
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:

@@ -446,6 +446,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseSeriesTitle => 'Choose Your Series';
 
   @override
+  String get chooseSeriesSubtitle => 'Select a series to begin learning';
+
+  @override
   String get languageEnglish => 'English';
 
   @override

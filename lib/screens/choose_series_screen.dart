@@ -97,7 +97,7 @@ class _ChooseSeriesScreenState extends State<ChooseSeriesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Select a series to begin learning',
+                          l10n.chooseSeriesSubtitle,
                           textAlign: TextAlign.center,
                           style: context.textTheme.bodyMedium?.copyWith(
                             color: context.secondaryTextColor,

@@ -442,6 +442,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chooseSeriesTitle => 'ابدأ رحلتك مع التوحيد';
 
   @override
+  String get chooseSeriesSubtitle => 'اختر سلسلة لتبدأ التعلّم';
+
+  @override
   String get languageEnglish => 'English';
 
   @override

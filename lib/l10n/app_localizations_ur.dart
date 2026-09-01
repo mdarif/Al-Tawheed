@@ -434,6 +434,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chooseSeriesTitle => 'اپنا سفرِ توحید شروع کریں';
 
   @override
+  String get chooseSeriesSubtitle =>
+      'سیکھنا شروع کرنے کے لیے ایک سیریز منتخب کریں';
+
+  @override
   String get languageEnglish => 'English';
 
   @override
@@ -1033,6 +1037,10 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get chooseSeriesTitle => 'Apna Safar-e-Tawheed Shuru Karein';
+
+  @override
+  String get chooseSeriesSubtitle =>
+      'Seekhna shuru karne ke liye ek series muntakhib karein';
 
   @override
   String get languageEnglish => 'English';
