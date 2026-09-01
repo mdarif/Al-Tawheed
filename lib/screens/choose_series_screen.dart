@@ -7,6 +7,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/capability_chip.dart';
 
 // Arabic title shown on the Arabic series' card, independent of the app's
 // UI language — mirrors the lecture-title pattern in ContinueListeningBanner.
@@ -286,17 +287,17 @@ class _SeriesCardState extends State<_SeriesCard> {
                                   spacing: 8,
                                   runSpacing: 8,
                                   children: [
-                                    _MetricChip(
+                                    CapabilityChip(
                                       icon: Icons.headphones_rounded,
                                       label: l10n.audioLabel,
                                     ),
                                     if (series.hasStudyMode)
-                                      _MetricChip(
+                                      CapabilityChip(
                                         icon: Icons.school_rounded,
                                         label: l10n.studyMode,
                                       ),
                                     if (series.hasBook)
-                                      _MetricChip(
+                                      CapabilityChip(
                                         icon: Icons.menu_book_rounded,
                                         label: l10n.tabBook,
                                       ),
@@ -501,42 +502,6 @@ class _LanguageThumbnail extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Small pill used in a series card's metrics row — e.g. the language
-/// qualifier or Study Mode availability.
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({this.icon, required this.label});
-
-  final IconData? icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: context.elevatedSurface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: context.brandColor),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: context.textTheme.labelSmall?.copyWith(
-              color: context.secondaryTextColor,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],

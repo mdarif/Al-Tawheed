@@ -169,6 +169,13 @@ void main() {
         find.byKey(WidgetKeys.settingsSeriesOption(_seriesArabic.id)),
         findsOneWidget,
       );
+
+      // Each row previews the capabilities that change when switching:
+      // Urdu has Study but no Book; Arabic has Book but no Study. Both
+      // always show Audio.
+      expect(find.text('Audio'), findsNWidgets(2));
+      expect(find.text('Study Mode'), findsOneWidget);
+      expect(find.text('Book'), findsOneWidget);
     });
 
     testWidgets(

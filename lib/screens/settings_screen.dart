@@ -13,6 +13,7 @@ import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
+import 'package:myapp/widgets/capability_chip.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
@@ -434,6 +435,7 @@ class _SeriesLanguageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ListTile(
       key: WidgetKeys.settingsSeriesOption(series.id),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -443,9 +445,34 @@ class _SeriesLanguageRow extends StatelessWidget {
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
-      subtitle: teacher.isNotEmpty
-          ? Text(teacher, style: context.textTheme.bodySmall)
-          : null,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (teacher.isNotEmpty)
+            Text(teacher, style: context.textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              CapabilityChip(
+                icon: Icons.headphones_rounded,
+                label: l10n.audioLabel,
+              ),
+              if (series.hasStudyMode)
+                CapabilityChip(
+                  icon: Icons.school_rounded,
+                  label: l10n.studyMode,
+                ),
+              if (series.hasBook)
+                CapabilityChip(
+                  icon: Icons.menu_book_rounded,
+                  label: l10n.tabBook,
+                ),
+            ],
+          ),
+        ],
+      ),
       trailing: selected
           ? Icon(Icons.check_rounded, color: context.brandColor)
           : null,
