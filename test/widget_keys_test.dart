@@ -10,6 +10,7 @@ void main() {
       WidgetKeys.shellLecturesTab,
       WidgetKeys.shellBookTab,
       WidgetKeys.shellStudyTab,
+      WidgetKeys.shellLibraryTab,
       WidgetKeys.shellSettingsTab,
       WidgetKeys.offlineStatusBanner,
       WidgetKeys.playerClose,

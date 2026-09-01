@@ -6,7 +6,7 @@ import 'package:myapp/models/series.dart';
 /// [SeriesConfig] describes which content is actually bundled/published;
 /// feature flags may roll out unrelated features, but must not manufacture a
 /// tab for content that the selected edition cannot serve.
-enum SeriesNavigationTab { lectures, book, study, settings }
+enum SeriesNavigationTab { lectures, book, study, library, settings }
 
 /// Single source of truth for the series-aware bottom navigation.
 abstract final class SeriesNavigationPolicy {
@@ -23,6 +23,7 @@ abstract final class SeriesNavigationPolicy {
         SeriesNavigationTab.lectures => true,
         SeriesNavigationTab.book => series.hasBook,
         SeriesNavigationTab.study => series.hasStudyMode,
+        SeriesNavigationTab.library => true,
         SeriesNavigationTab.settings => true,
       };
 }

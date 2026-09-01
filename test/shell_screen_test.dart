@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +19,9 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
+import 'package:myapp/screens/bookmarks_screen.dart';
+import 'package:myapp/screens/library_screen.dart';
+import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
@@ -72,6 +77,9 @@ Widget _wrap({
   ProgressProvider? progress,
   DownloadsProvider? downloads,
   ConnectivityProvider? connectivity,
+  bool downloadsEnabled = false,
+  TextScaler? textScaler,
+  TextDirection? textDirection,
   // UI/chrome locale. Chrome now follows the UI language independently of the
   // content edition, so Arabic-chrome expectations require an Arabic UI locale.
   Locale? locale,
@@ -84,7 +92,10 @@ Widget _wrap({
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
-      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      ChangeNotifierProvider(
+        create: (_) => FeatureFlagsProvider()
+          ..setFeaturesJsonForTest({'downloads': downloadsEnabled}),
+      ),
       connectivity != null
           ? ChangeNotifierProvider.value(value: connectivity)
           : ChangeNotifierProvider(
@@ -113,35 +124,102 @@ Widget _wrap({
     child: MaterialApp.router(
       theme: AppTheme.light,
       locale: locale,
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        return Directionality(
+          textDirection: textDirection ?? TextDirection.ltr,
+          child: MediaQuery(
+            data: media.copyWith(textScaler: textScaler ?? media.textScaler),
+            child: child!,
+          ),
+        );
+      },
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
         initialLocation: initialLocation,
         routes: [
-          ShellRoute(
-            builder: (context, state, child) => ShellScreen(child: child),
-            routes: [
-              GoRoute(
-                path: '/lectures',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Lectures'))),
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                ShellScreen(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/lectures',
+                    builder: (_, __) => Scaffold(
+                      body: ListView.builder(
+                        key: const PageStorageKey('lecture-list'),
+                        itemCount: 60,
+                        itemBuilder: (context, index) => ListTile(
+                          title: Text('Lecture $index'),
+                          onTap: index == 0
+                              ? () => context.push('/lectures/detail')
+                              : null,
+                        ),
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'detail',
+                        builder: (_, __) => const Scaffold(
+                          body: Center(child: Text('Nested lecture detail')),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              GoRoute(
-                path: '/book',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Book'))),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/book',
+                    builder: (_, __) =>
+                        const Scaffold(body: Center(child: Text('Book'))),
+                  ),
+                ],
               ),
-              GoRoute(
-                path: '/study',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Study'))),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/study',
+                    builder: (_, __) =>
+                        const Scaffold(body: Center(child: Text('Study'))),
+                  ),
+                ],
               ),
-              GoRoute(
-                path: '/settings',
-                builder: (_, __) =>
-                    const Scaffold(body: Center(child: Text('Settings'))),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/library',
+                    builder: (_, __) => const LibraryScreen(),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/settings',
+                    builder: (_, __) =>
+                        const Scaffold(body: Center(child: Text('Settings'))),
+                  ),
+                ],
               ),
             ],
+          ),
+          GoRoute(
+            path: '/bookmarks',
+            builder: (_, __) => const BookmarksScreen(),
+          ),
+          GoRoute(
+            path: '/offline-library',
+            builder: (_, __) => const OfflineLibraryScreen(),
+          ),
+          GoRoute(
+            path: '/player',
+            builder: (_, __) => const Scaffold(
+              body: Text('Player route', key: ValueKey('player-route-probe')),
+            ),
           ),
         ],
       ),
@@ -169,7 +247,9 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('shows 3 tabs (Lectures, Book, Study) for the Urdu series', (
+  testWidgets(
+      'shows 5 tabs (Lectures, Book, Study, Library, Settings) for the Urdu series',
+      (
     tester,
   ) async {
     final series = SeriesProvider()..load(false);
@@ -179,16 +259,18 @@ void main() {
 
     // The Urdu series has a Book tab and Study mode, plus Settings last. Home
     // was retired; Bookmarks and About live behind the ⋯ overflow menu.
-    // "Lectures" appears twice: the page body and the nav destination label.
-    expect(find.text('Lectures'), findsNWidgets(2));
+    expect(find.text('Lecture 0'), findsOneWidget);
+    expect(find.text('Lectures'), findsOneWidget);
     expect(find.text('Book'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
     expect(find.text('Study'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget); // nav destination label
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
     expect(find.byKey(WidgetKeys.shellLecturesTab), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellBookTab), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellStudyTab), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellLibraryTab), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellSettingsTab), findsOneWidget);
   });
 
@@ -208,29 +290,32 @@ void main() {
             SeriesNavigationTab.lectures => 'Lectures',
             SeriesNavigationTab.book => 'Book',
             SeriesNavigationTab.study => 'Study',
+            SeriesNavigationTab.library => 'Library',
             SeriesNavigationTab.settings => 'Settings',
           },
         )
         .toList();
     expect(labels, expected);
-    expect(labels, ['Lectures', 'Book', 'Study', 'Settings']);
+    expect(labels, ['Lectures', 'Book', 'Study', 'Library', 'Settings']);
   });
 
-  testWidgets('shows 3 tabs (Lectures, Book, Settings) for the Arabic series', (
+  testWidgets(
+      'shows 4 tabs (Lectures, Book, Library, Settings) for the Arabic series',
+      (
     tester,
   ) async {
     final series = SeriesProvider()
       ..load(false)
       ..setCurrentSeriesForTest(_arabicSeries);
 
-    // Arabic UI locale → Arabic nav labels, so the page-body 'Lectures' is unique.
+    // Arabic UI locale → Arabic navigation labels.
     await tester.pumpWidget(_wrap(series: series, locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Lectures'), findsOneWidget); // page body only
+    expect(find.text('Lectures'), findsNothing);
     expect(find.text('Study'), findsNothing); // no Study for the Arabic series
-    // Lectures + Book + Settings — Settings is series-independent.
-    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    // Lectures + Book + Library + Settings — Settings is series-independent.
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
 
     final labels = tester
         .widgetList<NavigationDestination>(find.byType(NavigationDestination))
@@ -242,12 +327,17 @@ void main() {
             SeriesNavigationTab.lectures => 'الدروس',
             SeriesNavigationTab.book => 'الكتاب',
             SeriesNavigationTab.study => 'وضع الدراسة',
+            SeriesNavigationTab.library => 'المكتبة',
             SeriesNavigationTab.settings => 'الإعدادات',
           },
         )
         .toList();
     expect(labels, expected);
-    expect(labels, ['الدروس', 'الكتاب', 'الإعدادات']);
+    expect(labels, ['الدروس', 'الكتاب', 'المكتبة', 'الإعدادات']);
+
+    await tester.tap(find.text('المكتبة'));
+    await tester.pumpAndSettle();
+    expect(find.text('المكتبة'), findsNWidgets(2));
   });
 
   testWidgets('shows Arabic nav labels for the Arabic series under Arabic UI', (
@@ -262,6 +352,7 @@ void main() {
 
     expect(find.text('الدروس'), findsOneWidget);
     expect(find.text('الكتاب'), findsOneWidget);
+    expect(find.text('المكتبة'), findsOneWidget);
     expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
     // Home retired; only Bookmarks/About live behind the ⋯ overflow menu.
     expect(find.text('الرئيسية'), findsNothing);
@@ -289,6 +380,166 @@ void main() {
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(_shellChromeSlide(tester).offset, Offset.zero);
+  });
+
+  testWidgets('mini player survives repeated switches across every Urdu branch',
+      (tester) async {
+    final progress = ProgressProvider()..load();
+    final downloads = DownloadsProvider();
+    final connectivity = ConnectivityProvider.testOffline();
+    final player =
+        PlayerNotifier(FakeAudioPlayback(), progress, downloads, connectivity);
+    addTearDown(player.dispose);
+    final lecture = _arabicLec();
+    await player.loadAndPlay(lecture, [lecture]);
+
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        player: player,
+        progress: progress,
+        downloads: downloads,
+        connectivity: connectivity,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final destination in [
+      WidgetKeys.shellBookTab,
+      WidgetKeys.shellStudyTab,
+      WidgetKeys.shellLibraryTab,
+      WidgetKeys.shellSettingsTab,
+      WidgetKeys.shellLecturesTab,
+      WidgetKeys.shellLibraryTab,
+    ]) {
+      await tester.tap(find.byKey(destination));
+      await tester.pumpAndSettle();
+      expect(find.text('Dars 02'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+    }
+  });
+
+  testWidgets('Back from a non-Lectures branch returns to Lectures',
+      (tester) async {
+    await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Library'));
+    await tester.pumpAndSettle();
+    expect(find.text('Library'), findsNWidgets(2));
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lecture 0'), findsOneWidget);
+  });
+
+  testWidgets('lecture list scroll position survives switching away and back',
+      (tester) async {
+    await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const PageStorageKey('lecture-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    final before =
+        tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    expect(before, greaterThan(0));
+
+    await tester.tap(find.byKey(WidgetKeys.shellLibraryTab));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(WidgetKeys.shellLecturesTab));
+    await tester.pumpAndSettle();
+    final after =
+        tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    expect(after, before);
+  });
+
+  testWidgets('Back pops branch detail, returns to Lectures, then permits exit',
+      (tester) async {
+    await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lecture 0'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nested lecture detail'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Lecture 0'), findsOneWidget);
+
+    await tester.tap(find.byKey(WidgetKeys.shellLibraryTab));
+    await tester.pumpAndSettle();
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Lecture 0'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isFalse);
+  });
+
+  testWidgets('five Urdu destinations stay usable at narrow 2x RTL layout',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        textScaler: const TextScaler.linear(2),
+        textDirection: TextDirection.rtl,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final key in [
+      WidgetKeys.shellLecturesTab,
+      WidgetKeys.shellBookTab,
+      WidgetKeys.shellStudyTab,
+      WidgetKeys.shellLibraryTab,
+      WidgetKeys.shellSettingsTab,
+    ]) {
+      expect(find.byKey(key), findsOneWidget);
+      await tester.tap(find.byKey(key));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('legacy Library routes from Player preserve Player and pop back',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        downloadsEnabled: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+
+    for (final route in ['/bookmarks', '/offline-library']) {
+      unawaited(router.push('/player'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('player-route-probe')), findsOneWidget);
+      unawaited(router.push(route));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('player-route-probe'), skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        route == '/bookmarks'
+            ? find.byType(BookmarksScreen)
+            : find.byType(OfflineLibraryScreen),
+        findsOneWidget,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('player-route-probe')), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+    }
   });
 
   group('ShellScreen — mini player', () {
@@ -331,7 +582,7 @@ void main() {
         expect(find.text('Dars 02'), findsNothing);
 
         // Bottom nav is Arabic because the UI locale is Arabic.
-        expect(find.text('Lectures'), findsOneWidget); // page body only
+        expect(find.text('Lectures'), findsNothing);
         expect(find.text('الدروس'), findsOneWidget);
         expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
       },

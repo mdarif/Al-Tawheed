@@ -15,15 +15,24 @@ class OfflineLibraryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    return Scaffold(
+      appBar: AppBar(title: Text(context.l10n.offlineLibrary)),
+      body: const OfflineLibraryBody(),
+    );
+  }
+}
+
+/// The Downloads collection without route chrome, for embedding in Library.
+class OfflineLibraryBody extends StatelessWidget {
+  const OfflineLibraryBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>().catalog;
     final downloads = context.watch<DownloadsProvider>();
 
     if (catalog == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(l10n.offlineLibrary)),
-        body: _EmptyState(),
-      );
+      return _EmptyState();
     }
 
     if (catalog.chapters.isEmpty) {
@@ -31,16 +40,13 @@ class OfflineLibraryScreen extends StatelessWidget {
       // list the downloaded lectures directly.
       final saved =
           catalog.lectures.where((l) => downloads.isDownloaded(l.id)).toList();
-      return Scaffold(
-        appBar: AppBar(title: Text(l10n.offlineLibrary)),
-        body: saved.isEmpty
-            ? _EmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.only(top: 8, bottom: 32),
-                itemCount: saved.length,
-                itemBuilder: (context, i) => _LectureTile(lecture: saved[i]),
-              ),
-      );
+      return saved.isEmpty
+          ? _EmptyState()
+          : ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 32),
+              itemCount: saved.length,
+              itemBuilder: (context, i) => _LectureTile(lecture: saved[i]),
+            );
     }
 
     final chaptersWithDownloads = catalog.chapters
@@ -57,17 +63,14 @@ class OfflineLibraryScreen extends StatelessWidget {
         .where((g) => g.savedLectures.isNotEmpty)
         .toList();
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.offlineLibrary)),
-      body: chaptersWithDownloads.isEmpty
-          ? _EmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 32),
-              itemCount: chaptersWithDownloads.length,
-              itemBuilder: (context, i) =>
-                  _ChapterSection(group: chaptersWithDownloads[i]),
-            ),
-    );
+    return chaptersWithDownloads.isEmpty
+        ? _EmptyState()
+        : ListView.builder(
+            padding: const EdgeInsets.only(bottom: 32),
+            itemCount: chaptersWithDownloads.length,
+            itemBuilder: (context, i) =>
+                _ChapterSection(group: chaptersWithDownloads[i]),
+          );
   }
 }
 

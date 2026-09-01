@@ -125,6 +125,12 @@ abstract class AppLocalizations {
   /// **'Study'**
   String get tabStudyMode;
 
+  /// No description provided for @tabLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get tabLibrary;
+
   /// No description provided for @tabSettings.
   ///
   /// In en, this message translates to:

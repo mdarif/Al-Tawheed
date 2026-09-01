@@ -27,6 +27,7 @@ import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
+import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
@@ -40,6 +41,11 @@ import 'package:myapp/theme/app_theme.dart';
 // not the shell's nested navigator. Without this, context.push('/player')
 // from within ShellRoute throws because /player is not a shell-level route.
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _lecturesNavigatorKey = GlobalKey<NavigatorState>();
+final _bookNavigatorKey = GlobalKey<NavigatorState>();
+final _studyNavigatorKey = GlobalKey<NavigatorState>();
+final _libraryNavigatorKey = GlobalKey<NavigatorState>();
+final _settingsNavigatorKey = GlobalKey<NavigatorState>();
 
 // Router is a top-level singleton — created once, never recreated on rebuild.
 final _router = GoRouter(
@@ -58,33 +64,65 @@ final _router = GoRouter(
       builder: (context, state) => const WelcomeScreen(),
     ),
 
-    // Shell: bottom navigation wraps these tabs (series-aware: Book and Study
-    // appear only for series that have them).
-    ShellRoute(
-      builder: (context, state, child) => ShellScreen(child: child),
-      routes: [
-        GoRoute(
-          path: '/lectures',
-          builder: (context, state) => const LectureListScreen(),
+    // Indexed branches preserve each destination's scroll and nested state.
+    // Their order mirrors SeriesNavigationPolicy for the shipped capabilities.
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          ShellScreen(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          navigatorKey: _lecturesNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/lectures',
+              builder: (context, state) => const LectureListScreen(),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/book',
-          redirect: (context, state) =>
-              RouteGuards.book(context.read<SeriesProvider>().currentSeries),
-          builder: (context, state) => const BookChapterListScreen(),
+        StatefulShellBranch(
+          navigatorKey: _bookNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/book',
+              redirect: (context, state) => RouteGuards.book(
+                context.read<SeriesProvider>().currentSeries,
+              ),
+              builder: (context, state) => const BookChapterListScreen(),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/study',
-          redirect: (context, state) =>
-              RouteGuards.study(context.read<SeriesProvider>().currentSeries),
-          builder: (context, state) => const StudyScreen(),
+        StatefulShellBranch(
+          navigatorKey: _studyNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/study',
+              redirect: (context, state) => RouteGuards.study(
+                context.read<SeriesProvider>().currentSeries,
+              ),
+              builder: (context, state) => const StudyScreen(),
+            ),
+          ],
         ),
-        // Settings is a bottom-nav tab (always last), so it lives inside the
-        // shell and keeps the nav bar visible. Bookmarks and About remain
-        // full-screen pushes from the ⋯ overflow menu below.
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
+        StatefulShellBranch(
+          navigatorKey: _libraryNavigatorKey,
+          routes: [
+            GoRoute(
+              path: '/library',
+              builder: (context, state) => const LibraryScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          navigatorKey: _settingsNavigatorKey,
+          routes: [
+            // Settings is a bottom-nav tab (always last), so it lives inside the
+            // shell and keeps the nav bar visible. Bookmarks and About remain
+            // full-screen pushes from the ⋯ overflow menu below.
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsScreen(),
+            ),
+          ],
         ),
       ],
     ),

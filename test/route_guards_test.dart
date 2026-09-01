@@ -108,11 +108,20 @@ void main() {
         SeriesNavigationTab.lectures,
         SeriesNavigationTab.book,
         SeriesNavigationTab.study,
+        SeriesNavigationTab.library,
         SeriesNavigationTab.settings,
       ]);
       expect(SeriesNavigationPolicy.tabsFor(arabic), [
         SeriesNavigationTab.lectures,
         SeriesNavigationTab.book,
+        SeriesNavigationTab.library,
+        SeriesNavigationTab.settings,
+      ]);
+
+      final minimal = _series(hasBook: false, hasStudyMode: false);
+      expect(SeriesNavigationPolicy.tabsFor(minimal), [
+        SeriesNavigationTab.lectures,
+        SeriesNavigationTab.library,
         SeriesNavigationTab.settings,
       ]);
     });

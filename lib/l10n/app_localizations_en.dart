@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabStudyMode => 'Study';
 
   @override
+  String get tabLibrary => 'Library';
+
+  @override
   String get tabSettings => 'Settings';
 
   @override

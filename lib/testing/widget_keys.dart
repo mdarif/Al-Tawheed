@@ -18,6 +18,7 @@ abstract final class WidgetKeys {
   static const shellLecturesTab = ValueKey<String>('shell.tab.lectures');
   static const shellBookTab = ValueKey<String>('shell.tab.book');
   static const shellStudyTab = ValueKey<String>('shell.tab.study');
+  static const shellLibraryTab = ValueKey<String>('shell.tab.library');
   static const shellSettingsTab = ValueKey<String>('shell.tab.settings');
 
   static const offlineStatusBanner = ValueKey<String>(

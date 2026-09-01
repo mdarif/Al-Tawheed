@@ -14,11 +14,14 @@ import 'package:myapp/widgets/offline_status_banner.dart';
 const _kChromeAnim = Duration(milliseconds: 220);
 
 extension on SeriesNavigationTab {
-  String get path => switch (this) {
-        SeriesNavigationTab.lectures => '/lectures',
-        SeriesNavigationTab.book => '/book',
-        SeriesNavigationTab.study => '/study',
-        SeriesNavigationTab.settings => '/settings',
+  /// StatefulShellRoute branch indexes are fixed at router construction, while
+  /// the visible destinations vary by edition capability.
+  int get branchIndex => switch (this) {
+        SeriesNavigationTab.lectures => 0,
+        SeriesNavigationTab.book => 1,
+        SeriesNavigationTab.study => 2,
+        SeriesNavigationTab.library => 3,
+        SeriesNavigationTab.settings => 4,
       };
 
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
@@ -40,6 +43,12 @@ extension on SeriesNavigationTab {
             selectedIcon: const Icon(Icons.school_rounded),
             label: l10n.tabStudyMode,
           ),
+        SeriesNavigationTab.library => NavigationDestination(
+            key: WidgetKeys.shellLibraryTab,
+            icon: const Icon(Icons.collections_bookmark_outlined),
+            selectedIcon: const Icon(Icons.collections_bookmark_rounded),
+            label: l10n.tabLibrary,
+          ),
         SeriesNavigationTab.settings => NavigationDestination(
             key: WidgetKeys.shellSettingsTab,
             icon: const Icon(Icons.settings_outlined),
@@ -50,8 +59,8 @@ extension on SeriesNavigationTab {
 }
 
 class ShellScreen extends StatelessWidget {
-  final Widget child;
-  const ShellScreen({super.key, required this.child});
+  final StatefulNavigationShell navigationShell;
+  const ShellScreen({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context) {
@@ -60,38 +69,54 @@ class ShellScreen extends StatelessWidget {
     final tabs = SeriesNavigationPolicy.tabsFor(series);
     final l10n = context.l10n;
 
-    return AllLecturesCompleteListener(
-      child: Scaffold(
-        body: Column(
-          children: [
-            const OfflineStatusBanner(),
-            Expanded(child: child),
-          ],
-        ),
-        extendBody: true,
-        bottomNavigationBar: AnimatedSlide(
-          offset: chromeVisible ? Offset.zero : const Offset(0, 1),
-          duration: _kChromeAnim,
-          curve: Curves.easeOut,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    return PopScope<void>(
+      // Each branch navigator gets first chance to pop its own stack. Once a
+      // branch is at its root, Android Back returns to Lectures before it can
+      // leave the app.
+      canPop: navigationShell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && navigationShell.currentIndex != 0) {
+          navigationShell.goBranch(0);
+        }
+      },
+      child: AllLecturesCompleteListener(
+        child: Scaffold(
+          body: Column(
             children: [
-              const MiniPlayer(),
-              NavigationBar(
-                selectedIndex: _selectedIndex(context, tabs),
-                onDestinationSelected: (i) => context.go(tabs[i].path),
-                destinations: [for (final tab in tabs) tab.destination(l10n)],
-              ),
+              const OfflineStatusBanner(),
+              Expanded(child: navigationShell),
             ],
+          ),
+          extendBody: true,
+          bottomNavigationBar: AnimatedSlide(
+            offset: chromeVisible ? Offset.zero : const Offset(0, 1),
+            duration: _kChromeAnim,
+            curve: Curves.easeOut,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const MiniPlayer(),
+                NavigationBar(
+                  selectedIndex: _selectedIndex(tabs),
+                  onDestinationSelected: (i) => navigationShell.goBranch(
+                    tabs[i].branchIndex,
+                    initialLocation:
+                        tabs[i].branchIndex == navigationShell.currentIndex,
+                  ),
+                  destinations: [for (final tab in tabs) tab.destination(l10n)],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  int _selectedIndex(BuildContext context, List<SeriesNavigationTab> tabs) {
-    final path = GoRouterState.of(context).uri.path;
-    final index = tabs.indexWhere((tab) => path.startsWith(tab.path));
+  int _selectedIndex(List<SeriesNavigationTab> tabs) {
+    final index = tabs.indexWhere(
+      (tab) => tab.branchIndex == navigationShell.currentIndex,
+    );
     return index == -1 ? 0 : index;
   }
 }

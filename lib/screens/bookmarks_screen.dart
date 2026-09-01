@@ -30,26 +30,45 @@ class BookmarksScreen extends StatelessWidget {
           lectures.isEmpty ? l10n.saved : l10n.savedCount(lectures.length),
         ),
       ),
-      body: lectures.isEmpty
-          ? _EmptyState(isLoading: catalog.status == CatalogStatus.loading)
-          : ListView.builder(
-              itemCount: lectures.length,
-              itemBuilder: (context, i) => Column(
-                children: [
-                  LectureTile(
-                    lecture: lectures[i],
-                    onTap: () => _play(context, lectures[i], catalog),
-                  ),
-                  Divider(
-                    height: 1,
-                    indent: 70,
-                    endIndent: 16,
-                    color: context.dividerColor,
-                  ),
-                ],
-              ),
-            ),
+      body: const BookmarksBody(),
     );
+  }
+}
+
+/// The Saved collection without route chrome, for embedding in Library.
+class BookmarksBody extends StatelessWidget {
+  const BookmarksBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = context.watch<ProgressProvider>();
+    final catalog = context.watch<CatalogProvider>();
+
+    final lectures = catalog.status == CatalogStatus.loaded
+        ? catalog.catalog!.lectures
+            .where((l) => progress.isBookmarked(l.id))
+            .toList()
+        : <Lecture>[];
+
+    return lectures.isEmpty
+        ? _EmptyState(isLoading: catalog.status == CatalogStatus.loading)
+        : ListView.builder(
+            itemCount: lectures.length,
+            itemBuilder: (context, i) => Column(
+              children: [
+                LectureTile(
+                  lecture: lectures[i],
+                  onTap: () => _play(context, lectures[i], catalog),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 70,
+                  endIndent: 16,
+                  color: context.dividerColor,
+                ),
+              ],
+            ),
+          );
   }
 
   void _play(BuildContext context, Lecture lecture, CatalogProvider catalog) {

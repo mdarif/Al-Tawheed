@@ -21,6 +21,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tabStudyMode => 'الدراسة';
 
   @override
+  String get tabLibrary => 'المكتبة';
+
+  @override
   String get tabSettings => 'الإعدادات';
 
   @override
