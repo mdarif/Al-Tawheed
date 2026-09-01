@@ -137,7 +137,7 @@ void main() {
     );
   });
 
-  group('SettingsScreen — content language selector', () {
+  group('SettingsScreen — content edition selector', () {
     testWidgets('lists each edition as a language endonym with the teacher',
         (tester) async {
       final series = SeriesProvider()
@@ -171,7 +171,8 @@ void main() {
       );
     });
 
-    testWidgets('switching editions confirms with a language-worded dialog',
+    testWidgets(
+        'switching editions confirms with a content-edition-worded dialog',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
@@ -186,8 +187,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Dialog is worded around language, not "series".
-      expect(find.text('Change language?'), findsOneWidget);
+      // Dialog is worded around content edition, not "series" or "language" —
+      // switching also changes teacher, catalogue, tabs, and scoped progress.
+      expect(find.text('Change content edition?'), findsOneWidget);
       expect(find.textContaining('العربية'), findsWidgets);
     });
   });
@@ -252,10 +254,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Two distinct section headers: the content edition switcher ("Series")
-      // and the app/chrome language picker ("App language") — proving they
-      // read as separate, independent axes without shouting in all caps.
-      expect(find.text('Series'), findsOneWidget);
+      // Two distinct section headers: the content edition switcher ("Content
+      // edition") and the app/chrome language picker ("App language") —
+      // proving they read as separate, independent axes without shouting in
+      // all caps.
+      expect(find.text('Content edition'), findsOneWidget);
       expect(find.text('App language'), findsOneWidget);
       expect(find.text('LANGUAGE'), findsNothing);
       expect(find.text('APP LANGUAGE'), findsNothing);

@@ -130,7 +130,7 @@
   "settingsLanguage": "اللغة",
   "settingsAppLanguage": "لغة التطبيق",
   "settingsAppearance": "المظهر",
-  "settingsSeries": "السلسلة",
+  "settingsSeries": "إصدار المحتوى",
   "settingsDarkMode": "الوضع الداكن",
   "settingsLightMode": "الوضع الفاتح",
   "settingsThemeSystem": "اتبع النظام",
@@ -206,8 +206,8 @@
   },
   "deleteAll": "حذف الكل",
 
-  "changeSeriesConfirmTitle": "تغيير اللغة؟",
-  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل لغة بشكل منفصل — ويمكنك العودة في أيّ وقت.",
+  "changeSeriesConfirmTitle": "تغيير إصدار المحتوى؟",
+  "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". سيتوقف التشغيل، ويُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل إصدار بشكل منفصل — ويمكنك العودة في أيّ وقت.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },

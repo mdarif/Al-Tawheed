@@ -91,7 +91,7 @@
   "settingsLanguage": "Zabaan",
   "settingsAppLanguage": "App ki Zabaan",
   "settingsAppearance": "Zahiri shakl",
-  "settingsSeries": "Silsila",
+  "settingsSeries": "Content Edition",
   "settingsDarkMode": "Dark mode",
   "settingsLightMode": "Light mode",
   "settingsThemeSystem": "System ke mutabiq",
@@ -133,8 +133,8 @@
   "clearAllDownloadsMessage": "{count} dars ({size}) is device se hata diye jayenge.",
   "deleteAll": "Sab hata dein",
 
-  "changeSeriesConfirmTitle": "Zabaan tabdeel karein?",
-  "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se aap ke dars ki zabaan tabdeel ho jayegi. Aap ki progress, downloads aur bookmarks har zabaan ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",
+  "changeSeriesConfirmTitle": "Edition tabdeel karein?",
+  "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se chal rahi audio ruk jayegi. Aap ki progress, downloads aur bookmarks har edition ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",
   "changeSeriesConfirm": "Tabdeel karein",
 
   "startListening": "Sunna shuru karein",

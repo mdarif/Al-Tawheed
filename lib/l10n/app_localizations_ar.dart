@@ -276,7 +276,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAppearance => 'المظهر';
 
   @override
-  String get settingsSeries => 'السلسلة';
+  String get settingsSeries => 'إصدار المحتوى';
 
   @override
   String get settingsDarkMode => 'الوضع الداكن';
@@ -425,11 +425,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteAll => 'حذف الكل';
 
   @override
-  String get changeSeriesConfirmTitle => 'تغيير اللغة؟';
+  String get changeSeriesConfirmTitle => 'تغيير إصدار المحتوى؟';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'ستنتقل إلى \"$seriesName\". يُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل لغة بشكل منفصل — ويمكنك العودة في أيّ وقت.';
+    return 'ستنتقل إلى \"$seriesName\". سيتوقف التشغيل، ويُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل إصدار بشكل منفصل — ويمكنك العودة في أيّ وقت.';
   }
 
   @override

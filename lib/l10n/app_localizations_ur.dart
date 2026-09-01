@@ -281,7 +281,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAppearance => 'ظاہری شکل';
 
   @override
-  String get settingsSeries => 'سلسلہ';
+  String get settingsSeries => 'مواد کا ایڈیشن';
 
   @override
   String get settingsDarkMode => 'ڈارک موڈ';
@@ -417,11 +417,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get deleteAll => 'سب حذف کریں';
 
   @override
-  String get changeSeriesConfirmTitle => 'زبان تبدیل کریں؟';
+  String get changeSeriesConfirmTitle => 'ایڈیشن تبدیل کریں؟';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return '\"$seriesName\" پر سوئچ کرنے سے آپ کے دروس کی زبان تبدیل ہو جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر زبان کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔';
+    return '\"$seriesName\" پر سوئچ کرنے سے چلائی جا رہی آڈیو رک جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر ایڈیشن کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔';
   }
 
   @override
@@ -884,7 +884,7 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get settingsAppearance => 'Zahiri shakl';
 
   @override
-  String get settingsSeries => 'Silsila';
+  String get settingsSeries => 'Content Edition';
 
   @override
   String get settingsDarkMode => 'Dark mode';
@@ -1022,11 +1022,11 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get deleteAll => 'Sab hata dein';
 
   @override
-  String get changeSeriesConfirmTitle => 'Zabaan tabdeel karein?';
+  String get changeSeriesConfirmTitle => 'Edition tabdeel karein?';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return '\"$seriesName\" par switch karne se aap ke dars ki zabaan tabdeel ho jayegi. Aap ki progress, downloads aur bookmarks har zabaan ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.';
+    return '\"$seriesName\" par switch karne se chal rahi audio ruk jayegi. Aap ki progress, downloads aur bookmarks har edition ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.';
   }
 
   @override

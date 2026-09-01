@@ -145,7 +145,7 @@
   "settingsLanguage": "Language",
   "settingsAppLanguage": "App language",
   "settingsAppearance": "Appearance",
-  "settingsSeries": "Series",
+  "settingsSeries": "Content edition",
   "settingsDarkMode": "Dark mode",
   "settingsLightMode": "Light mode",
   "settingsThemeSystem": "Follow System",
@@ -223,8 +223,8 @@
   },
   "deleteAll": "Delete all",
 
-  "changeSeriesConfirmTitle": "Change language?",
-  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.",
+  "changeSeriesConfirmTitle": "Change content edition?",
+  "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Playback will stop, and your progress, downloads, and bookmarks are kept separately for each edition — you can switch back anytime.",
   "@changeSeriesConfirmMessage": {
     "placeholders": { "seriesName": { "type": "String" } }
   },

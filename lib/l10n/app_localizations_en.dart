@@ -279,7 +279,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearance => 'Appearance';
 
   @override
-  String get settingsSeries => 'Series';
+  String get settingsSeries => 'Content edition';
 
   @override
   String get settingsDarkMode => 'Dark mode';
@@ -429,11 +429,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAll => 'Delete all';
 
   @override
-  String get changeSeriesConfirmTitle => 'Change language?';
+  String get changeSeriesConfirmTitle => 'Change content edition?';
 
   @override
   String changeSeriesConfirmMessage(String seriesName) {
-    return 'You are switching to \"$seriesName\". Your progress, downloads, and bookmarks are kept separately for each language — you can switch back anytime.';
+    return 'You are switching to \"$seriesName\". Playback will stop, and your progress, downloads, and bookmarks are kept separately for each edition — you can switch back anytime.';
   }
 
   @override

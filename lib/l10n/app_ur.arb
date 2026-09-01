@@ -93,7 +93,7 @@
   "settingsLanguage": "زبان",
   "settingsAppLanguage": "ایپ کی زبان",
   "settingsAppearance": "ظاہری شکل",
-  "settingsSeries": "سلسلہ",
+  "settingsSeries": "مواد کا ایڈیشن",
   "settingsDarkMode": "ڈارک موڈ",
   "settingsLightMode": "لائٹ موڈ",
   "settingsThemeSystem": "سسٹم کے مطابق",
@@ -135,8 +135,8 @@
   "clearAllDownloadsMessage": "{count} دروس ({size}) اس ڈیوائس سے حذف کر دیے جائیں گے۔",
   "deleteAll": "سب حذف کریں",
 
-  "changeSeriesConfirmTitle": "زبان تبدیل کریں؟",
-  "changeSeriesConfirmMessage": "\"{seriesName}\" پر سوئچ کرنے سے آپ کے دروس کی زبان تبدیل ہو جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر زبان کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔",
+  "changeSeriesConfirmTitle": "ایڈیشن تبدیل کریں؟",
+  "changeSeriesConfirmMessage": "\"{seriesName}\" پر سوئچ کرنے سے چلائی جا رہی آڈیو رک جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر ایڈیشن کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔",
   "changeSeriesConfirm": "تبدیل کریں",
 
   "startListening": "سننا شروع کریں",
