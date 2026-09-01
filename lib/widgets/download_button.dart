@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
@@ -5,6 +7,7 @@ import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/download_notification_permission.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
@@ -112,6 +115,7 @@ class DownloadButton extends StatelessWidget {
   void _startDownload(BuildContext context) {
     final downloads = context.read<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
+    unawaited(maybeRequestDownloadNotificationPermission(context));
     downloads.downloadNowOrQueue(
       lecture: lecture,
       isOnline: connectivity.isOnline,

@@ -228,6 +228,16 @@ class PreferencesService {
   Future<void> saveHasCompletedOnboarding() =>
       _p.setBool('has_completed_onboarding', true);
 
+  // ── Notification permission rationale ───────────────────────────────────
+  // Asked once, on the first download action — not at startup. See
+  // DownloadNotificationService and BLK-07.
+
+  bool get hasAskedDownloadNotificationPermission =>
+      _p.getBool('has_asked_download_notification_permission') ?? false;
+
+  Future<void> saveHasAskedDownloadNotificationPermission() =>
+      _p.setBool('has_asked_download_notification_permission', true);
+
   // Per-series set of IDs whose welcome screen has been shown. Used to gate
   // the welcome screen per-series instead of using the old single global flag.
   Set<String> get seenWelcomeSeriesIds =>

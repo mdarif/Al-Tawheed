@@ -23,6 +23,7 @@ import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/settings_screen.dart';
+import 'package:myapp/services/download_notification_service.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -501,6 +502,64 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(WidgetKeys.settingsDownloadOnWifiOnly), findsNothing);
+    });
+
+    group('notification permission recovery', () {
+      tearDown(() {
+        DownloadNotificationService.instance.areNotificationsEnabledForTest =
+            null;
+      });
+
+      testWidgets(
+          'stays hidden if notifications were never asked about, even when '
+          'off', (tester) async {
+        DownloadNotificationService.instance.areNotificationsEnabledForTest =
+            false;
+        final series = SeriesProvider()
+          ..setAvailableSeriesForTest([_seriesUrdu])
+          ..setCurrentSeriesForTest(_seriesUrdu);
+
+        await tester.pumpWidget(_wrap(series: series, downloads: true));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Download notifications'), findsNothing);
+      });
+
+      testWidgets('shows recovery once asked and currently disabled',
+          (tester) async {
+        await PreferencesService.instance
+            .saveHasAskedDownloadNotificationPermission();
+        DownloadNotificationService.instance.areNotificationsEnabledForTest =
+            false;
+        final series = SeriesProvider()
+          ..setAvailableSeriesForTest([_seriesUrdu])
+          ..setCurrentSeriesForTest(_seriesUrdu);
+
+        await tester.pumpWidget(_wrap(series: series, downloads: true));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Download notifications'), findsOneWidget);
+        expect(
+          find.textContaining("Turned off"),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('stays hidden once asked when notifications are enabled',
+          (tester) async {
+        await PreferencesService.instance
+            .saveHasAskedDownloadNotificationPermission();
+        DownloadNotificationService.instance.areNotificationsEnabledForTest =
+            true;
+        final series = SeriesProvider()
+          ..setAvailableSeriesForTest([_seriesUrdu])
+          ..setCurrentSeriesForTest(_seriesUrdu);
+
+        await tester.pumpWidget(_wrap(series: series, downloads: true));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Download notifications'), findsNothing);
+      });
     });
   });
 

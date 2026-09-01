@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -29,27 +30,45 @@ class OfflineStatusBanner extends StatelessWidget {
       color: const Color(0xFFE65100).withValues(
         alpha: context.isDarkTheme ? 0.22 : 0.12,
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.wifi_off_rounded,
-                size: 14,
-                color: const Color(0xFFE65100),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                l10n.offlineBadge,
-                style: context.textTheme.labelSmall?.copyWith(
+      child: InkWell(
+        onTap: () => context.go('/library'),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 14,
                   color: const Color(0xFFE65100),
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  l10n.offlineBadge,
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFFE65100),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.offlineBadgeViewLibrary,
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFFE65100),
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 14,
+                  color: const Color(0xFFE65100),
+                ),
+              ],
+            ),
           ),
         ),
       ),

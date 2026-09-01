@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
@@ -9,6 +11,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/download_notification_permission.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
@@ -248,6 +251,9 @@ class _ChapterSection extends StatelessWidget {
                   label: l10n.downloadRemaining,
                   icon: Icons.download_rounded,
                   onTap: () {
+                    unawaited(
+                      maybeRequestDownloadNotificationPermission(context),
+                    );
                     downloads.downloadChapterNowOrQueue(
                       chapterId: group.chapter.id,
                       lectures: group.allLectures,
@@ -407,6 +413,9 @@ class _LectureTile extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 20),
                   onPressed: () {
                     final connectivity = context.read<ConnectivityProvider>();
+                    unawaited(
+                      maybeRequestDownloadNotificationPermission(context),
+                    );
                     context.read<DownloadsProvider>().downloadNowOrQueue(
                           lecture: lecture,
                           isOnline: connectivity.isOnline,

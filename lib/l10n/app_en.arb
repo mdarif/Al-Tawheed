@@ -223,6 +223,12 @@
   },
   "deleteAll": "Delete all",
 
+  "downloadNotificationRationaleTitle": "Get notified about your downloads?",
+  "downloadNotificationRationaleMessage": "We'll let you know when a download finishes or fails — you can turn this off anytime in your device settings.",
+  "downloadNotificationRationaleAllow": "Allow",
+  "notificationsSettingsRow": "Download notifications",
+  "notificationsDisabledHint": "Turned off — enable in your device's Settings app to see download progress and completion.",
+
   "changeSeriesConfirmTitle": "Change content edition?",
   "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Playback will stop, and your progress, downloads, and bookmarks are kept separately for each edition — you can switch back anytime.",
   "@changeSeriesConfirmMessage": {
@@ -280,6 +286,7 @@
   "offlineSourceStreaming": "Streaming",
   "offlineNotAvailableOffline": "Not available offline",
   "offlineBadge": "Offline",
+  "offlineBadgeViewLibrary": "View Library",
   "retryDownload": "Retry download",
   "offlineNoConnection": "No connection",
   "offlineConnectionLost": "Connection lost",

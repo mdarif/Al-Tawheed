@@ -429,6 +429,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAll => 'Delete all';
 
   @override
+  String get downloadNotificationRationaleTitle =>
+      'Get notified about your downloads?';
+
+  @override
+  String get downloadNotificationRationaleMessage =>
+      'We\'ll let you know when a download finishes or fails — you can turn this off anytime in your device settings.';
+
+  @override
+  String get downloadNotificationRationaleAllow => 'Allow';
+
+  @override
+  String get notificationsSettingsRow => 'Download notifications';
+
+  @override
+  String get notificationsDisabledHint =>
+      'Turned off — enable in your device\'s Settings app to see download progress and completion.';
+
+  @override
   String get changeSeriesConfirmTitle => 'Change content edition?';
 
   @override
@@ -513,6 +531,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineBadge => 'Offline';
+
+  @override
+  String get offlineBadgeViewLibrary => 'View Library';
 
   @override
   String get retryDownload => 'Retry download';

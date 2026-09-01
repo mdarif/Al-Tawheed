@@ -425,6 +425,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteAll => 'حذف الكل';
 
   @override
+  String get downloadNotificationRationaleTitle => 'تفعيل إشعارات التنزيلات؟';
+
+  @override
+  String get downloadNotificationRationaleMessage =>
+      'سنُعلمك عند اكتمال التنزيل أو فشله — يمكنك إيقاف ذلك في أي وقت من إعدادات جهازك.';
+
+  @override
+  String get downloadNotificationRationaleAllow => 'السماح';
+
+  @override
+  String get notificationsSettingsRow => 'إشعارات التنزيل';
+
+  @override
+  String get notificationsDisabledHint =>
+      'متوقفة — فعّلها من تطبيق الإعدادات في جهازك لرؤية تقدّم التنزيل واكتماله.';
+
+  @override
   String get changeSeriesConfirmTitle => 'تغيير إصدار المحتوى؟';
 
   @override
@@ -509,6 +526,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get offlineBadge => 'بلا إنترنت';
+
+  @override
+  String get offlineBadgeViewLibrary => 'عرض المكتبة';
 
   @override
   String get retryDownload => 'إعادة التنزيل';

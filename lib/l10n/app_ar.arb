@@ -206,6 +206,12 @@
   },
   "deleteAll": "حذف الكل",
 
+  "downloadNotificationRationaleTitle": "تفعيل إشعارات التنزيلات؟",
+  "downloadNotificationRationaleMessage": "سنُعلمك عند اكتمال التنزيل أو فشله — يمكنك إيقاف ذلك في أي وقت من إعدادات جهازك.",
+  "downloadNotificationRationaleAllow": "السماح",
+  "notificationsSettingsRow": "إشعارات التنزيل",
+  "notificationsDisabledHint": "متوقفة — فعّلها من تطبيق الإعدادات في جهازك لرؤية تقدّم التنزيل واكتماله.",
+
   "changeSeriesConfirmTitle": "تغيير إصدار المحتوى؟",
   "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". سيتوقف التشغيل، ويُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل إصدار بشكل منفصل — ويمكنك العودة في أيّ وقت.",
   "@changeSeriesConfirmMessage": {
@@ -261,6 +267,7 @@
   "offlineSourceStreaming": "يُبثّ مباشرةً",
   "offlineNotAvailableOffline": "غير متاح بلا إنترنت",
   "offlineBadge": "بلا إنترنت",
+  "offlineBadgeViewLibrary": "عرض المكتبة",
   "retryDownload": "إعادة التنزيل",
   "offlineNoConnection": "لا يوجد اتصال",
   "offlineConnectionLost": "انقطع الاتصال",

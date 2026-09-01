@@ -135,6 +135,12 @@
   "clearAllDownloadsMessage": "{count} دروس ({size}) اس ڈیوائس سے حذف کر دیے جائیں گے۔",
   "deleteAll": "سب حذف کریں",
 
+  "downloadNotificationRationaleTitle": "اپنے ڈاؤن لوڈز کے بارے میں مطلع کیا جائے؟",
+  "downloadNotificationRationaleMessage": "جب کوئی ڈاؤن لوڈ مکمل ہو یا ناکام ہو جائے تو ہم آپ کو بتائیں گے — آپ اسے کسی بھی وقت اپنی ڈیوائس کی سیٹنگز میں بند کر سکتے ہیں۔",
+  "downloadNotificationRationaleAllow": "اجازت دیں",
+  "notificationsSettingsRow": "ڈاؤن لوڈ اطلاعات",
+  "notificationsDisabledHint": "بند ہے — ڈاؤن لوڈ کی پیش رفت اور تکمیل دیکھنے کے لیے اپنی ڈیوائس کی سیٹنگز ایپ میں فعال کریں۔",
+
   "changeSeriesConfirmTitle": "ایڈیشن تبدیل کریں؟",
   "changeSeriesConfirmMessage": "\"{seriesName}\" پر سوئچ کرنے سے چلائی جا رہی آڈیو رک جائے گی۔ آپ کی پیش رفت، ڈاؤن لوڈز اور بک مارکس ہر ایڈیشن کے لیے الگ الگ محفوظ رہتے ہیں اور آپ کسی بھی وقت واپس جا سکتے ہیں۔",
   "changeSeriesConfirm": "تبدیل کریں",
@@ -165,6 +171,7 @@
   "offlineSourceStreaming": "اسٹریمنگ",
   "offlineNotAvailableOffline": "آف لائن دستیاب نہیں",
   "offlineBadge": "آف لائن",
+  "offlineBadgeViewLibrary": "لائبریری دیکھیں",
   "retryDownload": "دوبارہ ڈاؤن لوڈ کریں",
   "offlineNoConnection": "کوئی کنکشن نہیں",
   "offlineConnectionLost": "کنکشن ٹوٹ گیا",

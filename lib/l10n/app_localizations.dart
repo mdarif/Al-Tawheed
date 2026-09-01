@@ -821,6 +821,36 @@ abstract class AppLocalizations {
   /// **'Delete all'**
   String get deleteAll;
 
+  /// No description provided for @downloadNotificationRationaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified about your downloads?'**
+  String get downloadNotificationRationaleTitle;
+
+  /// No description provided for @downloadNotificationRationaleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll let you know when a download finishes or fails — you can turn this off anytime in your device settings.'**
+  String get downloadNotificationRationaleMessage;
+
+  /// No description provided for @downloadNotificationRationaleAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get downloadNotificationRationaleAllow;
+
+  /// No description provided for @notificationsSettingsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Download notifications'**
+  String get notificationsSettingsRow;
+
+  /// No description provided for @notificationsDisabledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned off — enable in your device\'s Settings app to see download progress and completion.'**
+  String get notificationsDisabledHint;
+
   /// No description provided for @changeSeriesConfirmTitle.
   ///
   /// In en, this message translates to:
@@ -958,6 +988,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline'**
   String get offlineBadge;
+
+  /// No description provided for @offlineBadgeViewLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'View Library'**
+  String get offlineBadgeViewLibrary;
 
   /// No description provided for @retryDownload.
   ///

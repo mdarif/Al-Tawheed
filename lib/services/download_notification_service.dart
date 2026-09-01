@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class DownloadNotificationService {
@@ -13,6 +14,16 @@ class DownloadNotificationService {
   static const _channelId = 'downloads';
   static const _channelName = 'Downloads';
 
+  /// Overrides [areNotificationsEnabled]'s result in tests, where the real
+  /// platform is never Android. `null` (the default) means "use the real
+  /// platform check".
+  @visibleForTesting
+  bool? areNotificationsEnabledForTest;
+
+  /// Sets up the plugin and notification channel only — does **not** ask for
+  /// permission. The permission prompt is contextual (first download action,
+  /// with a rationale), not a startup interruption — see [requestPermission]
+  /// and BLK-07.
   Future<void> init() async {
     if (!Platform.isAndroid) return;
 
@@ -31,11 +42,28 @@ class DownloadNotificationService {
         showBadge: false,
       ),
     );
-    // Don't await: on Android 13+ this shows a native system dialog whose
-    // Future only resolves once the user responds — blocking on it here would
-    // delay runApp() until the user dismisses a dialog they haven't even seen
-    // the app behind yet.
-    unawaited(android?.requestNotificationsPermission());
+  }
+
+  /// Shows the native permission dialog (Android 13+; a no-op granted-by-
+  /// default on older Android). Returns `null` off Android, where there is
+  /// nothing to ask.
+  Future<bool?> requestPermission() async {
+    if (!Platform.isAndroid) return null;
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    return android?.requestNotificationsPermission();
+  }
+
+  /// Current grant state, for the Settings recovery row — checkable anytime,
+  /// unlike [requestPermission] which shows a dialog. `null` off Android.
+  Future<bool?> areNotificationsEnabled() async {
+    if (areNotificationsEnabledForTest != null) {
+      return areNotificationsEnabledForTest;
+    }
+    if (!Platform.isAndroid) return null;
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    return android?.areNotificationsEnabled();
   }
 
   int _idFor(String lectureId) => lectureId.hashCode & 0x7FFFFFFF;

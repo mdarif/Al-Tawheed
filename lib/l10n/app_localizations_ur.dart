@@ -417,6 +417,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get deleteAll => 'سب حذف کریں';
 
   @override
+  String get downloadNotificationRationaleTitle =>
+      'اپنے ڈاؤن لوڈز کے بارے میں مطلع کیا جائے؟';
+
+  @override
+  String get downloadNotificationRationaleMessage =>
+      'جب کوئی ڈاؤن لوڈ مکمل ہو یا ناکام ہو جائے تو ہم آپ کو بتائیں گے — آپ اسے کسی بھی وقت اپنی ڈیوائس کی سیٹنگز میں بند کر سکتے ہیں۔';
+
+  @override
+  String get downloadNotificationRationaleAllow => 'اجازت دیں';
+
+  @override
+  String get notificationsSettingsRow => 'ڈاؤن لوڈ اطلاعات';
+
+  @override
+  String get notificationsDisabledHint =>
+      'بند ہے — ڈاؤن لوڈ کی پیش رفت اور تکمیل دیکھنے کے لیے اپنی ڈیوائس کی سیٹنگز ایپ میں فعال کریں۔';
+
+  @override
   String get changeSeriesConfirmTitle => 'ایڈیشن تبدیل کریں؟';
 
   @override
@@ -496,6 +514,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get offlineBadge => 'آف لائن';
+
+  @override
+  String get offlineBadgeViewLibrary => 'لائبریری دیکھیں';
 
   @override
   String get retryDownload => 'دوبارہ ڈاؤن لوڈ کریں';
@@ -1032,6 +1053,24 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get deleteAll => 'Sab hata dein';
 
   @override
+  String get downloadNotificationRationaleTitle =>
+      'Apne downloads ke baare mein mutla kiya jaye?';
+
+  @override
+  String get downloadNotificationRationaleMessage =>
+      'Jab koi download mukammal ho ya nakaam ho jaye to hum aap ko batayenge — aap ise kabhi bhi apni device ki settings mein band kar sakte hain.';
+
+  @override
+  String get downloadNotificationRationaleAllow => 'Ijazat dein';
+
+  @override
+  String get notificationsSettingsRow => 'Download notifications';
+
+  @override
+  String get notificationsDisabledHint =>
+      'Band hai — download progress aur completion dekhne ke liye apni device ki Settings app mein enable karein.';
+
+  @override
   String get changeSeriesConfirmTitle => 'Edition tabdeel karein?';
 
   @override
@@ -1111,6 +1150,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get offlineBadge => 'Offline';
+
+  @override
+  String get offlineBadgeViewLibrary => 'Library dekhein';
 
   @override
   String get retryDownload => 'Dobara download karein';

@@ -9,6 +9,8 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/services/download_notification_service.dart';
+import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -296,6 +298,8 @@ class _DownloadsSection extends StatelessWidget {
                     context.read<DownloadsProvider>().setDownloadOnWifiOnly(v),
               ),
 
+              const _NotificationStatusRow(),
+
               // Storage summary + library link
               ListTile(
                 key: WidgetKeys.settingsOfflineLibrary,
@@ -342,6 +346,69 @@ class _DownloadsSection extends StatelessWidget {
         ),
         const SizedBox(height: 6),
       ],
+    );
+  }
+}
+
+/// Recovery for a denied/off notification permission (BLK-07) — only shown
+/// once we've actually asked (see maybeRequestDownloadNotificationPermission)
+/// and the OS currently reports notifications as disabled. Rechecks on app
+/// resume so it disappears reactively if the user re-enables it in system
+/// Settings and comes back. No in-app deep link to Settings — instructional
+/// text only, since that needs a permission-status package this app doesn't
+/// otherwise depend on.
+class _NotificationStatusRow extends StatefulWidget {
+  const _NotificationStatusRow();
+
+  @override
+  State<_NotificationStatusRow> createState() => _NotificationStatusRowState();
+}
+
+class _NotificationStatusRowState extends State<_NotificationStatusRow>
+    with WidgetsBindingObserver {
+  bool? _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    if (!PreferencesService.instance.hasAskedDownloadNotificationPermission) {
+      return;
+    }
+    final enabled =
+        await DownloadNotificationService.instance.areNotificationsEnabled();
+    if (mounted) setState(() => _enabled = enabled);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_enabled != false) return const SizedBox.shrink();
+    final l10n = context.l10n;
+    return ListTile(
+      leading: Icon(
+        Icons.notifications_off_outlined,
+        color: context.colorScheme.error,
+      ),
+      title: Text(l10n.notificationsSettingsRow),
+      subtitle: Text(
+        l10n.notificationsDisabledHint,
+        style: context.textTheme.bodySmall,
+      ),
     );
   }
 }

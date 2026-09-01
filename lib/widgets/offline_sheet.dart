@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
+import 'package:myapp/utils/download_notification_permission.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
@@ -166,6 +169,7 @@ class _OfflineSheetContent extends StatelessWidget {
     ConnectivityProvider connectivity,
   ) {
     final blocked = _wifiOnlyBlocked(context, downloads, connectivity);
+    unawaited(maybeRequestDownloadNotificationPermission(context));
     Navigator.pop(context);
     downloads.downloadNowOrQueue(
       lecture: lecture,
@@ -181,6 +185,7 @@ class _OfflineSheetContent extends StatelessWidget {
     ConnectivityProvider connectivity,
   ) {
     final blocked = _wifiOnlyBlocked(context, downloads, connectivity);
+    unawaited(maybeRequestDownloadNotificationPermission(context));
     Navigator.pop(context);
     downloads.downloadChapterNowOrQueue(
       chapterId: lecture.chapterId,
