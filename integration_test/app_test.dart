@@ -7,7 +7,8 @@ import 'package:myapp/widgets/lecture_tile.dart';
 import 'support/app_flow.dart';
 
 // Covered here (Flutter UI only):
-//   welcome, catalog, shell tabs, player, mini player, streaming strip,
+//   welcome, catalog, shell tabs (with scroll-state retention across the
+//   real production router), player, mini player, streaming strip,
 //   offline sheet, download/complete, local playback, offline library
 //   (sheet + settings), list tile download state, remove download,
 //   list-tile download start + cancel.
@@ -45,6 +46,20 @@ void main() {
       // A1) — the Home tab was retired (f793a78). Exercise Read (this
       // release's headline surface), Library, and Settings, then return to
       // Lectures.
+      //
+      // Scroll the Lectures list before switching away, so the round trip
+      // also proves StatefulShellRoute.indexedStack retains branch state on
+      // the real production router — shell_screen_test.dart proves the same
+      // thing against a substitute router, not createAppRouter.
+      final lecturesScrollable = find.byType(Scrollable).first;
+      await tester.drag(lecturesScrollable, const Offset(0, -400));
+      await AppFlow.pumpFrames(tester, count: 3);
+      final scrollBefore = tester
+          .state<ScrollableState>(lecturesScrollable)
+          .position
+          .pixels;
+      expect(scrollBefore, greaterThan(0));
+
       if (tester.any(find.byKey(WidgetKeys.shellReadTab))) {
         await AppFlow.navigateToTab(tester, AppTab.read);
       }
@@ -54,6 +69,16 @@ void main() {
       await AppFlow.scrollToSettingsDownloads(tester);
       expect(find.text('Downloads'), findsWidgets);
       await AppFlow.navigateToTab(tester, AppTab.lectures);
+      final scrollAfter = tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .pixels;
+      expect(scrollAfter, scrollBefore);
+
+      // Scroll back to the top — later steps assume the first tile is
+      // on-screen.
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 800));
+      await AppFlow.pumpFrames(tester, count: 3);
 
       // ── Player opens with transport controls ────────────────────────────
       await AppFlow.openFirstLecture(tester);

@@ -81,6 +81,17 @@ the quality truth that active docs should use.
   denied, or open system Settings; that needs a `permission_handler`-class
   dependency this app doesn't otherwise carry. Revisit if real users report
   the manual-instructions recovery is insufficient.
+- A5's local Patrol gate cannot currently produce a clean automated pass on
+  either device available on this machine: the real phone (Oppo CPH2767) is
+  Android 16/API 36, where Patrol 4.4.0 discovers `Total: 0` tests (a known
+  CLI/API-36 incompatibility, documented in `testing.md`); the only remaining
+  API 35 AVD is tablet-form (`Nexus_7` — the phone-form AVDs on this machine
+  drifted to API 36, see `gotchas.md`), and its airplane-mode native
+  automation is flaky enough that native/Arabic-suite runs land around 4-9 of
+  11 passing rather than consistently green. `integration_test/app_test.dart`
+  (the Flutter-side validation gate) is solid on both. Closing this needs
+  either a working API 35 phone AVD, a Patrol CLI update that fixes API 36
+  discovery, or a real device on API ≤35 — none available right now.
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
