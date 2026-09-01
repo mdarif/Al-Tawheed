@@ -264,6 +264,53 @@ void main() {
     });
   });
 
+  group('hasMissingSelectedSeries', () {
+    test(
+        'true once a real manifest fetch completes without the saved '
+        'edition (BLK-06)', () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await PreferencesService.instance.saveRemoteJson(
+        'series_manifest',
+        jsonEncode({'version': 1, 'series': <Map<String, dynamic>>[]}),
+      );
+
+      final provider = SeriesProvider()..load(true, definitive: true);
+      // Saved id resolves synchronously before the fetch — must not be
+      // flagged missing yet, only after loadManifest() actually runs.
+      expect(provider.hasMissingSelectedSeries, isFalse);
+
+      await provider.loadManifest();
+
+      expect(provider.hasMissingSelectedSeries, isTrue);
+      // The saved id is retained, not cleared, until the user chooses
+      // otherwise.
+      expect(provider.selectedSeriesId, 'tawheed-ar');
+      expect(provider.hasSelectedSeries, isTrue);
+    });
+
+    test('false once the saved edition is found in the fetched manifest',
+        () async {
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await _cacheManifest([_arabicSeries]);
+
+      final provider = SeriesProvider()..load(true, definitive: true);
+      await provider.loadManifest();
+
+      expect(provider.hasMissingSelectedSeries, isFalse);
+    });
+
+    test('false for a genuinely fresh install with no saved selection',
+        () async {
+      await _cacheManifest([_arabicSeries]);
+
+      final provider = SeriesProvider()..load(true, definitive: true);
+      await provider.loadManifest();
+
+      expect(provider.hasSelectedSeries, isFalse);
+      expect(provider.hasMissingSelectedSeries, isFalse);
+    });
+  });
+
   group('loadManifest — Arabic locale auto-default', () {
     Future<void> seedManifest() => PreferencesService.instance.saveRemoteJson(
           'series_manifest',

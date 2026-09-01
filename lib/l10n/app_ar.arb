@@ -218,6 +218,10 @@
   "chooseSeriesTitle": "ابدأ رحلتك مع التوحيد",
   "chooseSeriesSubtitle": "اختر سلسلة لتبدأ التعلّم",
 
+  "editionMissingTitle": "إصدارك غير متاح حاليًا",
+  "editionMissingMessage": "تعذّر علينا العثور على الإصدار الذي استخدمته آخر مرة. قد يكون هذا بسبب عدم وجود اتصال بالإنترنت أو إزالة الإصدار. اختيارك محفوظ — أعد المحاولة أو اختر إصدارًا آخر.",
+  "editionMissingChooseAnother": "اختر إصدارًا آخر",
+
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "languageRomanUrdu": "Roman Urdu",

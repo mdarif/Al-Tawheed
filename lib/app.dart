@@ -26,6 +26,8 @@ import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
+import 'package:myapp/screens/edition_missing_screen.dart';
+import 'package:myapp/widgets/missing_edition_guard.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
@@ -132,6 +134,15 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
           parentNavigatorKey: _rootNavigatorKey,
           path: '/choose-series',
           builder: (context, state) => const ChooseSeriesScreen(),
+        ),
+
+        // Shown instead of silently substituting Urdu when the saved edition
+        // isn't in the loaded manifest (BLK-06). WelcomeScreen redirects here
+        // once the series state is definitively resolved.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/edition-missing',
+          builder: (context, state) => const EditionMissingScreen(),
         ),
 
         // Bookmarks — root navigator so it opens as a full-screen pushed view
@@ -309,7 +320,10 @@ class MyApp extends StatelessWidget {
               child: Directionality(
                 textDirection:
                     langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
-                child: child ?? const SizedBox.shrink(),
+                child: MissingEditionGuard(
+                  router: _router,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             );
           },

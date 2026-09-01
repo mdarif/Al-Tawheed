@@ -857,6 +857,24 @@ abstract class AppLocalizations {
   /// **'Select a series to begin learning'**
   String get chooseSeriesSubtitle;
 
+  /// No description provided for @editionMissingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your edition isn\'t available right now'**
+  String get editionMissingTitle;
+
+  /// No description provided for @editionMissingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find the content edition you last used. This can happen if there\'s no internet connection or it was removed. Your selection is remembered — try again, or choose a different edition.'**
+  String get editionMissingMessage;
+
+  /// No description provided for @editionMissingChooseAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another edition'**
+  String get editionMissingChooseAnother;
+
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:

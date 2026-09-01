@@ -438,6 +438,16 @@ class AppLocalizationsUr extends AppLocalizations {
       'سیکھنا شروع کرنے کے لیے ایک سیریز منتخب کریں';
 
   @override
+  String get editionMissingTitle => 'آپ کا ایڈیشن فی الحال دستیاب نہیں';
+
+  @override
+  String get editionMissingMessage =>
+      'ہمیں آپ کا آخری استعمال شدہ ایڈیشن نہیں ملا۔ ایسا انٹرنیٹ کنکشن نہ ہونے یا ایڈیشن ہٹائے جانے کی وجہ سے ہو سکتا ہے۔ آپ کا انتخاب محفوظ ہے — دوبارہ کوشش کریں یا کوئی دوسرا ایڈیشن منتخب کریں۔';
+
+  @override
+  String get editionMissingChooseAnother => 'دوسرا ایڈیشن منتخب کریں';
+
+  @override
   String get languageEnglish => 'English';
 
   @override
@@ -1041,6 +1051,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String get chooseSeriesSubtitle =>
       'Seekhna shuru karne ke liye ek series muntakhib karein';
+
+  @override
+  String get editionMissingTitle => 'Aap ka edition abhi dastyaab nahin';
+
+  @override
+  String get editionMissingMessage =>
+      'Humein aap ka aakhri istemal kiya gaya edition nahin mila. Yeh internet connection na hone ya edition hataye jaane ki wajah se ho sakta hai. Aap ka intekhaab mahfooz hai — dobara koshish karein ya koi doosra edition muntakhib karein.';
+
+  @override
+  String get editionMissingChooseAnother => 'Doosra edition muntakhib karein';
 
   @override
   String get languageEnglish => 'English';

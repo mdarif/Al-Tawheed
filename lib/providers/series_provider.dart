@@ -66,6 +66,23 @@ class SeriesProvider extends ChangeNotifier {
         orElse: () => SeriesConfig.legacyUrduFallback,
       );
 
+  /// `true` once a real (network-backed, not just cache-hydrated) manifest
+  /// fetch has completed and the saved selection still isn't in it — a
+  /// remotely removed edition, or a manifest fetch that failed and fell back
+  /// to the bundled default. [currentSeries] still returns something
+  /// (Urdu, via its own fallback) so chrome-only readers don't crash, but
+  /// nothing should silently proceed to Lectures showing that substitute —
+  /// callers must check this first and offer Retry / Choose another edition
+  /// instead. The saved id itself is untouched: [selectedSeriesId].
+  bool get hasMissingSelectedSeries =>
+      _currentId != null &&
+      _manifestApplied &&
+      !_available.any((s) => s.id == _currentId);
+
+  /// The raw saved selection, independent of whether it currently resolves
+  /// to a real edition — see [hasMissingSelectedSeries].
+  String? get selectedSeriesId => _currentId;
+
   /// Synchronous onboarding decision — call at startup (like
   /// [ProgressProvider.load]) and again whenever [multiSeriesEnabled] changes.
   ///

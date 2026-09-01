@@ -235,6 +235,10 @@
   "chooseSeriesTitle": "Choose Your Series",
   "chooseSeriesSubtitle": "Select a series to begin learning",
 
+  "editionMissingTitle": "Your edition isn't available right now",
+  "editionMissingMessage": "We couldn't find the content edition you last used. This can happen if there's no internet connection or it was removed. Your selection is remembered — try again, or choose a different edition.",
+  "editionMissingChooseAnother": "Choose another edition",
+
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "languageRomanUrdu": "Roman Urdu",

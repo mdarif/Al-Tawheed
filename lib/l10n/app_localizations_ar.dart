@@ -445,6 +445,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chooseSeriesSubtitle => 'اختر سلسلة لتبدأ التعلّم';
 
   @override
+  String get editionMissingTitle => 'إصدارك غير متاح حاليًا';
+
+  @override
+  String get editionMissingMessage =>
+      'تعذّر علينا العثور على الإصدار الذي استخدمته آخر مرة. قد يكون هذا بسبب عدم وجود اتصال بالإنترنت أو إزالة الإصدار. اختيارك محفوظ — أعد المحاولة أو اختر إصدارًا آخر.';
+
+  @override
+  String get editionMissingChooseAnother => 'اختر إصدارًا آخر';
+
+  @override
   String get languageEnglish => 'English';
 
   @override

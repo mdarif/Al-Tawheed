@@ -142,6 +142,10 @@
   "chooseSeriesTitle": "Apna Safar-e-Tawheed Shuru Karein",
   "chooseSeriesSubtitle": "Seekhna shuru karne ke liye ek series muntakhib karein",
 
+  "editionMissingTitle": "Aap ka edition abhi dastyaab nahin",
+  "editionMissingMessage": "Humein aap ka aakhri istemal kiya gaya edition nahin mila. Yeh internet connection na hone ya edition hataye jaane ki wajah se ho sakta hai. Aap ka intekhaab mahfooz hai — dobara koshish karein ya koi doosra edition muntakhib karein.",
+  "editionMissingChooseAnother": "Doosra edition muntakhib karein",
+
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "languageRomanUrdu": "Roman Urdu",

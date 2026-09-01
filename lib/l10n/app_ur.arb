@@ -144,6 +144,10 @@
   "chooseSeriesTitle": "اپنا سفرِ توحید شروع کریں",
   "chooseSeriesSubtitle": "سیکھنا شروع کرنے کے لیے ایک سیریز منتخب کریں",
 
+  "editionMissingTitle": "آپ کا ایڈیشن فی الحال دستیاب نہیں",
+  "editionMissingMessage": "ہمیں آپ کا آخری استعمال شدہ ایڈیشن نہیں ملا۔ ایسا انٹرنیٹ کنکشن نہ ہونے یا ایڈیشن ہٹائے جانے کی وجہ سے ہو سکتا ہے۔ آپ کا انتخاب محفوظ ہے — دوبارہ کوشش کریں یا کوئی دوسرا ایڈیشن منتخب کریں۔",
+  "editionMissingChooseAnother": "دوسرا ایڈیشن منتخب کریں",
+
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "languageRomanUrdu": "Roman Urdu",

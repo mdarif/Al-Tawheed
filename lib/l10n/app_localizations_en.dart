@@ -449,6 +449,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseSeriesSubtitle => 'Select a series to begin learning';
 
   @override
+  String get editionMissingTitle => 'Your edition isn\'t available right now';
+
+  @override
+  String get editionMissingMessage =>
+      'We couldn\'t find the content edition you last used. This can happen if there\'s no internet connection or it was removed. Your selection is remembered — try again, or choose a different edition.';
+
+  @override
+  String get editionMissingChooseAnother => 'Choose another edition';
+
+  @override
   String get languageEnglish => 'English';
 
   @override
