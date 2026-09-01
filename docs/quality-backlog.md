@@ -56,6 +56,14 @@ the quality truth that active docs should use.
   discovery/continuity, and data-backed Book/Study/audio hand-offs.
 - Capture and review a physical-device profile-mode performance baseline;
   emulator smoke timings are not a substitute.
+- B1c (deferred): lecture/chapter search and a chapter jump affordance from
+  Lectures, per the roadmap's B1 "Search/jump" journey row. B1a (reading
+  resume, cross-edition leak fix, stale-route recovery) and B1b (Player-entry
+  consistency proof) are done; search is deliberately not scoped in detail
+  yet — it's genuinely greenfield (no existing `TextEditingController`/search
+  pattern anywhere in `lib/`) and touches Arabic/Urdu/Roman Urdu/English
+  multi-script matching, worth iterating live with screenshots rather than
+  speccing blind. Pick up as its own pass when ready.
 - Configure a local release signing store/key so the release APK gate can package
   a signed artifact; debug APK packaging is green.
 - A1's legacy-route regression test (`/player` → `/bookmarks`/`/offline-library`
