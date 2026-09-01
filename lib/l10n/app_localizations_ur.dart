@@ -74,6 +74,12 @@ class AppLocalizationsUr extends AppLocalizations {
       'یہاں سے جاری رکھنے کے لیے کوئی درس شروع کریں';
 
   @override
+  String get continueReading => 'پڑھنا جاری رکھیں';
+
+  @override
+  String get startFromTop => 'شروع سے پڑھیں';
+
+  @override
   String listenedDuration(String listened, String remaining) {
     return '$listened سنا · $remaining باقی';
   }
@@ -466,6 +472,15 @@ class AppLocalizationsUr extends AppLocalizations {
   String get editionMissingChooseAnother => 'دوسرا ایڈیشن منتخب کریں';
 
   @override
+  String get bookChapterNotFoundTitle => 'باب نہیں ملا';
+
+  @override
+  String get bookChapterNotFoundMessage => 'یہ باب کا لنک اب درست نہیں ہے۔';
+
+  @override
+  String get bookChapterNotFoundAction => 'ابواب کی فہرست پر واپس جائیں';
+
+  @override
   String get languageEnglish => 'English';
 
   @override
@@ -703,6 +718,12 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String get continueListeningEmpty =>
       'Yahan se jari rakhne ke liye koi dars shuru karein';
+
+  @override
+  String get continueReading => 'Parhna Jari Rakhein';
+
+  @override
+  String get startFromTop => 'Shuru se parhein';
 
   @override
   String listenedDuration(String listened, String remaining) {
@@ -1100,6 +1121,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get editionMissingChooseAnother => 'Doosra edition muntakhib karein';
+
+  @override
+  String get bookChapterNotFoundTitle => 'Bab nahi mila';
+
+  @override
+  String get bookChapterNotFoundMessage =>
+      'Yeh bab ka link ab durust nahi hai.';
+
+  @override
+  String get bookChapterNotFoundAction => 'Bawab ki list par wapas jayein';
 
   @override
   String get languageEnglish => 'English';

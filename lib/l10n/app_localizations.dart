@@ -227,6 +227,18 @@ abstract class AppLocalizations {
   /// **'Start a lecture to resume here'**
   String get continueListeningEmpty;
 
+  /// No description provided for @continueReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Reading'**
+  String get continueReading;
+
+  /// No description provided for @startFromTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from top'**
+  String get startFromTop;
+
   /// No description provided for @listenedDuration.
   ///
   /// In en, this message translates to:
@@ -904,6 +916,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose another edition'**
   String get editionMissingChooseAnother;
+
+  /// No description provided for @bookChapterNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter not found'**
+  String get bookChapterNotFoundTitle;
+
+  /// No description provided for @bookChapterNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This chapter link is no longer valid.'**
+  String get bookChapterNotFoundMessage;
+
+  /// No description provided for @bookChapterNotFoundAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to chapters'**
+  String get bookChapterNotFoundAction;
 
   /// No description provided for @languageEnglish.
   ///

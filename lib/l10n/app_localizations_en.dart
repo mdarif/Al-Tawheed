@@ -73,6 +73,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueListeningEmpty => 'Start a lecture to resume here';
 
   @override
+  String get continueReading => 'Continue Reading';
+
+  @override
+  String get startFromTop => 'Start from top';
+
+  @override
   String listenedDuration(String listened, String remaining) {
     return '$listened listened · $remaining left';
   }
@@ -475,6 +481,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editionMissingChooseAnother => 'Choose another edition';
+
+  @override
+  String get bookChapterNotFoundTitle => 'Chapter not found';
+
+  @override
+  String get bookChapterNotFoundMessage =>
+      'This chapter link is no longer valid.';
+
+  @override
+  String get bookChapterNotFoundAction => 'Back to chapters';
 
   @override
   String get languageEnglish => 'English';

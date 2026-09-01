@@ -19,6 +19,7 @@ import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
@@ -153,6 +154,9 @@ Widget _settingsProviders({
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
       ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
       ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider(
+        create: (ctx) => ReadingProvider(ctx.read<SeriesProvider>())..load(),
+      ),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
           ctx.read<ProgressProvider>(),

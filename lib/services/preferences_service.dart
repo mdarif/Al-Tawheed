@@ -127,9 +127,12 @@ class PreferencesService {
       _p.setDouble('book_font_size', size);
 
   // Per-chapter scroll offset (pixels), so a reader returns to where they left
-  // off. Stored as a single JSON map keyed by chapter id.
-  Map<String, double> get bookScrollOffsets {
-    final raw = _p.getString('book_scroll_offsets');
+  // off. Stored as a single JSON map keyed by chapter id, scoped by [prefix]
+  // (SeriesConfig.storagePrefix) — chapter ids ("ch-01", "ch-02", ...) are
+  // NOT globally unique across editions, so an unscoped key would leak one
+  // edition's reading position into another's.
+  Map<String, double> bookScrollOffsets({String prefix = ''}) {
+    final raw = _p.getString('${prefix}book_scroll_offsets');
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -139,8 +142,17 @@ class PreferencesService {
     }
   }
 
-  Future<void> saveBookScrollOffsets(Map<String, double> offsets) =>
-      _p.setString('book_scroll_offsets', jsonEncode(offsets));
+  Future<void> saveBookScrollOffsets(
+    Map<String, double> offsets, {
+    String prefix = '',
+  }) =>
+      _p.setString('${prefix}book_scroll_offsets', jsonEncode(offsets));
+
+  String? lastChapterIdFor(String prefix) =>
+      _p.getString('${prefix}last_chapter_id');
+
+  Future<void> saveLastChapterId(String chapterId, {String prefix = ''}) =>
+      _p.setString('${prefix}last_chapter_id', chapterId);
 
   // ── Downloads ───────────────────────────────────────────────────────────
 

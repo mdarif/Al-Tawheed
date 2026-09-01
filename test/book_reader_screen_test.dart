@@ -92,7 +92,12 @@ final _twoLongChaptersBook = BookContent(
   ],
 );
 
-Widget _wrap(BookProvider book, String chapterId, {ReadingProvider? reading}) {
+Widget _wrap(
+  BookProvider book,
+  String chapterId, {
+  ReadingProvider? reading,
+  bool startFromTop = false,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: book),
@@ -107,12 +112,21 @@ Widget _wrap(BookProvider book, String chapterId, {ReadingProvider? reading}) {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
-        initialLocation: '/book/$chapterId',
+        initialLocation:
+            '/book/$chapterId${startFromTop ? '?startFromTop=true' : ''}',
         routes: [
           GoRoute(
             path: '/book/:chapterId',
+            builder: (context, state) => BookReaderScreen(
+              chapterId: state.pathParameters['chapterId']!,
+              startFromTop:
+                  state.uri.queryParameters['startFromTop'] == 'true',
+            ),
+          ),
+          GoRoute(
+            path: '/read',
             builder: (context, state) =>
-                BookReaderScreen(chapterId: state.pathParameters['chapterId']!),
+                const Scaffold(body: Text('Chapter list')),
           ),
         ],
       ),
@@ -283,6 +297,45 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('۲ / ۳'), findsOneWidget);
+    });
+  });
+
+  group('unknown chapterId', () {
+    testWidgets('shows a recovery screen instead of opening chapter 0',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      // 'ch-99' matches no chapter in _testBook (intro, ch-01, ch-02) — a
+      // stale bookmark or deep link.
+      await tester.pumpWidget(_wrap(book, 'ch-99'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chapter not found'), findsOneWidget);
+      expect(find.text('This chapter link is no longer valid.'), findsOneWidget);
+      expect(find.byType(PageView), findsNothing);
+    });
+
+    testWidgets('the recovery action returns to the chapter list',
+        (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      await tester.pumpWidget(_wrap(book, 'ch-99'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back to chapters'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chapter list'), findsOneWidget);
+    });
+
+    testWidgets('an empty book shows the same recovery screen, not a crash',
+        (tester) async {
+      final book = BookProvider()
+        ..setBookForTest(
+          const BookContent(title: '', author: '', chapters: []),
+        );
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chapter not found'), findsOneWidget);
     });
   });
 
@@ -460,7 +513,7 @@ void main() {
     expect(position.pixels, 0);
   });
 
-  testWidgets('opens a chapter at the top even when an old offset was saved', (
+  testWidgets('resumes the saved scroll offset for a chapter (D2)', (
     tester,
   ) async {
     final book = BookProvider()..setBookForTest(_longReaderBook);
@@ -468,6 +521,33 @@ void main() {
     await reading.setBookScrollOffset('ch-long', 900);
 
     await tester.pumpWidget(_wrap(book, 'ch-long', reading: reading));
+    await tester.pumpAndSettle();
+
+    expect(_readerScrollPosition(tester).pixels, 900);
+  });
+
+  testWidgets(
+      'startFromTop opens at the top even when an offset was saved (D2)', (
+    tester,
+  ) async {
+    final book = BookProvider()..setBookForTest(_longReaderBook);
+    final reading = ReadingProvider()..load();
+    await reading.setBookScrollOffset('ch-long', 900);
+
+    await tester.pumpWidget(
+      _wrap(book, 'ch-long', reading: reading, startFromTop: true),
+    );
+    await tester.pumpAndSettle();
+
+    expect(_readerScrollPosition(tester).pixels, 0);
+  });
+
+  testWidgets('a chapter with no saved offset opens at the top', (
+    tester,
+  ) async {
+    final book = BookProvider()..setBookForTest(_longReaderBook);
+
+    await tester.pumpWidget(_wrap(book, 'ch-long'));
     await tester.pumpAndSettle();
 
     expect(_readerScrollPosition(tester).pixels, 0);

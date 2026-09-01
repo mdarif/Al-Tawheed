@@ -73,6 +73,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get continueListeningEmpty => 'ابدأ درسًا للمتابعة من هنا';
 
   @override
+  String get continueReading => 'متابعة القراءة';
+
+  @override
+  String get startFromTop => 'البدء من الأعلى';
+
+  @override
   String listenedDuration(String listened, String remaining) {
     return '$listened مستمَع · $remaining متبقٍّ';
   }
@@ -470,6 +476,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get editionMissingChooseAnother => 'اختر إصدارًا آخر';
+
+  @override
+  String get bookChapterNotFoundTitle => 'الفصل غير موجود';
+
+  @override
+  String get bookChapterNotFoundMessage =>
+      'هذا الرابط إلى الفصل لم يعد صالحًا.';
+
+  @override
+  String get bookChapterNotFoundAction => 'العودة إلى الفصول';
 
   @override
   String get languageEnglish => 'English';

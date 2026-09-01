@@ -22,6 +22,8 @@
   "allLecturesCompleteMessage": "Aap ne tamam daras sun liye hain. Allah Ta'ala aap ko ilm-e-nafe se nawaze.",
   "continueListening": "Sunna Jari Rakhein",
   "continueListeningEmpty": "Yahan se jari rakhne ke liye koi dars shuru karein",
+  "continueReading": "Parhna Jari Rakhein",
+  "startFromTop": "Shuru se parhein",
   "listenedDuration": "{listened} suna · {remaining} baqi",
   "percentComplete": "{percent}% mukammal",
 
@@ -151,6 +153,10 @@
   "editionMissingTitle": "Aap ka edition abhi dastyaab nahin",
   "editionMissingMessage": "Humein aap ka aakhri istemal kiya gaya edition nahin mila. Yeh internet connection na hone ya edition hataye jaane ki wajah se ho sakta hai. Aap ka intekhaab mahfooz hai — dobara koshish karein ya koi doosra edition muntakhib karein.",
   "editionMissingChooseAnother": "Doosra edition muntakhib karein",
+
+  "bookChapterNotFoundTitle": "Bab nahi mila",
+  "bookChapterNotFoundMessage": "Yeh bab ka link ab durust nahi hai.",
+  "bookChapterNotFoundAction": "Bawab ki list par wapas jayein",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

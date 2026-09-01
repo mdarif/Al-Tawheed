@@ -24,6 +24,8 @@
   "allLecturesCompleteMessage": "You have listened to every lecture. May Allah bless you with beneficial knowledge.",
   "continueListening": "Continue Listening",
   "continueListeningEmpty": "Start a lecture to resume here",
+  "continueReading": "Continue Reading",
+  "startFromTop": "Start from top",
   "listenedDuration": "{listened} listened · {remaining} left",
   "@listenedDuration": {
     "placeholders": {
@@ -244,6 +246,10 @@
   "editionMissingTitle": "Your edition isn't available right now",
   "editionMissingMessage": "We couldn't find the content edition you last used. This can happen if there's no internet connection or it was removed. Your selection is remembered — try again, or choose a different edition.",
   "editionMissingChooseAnother": "Choose another edition",
+
+  "bookChapterNotFoundTitle": "Chapter not found",
+  "bookChapterNotFoundMessage": "This chapter link is no longer valid.",
+  "bookChapterNotFoundAction": "Back to chapters",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

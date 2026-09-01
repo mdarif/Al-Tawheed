@@ -16,6 +16,7 @@ import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
@@ -96,6 +97,9 @@ Widget _wrap({required SeriesProvider series}) {
     providers: [
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider(
+        create: (ctx) => ReadingProvider(ctx.read<SeriesProvider>())..load(),
+      ),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider(create: (_) => CatalogProvider()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),

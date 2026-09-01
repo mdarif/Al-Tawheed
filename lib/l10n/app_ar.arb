@@ -24,6 +24,8 @@
   "allLecturesCompleteMessage": "لقد استمعتَ إلى جميع الدروس. بارك الله لك في علمك.",
   "continueListening": "متابعة الاستماع",
   "continueListeningEmpty": "ابدأ درسًا للمتابعة من هنا",
+  "continueReading": "متابعة القراءة",
+  "startFromTop": "البدء من الأعلى",
   "listenedDuration": "{listened} مستمَع · {remaining} متبقٍّ",
   "@listenedDuration": {
     "placeholders": {
@@ -227,6 +229,10 @@
   "editionMissingTitle": "إصدارك غير متاح حاليًا",
   "editionMissingMessage": "تعذّر علينا العثور على الإصدار الذي استخدمته آخر مرة. قد يكون هذا بسبب عدم وجود اتصال بالإنترنت أو إزالة الإصدار. اختيارك محفوظ — أعد المحاولة أو اختر إصدارًا آخر.",
   "editionMissingChooseAnother": "اختر إصدارًا آخر",
+
+  "bookChapterNotFoundTitle": "الفصل غير موجود",
+  "bookChapterNotFoundMessage": "هذا الرابط إلى الفصل لم يعد صالحًا.",
+  "bookChapterNotFoundAction": "العودة إلى الفصول",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

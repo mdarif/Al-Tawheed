@@ -12,6 +12,7 @@ import 'package:myapp/utils/reader_scroll_physics.dart';
 import 'package:myapp/utils/scroll_immersion_detector.dart';
 import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
+import 'package:myapp/widgets/continue_reading_banner.dart';
 
 const _kChromeAnim = Duration(milliseconds: 220);
 
@@ -191,7 +192,7 @@ class _BookChapterListBodyState extends State<BookChapterListBody> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookProvider>();
-    final book = provider.book;
+    final chapters = provider.book?.chapters ?? const [];
     final l10n = context.l10n;
     final series = context.watch<SeriesProvider>().currentSeries;
     final fontFamily = series.bookFontFamily;
@@ -209,29 +210,39 @@ class _BookChapterListBodyState extends State<BookChapterListBody> {
             context.read<SeriesProvider>().currentSeries,
           ),
         ),
-      BookStatus.loaded => ListView.builder(
+      BookStatus.loaded => CustomScrollView(
           controller: _scrollController,
           physics: const ReaderClampEdgesPhysics(),
-          itemCount: book!.chapters.length,
-          itemBuilder: (context, index) {
-            final chapter = book.chapters[index];
-            return Column(
-              children: [
-                _ChapterTile(
-                  chapter: chapter,
-                  displayNumber: index + 1,
-                  fontFamily: fontFamily,
-                  language: language,
-                ),
-                Divider(
-                  height: 1,
-                  indent: 70,
-                  endIndent: 16,
-                  color: context.dividerColor,
-                ),
-              ],
-            );
-          },
+          slivers: [
+            // Resume-where-you-left-off, atop the list — self-hides when
+            // there's nothing to resume, mirroring ContinueListeningBanner
+            // on Lectures.
+            const SliverToBoxAdapter(child: ContinueReadingBanner()),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final chapter = chapters[index];
+                  return Column(
+                    children: [
+                      _ChapterTile(
+                        chapter: chapter,
+                        displayNumber: index + 1,
+                        fontFamily: fontFamily,
+                        language: language,
+                      ),
+                      Divider(
+                        height: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: context.dividerColor,
+                      ),
+                    ],
+                  );
+                },
+                childCount: chapters.length,
+              ),
+            ),
+          ],
         ),
     };
   }

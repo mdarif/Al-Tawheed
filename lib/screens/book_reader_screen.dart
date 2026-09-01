@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myapp/models/book_content.dart';
@@ -31,7 +34,16 @@ const _kReaderBottomTextGap = 28.0;
 class BookReaderScreen extends StatefulWidget {
   final String chapterId;
 
-  const BookReaderScreen({super.key, required this.chapterId});
+  /// True when the reader should ignore any saved scroll position for
+  /// [chapterId] and open at the top — the explicit "start from top" action
+  /// (D2), as opposed to the default "Continue reading" resume.
+  final bool startFromTop;
+
+  const BookReaderScreen({
+    super.key,
+    required this.chapterId,
+    this.startFromTop = false,
+  });
 
   @override
   State<BookReaderScreen> createState() => _BookReaderScreenState();
@@ -43,6 +55,12 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
   int _currentIndex = 0;
   bool _chromeVisible = true;
 
+  /// True once book data has loaded and [widget.chapterId] genuinely does
+  /// not match any chapter (a stale bookmark/link, or — defensively — an
+  /// empty book). Distinct from "still loading": that keeps showing the
+  /// blank Scaffold in [build] until the book arrives.
+  bool _chapterNotFound = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -52,9 +70,14 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
       final book = context.read<BookProvider>().book;
       if (book == null) return;
       _chapters = book.chapters;
-      _currentIndex = _chapters
-          .indexWhere((c) => c.id == widget.chapterId)
-          .clamp(0, _chapters.length - 1);
+      final index = _chapters.indexWhere((c) => c.id == widget.chapterId);
+      if (index == -1) {
+        // Unknown chapterId (stale bookmark/deep link) or an empty book —
+        // don't silently open chapter 0, show a recovery state instead.
+        _chapterNotFound = true;
+        return;
+      }
+      _currentIndex = index;
       _pageController = PageController(initialPage: _currentIndex);
     }
   }
@@ -156,6 +179,9 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_chapterNotFound) {
+      return _ChapterNotFoundScreen(onBack: () => context.go('/read'));
+    }
     final controller = _pageController;
     if (controller == null || _chapters.isEmpty) {
       return Scaffold(appBar: AppBar());
@@ -294,6 +320,11 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
               fontFamily: fontFamily,
               language: language,
               onChromeVisibilityChanged: _setChromeVisible,
+              // Only the chapter the reader was opened on can carry the
+              // "start from top" request — chapters reached by paging always
+              // resume their own saved position, if any.
+              startFromTop:
+                  widget.startFromTop && _chapters[i].id == widget.chapterId,
             ),
           ),
         ),
@@ -308,6 +339,7 @@ class _BookBody extends StatefulWidget {
   final String fontFamily;
   final String language;
   final ValueChanged<bool> onChromeVisibilityChanged;
+  final bool startFromTop;
   const _BookBody({
     super.key,
     required this.text,
@@ -315,6 +347,7 @@ class _BookBody extends StatefulWidget {
     required this.fontFamily,
     required this.language,
     required this.onChromeVisibilityChanged,
+    this.startFromTop = false,
   });
 
   @override
@@ -344,6 +377,9 @@ class _SlidingAppBar extends StatelessWidget implements PreferredSizeWidget {
 class _BookBodyState extends State<_BookBody> {
   bool _initialized = false;
   final _scrollController = ScrollController();
+  // Cached rather than read via context in dispose(), where the widget's
+  // element-tree association may already be severed.
+  late final ReadingProvider _reading;
   final _immersion = ScrollImmersionDetector();
   double _lastOffset = 0;
 
@@ -589,6 +625,8 @@ class _BookBodyState extends State<_BookBody> {
     );
   }
 
+  Timer? _persistDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -609,6 +647,14 @@ class _BookBodyState extends State<_BookBody> {
         ? _lastOffset > _hideTopBelow
         : _lastOffset > _showTopAbove;
     if (show != _showScrollTop) setState(() => _showScrollTop = show);
+
+    // Debounced persistence — scroll events fire far too often to write on
+    // every one of them.
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _reading.setBookScrollOffset(widget.chapterId, offset);
+    });
   }
 
   bool _onScrollNotification(ScrollNotification notification) {
@@ -638,11 +684,31 @@ class _BookBodyState extends State<_BookBody> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
+      _reading = context.read<ReadingProvider>();
+      if (!widget.startFromTop) {
+        final saved = _reading.bookScrollOffsetFor(widget.chapterId);
+        if (saved > 0) {
+          // The ScrollView isn't laid out yet — jump once the first frame
+          // has a max scroll extent to clamp against.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_scrollController.hasClients) return;
+            final max = _scrollController.position.maxScrollExtent;
+            _scrollController.jumpTo(saved.clamp(0, max));
+          });
+        }
+      }
     }
   }
 
   @override
   void dispose() {
+    // Flush any pending debounced write immediately rather than losing the
+    // latest position — dispose fires when paging to another chapter or
+    // leaving the reader, exactly when the position matters most.
+    if (_persistDebounce?.isActive ?? false) {
+      _persistDebounce!.cancel();
+      _reading.setBookScrollOffset(widget.chapterId, _lastOffset);
+    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -802,3 +868,54 @@ class _ColorKeyRow extends StatelessWidget {
 /// kept in LTR order regardless of the app's UI language. The callbacks drive
 /// the [PageView]; a null callback disables (greys out) that direction at the
 /// first/last chapter.
+
+/// Shown instead of silently opening chapter 0 when [BookReaderScreen.
+/// chapterId] doesn't match any chapter in the current edition's book — a
+/// stale bookmark, a deep link into a since-removed chapter, or (defensively)
+/// an empty book.
+class _ChapterNotFoundScreen extends StatelessWidget {
+  const _ChapterNotFoundScreen({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.menu_book_outlined,
+                  size: 52,
+                  color: context.mutedIconColor,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  l10n.bookChapterNotFoundTitle,
+                  style: context.textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.bookChapterNotFoundMessage,
+                  style: context.textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                FilledButton(
+                  onPressed: onBack,
+                  child: Text(l10n.bookChapterNotFoundAction),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

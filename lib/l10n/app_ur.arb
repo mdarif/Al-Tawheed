@@ -24,6 +24,8 @@
   "allLecturesCompleteMessage": "آپ نے تمام دروس سن لیے ہیں۔ اللہ تعالیٰ آپ کو علمِ نافع سے نوازے۔",
   "continueListening": "سننا جاری رکھیں",
   "continueListeningEmpty": "یہاں سے جاری رکھنے کے لیے کوئی درس شروع کریں",
+  "continueReading": "پڑھنا جاری رکھیں",
+  "startFromTop": "شروع سے پڑھیں",
   "listenedDuration": "{listened} سنا · {remaining} باقی",
   "percentComplete": "{percent}٪ مکمل",
 
@@ -153,6 +155,10 @@
   "editionMissingTitle": "آپ کا ایڈیشن فی الحال دستیاب نہیں",
   "editionMissingMessage": "ہمیں آپ کا آخری استعمال شدہ ایڈیشن نہیں ملا۔ ایسا انٹرنیٹ کنکشن نہ ہونے یا ایڈیشن ہٹائے جانے کی وجہ سے ہو سکتا ہے۔ آپ کا انتخاب محفوظ ہے — دوبارہ کوشش کریں یا کوئی دوسرا ایڈیشن منتخب کریں۔",
   "editionMissingChooseAnother": "دوسرا ایڈیشن منتخب کریں",
+
+  "bookChapterNotFoundTitle": "باب نہیں ملا",
+  "bookChapterNotFoundMessage": "یہ باب کا لنک اب درست نہیں ہے۔",
+  "bookChapterNotFoundAction": "ابواب کی فہرست پر واپس جائیں",
 
   "languageEnglish": "English",
   "languageUrdu": "اردو",

@@ -8,6 +8,7 @@ import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/services/series_manifest_service.dart';
@@ -254,6 +255,7 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   final study = context.read<StudyProgressProvider>();
   final downloads = context.read<DownloadsProvider>();
   final book = context.read<BookProvider>();
+  final reading = context.read<ReadingProvider>();
 
   await player.stop();
   await series.selectSeries(newSeries);
@@ -262,6 +264,9 @@ Future<void> switchSeries(BuildContext context, SeriesConfig newSeries) async {
   study.reload();
   await downloads.reload();
   book.reload(); // clears the stale book; Book tab lazy-loads the new series'
+  // content on demand.
+  reading.reload(); // chapter ids ("ch-01", ...) repeat across editions —
+  // without this, a reading position would leak from one edition to another.
   // The app UI language is intentionally NOT changed here — content-edition and
   // UI/chrome language are independent, so switching editions preserves the
   // user's chosen (or device-detected) UI language instead of forcing it.

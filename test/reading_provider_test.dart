@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/reading_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
 
 void main() {
@@ -103,13 +105,107 @@ void main() {
       expect(p2.bookScrollOffsetFor('ch-01'), 256.0);
     });
 
-    test('does not notify listeners when saving an offset', () async {
+    test('does not notify listeners for a same-chapter scroll update',
+        () async {
+      final p = ReadingProvider()..load();
+      await p.setBookScrollOffset('ch-01', 100.0); // establishes the chapter
+      int notifications = 0;
+      p.addListener(() => notifications++);
+
+      await p.setBookScrollOffset('ch-01', 250.0); // same chapter, new offset
+      expect(notifications, 0);
+    });
+  });
+
+  group('ReadingProvider — lastChapterId', () {
+    test('is null before any chapter is opened', () {
+      expect(ReadingProvider().lastChapterId, isNull);
+    });
+
+    test('is set the first time a chapter is scrolled and notifies once',
+        () async {
       final p = ReadingProvider()..load();
       int notifications = 0;
       p.addListener(() => notifications++);
 
-      await p.setBookScrollOffset('ch-01', 100.0);
-      expect(notifications, 0);
+      await p.setBookScrollOffset('ch-03', 40.0);
+      expect(p.lastChapterId, 'ch-03');
+      expect(notifications, 1);
+    });
+
+    test('updates and notifies again when a different chapter opens',
+        () async {
+      final p = ReadingProvider()..load();
+      await p.setBookScrollOffset('ch-01', 0.0);
+      int notifications = 0;
+      p.addListener(() => notifications++);
+
+      await p.setBookScrollOffset('ch-02', 0.0);
+      expect(p.lastChapterId, 'ch-02');
+      expect(notifications, 1);
+    });
+
+    test('persists across a new provider instance', () async {
+      final p1 = ReadingProvider()..load();
+      await p1.setBookScrollOffset('ch-05', 10.0);
+
+      final p2 = ReadingProvider()..load();
+      expect(p2.lastChapterId, 'ch-05');
+    });
+  });
+
+  group('ReadingProvider — per-series scoping', () {
+    test('scroll offsets and lastChapterId do not leak across editions',
+        () async {
+      final urdu = SeriesProvider()
+        ..setCurrentSeriesForTest(
+          SeriesConfig.legacyUrduFallback,
+        );
+      final arabic = SeriesConfig(
+        id: 'tawheed-ar',
+        catalogUrl: 'https://example.com/ar/catalog.json',
+        storagePrefix: 'tawheed-ar_',
+        hasBook: true,
+        hasStudyMode: false,
+        language: 'ar',
+        displayName: const {'ar': 'كتاب التوحيد'},
+        speakerName: const {'ar': 'الشيخ'},
+      );
+
+      final urduReading = ReadingProvider(urdu)..load();
+      await urduReading.setBookScrollOffset('ch-01', 500.0);
+
+      urdu.setCurrentSeriesForTest(arabic);
+      final arabicReading = ReadingProvider(urdu)..load();
+
+      // Same chapter id, different edition — must not see Urdu's offset.
+      expect(arabicReading.bookScrollOffsetFor('ch-01'), 0.0);
+      expect(arabicReading.lastChapterId, isNull);
+    });
+
+    test('reload() re-reads state for the current series', () async {
+      final urdu = SeriesProvider()
+        ..setCurrentSeriesForTest(SeriesConfig.legacyUrduFallback);
+      final arabic = SeriesConfig(
+        id: 'tawheed-ar',
+        catalogUrl: 'https://example.com/ar/catalog.json',
+        storagePrefix: 'tawheed-ar_',
+        hasBook: true,
+        hasStudyMode: false,
+        language: 'ar',
+        displayName: const {'ar': 'كتاب التوحيد'},
+        speakerName: const {'ar': 'الشيخ'},
+      );
+
+      final reading = ReadingProvider(urdu)..load();
+      await reading.setBookScrollOffset('ch-01', 500.0);
+      expect(reading.lastChapterId, 'ch-01');
+
+      urdu.setCurrentSeriesForTest(arabic);
+      reading.reload();
+
+      expect(reading.lastChapterId, isNull);
+      expect(reading.bookScrollOffsetFor('ch-01'), 0.0);
     });
   });
 }

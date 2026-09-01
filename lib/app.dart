@@ -169,6 +169,7 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
           path: '/book/:chapterId',
           builder: (context, state) => BookReaderScreen(
             chapterId: state.pathParameters['chapterId']!,
+            startFromTop: state.uri.queryParameters['startFromTop'] == 'true',
           ),
         ),
 
@@ -279,7 +280,7 @@ class MyApp extends StatelessWidget {
           lazy: false,
         ),
         ChangeNotifierProvider(
-          create: (_) => ReadingProvider()..load(),
+          create: (ctx) => ReadingProvider(ctx.read<SeriesProvider>())..load(),
           lazy: false,
         ),
         ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
