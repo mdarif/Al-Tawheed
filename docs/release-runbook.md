@@ -76,7 +76,8 @@ Runs, in order: `pub get` → `dart format --set-exit-if-changed` →
 `flutter analyze --fatal-warnings` → `flutter test` (unit/widget) →
 `flutter test integration_test/app_test.dart` (Flutter validation on-device)
 → `patrol test` (native scenarios — airplane mode, notifications, lock-screen
-controls; must discover at least one test) → `flutter build apk --release`.
+controls — plus the Arabic-edition suite in `arabic_series_test.dart`;
+must discover at least one test) → `flutter build apk --release`.
 
 The format and tooling checks are first because they cost seconds and
 `build-android` gates on them too — without them here, Step 1 can pass locally
