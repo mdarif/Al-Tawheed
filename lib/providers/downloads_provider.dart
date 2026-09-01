@@ -174,10 +174,15 @@ class DownloadsProvider extends ChangeNotifier {
     }
     _totalDownloadedBytes = totalBytes;
     notifyListeners();
-    // The app wires a confirmed connectivity result before this provider.
-    // Keep the legacy no-connectivity constructor optimistic for lightweight
-    // callers/tests, but never attempt restored jobs when it is confirmed
-    // offline.
+    // ConnectivityProvider starts optimistically online and only learns the
+    // true state after an awaited platform-channel round trip — awaiting
+    // `ready` here closes the race where this provider and
+    // ConnectivityProvider are constructed back-to-back at app startup and
+    // `isOnline` would otherwise still read the stale optimistic default.
+    // The legacy no-connectivity constructor (no instance passed) stays
+    // optimistic for lightweight callers/tests.
+    await _connectivity?.ready;
+    if (!_isCurrentOperation(generation, seriesId)) return;
     final isOnline = _connectivity?.isOnline ?? true;
     if (isOnline) {
       unawaited(
@@ -354,8 +359,23 @@ class DownloadsProvider extends ChangeNotifier {
     return true;
   }
 
+  /// Test-only seam: awaited (if set) between persisting queue intent and
+  /// starting the transfer, so tests can deterministically land an edition
+  /// switch in that window. See `_queueThenDownload`.
+  @visibleForTesting
+  static Future<void> Function()? afterQueueBeforeDownloadForTest;
+
   Future<void> _queueThenDownload(Lecture lecture) async {
+    final generation = _generation;
+    final seriesId = _seriesId;
     await queueDownload(lecture);
+    if (afterQueueBeforeDownloadForTest != null) {
+      await afterQueueBeforeDownloadForTest!();
+    }
+    // An edition switch between queueing and starting the transfer must not
+    // attach this lecture to the new edition — leave it durably queued under
+    // the edition it actually belongs to instead.
+    if (!_isCurrentOperation(generation, seriesId)) return;
     await download(lecture);
   }
 

@@ -350,4 +350,49 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+      'an edition switch between queueing and starting a download does not '
+      'attach it to the new edition', () async {
+    final (:server, :baseUrl) = await _startServer(128);
+    addTearDown(() => server.close(force: true));
+
+    var activeSeries = SeriesConfig.legacyUrduFallback;
+    final provider = DownloadsProvider.forSeries(() => activeSeries);
+    final resumeAfterSwitch = Completer<void>();
+    DownloadsProvider.afterQueueBeforeDownloadForTest =
+        () => resumeAfterSwitch.future;
+    addTearDown(
+      () => DownloadsProvider.afterQueueBeforeDownloadForTest = null,
+    );
+
+    final started = provider.downloadNowOrQueue(
+      lecture: _lec('edition-race', bytes: 128, audioUrl: baseUrl),
+      isOnline: true,
+      isWifi: true,
+    );
+    expect(started, isTrue);
+
+    // Land the edition switch in the window between the queue write and the
+    // transfer starting.
+    activeSeries = _arabicSeries;
+    await provider.reload();
+    resumeAfterSwitch.complete();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(
+      DownloadService.existsSync('edition-race', seriesId: _arabicSeries.id),
+      isFalse,
+    );
+    // The queued item survives under the edition it actually belongs to,
+    // for eventual reconciliation when that edition is active again.
+    expect(
+      PreferencesService.instance
+          .loadQueuedDownloads(
+            prefix: SeriesConfig.legacyUrduFallback.storagePrefix,
+          )
+          .map((row) => row.id),
+      contains('edition-race'),
+    );
+  });
 }

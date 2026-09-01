@@ -10,11 +10,18 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   bool _isOnline = true;
   List<ConnectivityResult> _results = const [ConnectivityResult.wifi];
+  final _readyCompleter = Completer<void>();
 
   bool get isOnline => _isOnline;
   bool get isOffline => !_isOnline;
   bool get isWifi => _results.contains(ConnectivityResult.wifi);
   bool get isMobile => _results.contains(ConnectivityResult.mobile);
+
+  /// Resolves once the first real platform check completes. [isOnline]
+  /// starts optimistically `true` before that — callers that must not act on
+  /// a possibly-stale default (e.g. deciding whether to start a restored
+  /// download queue at launch) should await this first.
+  Future<void> get ready => _readyCompleter.future;
 
   ConnectivityProvider() {
     WidgetsBinding.instance.addObserver(this);
@@ -25,11 +32,15 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
       : _isOnline = online,
         _results = online
             ? const [ConnectivityResult.wifi]
-            : const [ConnectivityResult.none];
+            : const [ConnectivityResult.none] {
+    _readyCompleter.complete();
+  }
 
   ConnectivityProvider._testMobile()
       : _isOnline = true,
-        _results = const [ConnectivityResult.mobile];
+        _results = const [ConnectivityResult.mobile] {
+    _readyCompleter.complete();
+  }
 
   @visibleForTesting
   factory ConnectivityProvider.testOnline() => ConnectivityProvider._test(true);
@@ -56,6 +67,7 @@ class ConnectivityProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _init() async {
     await _refresh();
+    if (!_readyCompleter.isCompleted) _readyCompleter.complete();
     _sub =
         _connectivity.onConnectivityChanged.listen((_) => _scheduleRefresh());
   }

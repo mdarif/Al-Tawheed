@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus_platform_interface/connectivity_plus_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/saved_lecture_metadata.dart';
@@ -7,7 +9,28 @@ import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Fake platform so the real `ConnectivityProvider()` constructor can be
+/// exercised without a device — see connectivity_provider_test.dart for the
+/// canonical version of this seam.
+class _FakeConnectivityPlatform extends ConnectivityPlatform
+    with MockPlatformInterfaceMixin {
+  _FakeConnectivityPlatform(this.checkResult);
+
+  List<ConnectivityResult> checkResult;
+  final _controller = StreamController<List<ConnectivityResult>>.broadcast();
+
+  @override
+  Future<List<ConnectivityResult>> checkConnectivity() async => checkResult;
+
+  @override
+  Stream<List<ConnectivityResult>> get onConnectivityChanged =>
+      _controller.stream;
+
+  void close() => _controller.close();
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -153,6 +176,38 @@ void main() {
         PreferencesService.instance.loadQueuedDownloads().single.id,
         'offline-cold-start',
       );
+    });
+
+    test(
+        'does not attempt restored work before the real ConnectivityProvider '
+        'confirms its first platform check', () async {
+      // ConnectivityProvider.testOffline() sets its state synchronously in
+      // the constructor, so it can never reproduce the real app-startup
+      // race: the production ConnectivityProvider() constructor starts
+      // optimistically online and only learns the true state after an
+      // awaited platform-channel round trip. DownloadsProvider.load() is
+      // called in the same synchronous provider-tree build as
+      // ConnectivityProvider(), so it must not trust `isOnline` until that
+      // first check actually resolves — otherwise a genuinely offline cold
+      // launch still attempts (and fails) restored work.
+      final fake = _FakeConnectivityPlatform([ConnectivityResult.none]);
+      ConnectivityPlatform.instance = fake;
+      addTearDown(fake.close);
+
+      final first = DownloadsProvider();
+      await first.queueDownload(_lec('race-cold-start', audioUrl: 'not a URL'));
+
+      // Mirrors lib/app.dart: both providers are constructed back-to-back
+      // in the same synchronous provider-tree build, before
+      // ConnectivityProvider's own async `_init()` has resolved.
+      final connectivity = ConnectivityProvider();
+      addTearDown(connectivity.dispose);
+      final restored = DownloadsProvider(null, connectivity);
+      await restored.load();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(restored.statusFor('race-cold-start'), DownloadStatus.queued);
+      expect(restored.queuedDownloadCount, 1);
     });
 
     test('cancels queued work durably before it starts', () async {
