@@ -9,7 +9,7 @@ import 'package:myapp/services/download_notification_service.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
 
-enum DownloadStatus { notDownloaded, downloading, downloaded, failed }
+enum DownloadStatus { notDownloaded, queued, downloading, downloaded, failed }
 
 class DownloadsProvider extends ChangeNotifier {
   DownloadsProvider([this._series]) : _seriesForTest = null;
@@ -146,7 +146,7 @@ class DownloadsProvider extends ChangeNotifier {
     if (_downloadedMetadata.length + _unavailableMetadata.length !=
         persistedMetadata.length) {
       await PreferencesService.instance.saveDownloadedMetadata(
-        [..._downloadedMetadata.values, ..._unavailableMetadata.values],
+        _allMetadata,
         prefix: prefix,
       );
       if (!_isCurrentOperation(generation, seriesId)) return;
@@ -166,8 +166,15 @@ class DownloadsProvider extends ChangeNotifier {
     for (final id in _downloadedIds) {
       _statuses[id] = DownloadStatus.downloaded;
     }
+    for (final row in _queuedDownloads) {
+      _statuses[row.id] = DownloadStatus.queued;
+    }
     _totalDownloadedBytes = totalBytes;
     notifyListeners();
+    // Connectivity begins optimistically on Wi-Fi and does not emit when its
+    // first platform result agrees. Reconcile durable work immediately; a
+    // genuinely offline transfer fails safely and remains queued for retry.
+    unawaited(tryStartQueuedDownload(isWifi: true));
   }
 
   /// Re-scopes all in-memory state to the current series and reloads from
@@ -226,6 +233,30 @@ class DownloadsProvider extends ChangeNotifier {
       _unavailableMetadata.containsKey(lectureId);
   int get queuedDownloadCount => _queuedDownloads.length;
 
+  /// Migrates legacy ID-only completed downloads once a catalogue is available.
+  Future<void> backfillDownloadedMetadata(Iterable<Lecture> lectures) async {
+    final byId = {for (final lecture in lectures) lecture.id: lecture};
+    var changed = false;
+    for (final id in _downloadedIds) {
+      if (_downloadedMetadata.containsKey(id)) continue;
+      final lecture = byId[id];
+      if (lecture == null) continue;
+      _downloadedMetadata[id] = SavedLectureMetadata.fromLecture(lecture);
+      changed = true;
+    }
+    if (!changed) return;
+    await PreferencesService.instance.saveDownloadedMetadata(
+      _allMetadata,
+      prefix: _prefix,
+    );
+    notifyListeners();
+  }
+
+  Iterable<SavedLectureMetadata> get _allMetadata => [
+        ..._downloadedMetadata.values,
+        ..._unavailableMetadata.values,
+      ];
+
   bool get downloadOnWifiOnly => PreferencesService.instance.downloadOnWifiOnly;
 
   // ── Chapter-level getters ─────────────────────────────────────────────────
@@ -257,6 +288,7 @@ class DownloadsProvider extends ChangeNotifier {
     if (isDownloaded(lecture.id) || isDownloading(lecture.id)) return;
     _queuedDownloads.removeWhere((row) => row.id == lecture.id);
     _queuedDownloads.add(SavedLectureMetadata.fromLecture(lecture));
+    _statuses[lecture.id] = DownloadStatus.queued;
     await PreferencesService.instance
         .saveQueuedDownloads(_queuedDownloads, prefix: _prefix);
     notifyListeners();
@@ -274,9 +306,13 @@ class DownloadsProvider extends ChangeNotifier {
   Future<void> tryStartQueuedDownload({required bool isWifi}) async {
     if (_queuedDownloads.isEmpty) return;
     if (downloadOnWifiOnly && !isWifi) return;
+    final generation = _generation;
+    final seriesId = _seriesId;
     final queued = List<SavedLectureMetadata>.from(_queuedDownloads);
     for (final row in queued) {
+      if (!_isCurrentOperation(generation, seriesId)) return;
       if (!isDownloaded(row.id)) await download(row.toLecture());
+      if (!_isCurrentOperation(generation, seriesId)) return;
     }
   }
 
@@ -296,6 +332,24 @@ class DownloadsProvider extends ChangeNotifier {
       return false;
     }
     unawaited(download(lecture));
+    return true;
+  }
+
+  /// Starts a chapter now or durably queues each remaining lecture under the
+  /// exact same connectivity policy as an individual download.
+  bool downloadChapterNowOrQueue({
+    required String chapterId,
+    required List<Lecture> lectures,
+    required bool isOnline,
+    required bool isWifi,
+  }) {
+    if (!isOnline || (downloadOnWifiOnly && !isWifi)) {
+      for (final lecture in lectures) {
+        if (!isDownloaded(lecture.id)) unawaited(queueDownload(lecture));
+      }
+      return false;
+    }
+    unawaited(downloadChapter(chapterId, lectures));
     return true;
   }
 
@@ -388,7 +442,7 @@ class DownloadsProvider extends ChangeNotifier {
         PreferencesService.instance
             .saveDownloadedIds(_downloadedIds, prefix: prefix),
         PreferencesService.instance.saveDownloadedMetadata(
-          _downloadedMetadata.values,
+          _allMetadata,
           prefix: prefix,
         ),
       ]);
@@ -470,6 +524,12 @@ class DownloadsProvider extends ChangeNotifier {
 
   /// Aborts an in-flight download and clears progress immediately.
   bool cancelDownload(String lectureId) {
+    if (_statuses[lectureId] == DownloadStatus.queued) {
+      _statuses[lectureId] = DownloadStatus.notDownloaded;
+      unawaited(_removeQueuedDownload(lectureId));
+      notifyListeners();
+      return true;
+    }
     if (_statuses[lectureId] != DownloadStatus.downloading) return false;
     final seriesId = _seriesId;
     final attemptToken = _attemptTokens[lectureId];
@@ -565,7 +625,7 @@ class DownloadsProvider extends ChangeNotifier {
       PreferencesService.instance
           .saveDownloadedIds(_downloadedIds, prefix: prefix),
       PreferencesService.instance.saveDownloadedMetadata(
-        _downloadedMetadata.values,
+        _allMetadata,
         prefix: prefix,
       ),
     ]);
@@ -602,7 +662,7 @@ class DownloadsProvider extends ChangeNotifier {
       PreferencesService.instance
           .saveDownloadedIds(_downloadedIds, prefix: prefix),
       PreferencesService.instance.saveDownloadedMetadata(
-        _downloadedMetadata.values,
+        _allMetadata,
         prefix: prefix,
       ),
     ]);
@@ -662,10 +722,11 @@ class DownloadsProvider extends ChangeNotifier {
       );
       unawaited(
         PreferencesService.instance.saveDownloadedMetadata(
-          _downloadedMetadata.values,
+          _allMetadata,
           prefix: _prefix,
         ),
       );
+      unawaited(_removeQueuedDownload(lectureId));
     }
     _progress.remove(lectureId);
     _failures.remove(lectureId);

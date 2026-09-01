@@ -40,6 +40,19 @@ class DownloadButton extends StatelessWidget {
           ),
           onPressed: () => _startDownload(context),
         ),
+      DownloadStatus.queued => IconButton(
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(minWidth: size + 8, minHeight: size + 8),
+          tooltip: l10n.offlineCancelDownload,
+          icon: Icon(
+            Icons.schedule_rounded,
+            size: size,
+            color: context.brandColor,
+          ),
+          onPressed: () => context.read<DownloadsProvider>().cancelDownload(
+                lecture.id,
+              ),
+        ),
       DownloadStatus.downloading => IconButton(
           padding: EdgeInsets.zero,
           constraints: BoxConstraints(minWidth: size + 8, minHeight: size + 8),
@@ -99,15 +112,6 @@ class DownloadButton extends StatelessWidget {
   void _startDownload(BuildContext context) {
     final downloads = context.read<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
-    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wifiOnlyBlocked),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
     downloads.downloadNowOrQueue(
       lecture: lecture,
       isOnline: connectivity.isOnline,

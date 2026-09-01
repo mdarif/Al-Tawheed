@@ -87,6 +87,25 @@ class ProgressProvider extends ChangeNotifier {
     ]);
   }
 
+  /// Migrates legacy ID-only bookmarks once a catalogue is available.
+  Future<void> backfillBookmarkMetadata(Iterable<Lecture> lectures) async {
+    final byId = {for (final lecture in lectures) lecture.id: lecture};
+    var changed = false;
+    for (final id in _bookmarks) {
+      if (_bookmarkMetadata.containsKey(id)) continue;
+      final lecture = byId[id];
+      if (lecture == null) continue;
+      _bookmarkMetadata[id] = SavedLectureMetadata.fromLecture(lecture);
+      changed = true;
+    }
+    if (!changed) return;
+    await _prefs.saveBookmarkMetadata(
+      _bookmarkMetadata.values,
+      prefix: _prefix,
+    );
+    notifyListeners();
+  }
+
   // ── Commands ─────────────────────────────────────────────────────────────
 
   /// Persists progress and notifies listeners (use when UI should refresh).

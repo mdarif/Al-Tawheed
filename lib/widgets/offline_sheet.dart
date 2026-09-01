@@ -165,13 +165,14 @@ class _OfflineSheetContent extends StatelessWidget {
     DownloadsProvider downloads,
     ConnectivityProvider connectivity,
   ) {
-    if (_wifiOnlyBlocked(context, downloads, connectivity)) return;
+    final blocked = _wifiOnlyBlocked(context, downloads, connectivity);
     Navigator.pop(context);
     downloads.downloadNowOrQueue(
       lecture: lecture,
       isOnline: connectivity.isOnline,
       isWifi: connectivity.isWifi,
     );
+    if (blocked) return;
   }
 
   void _startChapterDownload(
@@ -179,9 +180,15 @@ class _OfflineSheetContent extends StatelessWidget {
     DownloadsProvider downloads,
     ConnectivityProvider connectivity,
   ) {
-    if (_wifiOnlyBlocked(context, downloads, connectivity)) return;
+    final blocked = _wifiOnlyBlocked(context, downloads, connectivity);
     Navigator.pop(context);
-    downloads.downloadChapter(lecture.chapterId, chapterLectures);
+    downloads.downloadChapterNowOrQueue(
+      chapterId: lecture.chapterId,
+      lectures: chapterLectures,
+      isOnline: connectivity.isOnline,
+      isWifi: connectivity.isWifi,
+    );
+    if (blocked) return;
   }
 
   bool _wifiOnlyBlocked(
@@ -190,10 +197,9 @@ class _OfflineSheetContent extends StatelessWidget {
     ConnectivityProvider connectivity,
   ) {
     if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      final l10n = context.l10n;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.wifiOnlyBlocked),
+          content: Text(context.l10n.wifiOnlyBlocked),
           behavior: SnackBarBehavior.floating,
         ),
       );

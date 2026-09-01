@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
@@ -24,9 +26,23 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   var _selected = 0;
+  Catalog? _backfilledCatalog;
 
   @override
   Widget build(BuildContext context) {
+    final catalog = context.watch<CatalogProvider>().catalog;
+    if (catalog != null && !identical(catalog, _backfilledCatalog)) {
+      _backfilledCatalog = catalog;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context
+            .read<ProgressProvider>()
+            .backfillBookmarkMetadata(catalog.lectures);
+        context
+            .read<DownloadsProvider>()
+            .backfillDownloadedMetadata(catalog.lectures);
+      });
+    }
     final l10n = context.l10n;
     final downloadsEnabled =
         context.watch<FeatureFlagsProvider>().features.downloads;

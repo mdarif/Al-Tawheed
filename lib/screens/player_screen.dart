@@ -160,18 +160,6 @@ class _NextBlockedListenerState extends State<_NextBlockedListener> {
     final downloads = context.read<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
 
-    if (connectivity.isOnline &&
-        downloads.downloadOnWifiOnly &&
-        !connectivity.isWifi) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.wifiOnlyBlocked),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
     final started = downloads.downloadNowOrQueue(
       lecture: next,
       isOnline: connectivity.isOnline,

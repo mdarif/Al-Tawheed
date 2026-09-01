@@ -122,16 +122,12 @@ class _ChapterDownloadAction extends StatelessWidget {
   void _startDownload(BuildContext context) {
     final downloads = context.read<DownloadsProvider>();
     final connectivity = context.read<ConnectivityProvider>();
-    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wifiOnlyBlocked),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    downloads.downloadChapter(chapter.id, chapterLectures);
+    downloads.downloadChapterNowOrQueue(
+      chapterId: chapter.id,
+      lectures: chapterLectures,
+      isOnline: connectivity.isOnline,
+      isWifi: connectivity.isWifi,
+    );
   }
 
   static String _sizeMb(int bytes) {

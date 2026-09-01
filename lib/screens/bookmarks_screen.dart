@@ -71,16 +71,26 @@ class BookmarksBody extends StatelessWidget {
   void _play(BuildContext context, Lecture lecture, CatalogProvider catalog) {
     context
         .read<PlayerNotifier>()
-        .loadAndPlay(lecture, catalog.catalog!.lectures);
+        .loadAndPlay(lecture, catalog.catalog?.lectures ?? [lecture]);
     context.push('/player');
   }
 }
 
 List<Lecture> _lectures(ProgressProvider progress, CatalogProvider catalog) {
-  if (catalog.status == CatalogStatus.loaded) {
-    return catalog.catalog!.lectures
-        .where((lecture) => progress.isBookmarked(lecture.id))
-        .toList();
+  final live = catalog.catalog;
+  if (live != null) {
+    final savedById = {
+      for (final row in progress.bookmarkedMetadata) row.id: row.toLecture(),
+    };
+    final result = <Lecture>[];
+    for (final lecture in live.lectures) {
+      if (progress.isBookmarked(lecture.id)) {
+        result.add(lecture);
+        savedById.remove(lecture.id);
+      }
+    }
+    result.addAll(savedById.values);
+    return result;
   }
   return progress.bookmarkedMetadata
       .map((SavedLectureMetadata row) => row.toLecture())

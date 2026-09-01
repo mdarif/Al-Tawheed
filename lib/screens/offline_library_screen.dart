@@ -54,6 +54,37 @@ class OfflineLibraryBody extends StatelessWidget {
       );
     }
 
+    // The catalogue is a refreshable index, not the authority for local files.
+    // Keep snapshots that disappeared remotely visible and recoverable.
+    final catalogById = {
+      for (final lecture in catalog.lectures) lecture.id: lecture,
+    };
+    final orphaned = [
+      ...downloads.downloadedMetadata,
+      ...downloads.unavailableMetadata,
+    ]
+        .where((row) => !catalogById.containsKey(row.id))
+        .map((row) => row.toLecture())
+        .toList();
+    if (orphaned.isNotEmpty) {
+      final saved = [
+        ...catalog.lectures.where(
+          (lecture) =>
+              downloads.isDownloaded(lecture.id) ||
+              downloads.isUnavailable(lecture.id),
+        ),
+        ...orphaned,
+      ];
+      return ListView.builder(
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        itemCount: saved.length,
+        itemBuilder: (context, index) => _LectureTile(
+          lecture: saved[index],
+          unavailable: downloads.isUnavailable(saved[index].id),
+        ),
+      );
+    }
+
     if (catalog.chapters.isEmpty) {
       // Flat series (e.g. standalone duroos) — no chapter grouping, just
       // list the downloaded lectures directly.
@@ -217,18 +248,11 @@ class _ChapterSection extends StatelessWidget {
                   label: l10n.downloadRemaining,
                   icon: Icons.download_rounded,
                   onTap: () {
-                    if (downloads.downloadOnWifiOnly && !connectivity.isWifi) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.wifiOnlyBlocked),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
-                    downloads.downloadChapter(
-                      group.chapter.id,
-                      group.allLectures,
+                    downloads.downloadChapterNowOrQueue(
+                      chapterId: group.chapter.id,
+                      lectures: group.allLectures,
+                      isOnline: connectivity.isOnline,
+                      isWifi: connectivity.isWifi,
                     );
                   },
                 )
@@ -381,8 +405,14 @@ class _LectureTile extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded, size: 20),
-                  onPressed: () =>
-                      context.read<DownloadsProvider>().download(lecture),
+                  onPressed: () {
+                    final connectivity = context.read<ConnectivityProvider>();
+                    context.read<DownloadsProvider>().downloadNowOrQueue(
+                          lecture: lecture,
+                          isOnline: connectivity.isOnline,
+                          isWifi: connectivity.isWifi,
+                        );
+                  },
                   tooltip: context.l10n.retryDownload,
                 ),
                 IconButton(

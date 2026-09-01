@@ -150,13 +150,13 @@ void main() {
     expect(find.text('Bookmarks (1)'), findsOneWidget);
   });
 
-  testWidgets('uses persisted bookmark metadata when catalogue is unavailable',
+  testWidgets('plays persisted bookmark metadata when catalogue is unavailable',
       (tester) async {
     final progress = ProgressProvider()..load();
     await progress.toggleBookmark(_lectures.first);
     final catalog = CatalogProvider()..setErrorForTest(Exception('offline'));
     final downloads = DownloadsProvider();
-    final connectivity = ConnectivityProvider.testOffline();
+    final connectivity = ConnectivityProvider.testOnline();
     final player = PlayerNotifier(
       TawheedAudioHandler(),
       progress,
@@ -176,17 +176,32 @@ void main() {
           ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
           ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
         ],
-        child: MaterialApp(
+        child: MaterialApp.router(
           theme: AppTheme.light,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const BookmarksScreen(),
+          routerConfig: GoRouter(
+            initialLocation: '/bookmarks',
+            routes: [
+              GoRoute(
+                path: '/bookmarks',
+                builder: (_, __) => const BookmarksScreen(),
+              ),
+              GoRoute(
+                path: '/player',
+                builder: (_, __) => const Scaffold(body: Text('PLAYER')),
+              ),
+            ],
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Lecture 1'), findsOneWidget);
+    await tester.tap(find.text('Lecture 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('PLAYER'), findsOneWidget);
   });
 
   testWidgets('tapping a bookmarked lecture opens the player', (tester) async {

@@ -88,10 +88,30 @@ void main() {
   });
 
   group('durable queue', () {
+    test('queues every chapter request behind the same offline policy',
+        () async {
+      final provider = DownloadsProvider();
+      final chapter = [
+        _lec('chapter-policy-a'),
+        _lec('chapter-policy-b'),
+      ];
+
+      final started = provider.downloadChapterNowOrQueue(
+        chapterId: 'ch-01',
+        lectures: chapter,
+        isOnline: false,
+        isWifi: false,
+      );
+
+      expect(started, isFalse);
+      await Future<void>.delayed(Duration.zero);
+      expect(provider.queuedDownloadCount, chapter.length);
+    });
+
     test('deduplicates queue intent and restores it after provider restart',
         () async {
       final first = DownloadsProvider();
-      final lecture = _lec('queued', audioUrl: 'https://example.test/q.mp3');
+      final lecture = _lec('queued', audioUrl: 'not a URL');
 
       await first.queueDownload(lecture);
       await first.queueDownload(lecture);
@@ -100,6 +120,30 @@ void main() {
       final restored = DownloadsProvider();
       await restored.load();
       expect(restored.queuedDownloadCount, 1);
+    });
+
+    test('starts restored work on a cold online launch', () async {
+      final first = DownloadsProvider();
+      await first.queueDownload(_lec('cold-start', audioUrl: 'not a URL'));
+
+      final restored = DownloadsProvider();
+      await restored.load();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(restored.statusFor('cold-start'), DownloadStatus.failed);
+    });
+
+    test('cancels queued work durably before it starts', () async {
+      final provider = DownloadsProvider();
+      await provider.queueDownload(_lec('cancel-queued'));
+
+      expect(provider.cancelDownload('cancel-queued'), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(provider.queuedDownloadCount, 0);
+      expect(
+        PreferencesService.instance.loadQueuedDownloads(),
+        isEmpty,
+      );
     });
 
     test('reconciles every queued chapter job after a provider restart',
