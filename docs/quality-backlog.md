@@ -54,6 +54,14 @@ the quality truth that active docs should use.
   emulator smoke timings are not a substitute.
 - Configure a local release signing store/key so the release APK gate can package
   a signed artifact; debug APK packaging is green.
+- A1's legacy-route regression test (`/player` → `/bookmarks`/`/offline-library`
+  → Back) runs against a substitute router, not `createAppRouter`; it does not
+  yet prove the production root-navigator topology preserves `PlayerNotifier`
+  state. Close this with A5T's integration-harness work.
+- A1's Library screen does not reset its Saved/Downloads segment on Back —
+  Back always returns straight to Lectures regardless of the selected segment.
+  This is a deliberate simplification (the segment is view state, not a route),
+  revisit only if user feedback wants segment-aware Back.
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
