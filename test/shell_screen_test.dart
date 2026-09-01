@@ -699,6 +699,51 @@ void main() {
     }
   });
 
+  testWidgets(
+      'opening a lecture from Saved or Downloads lands on Player via push, '
+      'and Back returns to the originating list (B1b)', (tester) async {
+    // bookmarks_screen.dart and offline_library_screen.dart both push
+    // '/player' from their lecture rows, the same mechanism as
+    // lecture_list_screen.dart and ContinueListeningBanner — this proves the
+    // resulting back-stack, not just that the same string literal is used.
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        downloadsEnabled: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+
+    for (final route in ['/bookmarks', '/offline-library']) {
+      unawaited(router.push(route));
+      await tester.pumpAndSettle();
+      expect(
+        route == '/bookmarks'
+            ? find.byType(BookmarksScreen)
+            : find.byType(OfflineLibraryScreen),
+        findsOneWidget,
+      );
+
+      unawaited(router.push('/player'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('player-route-probe')), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        route == '/bookmarks'
+            ? find.byType(BookmarksScreen)
+            : find.byType(OfflineLibraryScreen),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('player-route-probe')), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+    }
+  });
+
   group('ShellScreen — mini player', () {
     testWidgets(
       'shows the Arabic lecture title for the Arabic series, with l10n nav unchanged',

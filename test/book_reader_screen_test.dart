@@ -119,8 +119,7 @@ Widget _wrap(
             path: '/book/:chapterId',
             builder: (context, state) => BookReaderScreen(
               chapterId: state.pathParameters['chapterId']!,
-              startFromTop:
-                  state.uri.queryParameters['startFromTop'] == 'true',
+              startFromTop: state.uri.queryParameters['startFromTop'] == 'true',
             ),
           ),
           GoRoute(
@@ -310,7 +309,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Chapter not found'), findsOneWidget);
-      expect(find.text('This chapter link is no longer valid.'), findsOneWidget);
+      expect(
+        find.text('This chapter link is no longer valid.'),
+        findsOneWidget,
+      );
       expect(find.byType(PageView), findsNothing);
     });
 

@@ -10,8 +10,7 @@ class ReadingProvider extends ChangeNotifier {
   final SeriesProvider? _series;
 
   String get _prefix =>
-      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback)
-          .storagePrefix;
+      (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback).storagePrefix;
 
   // Reading comfort setting — global, not per-edition content state.
   double _bookFontSize = 20;
@@ -74,7 +73,9 @@ class ReadingProvider extends ChangeNotifier {
     if (_scrollOffsets[chapterId] == offset && !chapterChanged) return;
     final prefix = _prefix;
     _scrollOffsets = {..._scrollOffsets, chapterId: offset};
-    final writes = [_prefs.saveBookScrollOffsets(_scrollOffsets, prefix: prefix)];
+    final writes = [
+      _prefs.saveBookScrollOffsets(_scrollOffsets, prefix: prefix),
+    ];
     if (chapterChanged) {
       _lastChapterId = chapterId;
       writes.add(_prefs.saveLastChapterId(chapterId, prefix: prefix));

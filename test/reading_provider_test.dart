@@ -133,8 +133,7 @@ void main() {
       expect(notifications, 1);
     });
 
-    test('updates and notifies again when a different chapter opens',
-        () async {
+    test('updates and notifies again when a different chapter opens', () async {
       final p = ReadingProvider()..load();
       await p.setBookScrollOffset('ch-01', 0.0);
       int notifications = 0;
