@@ -1,8 +1,11 @@
 # Quality backlog
 
 Canonical snapshot of maintenance work for the current multi-series app. The
-phased roadmap in [maintenance-roadmap.md](plans/maintenance-roadmap.md) owns
-sequencing; this page records the quality truth that active docs should use.
+completed maintenance sequence remains in
+[maintenance-roadmap.md](plans/maintenance-roadmap.md); the complete multi-release
+information architecture program is sequenced in the
+[IA user-journey roadmap](plans/ia-user-journey-roadmap.md). This page records
+the quality truth that active docs should use.
 
 ## Verified shipped safeguards
 
@@ -41,6 +44,10 @@ sequencing; this page records the quality truth that active docs should use.
 
 ## Open work
 
+- Execute the Claude Opus PASS-reviewed IA/user-journey roadmap. It covers
+  stateful navigation, a stable Library destination, truthful offline
+  collections, safe edition switching, contextual notification permission,
+  discovery/continuity, and data-backed Book/Study/audio hand-offs.
 - Persist and resume queued/chapter download jobs across process death; current
   download jobs are in memory only.
 - Capture and review a physical-device profile-mode performance baseline;

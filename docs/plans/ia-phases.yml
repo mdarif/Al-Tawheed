@@ -1,0 +1,308 @@
+plan: docs/plans/ia-user-journey-roadmap.md
+program_start: "2026-09-01"
+target_branch: develop
+release_boundaries: [A5D, B2D, C3D]
+
+phases:
+  A0:
+    title: Contract and baseline
+    needs: []
+    owns:
+      - docs/plans/ia-user-journey-roadmap.md
+      - docs/plans/ia-phases.yml
+      - docs/README.md
+      - docs/quality-backlog.md
+      - lib/testing/widget_keys.dart
+      - test/widget_keys_test.dart
+    runner: codex:gpt-5.6-luna
+    review: claude:frontier
+    gate_status: closed 2026-09-01 — D1-D5 accepted; content owner named Mohammad Arif
+
+  A1:
+    title: Navigation foundation and Library destination
+    needs: [A0]
+    owns:
+      - lib/app.dart
+      - lib/navigation/series_navigation_policy.dart
+      - lib/navigation/route_guards.dart
+      - lib/screens/shell_screen.dart
+      - lib/screens/library_screen.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/route_guards_test.dart
+      - test/series_navigation_policy_test.dart
+      - test/shell_screen_test.dart
+      - test/library_screen_test.dart
+    creates:
+      - lib/screens/library_screen.dart
+      - test/series_navigation_policy_test.dart
+      - test/library_screen_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  A2:
+    title: Trustworthy Library and offline playback
+    needs: [A1]
+    owns:
+      - lib/models/catalog.dart
+      - lib/models/saved_lecture_metadata.dart
+      - lib/providers/catalog_provider.dart
+      - lib/providers/downloads_provider.dart
+      - lib/providers/progress_provider.dart
+      - lib/services/download_service.dart
+      - lib/services/preferences_service.dart
+      - lib/screens/library_screen.dart
+      - lib/screens/bookmarks_screen.dart
+      - lib/screens/offline_library_screen.dart
+      - lib/screens/player_screen.dart
+      - lib/widgets/download_button.dart
+      - lib/widgets/offline_sheet.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/saved_lecture_metadata_test.dart
+      - test/catalog_provider_test.dart
+      - test/preferences_service_test.dart
+      - test/download_service_test.dart
+      - test/downloads_provider_test.dart
+      - test/download_cancellation_test.dart
+      - test/bookmarks_screen_test.dart
+      - test/offline_library_screen_test.dart
+      - test/library_screen_test.dart
+      - test/player_screen_test.dart
+    creates:
+      - lib/models/saved_lecture_metadata.dart
+      - test/saved_lecture_metadata_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  A3:
+    title: Onboarding and safe content-edition switching
+    needs: [A2]
+    owns:
+      - lib/app.dart
+      - lib/navigation/route_guards.dart
+      - lib/providers/series_provider.dart
+      - lib/screens/welcome.dart
+      - lib/screens/choose_series_screen.dart
+      - lib/screens/settings_screen.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/route_guards_test.dart
+      - test/series_provider_test.dart
+      - test/welcome_screen_test.dart
+      - test/choose_series_screen_test.dart
+      - test/settings_screen_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  A4:
+    title: Contextual permissions and recovery behavior
+    needs: [A3]
+    owns:
+      - lib/main.dart
+      - lib/providers/downloads_provider.dart
+      - lib/services/download_notification_service.dart
+      - lib/widgets/offline_status_banner.dart
+      - lib/providers/catalog_provider.dart
+      - lib/screens/lecture_list_screen.dart
+      - lib/screens/bookmarks_screen.dart
+      - lib/screens/offline_library_screen.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/download_notification_service_test.dart
+      - test/offline_status_banner_test.dart
+      - test/catalog_provider_test.dart
+      - test/lecture_list_screen_test.dart
+      - test/bookmarks_screen_test.dart
+      - test/offline_library_screen_test.dart
+    creates:
+      - test/download_notification_service_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  A5T:
+    title: Release A automation and CI
+    needs: [A4]
+    owns:
+      - integration_test/app_test.dart
+      - integration_test/support/app_flow.dart
+      - patrol_test/native_test.dart
+      - patrol_test/arabic_series_test.dart
+      - patrol_test/support/patrol_flow.dart
+      - Makefile
+      - .github/workflows/flutter-android-emulator.yml
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  A5D:
+    title: Release A documentation and boundary review
+    needs: [A5T]
+    owns:
+      - docs/onboarding-flows.md
+      - docs/testing.md
+      - docs/test-plan.md
+      - docs/quality-backlog.md
+      - docs/gotchas.md
+      - docs/release-runbook.md
+      - docs/ci-cd.md
+      - docs/plans/ia-user-journey-roadmap.md
+    runner: codex:gpt-5.6-luna
+    review: claude:frontier
+
+  B1:
+    title: Discovery and continuity behavior
+    needs: [A5D]
+    owns:
+      - lib/app.dart
+      - lib/providers/reading_provider.dart
+      - lib/screens/lecture_list_screen.dart
+      - lib/screens/lecture_search_screen.dart
+      - lib/screens/book_reader_screen.dart
+      - lib/screens/player_screen.dart
+      - lib/utils/lecture_search.dart
+      - lib/widgets/continue_listening_banner.dart
+      - lib/widgets/lecture_tile.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/lecture_search_test.dart
+      - test/lecture_search_screen_test.dart
+      - test/reading_provider_test.dart
+      - test/lecture_list_screen_test.dart
+      - test/book_reader_screen_test.dart
+      - test/player_screen_test.dart
+      - test/continue_listening_banner_test.dart
+      - test/lecture_tile_test.dart
+    creates:
+      - lib/screens/lecture_search_screen.dart
+      - lib/utils/lecture_search.dart
+      - test/lecture_search_test.dart
+      - test/lecture_search_screen_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  B2T:
+    title: Release B automation
+    needs: [B1]
+    owns:
+      - integration_test/app_test.dart
+      - integration_test/support/app_flow.dart
+      - patrol_test/native_test.dart
+      - patrol_test/arabic_series_test.dart
+      - patrol_test/support/patrol_flow.dart
+      - Makefile
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  B2D:
+    title: Release B documentation and boundary review
+    needs: [B2T]
+    owns:
+      - docs/onboarding-flows.md
+      - docs/testing.md
+      - docs/test-plan.md
+      - docs/quality-backlog.md
+      - docs/gotchas.md
+      - docs/release-runbook.md
+      - docs/plans/ia-user-journey-roadmap.md
+    runner: codex:gpt-5.6-luna
+    review: claude:frontier
+
+  C1:
+    title: Content identity schema validation and CDN publication
+    needs: [B2D]
+    owns:
+      - docs/decisions/0003-content-identity-mapping.md
+      - docs/remote-content-strategy.md
+      - lib/models/catalog.dart
+      - tool/validate_catalog_mapping.dart
+      - test/catalog_parsing_test.dart
+      - test/catalog_mapping_validator_test.dart
+      - test/fixtures/catalog_mapping_valid.json
+      - test/fixtures/catalog_mapping_unmapped.json
+      - test/fixtures/catalog_mapping_duplicate.json
+      - test/fixtures/catalog_mapping_dangling.json
+      - test/fixtures/catalog_mapping_wrong_edition.json
+      - test/fixtures/catalog_mapping_legacy_v1.json
+    creates:
+      - docs/decisions/0003-content-identity-mapping.md
+      - tool/validate_catalog_mapping.dart
+      - test/catalog_mapping_validator_test.dart
+      - test/fixtures/catalog_mapping_valid.json
+      - test/fixtures/catalog_mapping_unmapped.json
+      - test/fixtures/catalog_mapping_duplicate.json
+      - test/fixtures/catalog_mapping_dangling.json
+      - test/fixtures/catalog_mapping_wrong_edition.json
+      - test/fixtures/catalog_mapping_legacy_v1.json
+    external_outputs:
+      - reviewed Arabic and Urdu production catalogues
+      - CDN publication version and timestamp
+      - validator evidence for every supported edition
+      - rollback snapshot and procedure
+    external_owner: Mohammad Arif (accountable content owner named in A0)
+    runner: codex:gpt-5.6-terra
+    review: claude:frontier
+    gate: human
+    gate_reason: The named content owner must verify production mappings and CDN rollback before UI work.
+
+  C2:
+    title: Connected-learning hand-offs
+    needs: [C1]
+    owns:
+      - lib/models/catalog.dart
+      - lib/screens/book_chapter_list_screen.dart
+      - lib/screens/book_reader_screen.dart
+      - lib/screens/study_screen.dart
+      - lib/screens/player_screen.dart
+      - lib/utils/study_session.dart
+      - lib/l10n/app_en.arb
+      - lib/l10n/app_ar.arb
+      - lib/l10n/app_ur.arb
+      - lib/l10n/app_ur_roman.arb
+      - test/arb_parity_test.dart
+      - test/book_chapter_list_screen_test.dart
+      - test/book_reader_screen_test.dart
+      - test/study_screen_test.dart
+      - test/player_screen_test.dart
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  C3T:
+    title: Release C automation and live contract proof
+    needs: [C2]
+    owns:
+      - integration_test/app_test.dart
+      - integration_test/support/app_flow.dart
+      - patrol_test/arabic_series_test.dart
+      - .github/workflows/flutter-live-contract.yml
+      - Makefile
+    runner: codex:gpt-5.6-terra
+    review: codex:gpt-5.6-sol
+
+  C3D:
+    title: Release C documentation and boundary review
+    needs: [C3T]
+    owns:
+      - docs/remote-content-strategy.md
+      - docs/testing.md
+      - docs/test-plan.md
+      - docs/quality-backlog.md
+      - docs/gotchas.md
+      - docs/release-runbook.md
+      - docs/plans/ia-user-journey-roadmap.md
+    runner: codex:gpt-5.6-luna
+    review: claude:frontier

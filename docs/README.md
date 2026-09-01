@@ -11,5 +11,6 @@
 | [git-workflow.md](git-workflow.md) | Branching strategy, commit conventions, PR process |
 | [checklist.md](checklist.md) | Pre-commit and pre-release checklists |
 | [testing.md](testing.md) | Running tests, coverage, writing new tests |
-- [quality-backlog.md](quality-backlog.md) | Canonical current quality backlog and shipped safeguards |
+| [quality-backlog.md](quality-backlog.md) | Canonical current quality backlog and shipped safeguards |
+| [IA user-journey roadmap](plans/ia-user-journey-roadmap.md) | Complete multi-release information architecture program, acceptance criteria, ownership, and automation gates |
 | [troubleshooting.md](troubleshooting.md) | Common errors and fixes |
