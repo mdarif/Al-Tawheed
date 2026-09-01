@@ -75,6 +75,12 @@ the quality truth that active docs should use.
   existing offline/stale-cache handling is exercised elsewhere, but not from
   this specific entry point). Low priority — the underlying behavior is
   already covered by `catalog_provider_test.dart`.
+- A4's notification-permission recovery has no in-app Settings deep link
+  (text instructions only) and no "permanently denied" distinction —
+  `flutter_local_notifications` alone can't tell denied from permanently
+  denied, or open system Settings; that needs a `permission_handler`-class
+  dependency this app doesn't otherwise carry. Revisit if real users report
+  the manual-instructions recovery is insufficient.
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
