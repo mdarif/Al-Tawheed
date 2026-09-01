@@ -7,11 +7,13 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/navigation/series_navigation_policy.dart';
 import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/announcements_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
@@ -38,6 +40,17 @@ const _arabicSeries = SeriesConfig(
   language: 'ar',
   displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
   speakerName: {'en': 'Shaikh Salih al-Fawzan Hafizhahullah'},
+);
+
+const _audioOnlySeries = SeriesConfig(
+  id: 'audio-only',
+  catalogUrl: 'https://example.com/audio-only/catalog.json',
+  storagePrefix: 'audio_',
+  hasStudyMode: false,
+  hasBook: false,
+  language: 'ur',
+  displayName: {'en': 'Audio only'},
+  speakerName: {'en': 'Speaker'},
 );
 
 Lecture _arabicLec() => Lecture(
@@ -83,6 +96,7 @@ Widget _wrap({
   // UI/chrome locale. Chrome now follows the UI language independently of the
   // content edition, so Arabic-chrome expectations require an Arabic UI locale.
   Locale? locale,
+  bool useProductionRouter = false,
 }) {
   final catalogProvider = CatalogProvider();
   if (catalog != null) {
@@ -108,6 +122,7 @@ Widget _wrap({
           ? ChangeNotifierProvider.value(value: downloads)
           : ChangeNotifierProvider(create: (_) => DownloadsProvider()),
       ChangeNotifierProvider.value(value: catalogProvider),
+      ChangeNotifierProvider(create: (_) => AnnouncementsProvider()),
       ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
       player != null
@@ -127,7 +142,10 @@ Widget _wrap({
       builder: (context, child) {
         final media = MediaQuery.of(context);
         return Directionality(
-          textDirection: textDirection ?? TextDirection.ltr,
+          textDirection: textDirection ??
+              ((locale?.languageCode == 'ar' || locale?.languageCode == 'ur')
+                  ? TextDirection.rtl
+                  : TextDirection.ltr),
           child: MediaQuery(
             data: media.copyWith(textScaler: textScaler ?? media.textScaler),
             child: child!,
@@ -136,93 +154,113 @@ Widget _wrap({
       },
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: GoRouter(
-        initialLocation: initialLocation,
-        routes: [
-          StatefulShellRoute.indexedStack(
-            builder: (context, state, navigationShell) =>
-                ShellScreen(navigationShell: navigationShell),
-            branches: [
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/lectures',
-                    builder: (_, __) => Scaffold(
-                      body: ListView.builder(
-                        key: const PageStorageKey('lecture-list'),
-                        itemCount: 60,
-                        itemBuilder: (context, index) => ListTile(
-                          title: Text('Lecture $index'),
-                          onTap: index == 0
-                              ? () => context.push('/lectures/detail')
-                              : null,
+      routerConfig: useProductionRouter
+          ? createAppRouter(initialLocation: initialLocation)
+          : GoRouter(
+              initialLocation: initialLocation,
+              routes: [
+                StatefulShellRoute.indexedStack(
+                  builder: (context, state, navigationShell) =>
+                      ShellScreen(navigationShell: navigationShell),
+                  branches: [
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/lectures',
+                          builder: (_, __) => Scaffold(
+                            body: ListView.builder(
+                              key: const PageStorageKey('lecture-list'),
+                              itemCount: 60,
+                              itemBuilder: (context, index) => ListTile(
+                                title: Text('Lecture $index'),
+                                onTap: index == 0
+                                    ? () => context.push('/lectures/detail')
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          routes: [
+                            GoRoute(
+                              path: 'detail',
+                              builder: (_, __) => const Scaffold(
+                                body: Center(
+                                  child: Text('Nested lecture detail'),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
-                    routes: [
-                      GoRoute(
-                        path: 'detail',
-                        builder: (_, __) => const Scaffold(
-                          body: Center(child: Text('Nested lecture detail')),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/book',
+                          builder: (_, __) => const Scaffold(
+                            body: Center(child: Text('Book')),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/study',
+                          builder: (_, __) => const Scaffold(
+                            body: Center(child: Text('Study')),
+                          ),
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/library',
+                          builder: (_, __) => const LibraryScreen(),
+                          routes: [
+                            GoRoute(
+                              path: 'detail',
+                              builder: (_, __) => const Scaffold(
+                                body: Center(
+                                  child: Text('Nested library detail'),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/settings',
+                          builder: (_, __) => const Scaffold(
+                            body: Center(child: Text('Settings')),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: '/bookmarks',
+                  builder: (_, __) => const BookmarksScreen(),
+                ),
+                GoRoute(
+                  path: '/offline-library',
+                  builder: (_, __) => const OfflineLibraryScreen(),
+                ),
+                GoRoute(
+                  path: '/player',
+                  builder: (_, __) => const Scaffold(
+                    body: Text(
+                      'Player route',
+                      key: ValueKey('player-route-probe'),
+                    ),
                   ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/book',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Book'))),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/study',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Study'))),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/library',
-                    builder: (_, __) => const LibraryScreen(),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/settings',
-                    builder: (_, __) =>
-                        const Scaffold(body: Center(child: Text('Settings'))),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/bookmarks',
-            builder: (_, __) => const BookmarksScreen(),
-          ),
-          GoRoute(
-            path: '/offline-library',
-            builder: (_, __) => const OfflineLibraryScreen(),
-          ),
-          GoRoute(
-            path: '/player',
-            builder: (_, __) => const Scaffold(
-              body: Text('Player route', key: ValueKey('player-route-probe')),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     ),
   );
 }
@@ -434,6 +472,28 @@ void main() {
     expect(find.text('Lecture 0'), findsOneWidget);
   });
 
+  testWidgets('Back pops a nested Library route before returning to Lectures',
+      (tester) async {
+    await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+    router.go('/library');
+    await tester.pumpAndSettle();
+    unawaited(router.push('/library/detail'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nested library detail'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Nested library detail'), findsNothing);
+    expect(find.byType(LibraryScreen), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Lecture 0'), findsOneWidget);
+  });
+
   testWidgets('lecture list scroll position survives switching away and back',
       (tester) async {
     await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
@@ -478,33 +538,146 @@ void main() {
     expect(await tester.binding.handlePopRoute(), isFalse);
   });
 
-  testWidgets('five Urdu destinations stay usable at narrow 2x RTL layout',
+  testWidgets(
+      'all capability layouts render localized destinations at narrow 2x scale',
       (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    final layouts = [
+      (
+        series: SeriesProvider()..load(false),
+        locale: const Locale('ur'),
+        localizedLectures: 'دروس',
+        destinations: [
+          WidgetKeys.shellLecturesTab,
+          WidgetKeys.shellBookTab,
+          WidgetKeys.shellStudyTab,
+          WidgetKeys.shellLibraryTab,
+          WidgetKeys.shellSettingsTab,
+        ],
+      ),
+      (
+        series: SeriesProvider()
+          ..load(false)
+          ..setCurrentSeriesForTest(_arabicSeries),
+        locale: const Locale('ar'),
+        localizedLectures: 'الدروس',
+        destinations: [
+          WidgetKeys.shellLecturesTab,
+          WidgetKeys.shellBookTab,
+          WidgetKeys.shellLibraryTab,
+          WidgetKeys.shellSettingsTab,
+        ],
+      ),
+      (
+        series: SeriesProvider()
+          ..load(false)
+          ..setCurrentSeriesForTest(_audioOnlySeries),
+        locale: const Locale('ur'),
+        localizedLectures: 'دروس',
+        destinations: [
+          WidgetKeys.shellLecturesTab,
+          WidgetKeys.shellLibraryTab,
+          WidgetKeys.shellSettingsTab,
+        ],
+      ),
+    ];
+
+    for (final layout in layouts) {
+      await tester.pumpWidget(
+        _wrap(
+          series: layout.series,
+          locale: layout.locale,
+          textScaler: const TextScaler.linear(2),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text(layout.localizedLectures), findsOneWidget);
+      expect(
+        find.byType(NavigationDestination),
+        findsNWidgets(layout.destinations.length),
+      );
+
+      for (final key in layout.destinations) {
+        await tester.tap(find.byKey(key));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+    }
+  });
+
+  testWidgets(
+      'Arabic and Urdu Library segments fit at narrow 2x scale with downloads',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final layout in [
+      (
+        series: SeriesProvider()
+          ..load(false)
+          ..setCurrentSeriesForTest(_arabicSeries),
+        locale: const Locale('ar'),
+        saved: 'المحفوظات',
+        downloads: 'التنزيلات',
+      ),
+      (
+        series: SeriesProvider()..load(false),
+        locale: const Locale('ur'),
+        saved: 'محفوظ',
+        downloads: 'ڈاؤن لوڈز',
+      ),
+    ]) {
+      await tester.pumpWidget(
+        _wrap(
+          series: layout.series,
+          initialLocation: '/library',
+          locale: layout.locale,
+          downloadsEnabled: true,
+          textScaler: const TextScaler.linear(2),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(layout.saved), findsOneWidget);
+      expect(find.text(layout.downloads), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets(
+      'production router wires the Library destination and redirects unavailable tabs',
+      (tester) async {
+    final series = SeriesProvider()
+      ..load(false)
+      ..setCurrentSeriesForTest(_arabicSeries);
     await tester.pumpWidget(
       _wrap(
-        series: SeriesProvider()..load(false),
-        textScaler: const TextScaler.linear(2),
-        textDirection: TextDirection.rtl,
+        series: series,
+        initialLocation: '/library',
+        useProductionRouter: true,
       ),
     );
     await tester.pumpAndSettle();
 
-    for (final key in [
-      WidgetKeys.shellLecturesTab,
-      WidgetKeys.shellBookTab,
-      WidgetKeys.shellStudyTab,
-      WidgetKeys.shellLibraryTab,
-      WidgetKeys.shellSettingsTab,
-    ]) {
-      expect(find.byKey(key), findsOneWidget);
-      await tester.tap(find.byKey(key));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-    }
+    expect(find.byType(LibraryScreen), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellLibraryTab), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(ShellScreen))).go('/study');
+    await tester.pumpAndSettle();
+    expect(
+      GoRouter.of(tester.element(find.byType(ShellScreen)))
+          .routeInformationProvider
+          .value
+          .uri
+          .path,
+      '/lectures',
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('legacy Library routes from Player preserve Player and pop back',

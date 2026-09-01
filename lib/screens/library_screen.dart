@@ -27,44 +27,59 @@ class _LibraryScreenState extends State<LibraryScreen> {
         context.watch<FeatureFlagsProvider>().features.downloads;
     final selected = downloadsEnabled ? _selected : 0;
 
-    final destinations = <ButtonSegment<int>>[
-      ButtonSegment(
-        value: 0,
-        label: Text(l10n.saved),
-        icon: const Icon(Icons.bookmark_outline_rounded),
-      ),
-      if (downloadsEnabled)
-        ButtonSegment(
-          value: 1,
-          label: Text(l10n.offlineLibrary),
-          icon: const Icon(Icons.download_outlined),
-        ),
-    ];
-
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabLibrary)),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: SegmentedButton<int>(
-              segments: destinations,
-              selected: {selected},
-              onSelectionChanged: (selected) =>
-                  setState(() => _selected = selected.first),
-              showSelectedIcon: false,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 360;
+          Widget segmentLabel(String label) => compact
+              ? SizedBox(
+                  height: 24,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(label),
+                  ),
+                )
+              : Text(label);
+          final destinations = <ButtonSegment<int>>[
+            ButtonSegment(
+              value: 0,
+              label: segmentLabel(l10n.saved),
+              icon: const Icon(Icons.bookmark_outline_rounded),
             ),
-          ),
-          Expanded(
-            child: IndexedStack(
-              index: selected,
-              children: [
-                const BookmarksBody(),
-                if (downloadsEnabled) const OfflineLibraryBody(),
-              ],
-            ),
-          ),
-        ],
+            if (downloadsEnabled)
+              ButtonSegment(
+                value: 1,
+                label: segmentLabel(l10n.offlineLibrary),
+                icon: const Icon(Icons.download_outlined),
+              ),
+          ];
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: SegmentedButton<int>(
+                  segments: destinations,
+                  selected: {selected},
+                  onSelectionChanged: (selected) =>
+                      setState(() => _selected = selected.first),
+                  showSelectedIcon: false,
+                ),
+              ),
+              Expanded(
+                child: IndexedStack(
+                  index: selected,
+                  children: [
+                    const BookmarksBody(),
+                    if (downloadsEnabled) const OfflineLibraryBody(),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -70,9 +70,9 @@ class ShellScreen extends StatelessWidget {
     final l10n = context.l10n;
 
     return PopScope<void>(
-      // Each branch navigator gets first chance to pop its own stack. Once a
-      // branch is at its root, Android Back returns to Lectures before it can
-      // leave the app.
+      // A nested route in the active branch pops before this shell PopScope is
+      // consulted. Once that branch is at its root, Android Back returns to
+      // Lectures before it can leave the app.
       canPop: navigationShell.currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && navigationShell.currentIndex != 0) {

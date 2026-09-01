@@ -47,152 +47,159 @@ final _studyNavigatorKey = GlobalKey<NavigatorState>();
 final _libraryNavigatorKey = GlobalKey<NavigatorState>();
 final _settingsNavigatorKey = GlobalKey<NavigatorState>();
 
-// Router is a top-level singleton — created once, never recreated on rebuild.
-final _router = GoRouter(
-  navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
-  routes: [
-    // Splash / onboarding — shown on cold start.
-    // Redirect fires before the widget builds, so returning users never see
-    // even a single frame of WelcomeScreen.
-    GoRoute(
-      path: '/',
-      redirect: (context, state) => RouteGuards.welcome(
-        shouldShowWelcome:
-            context.read<SeriesProvider>().shouldShowWelcomeForCurrentSeries,
-      ),
-      builder: (context, state) => const WelcomeScreen(),
-    ),
+/// Builds the route graph shared by the app and widget-level route tests.
+///
+/// Keeping this in one place ensures tests exercise the production branch
+/// navigator keys and capability redirects instead of a smaller substitute.
+GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
+      navigatorKey: _rootNavigatorKey,
+      initialLocation: initialLocation,
+      routes: [
+        // Splash / onboarding — shown on cold start.
+        // Redirect fires before the widget builds, so returning users never see
+        // even a single frame of WelcomeScreen.
+        GoRoute(
+          path: '/',
+          redirect: (context, state) => RouteGuards.welcome(
+            shouldShowWelcome: context
+                .read<SeriesProvider>()
+                .shouldShowWelcomeForCurrentSeries,
+          ),
+          builder: (context, state) => const WelcomeScreen(),
+        ),
 
-    // Indexed branches preserve each destination's scroll and nested state.
-    // Their order mirrors SeriesNavigationPolicy for the shipped capabilities.
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          ShellScreen(navigationShell: navigationShell),
-      branches: [
-        StatefulShellBranch(
-          navigatorKey: _lecturesNavigatorKey,
-          routes: [
-            GoRoute(
-              path: '/lectures',
-              builder: (context, state) => const LectureListScreen(),
+        // Indexed branches preserve each destination's scroll and nested state.
+        // Their order mirrors SeriesNavigationPolicy for the shipped capabilities.
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) =>
+              ShellScreen(navigationShell: navigationShell),
+          branches: [
+            StatefulShellBranch(
+              navigatorKey: _lecturesNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: '/lectures',
+                  builder: (context, state) => const LectureListScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              navigatorKey: _bookNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: '/book',
+                  redirect: (context, state) => RouteGuards.book(
+                    context.read<SeriesProvider>().currentSeries,
+                  ),
+                  builder: (context, state) => const BookChapterListScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              navigatorKey: _studyNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: '/study',
+                  redirect: (context, state) => RouteGuards.study(
+                    context.read<SeriesProvider>().currentSeries,
+                  ),
+                  builder: (context, state) => const StudyScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              navigatorKey: _libraryNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: '/library',
+                  builder: (context, state) => const LibraryScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              navigatorKey: _settingsNavigatorKey,
+              routes: [
+                // Settings is a bottom-nav tab (always last), so it lives inside the
+                // shell and keeps the nav bar visible. Bookmarks and About remain
+                // full-screen pushes from the ⋯ overflow menu below.
+                GoRoute(
+                  path: '/settings',
+                  builder: (context, state) => const SettingsScreen(),
+                ),
+              ],
             ),
           ],
         ),
-        StatefulShellBranch(
-          navigatorKey: _bookNavigatorKey,
-          routes: [
-            GoRoute(
-              path: '/book',
-              redirect: (context, state) => RouteGuards.book(
-                context.read<SeriesProvider>().currentSeries,
-              ),
-              builder: (context, state) => const BookChapterListScreen(),
-            ),
-          ],
+
+        // About — its own full-screen page, split out of Settings and pushed from
+        // the About row there (mirrors the al-Quran app).
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/about',
+          builder: (context, state) => const AboutPage(),
         ),
-        StatefulShellBranch(
-          navigatorKey: _studyNavigatorKey,
-          routes: [
-            GoRoute(
-              path: '/study',
-              redirect: (context, state) => RouteGuards.study(
-                context.read<SeriesProvider>().currentSeries,
-              ),
-              builder: (context, state) => const StudyScreen(),
-            ),
-          ],
+
+        // Series picker — root navigator, full-screen (no bottom nav), shown
+        // only to genuinely fresh installs when multi-series is enabled.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/choose-series',
+          builder: (context, state) => const ChooseSeriesScreen(),
         ),
-        StatefulShellBranch(
-          navigatorKey: _libraryNavigatorKey,
-          routes: [
-            GoRoute(
-              path: '/library',
-              builder: (context, state) => const LibraryScreen(),
-            ),
-          ],
+
+        // Bookmarks — root navigator so it opens as a full-screen pushed view
+        // (with a back button) from the ⋯ overflow menu, rather than occupying a
+        // bottom-nav slot.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/bookmarks',
+          builder: (context, state) => const BookmarksScreen(),
         ),
-        StatefulShellBranch(
-          navigatorKey: _settingsNavigatorKey,
-          routes: [
-            // Settings is a bottom-nav tab (always last), so it lives inside the
-            // shell and keeps the nav bar visible. Bookmarks and About remain
-            // full-screen pushes from the ⋯ overflow menu below.
-            GoRoute(
-              path: '/settings',
-              builder: (context, state) => const SettingsScreen(),
-            ),
-          ],
+
+        // Offline library — root navigator (same as /player) so pushes from the
+        // player sheet or Settings never duplicate ShellRoute page keys.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/offline-library',
+          builder: (context, state) => const OfflineLibraryScreen(),
+        ),
+
+        // Book reader — root navigator (same as /player) so the bottom nav bar
+        // is hidden while reading a chapter.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/book/:chapterId',
+          builder: (context, state) => BookReaderScreen(
+            chapterId: state.pathParameters['chapterId']!,
+          ),
+        ),
+
+        // Full-screen player — parentNavigatorKey forces it onto the root
+        // navigator so the bottom nav bar is hidden behind the player.
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/player',
+          pageBuilder: (context, state) => const MaterialPage(
+            fullscreenDialog: true,
+            child: PlayerScreen(),
+          ),
+        ),
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/study/complete',
+          builder: (context, state) {
+            final chapterId = state.uri.queryParameters['chapterId'];
+            if (chapterId == null || chapterId.isEmpty) {
+              return const StudyScreen();
+            }
+            return StudyClassCompleteScreen(chapterId: chapterId);
+          },
         ),
       ],
-    ),
+    );
 
-    // About — its own full-screen page, split out of Settings and pushed from
-    // the About row there (mirrors the al-Quran app).
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/about',
-      builder: (context, state) => const AboutPage(),
-    ),
-
-    // Series picker — root navigator, full-screen (no bottom nav), shown
-    // only to genuinely fresh installs when multi-series is enabled.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/choose-series',
-      builder: (context, state) => const ChooseSeriesScreen(),
-    ),
-
-    // Bookmarks — root navigator so it opens as a full-screen pushed view
-    // (with a back button) from the Saved shortcut on Home, rather than
-    // occupying a bottom nav slot.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/bookmarks',
-      builder: (context, state) => const BookmarksScreen(),
-    ),
-
-    // Offline library — root navigator (same as /player) so pushes from the
-    // player sheet or Settings never duplicate ShellRoute page keys.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/offline-library',
-      builder: (context, state) => const OfflineLibraryScreen(),
-    ),
-
-    // Book reader — root navigator (same as /player) so the bottom nav bar
-    // is hidden while reading a chapter.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/book/:chapterId',
-      builder: (context, state) => BookReaderScreen(
-        chapterId: state.pathParameters['chapterId']!,
-      ),
-    ),
-
-    // Full-screen player — parentNavigatorKey forces it onto the root
-    // navigator so the bottom nav bar is hidden behind the player.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/player',
-      pageBuilder: (context, state) => const MaterialPage(
-        fullscreenDialog: true,
-        child: PlayerScreen(),
-      ),
-    ),
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/study/complete',
-      builder: (context, state) {
-        final chapterId = state.uri.queryParameters['chapterId'];
-        if (chapterId == null || chapterId.isEmpty) {
-          return const StudyScreen();
-        }
-        return StudyClassCompleteScreen(chapterId: chapterId);
-      },
-    ),
-  ],
-);
+// Router is a top-level singleton — created once, never recreated on rebuild.
+final _router = createAppRouter();
 
 class MyApp extends StatelessWidget {
   final TawheedAudioHandler audioHandler;

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/audio/player_notifier.dart';
+import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
@@ -54,6 +55,7 @@ Widget _library({
   ProgressProvider? progress,
   DownloadsProvider? downloads,
   PlayerNotifier? player,
+  bool useProductionRouter = false,
 }) {
   final flags = FeatureFlagsProvider()
     ..setFeaturesJsonForTest({'downloads': downloadsEnabled});
@@ -85,60 +87,67 @@ Widget _library({
       theme: AppTheme.light,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: GoRouter(
-        initialLocation: '/library',
-        routes: [
-          StatefulShellRoute.indexedStack(
-            builder: (_, __, shell) => ShellScreen(navigationShell: shell),
-            branches: [
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/lectures',
-                    builder: (_, __) => const Scaffold(body: Text('Lectures')),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/book',
-                    builder: (_, __) => const Scaffold(body: Text('Book')),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/study',
-                    builder: (_, __) => const Scaffold(body: Text('Study')),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/library',
-                    builder: (_, __) => const LibraryScreen(),
-                  ),
-                ],
-              ),
-              StatefulShellBranch(
-                routes: [
-                  GoRoute(
-                    path: '/settings',
-                    builder: (_, __) => const Scaffold(body: Text('Settings')),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/player',
-            builder: (_, __) => const Scaffold(body: Text('Player')),
-          ),
-        ],
-      ),
+      routerConfig: useProductionRouter
+          ? createAppRouter(initialLocation: '/library')
+          : GoRouter(
+              initialLocation: '/library',
+              routes: [
+                StatefulShellRoute.indexedStack(
+                  builder: (_, __, shell) =>
+                      ShellScreen(navigationShell: shell),
+                  branches: [
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/lectures',
+                          builder: (_, __) =>
+                              const Scaffold(body: Text('Lectures')),
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/book',
+                          builder: (_, __) =>
+                              const Scaffold(body: Text('Book')),
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/study',
+                          builder: (_, __) =>
+                              const Scaffold(body: Text('Study')),
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/library',
+                          builder: (_, __) => const LibraryScreen(),
+                        ),
+                      ],
+                    ),
+                    StatefulShellBranch(
+                      routes: [
+                        GoRoute(
+                          path: '/settings',
+                          builder: (_, __) =>
+                              const Scaffold(body: Text('Settings')),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: '/player',
+                  builder: (_, __) => const Scaffold(body: Text('Player')),
+                ),
+              ],
+            ),
     ),
   );
 }
@@ -160,6 +169,19 @@ void main() {
     expect(find.text('Library'), findsNWidgets(2));
     expect(find.text('Bookmarks'), findsWidgets);
     expect(find.text('Downloads'), findsNothing);
+  });
+
+  testWidgets('mounts Library through the production route graph',
+      (tester) async {
+    await tester.pumpWidget(
+      _library(downloadsEnabled: true, useProductionRouter: true),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LibraryScreen), findsOneWidget);
+    expect(find.text('Bookmarks'), findsWidgets);
+    expect(find.text('Downloads'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
