@@ -47,28 +47,49 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _openedChooser = false;
+
   Future<void> _startListening(BuildContext context) async {
     final series = context.read<SeriesProvider>();
     if (!context.mounted) return;
+    // A fresh multi-edition install with no selection yet is redirected to
+    // the chooser before this button ever becomes tappable (see
+    // _maybeOpenChooser), so reaching here always means a series is either
+    // already selected or there is only one to default to.
     if (series.hasSelectedSeries) {
       series.markWelcomeSeenForCurrentSeries();
       context.go('/lectures');
-      return;
-    }
-    if (series.availableSeries.length > 1) {
-      // Do NOT mark welcome as seen here — ChooseSeriesScreen handles it.
-      // If the user picks the same series (Urdu), ChooseSeriesScreen marks it
-      // seen and goes to /lectures. If they pick a different series (Arabic),
-      // ChooseSeriesScreen navigates to / and the router shows that series'
-      // welcome. Leaving Urdu unseen means backing out of the picker restores
-      // this welcome screen correctly on the next launch.
-      unawaited(context.push('/choose-series'));
       return;
     }
     await switchSeries(context, series.availableSeries.first);
     if (!context.mounted) return;
     series.markWelcomeSeenForCurrentSeries();
     context.go('/lectures');
+  }
+
+  /// A genuinely fresh multi-edition install must choose an edition first —
+  /// otherwise this screen would render a full introduction for whichever
+  /// edition `currentSeries` falls back to before any choice is made,
+  /// producing two "introductions" in a row (this one, then the chosen
+  /// edition's) instead of the canonical one. Fires once, as soon as the
+  /// series state is definitively resolved, before this screen's content
+  /// ever becomes visible (it stays hidden behind `isReady` until then).
+  void _maybeOpenChooser(SeriesProvider series) {
+    if (_openedChooser) return;
+    if (!series.isSeriesReady) return;
+    if (series.hasSelectedSeries) return;
+    if (series.availableSeries.length <= 1) return;
+    _openedChooser = true;
+    // Do NOT mark welcome as seen here — ChooseSeriesScreen handles it. If
+    // the user picks the same series (Urdu), ChooseSeriesScreen marks it
+    // seen and goes to /lectures. If they pick a different series (Arabic),
+    // ChooseSeriesScreen navigates to / and the router shows that series'
+    // welcome. Leaving Urdu unseen means backing out of the picker restores
+    // this welcome screen correctly on the next launch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.push('/choose-series'));
+    });
   }
 
   @override
@@ -88,6 +109,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final seriesProvider = context.watch<SeriesProvider>();
+    _maybeOpenChooser(seriesProvider);
     final isReady = seriesProvider.isSeriesReady;
     final series = seriesProvider.currentSeries;
     final isRtl = series.isRtl;

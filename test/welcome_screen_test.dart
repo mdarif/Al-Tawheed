@@ -328,7 +328,9 @@ void main() {
 
   group('WelcomeScreen — Scenario 4: fresh install, multiSeries ON, >1 series',
       () {
-    testWidgets('tapping CTA navigates to ChooseSeriesScreen', (tester) async {
+    testWidgets(
+        'auto-navigates to ChooseSeriesScreen without ever rendering a '
+        'defaulted welcome', (tester) async {
       final series = SeriesProvider()
         ..load(true, definitive: true)
         ..setAvailableSeriesForTest(
@@ -339,13 +341,17 @@ void main() {
       expect(series.hasSelectedSeries, isFalse);
 
       await tester.pumpWidget(_wrapWithRouter(series: series));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(WidgetKeys.welcomeStartListening));
+      // No tap — this must happen on its own, before the welcome content for
+      // an unchosen (defaulted-Urdu) series is ever shown.
       await tester.pumpAndSettle();
 
       // Should be on ChooseSeriesScreen, NOT lectures
       expect(find.text('Lectures'), findsNothing);
+      // The Welcome CTA must never have appeared — otherwise the fresh
+      // multi-edition install briefly showed a welcome for an edition
+      // nobody chose yet, which is the duplicate-intro path this fix
+      // removes.
+      expect(find.byKey(WidgetKeys.welcomeStartListening), findsNothing);
       // Onboarding not yet completed (deferred to card tap)
       expect(series.hasCompletedOnboarding, isFalse);
 
