@@ -31,6 +31,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/route_guards_test.dart
       - test/series_navigation_policy_test.dart
@@ -64,6 +68,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/saved_lecture_metadata_test.dart
       - test/catalog_provider_test.dart
@@ -95,6 +103,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/route_guards_test.dart
       - test/series_provider_test.dart
@@ -120,6 +132,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/download_notification_service_test.dart
       - test/offline_status_banner_test.dart
@@ -178,6 +194,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/lecture_search_test.dart
       - test/lecture_search_screen_test.dart
@@ -273,6 +293,10 @@ phases:
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
       - lib/l10n/app_ur_roman.arb
+      - lib/l10n/app_localizations.dart
+      - lib/l10n/app_localizations_en.dart
+      - lib/l10n/app_localizations_ar.dart
+      - lib/l10n/app_localizations_ur.dart
       - test/arb_parity_test.dart
       - test/book_chapter_list_screen_test.dart
       - test/book_reader_screen_test.dart
