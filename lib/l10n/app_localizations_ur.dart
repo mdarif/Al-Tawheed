@@ -201,6 +201,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String libraryHeroSubtitle(int saved, int downloaded) {
+    return '$saved محفوظ · $downloaded ڈاؤن لوڈ';
+  }
+
+  @override
   String get noSavedLectures => 'ابھی تک کوئی درس محفوظ نہیں';
 
   @override
@@ -777,6 +782,11 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String savedCount(int count) {
     return 'Mehfooz ($count)';
+  }
+
+  @override
+  String libraryHeroSubtitle(int saved, int downloaded) {
+    return '$saved mehfooz · $downloaded download';
   }
 
   @override

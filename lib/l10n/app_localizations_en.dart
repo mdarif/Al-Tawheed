@@ -200,6 +200,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String libraryHeroSubtitle(int saved, int downloaded) {
+    return '$saved saved · $downloaded downloaded';
+  }
+
+  @override
   String get noSavedLectures => 'No bookmarked lectures yet';
 
   @override

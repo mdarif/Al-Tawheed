@@ -61,6 +61,13 @@
 
   "saved": "محفوظ",
   "savedCount": "محفوظ ({count})",
+  "libraryHeroSubtitle": "{saved} محفوظ · {downloaded} ڈاؤن لوڈ",
+  "@libraryHeroSubtitle": {
+    "placeholders": {
+      "saved": { "type": "int" },
+      "downloaded": { "type": "int" }
+    }
+  },
   "noSavedLectures": "ابھی تک کوئی درس محفوظ نہیں",
   "noSavedHint": "کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں",
 

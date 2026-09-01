@@ -99,6 +99,13 @@
   "@savedCount": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "libraryHeroSubtitle": "{saved} saved · {downloaded} downloaded",
+  "@libraryHeroSubtitle": {
+    "placeholders": {
+      "saved": { "type": "int" },
+      "downloaded": { "type": "int" }
+    }
+  },
   "noSavedLectures": "No bookmarked lectures yet",
   "noSavedHint": "Tap the bookmark icon in the player to save a lecture",
 

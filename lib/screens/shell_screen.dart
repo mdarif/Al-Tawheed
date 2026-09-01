@@ -45,8 +45,8 @@ extension on SeriesNavigationTab {
           ),
         SeriesNavigationTab.library => NavigationDestination(
             key: WidgetKeys.shellLibraryTab,
-            icon: const Icon(Icons.collections_bookmark_outlined),
-            selectedIcon: const Icon(Icons.collections_bookmark_rounded),
+            icon: const Icon(Icons.folder_outlined),
+            selectedIcon: const Icon(Icons.folder_rounded),
             label: l10n.tabLibrary,
           ),
         SeriesNavigationTab.settings => NavigationDestination(

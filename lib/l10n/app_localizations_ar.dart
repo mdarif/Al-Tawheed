@@ -198,6 +198,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String libraryHeroSubtitle(int saved, int downloaded) {
+    return '$saved محفوظ · $downloaded تنزيل';
+  }
+
+  @override
   String get noSavedLectures => 'لا توجد دروس محفوظة بعد';
 
   @override

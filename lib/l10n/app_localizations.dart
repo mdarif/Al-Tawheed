@@ -437,6 +437,12 @@ abstract class AppLocalizations {
   /// **'Bookmarks ({count})'**
   String savedCount(int count);
 
+  /// No description provided for @libraryHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{saved} saved · {downloaded} downloaded'**
+  String libraryHeroSubtitle(int saved, int downloaded);
+
   /// No description provided for @noSavedLectures.
   ///
   /// In en, this message translates to:

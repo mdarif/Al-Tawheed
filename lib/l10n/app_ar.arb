@@ -97,6 +97,13 @@
   "@savedCount": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "libraryHeroSubtitle": "{saved} محفوظ · {downloaded} تنزيل",
+  "@libraryHeroSubtitle": {
+    "placeholders": {
+      "saved": { "type": "int" },
+      "downloaded": { "type": "int" }
+    }
+  },
   "noSavedLectures": "لا توجد دروس محفوظة بعد",
   "noSavedHint": "اضغط أيقونة الإشارة المرجعية في المشغّل لحفظ درس",
 
