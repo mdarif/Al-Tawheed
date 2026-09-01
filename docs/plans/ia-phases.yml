@@ -55,6 +55,9 @@ phases:
     title: Trustworthy Library and offline playback
     needs: [A1]
     owns:
+      - lib/app.dart
+      - lib/audio/player_notifier.dart
+      - lib/providers/connectivity_provider.dart
       - lib/models/catalog.dart
       - lib/models/saved_lecture_metadata.dart
       - lib/providers/catalog_provider.dart
