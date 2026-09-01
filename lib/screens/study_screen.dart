@@ -94,6 +94,81 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 }
 
+/// Study content only, no `Scaffold`/`AppBar` — embedded inside `ReadScreen`'s
+/// single shared header.
+class StudyBody extends StatefulWidget {
+  const StudyBody({super.key});
+
+  @override
+  State<StudyBody> createState() => _StudyBodyState();
+}
+
+class _StudyBodyState extends State<StudyBody> {
+  // See the matching helper in LectureListScreen — reloads the catalog once
+  // per distinct series id so Study Mode never shows a different series'
+  // classes than the one currently active.
+  String? _requestedSeriesId;
+
+  void _syncCatalogToSeries(BuildContext context) {
+    final series = context.watch<SeriesProvider>().currentSeries;
+    if (series.id == _requestedSeriesId) return;
+    _requestedSeriesId = series.id;
+
+    final catalog = context.read<CatalogProvider>();
+    if (catalog.loadedSeriesId == series.id) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CatalogProvider>().load(series);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _syncCatalogToSeries(context);
+    final catalog = context.watch<CatalogProvider>();
+    final l10n = context.l10n;
+
+    return switch (catalog.status) {
+      CatalogStatus.idle || CatalogStatus.loading => Center(
+          child: CircularProgressIndicator(color: context.brandColor),
+        ),
+      CatalogStatus.error => catalog.needsOnlineToLoad
+          ? CatalogConnectRequiredBody(provider: catalog)
+          : CatalogErrorBody(
+              icon: Icons.wifi_off_rounded,
+              title: l10n.studyCouldNotLoadClasses,
+              message: catalog.error ?? l10n.studyCouldNotLoadClasses,
+              onRetry: () => catalog.load(),
+            ),
+      CatalogStatus.loaded => _StudyBody(
+          onClassTap: (info) => _onClassTap(context, info),
+        ),
+    };
+  }
+
+  Future<void> _onClassTap(BuildContext context, ChapterStudyInfo info) async {
+    final l10n = context.l10n;
+    final lang = context.read<LanguageProvider>();
+    final title = lang.resolve(info.chapter.title);
+
+    if (info.status == ChapterStudyStatus.studied) {
+      final restart = await showConfirmDialog(
+        context,
+        title: l10n.studyRestartTitle(title),
+        message: l10n.studyRestartMessage,
+        confirmLabel: l10n.studyRestart,
+        filledConfirm: true,
+      );
+      if (!restart || !context.mounted) return;
+      startStudySession(context, info.chapter.id, restartStudied: true);
+      return;
+    }
+
+    startStudySession(context, info.chapter.id);
+  }
+}
+
 class _StudyBody extends StatelessWidget {
   final ValueChanged<ChapterStudyInfo> onClassTap;
 

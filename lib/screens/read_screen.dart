@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/screens/study_screen.dart';
+import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/compact_toggle_chip.dart';
 
 /// The shell home for reading and studying the book — Book and Study merged
-/// into one destination with an in-screen toggle, matching Library's
-/// Saved/Downloads pattern, so an edition with both never needs a 5th bottom
-/// nav destination. See D1 amendment in the IA roadmap.
-///
-/// This first pass embeds the existing `BookChapterListScreen`/`StudyScreen`
-/// unmodified (each keeps its own app bar) below a slim toggle strip, rather
-/// than merging their chrome — that keeps their scroll/immersion behavior
-/// untouched while the merged-tab direction gets a look.
+/// into one destination behind a single shared header, with an in-screen
+/// toggle when an edition has both. See D1 amendment in the IA roadmap.
 class ReadScreen extends StatefulWidget {
   const ReadScreen({super.key});
 
@@ -34,51 +31,79 @@ class _ReadScreenState extends State<ReadScreen> {
     final hasStudy = series.hasStudyMode;
     final showToggle = hasBook && hasStudy;
     final selected = showToggle ? _selected : 0;
+    final showingBook = hasBook && (!hasStudy || selected == 0);
 
-    return Column(
-      children: [
-        if (showToggle)
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CompactToggleChip(
-                      label: l10n.tabBook,
-                      selected: selected == 0,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selected = 0);
-                      },
-                    ),
+    return Scaffold(
+      appBar: AppBar(
+        title: showingBook
+            ? _BookTitle(fontFamily: series.bookFontFamily)
+            : Text(l10n.studyMode),
+        actions: const [AppOverflowMenu()],
+        bottom: showToggle
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(56),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CompactToggleChip(
+                          label: l10n.tabBook,
+                          selected: selected == 0,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _selected = 0);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CompactToggleChip(
+                          label: l10n.tabStudyMode,
+                          selected: selected == 1,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _selected = 1);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: CompactToggleChip(
-                      label: l10n.tabStudyMode,
-                      selected: selected == 1,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selected = 1);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        Expanded(
-          child: IndexedStack(
-            index: selected,
-            children: [
-              if (hasBook) const BookChapterListScreen(),
-              if (hasStudy) const StudyScreen(),
-            ],
-          ),
+                ),
+              )
+            : null,
+      ),
+      body: IndexedStack(
+        index: selected,
+        children: [
+          if (hasBook) const BookChapterListBody(),
+          if (hasStudy) const StudyBody(),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookTitle extends StatelessWidget {
+  final String fontFamily;
+
+  const _BookTitle({required this.fontFamily});
+
+  @override
+  Widget build(BuildContext context) {
+    final book = context.watch<BookProvider>().book;
+    final l10n = context.l10n;
+    if (book == null) return Text(l10n.tabBook);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Text(
+        book.title,
+        textAlign: TextAlign.right,
+        style: context.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          fontFamily: fontFamily,
         ),
-      ],
+      ),
     );
   }
 }

@@ -133,6 +133,110 @@ class _BookChapterListScreenState extends State<BookChapterListScreen> {
   }
 }
 
+/// Book content only, no `Scaffold`/`AppBar` — embedded inside `ReadScreen`'s
+/// single shared header. Unlike [BookChapterListScreen], scrolling here does
+/// not hide a local app bar (there is no local one); the bottom nav still
+/// hides on scroll via [ShellChromeProvider], same as every other branch.
+class BookChapterListBody extends StatefulWidget {
+  const BookChapterListBody({super.key});
+
+  @override
+  State<BookChapterListBody> createState() => _BookChapterListBodyState();
+}
+
+class _BookChapterListBodyState extends State<BookChapterListBody> {
+  final _scrollController = ScrollController();
+  double _lastOffset = 0;
+  ShellChromeProvider? _shellChrome;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BookProvider>();
+      if (provider.status == BookStatus.idle) {
+        provider.load(context.read<SeriesProvider>().currentSeries);
+      }
+    });
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    final delta = offset - _lastOffset;
+    if (offset <= 8 || delta < -6) {
+      _shellChrome?.setVisible(true);
+    } else if (delta > 6) {
+      _shellChrome?.setVisible(false);
+    }
+    _lastOffset = offset;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final shellChrome = context.read<ShellChromeProvider>();
+    if (_shellChrome == shellChrome) return;
+    _shellChrome?.show();
+    _shellChrome = shellChrome..show();
+  }
+
+  @override
+  void dispose() {
+    _shellChrome?.show();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BookProvider>();
+    final book = provider.book;
+    final l10n = context.l10n;
+    final series = context.watch<SeriesProvider>().currentSeries;
+    final fontFamily = series.bookFontFamily;
+    final language = series.language;
+
+    return switch (provider.status) {
+      BookStatus.idle || BookStatus.loading => Center(
+          child: CircularProgressIndicator(color: context.brandColor),
+        ),
+      BookStatus.error => CatalogErrorBody(
+          icon: Icons.menu_book_outlined,
+          title: l10n.bookCouldNotLoad,
+          message: provider.error ?? l10n.bookCouldNotLoad,
+          onRetry: () => provider.load(
+            context.read<SeriesProvider>().currentSeries,
+          ),
+        ),
+      BookStatus.loaded => ListView.builder(
+          controller: _scrollController,
+          physics: const ReaderClampEdgesPhysics(),
+          itemCount: book!.chapters.length,
+          itemBuilder: (context, index) {
+            final chapter = book.chapters[index];
+            return Column(
+              children: [
+                _ChapterTile(
+                  chapter: chapter,
+                  displayNumber: index + 1,
+                  fontFamily: fontFamily,
+                  language: language,
+                ),
+                Divider(
+                  height: 1,
+                  indent: 70,
+                  endIndent: 16,
+                  color: context.dividerColor,
+                ),
+              ],
+            );
+          },
+        ),
+    };
+  }
+}
+
 class _SlidingAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool visible;
   final PreferredSizeWidget child;
