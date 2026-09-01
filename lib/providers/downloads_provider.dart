@@ -89,7 +89,7 @@ class DownloadsProvider extends ChangeNotifier {
       for (final row in persistedMetadata) row.id: row,
       for (final row in persistedQueued) row.id: row,
     };
-    final savedCount = downloadedIds.length;
+    final originalDownloadedIds = downloadedIds.toSet();
     final candidateIds = {
       ...downloadedIds,
       ...persistedQueued.map((row) => row.id),
@@ -111,7 +111,7 @@ class DownloadsProvider extends ChangeNotifier {
     }
     if (!_isCurrentOperation(generation, seriesId)) return;
 
-    if (downloadedIds.length != savedCount) {
+    if (!setEquals(downloadedIds.toSet(), originalDownloadedIds)) {
       await PreferencesService.instance
           .saveDownloadedIds(downloadedIds, prefix: prefix);
       if (!_isCurrentOperation(generation, seriesId)) return;
@@ -641,6 +641,8 @@ class DownloadsProvider extends ChangeNotifier {
     final generation = _generation;
     final seriesId = _seriesId;
     final prefix = _prefix;
+    await _removeQueuedDownload(lectureId);
+    if (!_isCurrentOperation(generation, seriesId)) return;
     if (isDownloading(lectureId)) {
       if (cancelDownload(lectureId)) return;
       // Promotion has begun. Mark the user intent now so the successful

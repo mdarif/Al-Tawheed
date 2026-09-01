@@ -223,6 +223,18 @@ void main() {
       );
     });
 
+    test('delete clears queued intent when removing an unstarted request',
+        () async {
+      final provider = DownloadsProvider();
+      await provider.queueDownload(_lec('queued-then-deleted'));
+      expect(provider.queuedDownloadCount, 1);
+
+      await provider.delete('queued-then-deleted');
+
+      expect(provider.queuedDownloadCount, 0);
+      expect(PreferencesService.instance.loadQueuedDownloads(), isEmpty);
+    });
+
     test('deleteAll clears queued work in memory and preferences', () async {
       final provider = DownloadsProvider();
       await provider.queueDownload(_lec('delete-all-queued-a'));
@@ -262,6 +274,68 @@ void main() {
       expect(restored.queuedDownloadCount, chapter.length - 1);
       await restored.tryStartQueuedDownload(isOnline: true, isWifi: true);
       expect(restored.queuedDownloadCount, chapter.length - 1);
+    });
+
+    test(
+        'persists a reconciled downloaded-id set even when its size matches '
+        'the old one', () async {
+      // old-a's file is missing (dropped) while queued-c's file already
+      // exists on disk (promoted, adopted) — the reconciled set has the same
+      // *count* as the original persisted set but different *members*. A
+      // count-only comparison would wrongly skip persisting the correction.
+      const oldA = SavedLectureMetadata(
+        id: 'old-a',
+        number: 1,
+        chapterId: 'ch-01',
+        title: {'en': 'Old A'},
+        audioUrl: 'https://example.test/old-a.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 100,
+      );
+      const oldB = SavedLectureMetadata(
+        id: 'old-b',
+        number: 2,
+        chapterId: 'ch-01',
+        title: {'en': 'Old B'},
+        audioUrl: 'https://example.test/old-b.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 100,
+      );
+      const queuedC = SavedLectureMetadata(
+        id: 'queued-c',
+        number: 3,
+        chapterId: 'ch-01',
+        title: {'en': 'Queued C'},
+        audioUrl: 'https://example.test/queued-c.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 100,
+      );
+
+      await File(DownloadService.localPath('old-b'))
+          .create(recursive: true)
+          .then((f) => f.writeAsBytes(List.filled(100, 0)));
+      await File(DownloadService.localPath('queued-c'))
+          .create(recursive: true)
+          .then((f) => f.writeAsBytes(List.filled(100, 0)));
+
+      await PreferencesService.instance.saveDownloadedIds({'old-a', 'old-b'});
+      await PreferencesService.instance.saveDownloadedMetadata([oldA, oldB]);
+      await PreferencesService.instance.saveQueuedDownloads([queuedC]);
+
+      final first = DownloadsProvider();
+      await first.load();
+      // The first load's in-memory state is already correct...
+      expect(first.isDownloaded('queued-c'), isTrue);
+      expect(first.isDownloaded('old-a'), isFalse);
+
+      // ...but a second restart must still see it: proves the correction
+      // was actually persisted, not just held in the first provider's
+      // memory.
+      final second = DownloadsProvider();
+      await second.load();
+      expect(second.isDownloaded('queued-c'), isTrue);
+      expect(second.isDownloaded('old-a'), isFalse);
+      expect(second.isDownloaded('old-b'), isTrue);
     });
   });
 
