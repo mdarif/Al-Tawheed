@@ -365,8 +365,20 @@ String _seriesLanguageLabel(BuildContext context, SeriesConfig series) {
 /// content series. Lists every available edition inline as a checkmark row
 /// (language endonym + teacher); tapping a different one confirms first because
 /// the switch stops playback and reloads the catalog.
-class _SeriesLanguageSelector extends StatelessWidget {
+class _SeriesLanguageSelector extends StatefulWidget {
   const _SeriesLanguageSelector();
+
+  @override
+  State<_SeriesLanguageSelector> createState() =>
+      _SeriesLanguageSelectorState();
+}
+
+class _SeriesLanguageSelectorState extends State<_SeriesLanguageSelector> {
+  // The id of the edition currently being switched to, or null when idle —
+  // guards against a second switch racing the first while it's in flight,
+  // and shows an in-row spinner so the switch reads as in-progress rather
+  // than unresponsive.
+  String? _switchingId;
 
   @override
   Widget build(BuildContext context) {
@@ -375,31 +387,36 @@ class _SeriesLanguageSelector extends StatelessWidget {
     final current = series.currentSeries;
     final available = series.availableSeries;
 
-    return Column(
-      children: [
-        for (var i = 0; i < available.length; i++) ...[
-          if (i > 0)
-            Divider(
-              height: 1,
-              indent: 16,
-              endIndent: 16,
-              color: context.groupedBorder,
+    return AbsorbPointer(
+      absorbing: _switchingId != null,
+      child: Column(
+        children: [
+          for (var i = 0; i < available.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                indent: 16,
+                endIndent: 16,
+                color: context.groupedBorder,
+              ),
+            _SeriesLanguageRow(
+              series: available[i],
+              teacher: lang.resolveForSeries(
+                available[i].speakerName,
+                available[i],
+              ),
+              selected: available[i].id == current.id,
+              loading: _switchingId == available[i].id,
+              onTap: () => _switchTo(context, available[i]),
             ),
-          _SeriesLanguageRow(
-            series: available[i],
-            teacher: lang.resolveForSeries(
-              available[i].speakerName,
-              available[i],
-            ),
-            selected: available[i].id == current.id,
-            onTap: () => _switchTo(context, available[i]),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Future<void> _switchTo(BuildContext context, SeriesConfig target) async {
+    if (_switchingId != null) return;
     final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
@@ -411,7 +428,9 @@ class _SeriesLanguageSelector extends StatelessWidget {
       filledConfirm: true,
     );
     if (!confirmed || !context.mounted) return;
+    if (_switchingId != null) return;
 
+    setState(() => _switchingId = target.id);
     await switchSeries(context, target);
     if (!context.mounted) return;
     // Navigate to / and let the router decide: welcome screen if this is the
@@ -424,12 +443,14 @@ class _SeriesLanguageRow extends StatelessWidget {
   final SeriesConfig series;
   final String teacher;
   final bool selected;
+  final bool loading;
   final VoidCallback onTap;
 
   const _SeriesLanguageRow({
     required this.series,
     required this.teacher,
     required this.selected,
+    this.loading = false,
     required this.onTap,
   });
 
@@ -473,9 +494,18 @@ class _SeriesLanguageRow extends StatelessWidget {
           ),
         ],
       ),
-      trailing: selected
-          ? Icon(Icons.check_rounded, color: context.brandColor)
-          : null,
+      trailing: loading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: context.brandColor,
+              ),
+            )
+          : selected
+              ? Icon(Icons.check_rounded, color: context.brandColor)
+              : null,
       // Selected row is inert; only the other editions are actionable.
       onTap: selected ? null : onTap,
     );

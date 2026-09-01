@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/app_config_provider.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -17,11 +20,39 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+
+Map<String, dynamic> _catalogJson(String bookId) => {
+      'version': 1,
+      'book': {
+        'id': bookId,
+        'title': {'en': 'Test Book'},
+        'titleArabic': '',
+        'speaker': {'en': 'Speaker'},
+        'totalDurationSeconds': 60,
+        'lectureCount': 1,
+        'coverImageUrl': '',
+        'language': 'Arabic',
+      },
+      'chapters': <Map<String, dynamic>>[],
+      'lectures': [
+        {
+          'id': 'lec-001',
+          'number': 1,
+          'chapterId': '',
+          'title': {'en': 'Part 1'},
+          'audioUrl': 'https://example.com/lec-001.mp3',
+          'durationSeconds': 60,
+          'fileSizeBytes': 1000,
+        },
+      ],
+      'dailyBenefits': <Map<String, dynamic>>[],
+    };
 
 // Both series carry an 'ur' translation in displayName that differs from the
 // canonical 'en' name — proving the picker shows the canonical name even
@@ -62,18 +93,30 @@ Widget _wrap({
   // test keying on those text finders would otherwise be ambiguous.
   bool languageFlag = false,
 }) {
-  return MaterialApp(
+  return MaterialApp.router(
     theme: AppTheme.light,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: _settingsProviders(
-      series: series,
-      language: language,
-      multiSeries: multiSeries,
-      appLinks: appLinks,
-      downloads: downloads,
-      languageFlag: languageFlag,
-      child: const SettingsScreen(),
+    routerConfig: GoRouter(
+      initialLocation: '/settings',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(body: SizedBox.shrink()),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (_, __) => _settingsProviders(
+            series: series,
+            language: language,
+            multiSeries: multiSeries,
+            appLinks: appLinks,
+            downloads: downloads,
+            languageFlag: languageFlag,
+            child: const SettingsScreen(),
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -108,6 +151,13 @@ Widget _settingsProviders({
       ChangeNotifierProvider(create: (_) => ConnectivityProvider.testOnline()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
       ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
+      ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider(
+        create: (ctx) => StudyProgressProvider(
+          ctx.read<ProgressProvider>(),
+          ctx.read<CatalogProvider>(),
+        ),
+      ),
       ChangeNotifierProvider(
         create: (ctx) => PlayerNotifier(
           TawheedAudioHandler(),
@@ -198,6 +248,47 @@ void main() {
       // switching also changes teacher, catalogue, tabs, and scoped progress.
       expect(find.text('Change content edition?'), findsOneWidget);
       expect(find.textContaining('العربية'), findsWidgets);
+    });
+
+    testWidgets(
+        'shows an in-progress spinner and blocks a second tap while '
+        'switching', (tester) async {
+      await PreferencesService.instance.saveRemoteJson(
+        'catalog_tawheed-ar',
+        jsonEncode(_catalogJson('arabic-book')),
+      );
+
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrdu, _seriesArabic])
+        ..setCurrentSeriesForTest(_seriesUrdu);
+
+      await tester.pumpWidget(_wrap(series: series));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(WidgetKeys.settingsSeriesOption(_seriesArabic.id)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Change content edition?'), findsOneWidget);
+
+      // Confirm the switch, then check state before it has resolved.
+      await tester.tap(find.text('Switch'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      final absorbing = tester
+          .widgetList<AbsorbPointer>(find.byType(AbsorbPointer))
+          .any((a) => a.absorbing);
+      expect(absorbing, isTrue);
+
+      // Let the switch finish so the test doesn't leak a pending timer.
+      await tester.runAsync(() async {
+        while (series.currentSeries.id != _seriesArabic.id) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+      });
+      await tester.pump();
+      await tester.pumpAndSettle();
     });
   });
 
