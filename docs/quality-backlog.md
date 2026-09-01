@@ -70,6 +70,11 @@ the quality truth that active docs should use.
   a `failed` download, no way to cancel/discard the durable queue entry —
   unlike the Library's unavailable-row UI, which offers both Retry and
   Remove. Add a cancel/delete action to the failed-state button to match.
+- A3's edition switcher lacks a dedicated widget test for switching while
+  offline and for a manifest-fetch failure mid-switch (catalog loading's
+  existing offline/stale-cache handling is exercised elsewhere, but not from
+  this specific entry point). Low priority — the underlying behavior is
+  already covered by `catalog_provider_test.dart`.
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
