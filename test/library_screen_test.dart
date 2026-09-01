@@ -108,18 +108,9 @@ Widget _library({
                     StatefulShellBranch(
                       routes: [
                         GoRoute(
-                          path: '/book',
+                          path: '/read',
                           builder: (_, __) =>
-                              const Scaffold(body: Text('Book')),
-                        ),
-                      ],
-                    ),
-                    StatefulShellBranch(
-                      routes: [
-                        GoRoute(
-                          path: '/study',
-                          builder: (_, __) =>
-                              const Scaffold(body: Text('Study')),
+                              const Scaffold(body: Text('Read')),
                         ),
                       ],
                     ),

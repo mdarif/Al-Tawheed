@@ -5,8 +5,8 @@ import 'package:myapp/navigation/series_navigation_policy.dart';
 
 /// The redirect matrix for `lib/app.dart`. `app.dart` itself has no test — the
 /// `AudioService` singleton makes `MyApp` unmountable in the test harness — so
-/// before this file every routing decision (does a deep link into /book on the
-/// Arabic-only-book edition open, or bounce?) shipped unguarded.
+/// before this file every routing decision (does a deep link into /read on the
+/// minimal-audio-only edition open, or bounce?) shipped unguarded.
 SeriesConfig _series({required bool hasBook, required bool hasStudyMode}) =>
     SeriesConfig(
       id: 'test',
@@ -20,27 +20,20 @@ SeriesConfig _series({required bool hasBook, required bool hasStudyMode}) =>
     );
 
 void main() {
-  group('RouteGuards.book (/book)', () {
+  group('RouteGuards.read (/read)', () {
     test('allows the route when the series bundles a book', () {
       final series = _series(hasBook: true, hasStudyMode: false);
-      expect(RouteGuards.book(series), isNull);
+      expect(RouteGuards.read(series), isNull);
     });
 
-    test('bounces to /lectures when the series has no book', () {
+    test('allows the route when the series has study mode alone', () {
       final series = _series(hasBook: false, hasStudyMode: true);
-      expect(RouteGuards.book(series), '/lectures');
-    });
-  });
-
-  group('RouteGuards.study (/study)', () {
-    test('allows the route when the series has study mode', () {
-      final series = _series(hasBook: false, hasStudyMode: true);
-      expect(RouteGuards.study(series), isNull);
+      expect(RouteGuards.read(series), isNull);
     });
 
-    test('bounces to /lectures when the series has no study mode', () {
-      final series = _series(hasBook: true, hasStudyMode: false);
-      expect(RouteGuards.study(series), '/lectures');
+    test('bounces to /lectures when the series has neither', () {
+      final series = _series(hasBook: false, hasStudyMode: false);
+      expect(RouteGuards.read(series), '/lectures');
     });
   });
 
@@ -54,11 +47,10 @@ void main() {
     });
   });
 
-  // The guards are independent: /book keys off hasBook alone, /study off
-  // hasStudyMode alone. This pins that they don't cross-wire — the real Arabic
-  // edition (book, no study) and Urdu edition (both) must each land right.
+  // /read keys off hasBook OR hasStudyMode — the real Arabic edition (book,
+  // no study) and Urdu edition (both) must each land on the same tab.
   group('the shipped editions land correctly', () {
-    test('Arabic edition: /book opens, /study bounces', () {
+    test('Arabic edition: /read opens (book, no study)', () {
       const arabic = SeriesConfig(
         id: 'tawheed-ar',
         catalogUrl: 'https://example.com/tawheed-ar/catalog.json',
@@ -69,14 +61,12 @@ void main() {
         displayName: {'en': 'Kitab at-Tawheed (Arabic)'},
         speakerName: {'en': 'Shaikh Salih al-Fawzan'},
       );
-      expect(RouteGuards.book(arabic), isNull);
-      expect(RouteGuards.study(arabic), '/lectures');
+      expect(RouteGuards.read(arabic), isNull);
     });
 
-    test('Urdu edition: both /book and /study open', () {
+    test('Urdu edition: /read opens (book and study)', () {
       const urdu = SeriesConfig.legacyUrduFallback;
-      expect(RouteGuards.book(urdu), isNull);
-      expect(RouteGuards.study(urdu), isNull);
+      expect(RouteGuards.read(urdu), isNull);
     });
 
     test('guards mirror the shared local capability policy', () {
@@ -95,25 +85,20 @@ void main() {
       for (final series in editions) {
         final tabs = SeriesNavigationPolicy.tabsFor(series);
         expect(
-          RouteGuards.book(series),
-          tabs.contains(SeriesNavigationTab.book) ? isNull : '/lectures',
-        );
-        expect(
-          RouteGuards.study(series),
-          tabs.contains(SeriesNavigationTab.study) ? isNull : '/lectures',
+          RouteGuards.read(series),
+          tabs.contains(SeriesNavigationTab.read) ? isNull : '/lectures',
         );
       }
 
       expect(SeriesNavigationPolicy.tabsFor(SeriesConfig.legacyUrduFallback), [
         SeriesNavigationTab.lectures,
-        SeriesNavigationTab.book,
-        SeriesNavigationTab.study,
+        SeriesNavigationTab.read,
         SeriesNavigationTab.library,
         SeriesNavigationTab.settings,
       ]);
       expect(SeriesNavigationPolicy.tabsFor(arabic), [
         SeriesNavigationTab.lectures,
-        SeriesNavigationTab.book,
+        SeriesNavigationTab.read,
         SeriesNavigationTab.library,
         SeriesNavigationTab.settings,
       ]);

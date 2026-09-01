@@ -12,6 +12,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get tabLectures => 'دروس';
 
   @override
+  String get tabRead => 'مطالعہ';
+
+  @override
   String get tabBook => 'کتاب';
 
   @override
@@ -592,6 +595,9 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get tabLectures => 'Duroos';
+
+  @override
+  String get tabRead => 'Mutaala';
 
   @override
   String get tabBook => 'Kitab';

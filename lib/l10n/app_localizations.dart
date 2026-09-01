@@ -107,6 +107,12 @@ abstract class AppLocalizations {
   /// **'Lectures'**
   String get tabLectures;
 
+  /// No description provided for @tabRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get tabRead;
+
   /// No description provided for @tabBook.
   ///
   /// In en, this message translates to:

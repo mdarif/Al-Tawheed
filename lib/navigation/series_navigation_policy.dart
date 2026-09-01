@@ -6,12 +6,18 @@ import 'package:myapp/models/series.dart';
 /// [SeriesConfig] describes which content is actually bundled/published;
 /// feature flags may roll out unrelated features, but must not manufacture a
 /// tab for content that the selected edition cannot serve.
-enum SeriesNavigationTab { lectures, book, study, library, settings }
+enum SeriesNavigationTab { lectures, read, library, settings }
 
 /// Single source of truth for the series-aware bottom navigation.
+///
+/// `read` covers both Book and Study: an edition with both gets one "Read"
+/// destination with an in-screen Book/Study toggle (see `ReadScreen`) rather
+/// than two separate tabs, keeping the bottom nav at 4 destinations even for
+/// editions that bundle both. See D1 amendment in the IA roadmap.
 abstract final class SeriesNavigationPolicy {
   /// Returns tabs in their production order. Lectures and Settings are always
-  /// available; Book and Study are conditional on the edition capabilities.
+  /// available; Read is conditional on the edition having a book and/or study
+  /// mode.
   static List<SeriesNavigationTab> tabsFor(SeriesConfig series) => [
         for (final tab in SeriesNavigationTab.values)
           if (isAvailable(series, tab)) tab,
@@ -21,8 +27,7 @@ abstract final class SeriesNavigationPolicy {
   static bool isAvailable(SeriesConfig series, SeriesNavigationTab tab) =>
       switch (tab) {
         SeriesNavigationTab.lectures => true,
-        SeriesNavigationTab.book => series.hasBook,
-        SeriesNavigationTab.study => series.hasStudyMode,
+        SeriesNavigationTab.read => series.hasBook || series.hasStudyMode,
         SeriesNavigationTab.library => true,
         SeriesNavigationTab.settings => true,
       };

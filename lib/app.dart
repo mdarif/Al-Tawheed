@@ -21,7 +21,7 @@ import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
-import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/screens/read_screen.dart';
 import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
@@ -42,8 +42,7 @@ import 'package:myapp/theme/app_theme.dart';
 // from within ShellRoute throws because /player is not a shell-level route.
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _lecturesNavigatorKey = GlobalKey<NavigatorState>();
-final _bookNavigatorKey = GlobalKey<NavigatorState>();
-final _studyNavigatorKey = GlobalKey<NavigatorState>();
+final _readNavigatorKey = GlobalKey<NavigatorState>();
 final _libraryNavigatorKey = GlobalKey<NavigatorState>();
 final _settingsNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -84,26 +83,14 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
               ],
             ),
             StatefulShellBranch(
-              navigatorKey: _bookNavigatorKey,
+              navigatorKey: _readNavigatorKey,
               routes: [
                 GoRoute(
-                  path: '/book',
-                  redirect: (context, state) => RouteGuards.book(
+                  path: '/read',
+                  redirect: (context, state) => RouteGuards.read(
                     context.read<SeriesProvider>().currentSeries,
                   ),
-                  builder: (context, state) => const BookChapterListScreen(),
-                ),
-              ],
-            ),
-            StatefulShellBranch(
-              navigatorKey: _studyNavigatorKey,
-              routes: [
-                GoRoute(
-                  path: '/study',
-                  redirect: (context, state) => RouteGuards.study(
-                    context.read<SeriesProvider>().currentSeries,
-                  ),
-                  builder: (context, state) => const StudyScreen(),
+                  builder: (context, state) => const ReadScreen(),
                 ),
               ],
             ),

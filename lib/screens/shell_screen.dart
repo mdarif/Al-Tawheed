@@ -18,10 +18,9 @@ extension on SeriesNavigationTab {
   /// the visible destinations vary by edition capability.
   int get branchIndex => switch (this) {
         SeriesNavigationTab.lectures => 0,
-        SeriesNavigationTab.book => 1,
-        SeriesNavigationTab.study => 2,
-        SeriesNavigationTab.library => 3,
-        SeriesNavigationTab.settings => 4,
+        SeriesNavigationTab.read => 1,
+        SeriesNavigationTab.library => 2,
+        SeriesNavigationTab.settings => 3,
       };
 
   NavigationDestination destination(AppLocalizations l10n) => switch (this) {
@@ -31,17 +30,11 @@ extension on SeriesNavigationTab {
             selectedIcon: const Icon(Icons.headphones_rounded),
             label: l10n.tabLectures,
           ),
-        SeriesNavigationTab.book => NavigationDestination(
-            key: WidgetKeys.shellBookTab,
+        SeriesNavigationTab.read => NavigationDestination(
+            key: WidgetKeys.shellReadTab,
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book_rounded),
-            label: l10n.tabBook,
-          ),
-        SeriesNavigationTab.study => NavigationDestination(
-            key: WidgetKeys.shellStudyTab,
-            icon: const Icon(Icons.school_outlined),
-            selectedIcon: const Icon(Icons.school_rounded),
-            label: l10n.tabStudyMode,
+            label: l10n.tabRead,
           ),
         SeriesNavigationTab.library => NavigationDestination(
             key: WidgetKeys.shellLibraryTab,

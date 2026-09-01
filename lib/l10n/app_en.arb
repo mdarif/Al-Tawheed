@@ -2,6 +2,7 @@
   "@@locale": "en",
 
   "tabLectures": "Lectures",
+  "tabRead": "Read",
   "tabBook": "Book",
   "tabHome": "Home",
   "tabStudyMode": "Study",

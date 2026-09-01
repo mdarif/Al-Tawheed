@@ -8,6 +8,7 @@ import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/compact_toggle_chip.dart';
 
 /// The shell home for content a user has explicitly kept.
 ///
@@ -47,7 +48,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _LibraryToggleChip(
+                      child: CompactToggleChip(
                         label: l10n.saved,
                         selected: selected == 0,
                         onTap: () {
@@ -58,7 +59,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _LibraryToggleChip(
+                      child: CompactToggleChip(
                         label: l10n.offlineLibrary,
                         selected: selected == 1,
                         onTap: () {
@@ -81,53 +82,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Saved/Downloads toggle chip. Like [SelectionChip] visually, but bounds its
-/// label to a fixed height and scales it down to fit — long Arabic/Urdu
-/// labels at narrow width + 2x text otherwise overflow the chip.
-class _LibraryToggleChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _LibraryToggleChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color:
-              selected ? context.brandColor : context.chipUnselectedBackground,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        alignment: Alignment.center,
-        child: SizedBox(
-          height: 24,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: context.textTheme.labelMedium?.copyWith(
-                color: selected
-                    ? context.onBrandColor
-                    : context.chipUnselectedText,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

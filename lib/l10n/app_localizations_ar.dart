@@ -12,6 +12,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tabLectures => 'الدروس';
 
   @override
+  String get tabRead => 'القراءة';
+
+  @override
   String get tabBook => 'الكتاب';
 
   @override

@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabLectures => 'Lectures';
 
   @override
+  String get tabRead => 'Read';
+
+  @override
   String get tabBook => 'Book';
 
   @override

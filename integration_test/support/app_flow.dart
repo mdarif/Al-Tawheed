@@ -11,13 +11,12 @@ import 'package:myapp/widgets/lecture_tile.dart';
 /// Shared helpers for integration tests — real device/emulator, network required.
 ///
 /// Scenarios that need native OS control live in patrol_test/ (Patrol CLI).
-enum AppTab { lectures, book, study, settings }
+enum AppTab { lectures, read, settings }
 
 extension on AppTab {
   Key get key => switch (this) {
         AppTab.lectures => WidgetKeys.shellLecturesTab,
-        AppTab.book => WidgetKeys.shellBookTab,
-        AppTab.study => WidgetKeys.shellStudyTab,
+        AppTab.read => WidgetKeys.shellReadTab,
         AppTab.settings => WidgetKeys.shellSettingsTab,
       };
 }
@@ -439,11 +438,11 @@ class AppFlow {
     fail('Lectures tab is not available');
   }
 
-  /// Taps the Book tab. Returns false if the tab is absent (Urdu series has no
-  /// Book tab).
+  /// Taps the Read tab (merged Book/Study). Returns false if the tab is
+  /// absent (an edition with neither a book nor study mode).
   static Future<bool> navigateToBookTab(WidgetTester tester) async {
     await dismissOverlays(tester);
-    final tab = find.byKey(WidgetKeys.shellBookTab);
+    final tab = find.byKey(WidgetKeys.shellReadTab);
     if (tester.any(tab)) {
       await tester.tap(tab);
       await pumpFrames(tester, count: 5);

@@ -49,11 +49,15 @@ Rules:
   Downloads; those collections must not depend on Book or Study being present.
 - Book and Study remain edition capabilities. Do not manufacture a tab for
   content the selected edition cannot serve.
-- The current Urdu edition has both Book and Study, so it receives five
-  destinations: Lectures, Book, Study, Library, Settings. Arabic receives four;
-  a minimal audio-only edition receives three. Five is the accepted maximum and
-  must be verified at narrow width, large text, and in RTL without truncation or
-  overflow.
+- **D1 amendment (2026-09-01):** Book and Study merge into one Read
+  destination with an in-screen toggle (mirroring Library's Saved/Downloads
+  toggle) rather than two separate tabs, after review found five destinations
+  too cramped on small devices. Every edition now tops out at four
+  destinations: Urdu is Lectures, Read, Library, Settings; Arabic is the same
+  four (Read shows only Book, no toggle, since Arabic has no Study); a minimal
+  audio-only edition receives three (no Read). Four is the new accepted
+  maximum and must still be verified at narrow width, large text, and in RTL
+  without truncation or overflow.
 - Player and Reader remain immersive root routes. The mini-player remains
   visible across shell destinations while audio is active.
 - Search is an action from Lectures, not another bottom-navigation tab.
@@ -129,7 +133,7 @@ lands.
 
 | Gate | Decision | Status | Blocks |
 |---|---|---|---|
-| D1 — shell | Approve the capability-aware five-destination maximum and stateful branches | **Accepted** 2026-09-01 | A1 |
+| D1 — shell | Approve the capability-aware four-destination maximum (Book+Study merged into one Read tab with a toggle) and stateful branches | **Accepted** 2026-09-01, amended 2026-09-01 (5→4, Read merge) | A1 |
 | D2 — reading resume | Resume the exact per-chapter scroll position and expose “Continue reading”; provide an explicit “start from top” action | **Accepted** 2026-09-01 | B1 |
 | D3 — download durability | Persist individual and chapter queue intent across process death because offline preparation is a core promise | **Accepted** 2026-09-01 | A2 |
 | D4 — content mapping | Require C1 data/schema publication with stable IDs and production validation before hand-off UI | **Accepted** 2026-09-01 | Release C |
@@ -197,8 +201,9 @@ work.
 
 **Acceptance**
 
-- Urdu receives five ordered destinations, Arabic four, and a minimal edition
-  three; each layout remains usable at narrow width, 2× text, and RTL.
+- Urdu and Arabic each receive four ordered destinations (Read merges Book
+  and Study with an in-screen toggle), and a minimal edition receives three;
+  each layout remains usable at narrow width, 2× text, and RTL.
 - Switching tabs preserves lecture scroll position and nested Library state.
 - Back pops a nested route, then returns from a non-Lectures tab to Lectures,
   then permits app exit.
@@ -446,7 +451,7 @@ XL requires native controls, process restart, or cross-edition orchestration.
 |---|---|---:|---|---|
 | A | Fresh multi-edition install | M | route guards, one-intro state machine, localized chooser | choose Arabic/Urdu → exactly one intro → correct Lectures shell |
 | A | Returning user | S | persisted edition and welcome flags | relaunch → same edition, no welcome flash |
-| A | Shell navigation | M | 3/4/5-destination capability matrix, branch state, Back policy | scroll Lectures → Library → Back/Lectures → scroll retained |
+| A | Shell navigation | M | 3/4-destination capability matrix, branch state, Back policy | scroll Lectures → Library → Back/Lectures → scroll retained |
 | A | Save a lecture | M | add/remove/idempotency, restart, empty and error states | save → relaunch → Library/Saved → play → unsave |
 | A | Prepare offline | XL | queue/dedupe/cancel/restart/integrity | download → kill/relaunch → airplane mode → local playback |
 | A | Cold offline/no catalogue | L | local metadata and no-cache state | retain local fixture, clear catalogue cache → Library remains truthful |

@@ -16,17 +16,12 @@ abstract final class RouteGuards {
   /// Where every guard sends a request it refuses — the always-present tab.
   static const lectures = '/lectures';
 
-  /// `/book` exists only for a series that bundles a book asset. A deep link or
-  /// stale nav into `/book` on a series without one is bounced to the lecture
-  /// list. Returning `null` means "no redirect — allow the route".
-  static String? book(SeriesConfig series) =>
-      SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.book)
-          ? null
-          : lectures;
-
-  /// `/study` likewise requires the series to offer study mode.
-  static String? study(SeriesConfig series) =>
-      SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.study)
+  /// `/read` exists only for a series that bundles a book and/or offers study
+  /// mode. A deep link or stale nav into `/read` on a series with neither is
+  /// bounced to the lecture list. Returning `null` means "no redirect — allow
+  /// the route".
+  static String? read(SeriesConfig series) =>
+      SeriesNavigationPolicy.isAvailable(series, SeriesNavigationTab.read)
           ? null
           : lectures;
 

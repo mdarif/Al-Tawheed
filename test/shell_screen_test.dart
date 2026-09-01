@@ -195,19 +195,9 @@ Widget _wrap({
                     StatefulShellBranch(
                       routes: [
                         GoRoute(
-                          path: '/book',
+                          path: '/read',
                           builder: (_, __) => const Scaffold(
-                            body: Center(child: Text('Book')),
-                          ),
-                        ),
-                      ],
-                    ),
-                    StatefulShellBranch(
-                      routes: [
-                        GoRoute(
-                          path: '/study',
-                          builder: (_, __) => const Scaffold(
-                            body: Center(child: Text('Study')),
+                            body: Center(child: Text('Read')),
                           ),
                         ),
                       ],
@@ -286,8 +276,7 @@ void main() {
   });
 
   testWidgets(
-      'shows 5 tabs (Lectures, Book, Study, Library, Settings) for the Urdu series',
-      (
+      'shows 4 tabs (Lectures, Read, Library, Settings) for the Urdu series', (
     tester,
   ) async {
     final series = SeriesProvider()..load(false);
@@ -295,19 +284,18 @@ void main() {
     await tester.pumpWidget(_wrap(series: series));
     await tester.pumpAndSettle();
 
-    // The Urdu series has a Book tab and Study mode, plus Settings last. Home
-    // was retired; Bookmarks and About live behind the ⋯ overflow menu.
+    // The Urdu series has both Book and Study, merged into one Read tab, plus
+    // Settings last. Home was retired; Bookmarks and About live behind the ⋯
+    // overflow menu.
     expect(find.text('Lecture 0'), findsOneWidget);
     expect(find.text('Lectures'), findsOneWidget);
-    expect(find.text('Book'), findsOneWidget);
+    expect(find.text('Read'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
-    expect(find.text('Study'), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget); // nav destination label
-    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
     expect(find.byKey(WidgetKeys.shellLecturesTab), findsOneWidget);
-    expect(find.byKey(WidgetKeys.shellBookTab), findsOneWidget);
-    expect(find.byKey(WidgetKeys.shellStudyTab), findsOneWidget);
+    expect(find.byKey(WidgetKeys.shellReadTab), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellLibraryTab), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellSettingsTab), findsOneWidget);
   });
@@ -326,19 +314,18 @@ void main() {
         .map(
           (tab) => switch (tab) {
             SeriesNavigationTab.lectures => 'Lectures',
-            SeriesNavigationTab.book => 'Book',
-            SeriesNavigationTab.study => 'Study',
+            SeriesNavigationTab.read => 'Read',
             SeriesNavigationTab.library => 'Library',
             SeriesNavigationTab.settings => 'Settings',
           },
         )
         .toList();
     expect(labels, expected);
-    expect(labels, ['Lectures', 'Book', 'Study', 'Library', 'Settings']);
+    expect(labels, ['Lectures', 'Read', 'Library', 'Settings']);
   });
 
   testWidgets(
-      'shows 4 tabs (Lectures, Book, Library, Settings) for the Arabic series',
+      'shows 4 tabs (Lectures, Read, Library, Settings) for the Arabic series',
       (
     tester,
   ) async {
@@ -351,8 +338,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lectures'), findsNothing);
-    expect(find.text('Study'), findsNothing); // no Study for the Arabic series
-    // Lectures + Book + Library + Settings — Settings is series-independent.
+    // Lectures + Read + Library + Settings — Settings is series-independent.
     expect(find.byType(NavigationDestination), findsNWidgets(4));
 
     final labels = tester
@@ -363,15 +349,14 @@ void main() {
         .map(
           (tab) => switch (tab) {
             SeriesNavigationTab.lectures => 'الدروس',
-            SeriesNavigationTab.book => 'الكتاب',
-            SeriesNavigationTab.study => 'وضع الدراسة',
+            SeriesNavigationTab.read => 'القراءة',
             SeriesNavigationTab.library => 'المكتبة',
             SeriesNavigationTab.settings => 'الإعدادات',
           },
         )
         .toList();
     expect(labels, expected);
-    expect(labels, ['الدروس', 'الكتاب', 'المكتبة', 'الإعدادات']);
+    expect(labels, ['الدروس', 'القراءة', 'المكتبة', 'الإعدادات']);
 
     await tester.tap(find.text('المكتبة'));
     await tester.pumpAndSettle();
@@ -389,7 +374,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('الدروس'), findsOneWidget);
-    expect(find.text('الكتاب'), findsOneWidget);
+    expect(find.text('القراءة'), findsOneWidget);
     expect(find.text('المكتبة'), findsOneWidget);
     expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
     // Home retired; only Bookmarks/About live behind the ⋯ overflow menu.
@@ -443,8 +428,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final destination in [
-      WidgetKeys.shellBookTab,
-      WidgetKeys.shellStudyTab,
+      WidgetKeys.shellReadTab,
       WidgetKeys.shellLibraryTab,
       WidgetKeys.shellSettingsTab,
       WidgetKeys.shellLecturesTab,
@@ -553,8 +537,7 @@ void main() {
         localizedLectures: 'دروس',
         destinations: [
           WidgetKeys.shellLecturesTab,
-          WidgetKeys.shellBookTab,
-          WidgetKeys.shellStudyTab,
+          WidgetKeys.shellReadTab,
           WidgetKeys.shellLibraryTab,
           WidgetKeys.shellSettingsTab,
         ],
@@ -567,7 +550,7 @@ void main() {
         localizedLectures: 'الدروس',
         destinations: [
           WidgetKeys.shellLecturesTab,
-          WidgetKeys.shellBookTab,
+          WidgetKeys.shellReadTab,
           WidgetKeys.shellLibraryTab,
           WidgetKeys.shellSettingsTab,
         ],
@@ -655,7 +638,7 @@ void main() {
       (tester) async {
     final series = SeriesProvider()
       ..load(false)
-      ..setCurrentSeriesForTest(_arabicSeries);
+      ..setCurrentSeriesForTest(_audioOnlySeries);
     await tester.pumpWidget(
       _wrap(
         series: series,
@@ -667,7 +650,8 @@ void main() {
 
     expect(find.byType(LibraryScreen), findsOneWidget);
     expect(find.byKey(WidgetKeys.shellLibraryTab), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(ShellScreen))).go('/study');
+    // Audio-only has neither book nor study, so /read is unavailable.
+    GoRouter.of(tester.element(find.byType(ShellScreen))).go('/read');
     await tester.pumpAndSettle();
     expect(
       GoRouter.of(tester.element(find.byType(ShellScreen)))
