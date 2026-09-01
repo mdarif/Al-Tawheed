@@ -96,11 +96,22 @@ class Chapter {
   final Map<String, dynamic> title;
   final int lectureCount;
 
+  /// Links this catalog chapter to a Book chapter (`BookChapter.id`) in the
+  /// *same edition's* bundled book, for the Release C audio/Study ↔ Book
+  /// hand-off (see ADR-0003). Null means unmapped — not an error; most
+  /// chapters in production are unmapped today. Never resolve this against
+  /// any book but the current edition's: `BookChapter.id` values like
+  /// "ch-01" are reused across editions, so cross-edition resolution would
+  /// silently open the wrong content (see
+  /// `lib/services/content_mapping_validator.dart`).
+  final String? bookChapterId;
+
   const Chapter({
     required this.id,
     required this.number,
     required this.title,
     required this.lectureCount,
+    this.bookChapterId,
   });
 
   // `id` is required (it keys lecture grouping); a chapter without one is
@@ -110,6 +121,7 @@ class Chapter {
         number: _asInt(json['number']),
         title: toI18nMap(json['title']),
         lectureCount: _asInt(json['lectureCount']),
+        bookChapterId: _optStr(json['bookChapterId']),
       );
 }
 

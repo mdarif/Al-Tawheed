@@ -60,6 +60,34 @@ void main() {
     });
   });
 
+  group('Chapter.bookChapterId (ADR-0003)', () {
+    test('round-trips through Chapter.fromJson when present', () {
+      final json = _base();
+      (json['chapters'] as List)[0]['bookChapterId'] = 'ch-01';
+
+      final c = Catalog.fromJson(json);
+      expect(c.chapters.single.bookChapterId, 'ch-01');
+    });
+
+    test('is null, and every other field parses normally, when absent', () {
+      final c = Catalog.fromJson(_base()); // _literal() never sets it
+
+      final chapter = c.chapters.single;
+      expect(chapter.bookChapterId, isNull);
+      expect(chapter.id, 'ch-01');
+      expect(chapter.number, 1);
+      expect(chapter.lectureCount, 1);
+    });
+
+    test('is null (not an error) when present but the wrong type', () {
+      final json = _base();
+      (json['chapters'] as List)[0]['bookChapterId'] = 42;
+
+      final c = Catalog.fromJson(json);
+      expect(c.chapters.single.bookChapterId, isNull);
+    });
+  });
+
   group('Catalog.fromJson — resilient list parsing', () {
     test('skips a lecture missing its id but keeps the valid ones', () {
       final json = _base();

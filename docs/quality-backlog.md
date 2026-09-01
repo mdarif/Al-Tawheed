@@ -64,6 +64,15 @@ the quality truth that active docs should use.
   pattern anywhere in `lib/`) and touches Arabic/Urdu/Roman Urdu/English
   multi-script matching, worth iterating live with screenshots rather than
   speccing blind. Pick up as its own pass when ready.
+- C1 build-side work is done: `Chapter.bookChapterId` (ADR-0003), the
+  `content_mapping_validator.dart` service, and the repeatable
+  `tool/validate_content_mapping.dart` CLI gate are shipped and tested,
+  including the cross-edition "wrong book" case. **C1's external gate is
+  still open** and is content curation, not code — Mohammad Arif (named
+  Release C content owner) needs to decide the real `bookChapterId` mapping
+  for every chapter in both editions, publish it to the CDN `catalog.json`,
+  and validate it with the new CLI tool before C2 (the Book/Study/audio
+  hand-off UI) can start.
 - Configure a local release signing store/key so the release APK gate can package
   a signed artifact; debug APK packaging is green.
 - A1's legacy-route regression test (`/player` → `/bookmarks`/`/offline-library`
