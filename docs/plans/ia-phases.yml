@@ -27,6 +27,10 @@ phases:
       - lib/navigation/route_guards.dart
       - lib/screens/shell_screen.dart
       - lib/screens/library_screen.dart
+      - lib/screens/bookmarks_screen.dart
+      - lib/screens/offline_library_screen.dart
+      - lib/testing/widget_keys.dart
+      - test/widget_keys_test.dart
       - lib/l10n/app_en.arb
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
