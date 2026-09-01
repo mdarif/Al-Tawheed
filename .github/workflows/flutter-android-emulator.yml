@@ -1,8 +1,10 @@
 # Flutter Android Emulator — Integration tests on an Android emulator
 #
 # Runs on:
-#   • Every PR into master  (mirrors flutter-regression.yml's iOS gate)
-#   • Nightly at 02:00 UTC  (catches develop drift before it reaches master)
+#   • Every PR into master or develop that touches app or journey-test code
+#     (mirrors flutter-regression.yml's iOS gate for master; the develop leg
+#     catches shell/navigation/Library journey regressions the moment a
+#     develop PR lands, instead of waiting for a release PR into master)
 #   • Manual dispatch        (on-demand re-run without a commit)
 #
 # CD Phase 4a (non-blocking): results surface in the Actions tab but do not
@@ -23,6 +25,11 @@ on:
   pull_request:
     branches:
       - master
+      - develop
+    paths:
+      - 'lib/**'
+      - 'integration_test/**'
+      - '.github/workflows/flutter-android-emulator.yml'
   # Nightly schedule removed 2026-08-31: these ran at 02:00 UTC and failed
   # 11 of the last 15 scheduled runs between them, burning free-tier quota
   # (Regression and Golden bill at the 10x macOS rate) while producing no

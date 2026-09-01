@@ -17,15 +17,18 @@ import 'support/patrol_flow.dart';
 
 void main() {
   patrolTest(
-    'Arabic series: nav bar shows Arabic labels with Book tab and no Study tab',
+    'Arabic series: nav bar shows Arabic labels, Read tab with no Study '
+    'toggle (Arabic has no study mode)',
     ($) async {
       if (!await PatrolFlow.bootstrapToArabicLectures($)) return;
 
-      expect(find.text('الدروس'), findsOneWidget);     // Lectures
-      expect(find.text('الكتاب'), findsOneWidget);     // Book — Arabic-only
-      expect(find.text('الرئيسية'), findsOneWidget);   // Home
-      expect(find.text('الإعدادات'), findsOneWidget);  // Settings
-      // Study tab must be absent — Arabic series has no study mode
+      expect(find.text('الدروس'), findsOneWidget); // Lectures
+      expect(find.text('القراءة'), findsOneWidget); // Read (Book+Study merge)
+      expect(find.text('المكتبة'), findsOneWidget); // Library
+      expect(find.text('الإعدادات'), findsOneWidget); // Settings
+      // Home was retired; there is no separate Book tab or Study tab/toggle
+      // for the Arabic edition (no hasStudyMode).
+      expect(find.text('الرئيسية'), findsNothing);
       expect(find.text('Study'), findsNothing);
 
       await PatrolFlow.restoreToUrduSeries($);
@@ -78,12 +81,16 @@ void main() {
   );
 
   patrolTest(
-    'Arabic series: Book tab opens the chapter list',
+    'Arabic series: Read tab opens the chapter list',
     ($) async {
       if (!await PatrolFlow.bootstrapToArabicLectures($)) return;
 
-      final navigated = await AppFlow.navigateToBookTab($.tester);
-      expect(navigated, isTrue, reason: 'Book tab must exist for Arabic series');
+      final navigated = await AppFlow.navigateToReadTab($.tester);
+      expect(
+        navigated,
+        isTrue,
+        reason: 'Read tab must exist for Arabic series',
+      );
 
       // Chapter list loads — wait for either the list or a loading spinner
       await AppFlow.waitFor(

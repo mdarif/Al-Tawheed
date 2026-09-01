@@ -40,12 +40,16 @@ void main() {
       }
 
       // ── Shell bottom navigation ─────────────────────────────────────────
-      // Tabs are lectures · read · settings (Book/Study merged into Read) —
-      // the Home tab was retired (f793a78). Exercise the Read tab (this
-      // release's headline surface) and Settings, then return to Lectures.
+      // Tabs are lectures · read · library · settings (Book/Study merged
+      // into Read; Library is a stable destination for every edition since
+      // A1) — the Home tab was retired (f793a78). Exercise Read (this
+      // release's headline surface), Library, and Settings, then return to
+      // Lectures.
       if (tester.any(find.byKey(WidgetKeys.shellReadTab))) {
         await AppFlow.navigateToTab(tester, AppTab.read);
       }
+      await AppFlow.navigateToTab(tester, AppTab.library);
+      expect(find.text('Library'), findsWidgets);
       await AppFlow.navigateToTab(tester, AppTab.settings);
       await AppFlow.scrollToSettingsDownloads(tester);
       expect(find.text('Downloads'), findsWidgets);

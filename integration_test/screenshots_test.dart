@@ -158,7 +158,7 @@ void main() {
       await AppFlow.waitForCatalog(tester);
       await shot(tester, '09-lectures-ar');
 
-      if (await AppFlow.navigateToBookTab(tester)) {
+      if (await AppFlow.navigateToReadTab(tester)) {
         await AppFlow.pumpFrames(tester, count: 6);
         await shot(tester, '02-book-ar');
       }

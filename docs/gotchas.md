@@ -154,10 +154,11 @@ is portable memory: any LLM working the repo should read and extend it.
   `docs/play-store/v3/`. `screenshots_tablet_test.dart` is not invoked by this
   target. iOS sim works well.
 - **The two series have different chrome — capture BOTH.** The Urdu series
-  renders the app UI in **English** (Now Playing, Study Mode, Settings) and has a
-  Study tab; the Arabic series renders **Arabic** chrome (يُشغَّل الآن، الدروس) and
-  has a Book tab instead of Study. A screenshot set must show both. The harness
-  picks Arabic first (for the Arabic welcome + Book), then switches to Urdu via
+  renders the app UI in **English** (Now Playing, Study Mode, Settings) and its
+  Read tab shows a Book/Study toggle; the Arabic series renders **Arabic**
+  chrome (يُشغَّل الآن، الدروس) and its Read tab shows Book alone (no toggle —
+  Arabic has no Study). A screenshot set must show both. The harness picks
+  Arabic first (for the Arabic welcome + Book), then switches to Urdu via
   Settings → language row (`اردو`/`العربية` endonyms) to capture the English
   screens. Switching routes through the new series' welcome if unseen.
   Since [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)
@@ -346,19 +347,23 @@ is portable memory: any LLM working the repo should read and extend it.
   render time** to the *book's* language (Urdu numerals everywhere in an Urdu
   book, even inside Arabic āyāt), via `localizedDigitsInString(text,
   widget.language)` in the reader.
-- **The Urdu series renders 3 bottom-nav tabs** (Lectures · Book · Study) — it
-  has both `hasBook` and `hasStudyMode`. Settings / Bookmarks / About are **not**
-  tabs; they live in the `⋯` overflow menu
-  ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)) shown on
-  every shell tab.
+- **The Urdu series renders 4 bottom-nav tabs** (Lectures · Read · Library ·
+  Settings). Book and Study merged into one Read destination with an
+  in-screen toggle (A3/D1 amendment) rather than two tabs, since a fifth
+  destination felt cramped on small devices — Read shows the toggle only
+  when the edition has both `hasBook` and `hasStudyMode`; Arabic (book only,
+  no study) shows Book alone with no toggle. Library is a stable destination
+  for every edition regardless of Book/Study (A1). Settings is a shell tab
+  (always last); only Bookmarks and About live in the `⋯` overflow menu
+  ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)).
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)
   atop the Lectures list, and **announcements** moved from the space-eating
   inline banner to a bell+badge ([announcements_bell.dart](../lib/widgets/announcements_bell.dart))
   in the Lectures app bar (tap → bottom sheet of `AnnouncementCard`s). Daily
-  Benefit + the offline-prep nudge were dropped. `/book` and `/study` redirect to
-  `/lectures` (not `/home`) for series lacking those features.
+  Benefit + the offline-prep nudge were dropped. `/read` redirects to
+  `/lectures` (not `/home`) for a series with neither Book nor Study.
 - **The Urdu Book tab is enabled client-side, not via `series.json`.**
   `SeriesConfig.fromJson` defaults `hasBook` to `true` for the legacy Urdu
   series (`id == legacyId`) because this app version bundles
@@ -585,3 +590,31 @@ is portable memory: any LLM working the repo should read and extend it.
   content repo, use `https://` (the site served https the whole time). A nightly
   contract test that asserts every live URL is https/mailto is filed as
   test-plan §6.3.
+
+## Local Android emulator flakiness (Patrol)
+
+- **Phone-form AVDs on this machine drifted to API 36** (SDK images
+  auto-updated), so the "stock API 35" AVD `testing.md` used to recommend no
+  longer exists as a phone. Only the tablet AVDs (`Nexus_7`, `Medium_Tablet`)
+  are still API 35. API 36 discovers `Total: 0` Patrol tests (documented
+  above); the tablet AVDs work functionally but run slower and use a
+  different form factor than a real target device.
+- **A freshly booted AVD's guest clock can be wrong**, and if `auto_time` is
+  on it periodically resyncs to the emulator's frozen virtual RTC (baked in
+  at image-build time) instead of the host clock — every HTTPS call then
+  fails TLS validation with "certificate is not yet valid", which surfaces in
+  Patrol as `Catalog needs network on first launch`. Fix: `adb shell settings
+  put global auto_time 0`, then `adb shell date $(date +%m%d%H%M%Y.%S)`.
+  Confirmed the "not yet valid" curl error goes away once `auto_time` is off.
+- **The emulator's saved Wi-Fi network can vanish mid-run** (`Active default
+  network: none`, `Supplicant state: DISCONNECTED`, no saved SSID), turning
+  every subsequent network-dependent step into the same misleading "Catalog
+  needs network" failure. Recovery: `adb shell cmd wifi connect-network
+  AndroidWifi open`. If that doesn't hold, a full kill (`adb emu kill`) and
+  relaunch is more reliable than trying to nurse the existing boot back.
+- **Switching to a series never visited before lands on that edition's
+  Welcome screen**, not the lecture list — this includes patrol/integration
+  tests that switch series via Settings on a fresh install. `AppFlow.
+  switchToSeries` now dismisses `WidgetKeys.welcomeStartListening` the same
+  way `goToLectureList` does before waiting for `LectureTile`; any new
+  series-switch helper needs the same handling or it hangs until timeout.

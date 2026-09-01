@@ -173,7 +173,7 @@ void main() {
 
     // ── 2. Book reader — Nastaliq scroll + page turns ───────────────────────
     // Only when the edition has a Book tab in this environment.
-    if (await AppFlow.navigateToBookTab(tester)) {
+    if (await AppFlow.navigateToReadTab(tester)) {
       // Open the first chapter (a chapter row pushes /book/<id>).
       await tester.tap(find.byType(InkWell).first);
       await AppFlow.pumpFrames(tester, count: 8);

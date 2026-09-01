@@ -130,7 +130,7 @@ format:
 # added when the whole repo was reformatted for the new release pipeline.
 # Exits non-zero if anything is unformatted, without touching files.
 format-check:
-	dart format --set-exit-if-changed -o none lib test tool integration_test
+	dart format --set-exit-if-changed -o none lib test tool integration_test patrol_test
 
 coverage:
 	flutter test --coverage
@@ -250,10 +250,16 @@ orientation-test: pub-get
 # 36 can build and instrument successfully while reporting Total: 0, which is
 # not a green gate.
 # Install the compatible CLI once: dart pub global activate patrol_cli 4.4.0
+# Both suites, explicitly: native_test.dart (airplane mode, notification
+# shade, permission dialogs) and arabic_series_test.dart (RTL/Arabic-edition
+# native flows). A command that only bundles one is not release evidence —
+# see the IA roadmap A5T note.
 patrol-test:
 	@PATROL_LOG=$$(mktemp /tmp/at-tawheed-patrol.XXXXXX); \
 	trap 'rm -f "$$PATROL_LOG"' 0; \
-	bash -o pipefail -c 'patrol test -t patrol_test/native_test.dart \
+	bash -o pipefail -c 'patrol test \
+		-t patrol_test/native_test.dart \
+		-t patrol_test/arabic_series_test.dart \
 		$(if $(DEVICE),--device $(DEVICE),) 2>&1 | tee "$$1"' _ "$$PATROL_LOG"; \
 	STATUS=$$?; \
 	dart run tool/patrol_result.dart --exit-code=$$STATUS "$$PATROL_LOG"; \

@@ -11,12 +11,13 @@ import 'package:myapp/widgets/lecture_tile.dart';
 /// Shared helpers for integration tests — real device/emulator, network required.
 ///
 /// Scenarios that need native OS control live in patrol_test/ (Patrol CLI).
-enum AppTab { lectures, read, settings }
+enum AppTab { lectures, read, library, settings }
 
 extension on AppTab {
   Key get key => switch (this) {
         AppTab.lectures => WidgetKeys.shellLecturesTab,
         AppTab.read => WidgetKeys.shellReadTab,
+        AppTab.library => WidgetKeys.shellLibraryTab,
         AppTab.settings => WidgetKeys.shellSettingsTab,
       };
 }
@@ -148,6 +149,20 @@ class AppFlow {
     await dismissPlayer(tester);
   }
 
+  /// Dismisses the "Get notified about your downloads?" rationale (A4/
+  /// BLK-07), tapping Allow — call right after any download-initiating tap.
+  /// A fresh install's first download action shows this dialog on top of
+  /// the UI; anything that taps or reads content immediately afterwards
+  /// otherwise hits the modal barrier instead of the real screen.
+  static Future<void> dismissNotificationRationaleIfShown(
+    WidgetTester tester,
+  ) async {
+    final allow = find.text('Allow');
+    if (!tester.any(allow)) return;
+    await tester.tap(allow);
+    await pumpFrames(tester, count: 3);
+  }
+
   static Future<void> dismissPlayer(WidgetTester tester) async {
     final isOpen = tester.any(find.byKey(WidgetKeys.playerClose));
     if (!isOpen) return;
@@ -255,6 +270,7 @@ class AppFlow {
     if (tester.any(downloadRow)) {
       await tester.tap(downloadRow);
       await pumpFrames(tester, count: 3);
+      await dismissNotificationRationaleIfShown(tester);
       await waitForDownloadComplete(tester);
       return;
     }
@@ -345,6 +361,7 @@ class AppFlow {
     );
     await tester.tap(button);
     await pumpFrames(tester, count: 3);
+    await dismissNotificationRationaleIfShown(tester);
   }
 
   static Future<void> cancelDownloadFromPlayer(WidgetTester tester) async {
@@ -440,7 +457,7 @@ class AppFlow {
 
   /// Taps the Read tab (merged Book/Study). Returns false if the tab is
   /// absent (an edition with neither a book nor study mode).
-  static Future<bool> navigateToBookTab(WidgetTester tester) async {
+  static Future<bool> navigateToReadTab(WidgetTester tester) async {
     await dismissOverlays(tester);
     final tab = find.byKey(WidgetKeys.shellReadTab);
     if (tester.any(tab)) {
@@ -489,10 +506,23 @@ class AppFlow {
     await tester.tap(confirmBtn);
     await pumpFrames(tester, count: 5);
 
+    // Switching to a series never visited before (e.g. Arabic on a fresh
+    // install) lands on its Welcome screen instead of the lecture list —
+    // same IgnorePointer-gated button as the cold-start flow in
+    // goToLectureList.
+    final start = find.byKey(WidgetKeys.welcomeStartListening);
+    if (tester.any(start)) {
+      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      while (tester.any(start) && DateTime.now().isBefore(deadline)) {
+        await tester.tap(start, warnIfMissed: false);
+        await pumpFrames(tester, count: 5);
+      }
+    }
+
     await waitFor(
       tester,
       find.byType(LectureTile),
-      timeout: const Duration(seconds: 30),
+      timeout: const Duration(seconds: 90),
       reason: 'lecture list after switching to "$seriesId"',
     );
     return true;

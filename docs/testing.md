@@ -106,7 +106,7 @@ Flutter SDK `integration_test` — same `WidgetTester` API as widget tests, runs
 **Validation scenarios covered**
 
 - Welcome → catalog → lecture list  
-- Shell tabs (Lectures, Book/Study when available, Settings)
+- Shell tabs (Lectures, Read when available, Library, Settings)
 - Player + mini player  
 - Offline sheet, download, local playback  
 - Offline library (sheet + Settings)  
