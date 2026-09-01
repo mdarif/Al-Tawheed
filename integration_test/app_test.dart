@@ -54,10 +54,8 @@ void main() {
       final lecturesScrollable = find.byType(Scrollable).first;
       await tester.drag(lecturesScrollable, const Offset(0, -400));
       await AppFlow.pumpFrames(tester, count: 3);
-      final scrollBefore = tester
-          .state<ScrollableState>(lecturesScrollable)
-          .position
-          .pixels;
+      final scrollBefore =
+          tester.state<ScrollableState>(lecturesScrollable).position.pixels;
       expect(scrollBefore, greaterThan(0));
 
       if (tester.any(find.byKey(WidgetKeys.shellReadTab))) {

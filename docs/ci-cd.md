@@ -459,7 +459,7 @@ CI runs on the PR. Merge when green.
 |---|---|
 | `make setup-hooks` | Activate `.githooks/pre-push` for this clone |
 | `make ci` | Run CI locally: format-check + tooling tests + analyze + unit/widget tests + debug APK |
-| `make format-check` | `dart format --set-exit-if-changed -o none lib test tool integration_test` — mirrors the `build-android` CI gate exactly |
+| `make format-check` | `dart format --set-exit-if-changed -o none lib test tool integration_test patrol_test` — mirrors the `build-android` CI gate exactly |
 | `make test-tooling` | `python3 -m unittest discover -s test/tool` — mirrors the `build-android` CI gate exactly |
 | `make verify-apk` | Run `tool/verify_release_apk.py` locally (`APK=` optional, defaults to the standard release path; `DEVICE=` optional for the on-device check) |
 | `make integration-test DEVICE=<id>` | Run validation `integration_test/app_test.dart` on a device |
@@ -512,9 +512,13 @@ Removes Runbook Step 1's on-device integration/patrol test run.
   `.github/workflows/flutter-android-emulator.yml`, mirroring
   `flutter-regression.yml`'s iOS-simulator pattern but using
   `reactivecircus/android-emulator-runner` (API 34, `google_apis`, `x86_64`)
-  on `ubuntu-latest`. Runs `integration_test/app_test.dart`. Same triggers as
-  the iOS regression workflow (PRs into master, nightly, manual dispatch).
-  Failures surface in Actions but don't block anything yet.
+  on `ubuntu-latest`. Runs `integration_test/app_test.dart`. Triggers on PRs
+  into **either** `master` or `develop` that touch `lib/**`,
+  `integration_test/**`, or the workflow file itself (the `develop` leg,
+  added for A5T, catches shell/navigation/Library journey regressions the
+  moment a develop PR lands rather than waiting for a release PR into
+  master), plus manual dispatch. Failures surface in Actions but don't block
+  anything yet.
 
   Patrol native tests (`patrol_test/native_test.dart`) are **not** included:
   they need `patrol_cli` plus an instrumented test build (roughly doubling

@@ -274,7 +274,7 @@ jobs:
 
       # ---------------- Quality gates: refuse to tag a bad build -------- #
       - name: Verify formatting
-        run: dart format --set-exit-if-changed lib test tool integration_test
+        run: dart format --set-exit-if-changed lib test tool integration_test patrol_test
 
       - name: Analyze code
         run: flutter analyze --fatal-warnings

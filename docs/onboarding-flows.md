@@ -216,3 +216,15 @@ edition shows its WelcomeScreen first, then its CTA goes to `/lectures`.
 4. **Series switching from Settings** — existing users can switch series from Settings without ever touching ChooseSeriesScreen. Uses the same `switchSeries()` function but does not re-run onboarding.
 
 5. **`markWelcomeSeenForCurrentSeries()` is idempotent** — each edition's welcome is recorded independently; switching editions can therefore show a new edition welcome once.
+
+6. **Saved edition stops resolving (BLK-06)** — a returning user's saved
+   `selected_series_id` can go missing after onboarding is long past: the
+   manifest drops that edition, or a manifest fetch fails and falls back to
+   the bundled default. This happens well after `/lectures`, so it can't be
+   a route `redirect:` (those only re-run on navigation, not on a provider
+   notifying). `MissingEditionGuard` wraps `MaterialApp.router`'s `builder`
+   content and reactively pushes `/edition-missing` — offering Retry
+   (re-fetch the manifest) or choosing another edition — whenever
+   `SeriesProvider.hasMissingSelectedSeries` becomes true. See
+   `lib/widgets/missing_edition_guard.dart` and
+   `lib/screens/edition_missing_screen.dart`.
