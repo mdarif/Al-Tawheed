@@ -161,13 +161,14 @@ void main() {
     await PreferencesService.instance.init();
   });
 
-  testWidgets('keeps Saved reachable and hides Downloads when disabled',
+  testWidgets('keeps Saved reachable and hides the toggle when disabled',
       (tester) async {
     await tester.pumpWidget(_library(downloadsEnabled: false));
     await tester.pumpAndSettle();
 
     expect(find.text('Library'), findsNWidgets(2));
-    expect(find.text('Bookmarks'), findsWidgets);
+    // No Bookmarks/Downloads toggle at all — a single option needs no chip.
+    expect(find.text('Bookmarks'), findsNothing);
     expect(find.text('Downloads'), findsNothing);
   });
 
