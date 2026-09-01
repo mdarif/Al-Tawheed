@@ -68,6 +68,7 @@ phases:
       - lib/screens/player_screen.dart
       - lib/widgets/download_button.dart
       - lib/widgets/offline_sheet.dart
+      - lib/widgets/chapter_header.dart
       - lib/l10n/app_en.arb
       - lib/l10n/app_ar.arb
       - lib/l10n/app_ur.arb
