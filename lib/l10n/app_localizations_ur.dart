@@ -587,6 +587,17 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get downloadComplete => 'ڈاؤن لوڈ مکمل';
+
+  @override
+  String get libraryContentUnavailable => 'آپ کا محفوظ شدہ مواد دستیاب نہیں ہے';
+
+  @override
+  String get libraryContentUnavailableHint =>
+      'کیٹلاگ تازہ کرنے کے لیے دوبارہ کنیکٹ کریں۔ جب ڈیٹا دستیاب ہوگا تو آپ کی محفوظ فہرست یہیں رہے گی۔';
+
+  @override
+  String get libraryLocalFileMissing =>
+      'یہ ڈاؤن لوڈ اب اس آلے پر دستیاب نہیں ہے۔ اسے حذف کر کے دوبارہ ڈاؤن لوڈ کریں۔';
 }
 
 /// The translations for Urdu (`ur_roman`).
@@ -1177,4 +1188,16 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get downloadComplete => 'Download mukammal';
+
+  @override
+  String get libraryContentUnavailable =>
+      'Aap ka mehfooz shuda mawaad dastiyab nahin hai';
+
+  @override
+  String get libraryContentUnavailableHint =>
+      'Catalogue taza karne ke liye dobara connect karein. Data dastiyab hone par aap ki mehfooz fehrist yahin rahe gi.';
+
+  @override
+  String get libraryLocalFileMissing =>
+      'Yeh download ab is device par dastiyab nahin hai. Ise hata kar dobara download karein.';
 }

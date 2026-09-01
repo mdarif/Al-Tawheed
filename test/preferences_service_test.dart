@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // PreferencesService is the persistence layer every provider reads/writes
@@ -91,6 +92,31 @@ void main() {
 
       expect(prefs.loadDownloadedIds(), {'lec-a'});
       expect(prefs.downloadOnWifiOnly, isTrue);
+    });
+  });
+
+  group('saved lecture metadata', () {
+    const row = SavedLectureMetadata(
+      id: 'lec-a',
+      number: 1,
+      chapterId: 'ch-a',
+      title: {'en': 'Persisted title'},
+      audioUrl: 'https://example.test/a.mp3',
+      durationSeconds: 60,
+      fileSizeBytes: 100,
+    );
+
+    test('round-trips bookmark, download and queued-work snapshots', () async {
+      await prefs.saveBookmarkMetadata([row]);
+      await prefs.saveDownloadedMetadata([row]);
+      await prefs.saveQueuedDownloads([row]);
+
+      expect(prefs.loadBookmarkMetadata().single.id, row.id);
+      expect(
+        prefs.loadDownloadedMetadata().single.title['en'],
+        'Persisted title',
+      );
+      expect(prefs.loadQueuedDownloads().single.audioUrl, row.audioUrl);
     });
   });
 

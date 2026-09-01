@@ -108,7 +108,11 @@ class DownloadButton extends StatelessWidget {
       );
       return;
     }
-    downloads.download(lecture);
+    downloads.downloadNowOrQueue(
+      lecture: lecture,
+      isOnline: connectivity.isOnline,
+      isWifi: connectivity.isWifi,
+    );
   }
 
   void _confirmDelete(BuildContext context) async {

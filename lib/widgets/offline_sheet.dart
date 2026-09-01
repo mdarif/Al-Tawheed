@@ -167,7 +167,11 @@ class _OfflineSheetContent extends StatelessWidget {
   ) {
     if (_wifiOnlyBlocked(context, downloads, connectivity)) return;
     Navigator.pop(context);
-    downloads.download(lecture);
+    downloads.downloadNowOrQueue(
+      lecture: lecture,
+      isOnline: connectivity.isOnline,
+      isWifi: connectivity.isWifi,
+    );
   }
 
   void _startChapterDownload(

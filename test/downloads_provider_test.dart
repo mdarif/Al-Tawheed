@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -83,6 +84,79 @@ void main() {
 
       expect(provider.statusFor('bad-url'), DownloadStatus.failed);
       expect(provider.failureFor('bad-url'), isA<DownloadTransferException>());
+    });
+  });
+
+  group('durable queue', () {
+    test('deduplicates queue intent and restores it after provider restart',
+        () async {
+      final first = DownloadsProvider();
+      final lecture = _lec('queued', audioUrl: 'https://example.test/q.mp3');
+
+      await first.queueDownload(lecture);
+      await first.queueDownload(lecture);
+
+      expect(first.queuedDownloadCount, 1);
+      final restored = DownloadsProvider();
+      await restored.load();
+      expect(restored.queuedDownloadCount, 1);
+    });
+
+    test('reconciles every queued chapter job after a provider restart',
+        () async {
+      final chapter = [
+        _lec('chapter-a', chapterId: 'chapter-queued', audioUrl: 'not a URL'),
+        _lec('chapter-b', chapterId: 'chapter-queued', audioUrl: 'not a URL'),
+        _lec('chapter-c', chapterId: 'chapter-queued', audioUrl: 'not a URL'),
+      ];
+      final first = DownloadsProvider();
+
+      await first.downloadChapter('chapter-queued', chapter);
+      expect(first.queuedDownloadCount, chapter.length);
+
+      // Model the narrow crash window after atomic file promotion but before
+      // its preferences write. The restarted provider must adopt this file,
+      // not download it a second time or lose the other queued jobs.
+      final promoted = File(DownloadService.localPath('chapter-b'));
+      await promoted.parent.create(recursive: true);
+      await promoted.writeAsBytes(List.filled(1000, 0));
+
+      // A new provider models process restart: no in-memory chapter state
+      // survives, but the durable jobs do. Retrying them neither drops nor
+      // duplicates the three chapter requests when their transfer fails.
+      final restored = DownloadsProvider();
+      await restored.load();
+      expect(restored.isDownloaded('chapter-b'), isTrue);
+      expect(restored.queuedDownloadCount, chapter.length - 1);
+      await restored.tryStartQueuedDownload(isWifi: true);
+      expect(restored.queuedDownloadCount, chapter.length - 1);
+    });
+  });
+
+  group('local-file recovery', () {
+    test('keeps a corrupt saved file as unavailable instead of playable',
+        () async {
+      const row = SavedLectureMetadata(
+        id: 'corrupt',
+        number: 1,
+        chapterId: 'ch-01',
+        title: {'en': 'Corrupt'},
+        audioUrl: 'https://example.test/corrupt.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 100,
+      );
+      final path = DownloadService.localPath('corrupt');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(List.filled(10, 0));
+      await PreferencesService.instance.saveDownloadedIds({'corrupt'});
+      await PreferencesService.instance.saveDownloadedMetadata([row]);
+
+      final provider = DownloadsProvider();
+      await provider.load();
+
+      expect(provider.isDownloaded('corrupt'), isFalse);
+      expect(provider.isUnavailable('corrupt'), isTrue);
+      expect(provider.unavailableMetadata.single.id, 'corrupt');
     });
   });
 

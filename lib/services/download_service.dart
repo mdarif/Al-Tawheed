@@ -89,13 +89,34 @@ Future<Set<String>> reconcileDownloadedIds(
   (List<String> ids, String documentsPath, String seriesId) args,
 ) async {
   final (ids, documentsPath, seriesId) = args;
+  return reconcileDownloadedIdsWithExpectedBytes(
+    (ids, const {}, documentsPath, seriesId),
+  );
+}
+
+/// Like [reconcileDownloadedIds], but also rejects files whose byte count no
+/// longer matches a trusted catalog snapshot. A missing expected size means
+/// legacy metadata and is checked for existence only.
+Future<Set<String>> reconcileDownloadedIdsWithExpectedBytes(
+  (
+    List<String> ids,
+    Map<String, int> expectedBytes,
+    String documentsPath,
+    String seriesId
+  ) args,
+) async {
+  final (ids, expectedBytes, documentsPath, seriesId) = args;
   final valid = <String>{};
   if (seriesId != SeriesConfig.legacyId && !isSafePathSegment(seriesId)) {
     return valid;
   }
   for (final id in ids) {
     if (!isSafePathSegment(id)) continue;
-    if (await File(_localPathFor(documentsPath, seriesId, id)).exists()) {
+    final file = File(_localPathFor(documentsPath, seriesId, id));
+    if (await file.exists() &&
+        (expectedBytes[id] == null ||
+            expectedBytes[id] == 0 ||
+            await file.length() == expectedBytes[id])) {
       valid.add(id);
     }
   }

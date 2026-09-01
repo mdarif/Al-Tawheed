@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Thin wrapper around shared_preferences.
@@ -69,6 +70,15 @@ class PreferencesService {
 
   Future<void> saveBookmarks(Set<String> ids, {String prefix = ''}) =>
       _p.setStringList('${prefix}bookmarks', ids.toList());
+
+  List<SavedLectureMetadata> loadBookmarkMetadata({String prefix = ''}) =>
+      _loadLectureMetadata('${prefix}bookmark_metadata');
+
+  Future<void> saveBookmarkMetadata(
+    Iterable<SavedLectureMetadata> rows, {
+    String prefix = '',
+  }) =>
+      _saveLectureMetadata('${prefix}bookmark_metadata', rows);
 
   // ── Playback speed ──────────────────────────────────────────────────────
 
@@ -140,6 +150,54 @@ class PreferencesService {
 
   Future<void> saveDownloadedIds(Set<String> ids, {String prefix = ''}) =>
       _p.setStringList('${prefix}downloaded_lecture_ids', ids.toList());
+
+  List<SavedLectureMetadata> loadDownloadedMetadata({String prefix = ''}) =>
+      _loadLectureMetadata('${prefix}downloaded_metadata');
+
+  Future<void> saveDownloadedMetadata(
+    Iterable<SavedLectureMetadata> rows, {
+    String prefix = '',
+  }) =>
+      _saveLectureMetadata('${prefix}downloaded_metadata', rows);
+
+  List<SavedLectureMetadata> loadQueuedDownloads({String prefix = ''}) =>
+      _loadLectureMetadata('${prefix}queued_downloads');
+
+  Future<void> saveQueuedDownloads(
+    Iterable<SavedLectureMetadata> rows, {
+    String prefix = '',
+  }) =>
+      _saveLectureMetadata('${prefix}queued_downloads', rows);
+
+  List<SavedLectureMetadata> _loadLectureMetadata(String key) {
+    final raw = _p.getString(key);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final values = jsonDecode(raw);
+      if (values is! List) return const [];
+      return values
+          .whereType<Map>()
+          .map((value) {
+            try {
+              return SavedLectureMetadata.fromJson(
+                Map<String, dynamic>.from(value),
+              );
+            } on FormatException {
+              return null;
+            }
+          })
+          .whereType<SavedLectureMetadata>()
+          .toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _saveLectureMetadata(
+    String key,
+    Iterable<SavedLectureMetadata> rows,
+  ) =>
+      _p.setString(key, jsonEncode(rows.map((row) => row.toJson()).toList()));
 
   bool get downloadOnWifiOnly => _p.getBool('download_wifi_only') ?? true;
 

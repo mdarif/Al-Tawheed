@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:myapp/app_config.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/catalog_service.dart';
 import 'package:myapp/services/content_fetch_exception.dart';
+import 'package:myapp/services/preferences_service.dart';
 
 enum CatalogStatus { idle, loading, loaded, error }
 
@@ -41,6 +43,7 @@ class CatalogProvider extends ChangeNotifier {
   Catalog? _catalog;
   String? _error;
   CatalogFailureReason _failureReason = CatalogFailureReason.none;
+  bool _isStaleCache = false;
 
   // Id of the series the currently-held [_catalog] belongs to. Used by screens
   // to detect a series/catalog desync and trigger a reload.
@@ -59,6 +62,7 @@ class CatalogProvider extends ChangeNotifier {
   bool get needsOnlineToLoad =>
       _failureReason == CatalogFailureReason.noCacheOffline;
   bool get isLoading => _status == CatalogStatus.loading;
+  bool get isStaleCache => _isStaleCache;
 
   /// Id of the series the loaded catalog belongs to, or `null` before any
   /// successful load.
@@ -85,6 +89,7 @@ class CatalogProvider extends ChangeNotifier {
     _status = CatalogStatus.loading;
     _error = null;
     _failureReason = CatalogFailureReason.none;
+    _isStaleCache = false;
     notifyListeners();
 
     try {
@@ -92,6 +97,10 @@ class CatalogProvider extends ChangeNotifier {
       if (token != _loadToken) return; // superseded by a newer load
       _catalog = catalog;
       _loadedSeriesId = targetId;
+      final cacheKey =
+          targetId == SeriesConfig.legacyId ? 'catalog' : 'catalog_$targetId';
+      final age = PreferencesService.instance.remoteJsonAgeMs(cacheKey);
+      _isStaleCache = age != null && age >= AppConfig.catalogCacheTtlMs;
       _status = CatalogStatus.loaded;
     } on NoCachedContentException {
       if (token != _loadToken) return;
@@ -114,6 +123,7 @@ class CatalogProvider extends ChangeNotifier {
     _status = CatalogStatus.loaded;
     _error = null;
     _failureReason = CatalogFailureReason.none;
+    _isStaleCache = false;
     notifyListeners();
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/audio/player_notifier.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -32,28 +34,57 @@ class OfflineLibraryBody extends StatelessWidget {
     final downloads = context.watch<DownloadsProvider>();
 
     if (catalog == null) {
-      return _EmptyState();
+      final saved = [
+        ...downloads.downloadedMetadata,
+        ...downloads.unavailableMetadata,
+      ];
+      if (saved.isNotEmpty) {
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 8, bottom: 32),
+          itemCount: saved.length,
+          itemBuilder: (context, index) => _LectureTile(
+            lecture: saved[index].toLecture(),
+            unavailable: downloads.isUnavailable(saved[index].id),
+          ),
+        );
+      }
+      return _EmptyState(
+        unavailable: downloads.downloadedCount > 0 ||
+            context.read<CatalogProvider>().status == CatalogStatus.error,
+      );
     }
 
     if (catalog.chapters.isEmpty) {
       // Flat series (e.g. standalone duroos) — no chapter grouping, just
       // list the downloaded lectures directly.
-      final saved =
-          catalog.lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+      final saved = catalog.lectures
+          .where(
+            (l) =>
+                downloads.isDownloaded(l.id) || downloads.isUnavailable(l.id),
+          )
+          .toList();
       return saved.isEmpty
-          ? _EmptyState()
+          ? const _EmptyState()
           : ListView.builder(
               padding: const EdgeInsets.only(top: 8, bottom: 32),
               itemCount: saved.length,
-              itemBuilder: (context, i) => _LectureTile(lecture: saved[i]),
+              itemBuilder: (context, i) => _LectureTile(
+                lecture: saved[i],
+                unavailable: downloads.isUnavailable(saved[i].id),
+              ),
             );
     }
 
     final chaptersWithDownloads = catalog.chapters
         .map((ch) {
           final lectures = catalog.lecturesForChapter(ch.id);
-          final saved =
-              lectures.where((l) => downloads.isDownloaded(l.id)).toList();
+          final saved = lectures
+              .where(
+                (l) =>
+                    downloads.isDownloaded(l.id) ||
+                    downloads.isUnavailable(l.id),
+              )
+              .toList();
           return _ChapterGroup(
             chapter: ch,
             allLectures: lectures,
@@ -64,7 +95,7 @@ class OfflineLibraryBody extends StatelessWidget {
         .toList();
 
     return chaptersWithDownloads.isEmpty
-        ? _EmptyState()
+        ? const _EmptyState()
         : ListView.builder(
             padding: const EdgeInsets.only(bottom: 32),
             itemCount: chaptersWithDownloads.length,
@@ -77,6 +108,8 @@ class OfflineLibraryBody extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
+  final bool unavailable;
+  const _EmptyState({this.unavailable = false});
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -93,12 +126,16 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              l10n.offlineLibraryEmpty,
+              unavailable
+                  ? l10n.libraryContentUnavailable
+                  : l10n.offlineLibraryEmpty,
               style: context.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.offlineLibraryEmptyHint,
+              unavailable
+                  ? l10n.libraryContentUnavailableHint
+                  : l10n.offlineLibraryEmptyHint,
               style: context.textTheme.bodySmall
                   ?.copyWith(color: context.secondaryTextColor),
               textAlign: TextAlign.center,
@@ -209,7 +246,10 @@ class _ChapterSection extends StatelessWidget {
 
         // ── Saved lectures ──────────────────────────────────────────────────
         ...group.savedLectures.map(
-          (lecture) => _LectureTile(lecture: lecture),
+          (lecture) => _LectureTile(
+            lecture: lecture,
+            unavailable: downloads.isUnavailable(lecture.id),
+          ),
         ),
       ],
     );
@@ -283,7 +323,8 @@ class _ActionChip extends StatelessWidget {
 
 class _LectureTile extends StatelessWidget {
   final Lecture lecture;
-  const _LectureTile({required this.lecture});
+  final bool unavailable;
+  const _LectureTile({required this.lecture, this.unavailable = false});
 
   @override
   Widget build(BuildContext context) {
@@ -327,21 +368,58 @@ class _LectureTile extends StatelessWidget {
           ? Directionality(textDirection: TextDirection.rtl, child: titleWidget)
           : titleWidget,
       subtitle: Text(
-        '${context.localizedTime(lecture.durationSeconds)}'
-        '  ·  ${context.localizedDigits(sizeMb)}',
+        unavailable
+            ? context.l10n.libraryLocalFileMissing
+            : '${context.localizedTime(lecture.durationSeconds)}'
+                '  ·  ${context.localizedDigits(sizeMb)}',
         style: context.textTheme.bodySmall
             ?.copyWith(color: context.secondaryTextColor),
       ),
-      trailing: IconButton(
-        icon: Icon(
-          Icons.delete_outline_rounded,
-          size: 20,
-          color: context.mutedIconColor,
-        ),
-        onPressed: () => _confirmDelete(context, title, removeLabel),
-        tooltip: removeLabel,
-      ),
+      trailing: unavailable
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  onPressed: () =>
+                      context.read<DownloadsProvider>().download(lecture),
+                  tooltip: context.l10n.retryDownload,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 20,
+                    color: context.mutedIconColor,
+                  ),
+                  onPressed: () => _confirmDelete(context, title, removeLabel),
+                  tooltip: removeLabel,
+                ),
+              ],
+            )
+          : IconButton(
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: 20,
+                color: context.mutedIconColor,
+              ),
+              onPressed: () => _confirmDelete(context, title, removeLabel),
+              tooltip: removeLabel,
+            ),
+      onTap: unavailable ? null : () => _playLocal(context),
     );
+  }
+
+  void _playLocal(BuildContext context) {
+    final downloads = context.read<DownloadsProvider>();
+    if (!downloads.isDownloaded(lecture.id) ||
+        downloads.localPathIfDownloaded(lecture.id) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.libraryLocalFileMissing)),
+      );
+      return;
+    }
+    context.read<PlayerNotifier>().loadAndPlay(lecture, [lecture]);
+    context.push('/player');
   }
 
   void _confirmDelete(

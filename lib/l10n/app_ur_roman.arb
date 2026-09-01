@@ -193,5 +193,8 @@
     "placeholders": { "size": { "type": "String" } }
   },
   "offlinePrepSave": "Download karein",
-  "downloadComplete": "Download mukammal"
+  "downloadComplete": "Download mukammal",
+  "libraryContentUnavailable": "Aap ka mehfooz shuda mawaad dastiyab nahin hai",
+  "libraryContentUnavailableHint": "Catalogue taza karne ke liye dobara connect karein. Data dastiyab hone par aap ki mehfooz fehrist yahin rahe gi.",
+  "libraryLocalFileMissing": "Yeh download ab is device par dastiyab nahin hai. Ise hata kar dobara download karein."
 }

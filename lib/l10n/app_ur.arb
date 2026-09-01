@@ -195,5 +195,8 @@
     "placeholders": { "size": { "type": "String" } }
   },
   "offlinePrepSave": "ڈاؤن لوڈ کریں",
-  "downloadComplete": "ڈاؤن لوڈ مکمل"
+  "downloadComplete": "ڈاؤن لوڈ مکمل",
+  "libraryContentUnavailable": "آپ کا محفوظ شدہ مواد دستیاب نہیں ہے",
+  "libraryContentUnavailableHint": "کیٹلاگ تازہ کرنے کے لیے دوبارہ کنیکٹ کریں۔ جب ڈیٹا دستیاب ہوگا تو آپ کی محفوظ فہرست یہیں رہے گی۔",
+  "libraryLocalFileMissing": "یہ ڈاؤن لوڈ اب اس آلے پر دستیاب نہیں ہے۔ اسے حذف کر کے دوبارہ ڈاؤن لوڈ کریں۔"
 }

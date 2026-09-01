@@ -204,7 +204,7 @@ void main() {
       ConnectivityProvider.testOnline(),
     );
     addTearDown(player.dispose);
-    await progress.toggleBookmark('saved');
+    await progress.toggleBookmark(_lecture('saved', 1));
     await tester.pumpWidget(
       _library(
         downloadsEnabled: true,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/download_notification_service.dart';
@@ -38,7 +39,9 @@ class DownloadsProvider extends ChangeNotifier {
   final Map<String, String> _chapterActiveLectureId = {};
   final Set<String> _activeDownloadKeys = {};
   final Map<String, String> _attemptTokens = {};
-  Lecture? _queuedDownload;
+  final Map<String, SavedLectureMetadata> _downloadedMetadata = {};
+  final Map<String, SavedLectureMetadata> _unavailableMetadata = {};
+  final List<SavedLectureMetadata> _queuedDownloads = [];
   int _generation = 0;
   int _nextAttemptToken = 0;
 
@@ -75,12 +78,32 @@ class DownloadsProvider extends ChangeNotifier {
     final prefix = _prefix;
     var downloadedIds =
         PreferencesService.instance.loadDownloadedIds(prefix: prefix);
+    final persistedMetadata =
+        PreferencesService.instance.loadDownloadedMetadata(prefix: prefix);
+    final persistedQueued =
+        PreferencesService.instance.loadQueuedDownloads(prefix: prefix);
+    final metadataById = {
+      for (final row in persistedMetadata) row.id: row,
+      for (final row in persistedQueued) row.id: row,
+    };
     final savedCount = downloadedIds.length;
+    final candidateIds = {
+      ...downloadedIds,
+      ...persistedQueued.map((row) => row.id),
+    };
 
-    if (downloadedIds.isNotEmpty) {
+    if (candidateIds.isNotEmpty) {
       downloadedIds = await compute(
-        reconcileDownloadedIds,
-        (downloadedIds.toList(), DownloadService.documentsPath, seriesId),
+        reconcileDownloadedIdsWithExpectedBytes,
+        (
+          candidateIds.toList(),
+          {
+            for (final entry in metadataById.entries)
+              entry.key: entry.value.fileSizeBytes,
+          },
+          DownloadService.documentsPath,
+          seriesId,
+        ),
       );
     }
     if (!_isCurrentOperation(generation, seriesId)) return;
@@ -101,6 +124,45 @@ class DownloadsProvider extends ChangeNotifier {
     if (!_isCurrentOperation(generation, seriesId)) return;
 
     _downloadedIds = downloadedIds;
+    _downloadedMetadata
+      ..clear()
+      ..addEntries(
+        persistedMetadata
+            .where((row) => downloadedIds.contains(row.id))
+            .map((row) => MapEntry(row.id, row)),
+      )
+      ..addEntries(
+        persistedQueued
+            .where((row) => downloadedIds.contains(row.id))
+            .map((row) => MapEntry(row.id, row)),
+      );
+    _unavailableMetadata
+      ..clear()
+      ..addEntries(
+        persistedMetadata
+            .where((row) => !downloadedIds.contains(row.id))
+            .map((row) => MapEntry(row.id, row)),
+      );
+    if (_downloadedMetadata.length + _unavailableMetadata.length !=
+        persistedMetadata.length) {
+      await PreferencesService.instance.saveDownloadedMetadata(
+        [..._downloadedMetadata.values, ..._unavailableMetadata.values],
+        prefix: prefix,
+      );
+      if (!_isCurrentOperation(generation, seriesId)) return;
+    }
+    _queuedDownloads
+      ..clear()
+      ..addAll(
+        PreferencesService.instance
+            .loadQueuedDownloads(prefix: prefix)
+            .where((row) => !downloadedIds.contains(row.id)),
+      );
+    if (_queuedDownloads.length != persistedQueued.length) {
+      await PreferencesService.instance
+          .saveQueuedDownloads(_queuedDownloads, prefix: prefix);
+      if (!_isCurrentOperation(generation, seriesId)) return;
+    }
     for (final id in _downloadedIds) {
       _statuses[id] = DownloadStatus.downloaded;
     }
@@ -124,7 +186,9 @@ class DownloadsProvider extends ChangeNotifier {
     _downloadingChapterIds.clear();
     _cancelledChapterIds.clear();
     _chapterActiveLectureId.clear();
-    _queuedDownload = null;
+    _downloadedMetadata.clear();
+    _unavailableMetadata.clear();
+    _queuedDownloads.clear();
     await load();
   }
 
@@ -152,6 +216,15 @@ class DownloadsProvider extends ChangeNotifier {
   int get downloadedCount => _downloadedIds.length;
 
   int get totalDownloadedBytes => _totalDownloadedBytes;
+  List<SavedLectureMetadata> get downloadedMetadata =>
+      _downloadedMetadata.values
+          .where((row) => _downloadedIds.contains(row.id))
+          .toList(growable: false);
+  List<SavedLectureMetadata> get unavailableMetadata =>
+      _unavailableMetadata.values.toList(growable: false);
+  bool isUnavailable(String lectureId) =>
+      _unavailableMetadata.containsKey(lectureId);
+  int get queuedDownloadCount => _queuedDownloads.length;
 
   bool get downloadOnWifiOnly => PreferencesService.instance.downloadOnWifiOnly;
 
@@ -180,20 +253,31 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   /// Queues a lecture to download when connectivity allows.
-  void queueDownload(Lecture lecture) {
-    _queuedDownload = lecture;
+  Future<void> queueDownload(Lecture lecture) async {
+    if (isDownloaded(lecture.id) || isDownloading(lecture.id)) return;
+    _queuedDownloads.removeWhere((row) => row.id == lecture.id);
+    _queuedDownloads.add(SavedLectureMetadata.fromLecture(lecture));
+    await PreferencesService.instance
+        .saveQueuedDownloads(_queuedDownloads, prefix: _prefix);
+    notifyListeners();
+  }
+
+  Future<void> _removeQueuedDownload(String lectureId) async {
+    final before = _queuedDownloads.length;
+    _queuedDownloads.removeWhere((row) => row.id == lectureId);
+    if (_queuedDownloads.length == before) return;
+    await PreferencesService.instance
+        .saveQueuedDownloads(_queuedDownloads, prefix: _prefix);
   }
 
   /// Starts a queued download once online (and on Wi‑Fi if required).
   Future<void> tryStartQueuedDownload({required bool isWifi}) async {
-    final lecture = _queuedDownload;
-    if (lecture == null || isDownloaded(lecture.id)) {
-      _queuedDownload = null;
-      return;
-    }
+    if (_queuedDownloads.isEmpty) return;
     if (downloadOnWifiOnly && !isWifi) return;
-    _queuedDownload = null;
-    await download(lecture);
+    final queued = List<SavedLectureMetadata>.from(_queuedDownloads);
+    for (final row in queued) {
+      if (!isDownloaded(row.id)) await download(row.toLecture());
+    }
   }
 
   /// Starts [lecture] now or queues it when offline / Wi‑Fi blocked.
@@ -204,10 +288,13 @@ class DownloadsProvider extends ChangeNotifier {
     required bool isWifi,
   }) {
     if (!isOnline) {
-      queueDownload(lecture);
+      unawaited(queueDownload(lecture));
       return false;
     }
-    if (downloadOnWifiOnly && !isWifi) return false;
+    if (downloadOnWifiOnly && !isWifi) {
+      unawaited(queueDownload(lecture));
+      return false;
+    }
     unawaited(download(lecture));
     return true;
   }
@@ -293,9 +380,18 @@ class DownloadsProvider extends ChangeNotifier {
       final wasDownloaded = _downloadedIds.contains(lecture.id);
       _statuses[lecture.id] = DownloadStatus.downloaded;
       _downloadedIds.add(lecture.id);
+      _downloadedMetadata[lecture.id] =
+          SavedLectureMetadata.fromLecture(lecture);
+      _unavailableMetadata.remove(lecture.id);
       _progress.remove(lecture.id);
-      await PreferencesService.instance
-          .saveDownloadedIds(_downloadedIds, prefix: prefix);
+      await Future.wait([
+        PreferencesService.instance
+            .saveDownloadedIds(_downloadedIds, prefix: prefix),
+        PreferencesService.instance.saveDownloadedMetadata(
+          _downloadedMetadata.values,
+          prefix: prefix,
+        ),
+      ]);
       if (!_isCurrentAttempt(
         lecture.id,
         attemptToken,
@@ -304,6 +400,7 @@ class DownloadsProvider extends ChangeNotifier {
       )) {
         return;
       }
+      await _removeQueuedDownload(lecture.id);
       // Add just this file's size — no full re-stat of every download.
       if (!wasDownloaded) {
         _totalDownloadedBytes +=
@@ -393,6 +490,12 @@ class DownloadsProvider extends ChangeNotifier {
     final seriesId = _seriesId;
     _downloadingChapterIds.add(chapterId);
     _cancelledChapterIds.remove(chapterId);
+    // Keep every remaining chapter job durable before starting the first
+    // transfer. If the process dies between lectures, startup can reconcile
+    // the same per-lecture queue without duplicating completed files.
+    for (final lecture in lectures) {
+      if (!isDownloaded(lecture.id)) await queueDownload(lecture);
+    }
     notifyListeners();
 
     for (final lecture in lectures) {
@@ -418,7 +521,16 @@ class DownloadsProvider extends ChangeNotifier {
     _cancelledChapterIds.add(chapterId);
     final activeId = _chapterActiveLectureId[chapterId];
     if (activeId != null) cancelDownload(activeId);
+    unawaited(_removeQueuedDownloadsForChapter(chapterId));
     notifyListeners();
+  }
+
+  Future<void> _removeQueuedDownloadsForChapter(String chapterId) async {
+    final before = _queuedDownloads.length;
+    _queuedDownloads.removeWhere((row) => row.chapterId == chapterId);
+    if (_queuedDownloads.length == before) return;
+    await PreferencesService.instance
+        .saveQueuedDownloads(_queuedDownloads, prefix: _prefix);
   }
 
   Future<void> delete(String lectureId) async {
@@ -446,9 +558,17 @@ class DownloadsProvider extends ChangeNotifier {
     if (!_isCurrentOperation(generation, seriesId)) return;
     _statuses[lectureId] = DownloadStatus.notDownloaded;
     _downloadedIds.remove(lectureId);
+    _downloadedMetadata.remove(lectureId);
+    _unavailableMetadata.remove(lectureId);
     _failures.remove(lectureId);
-    await PreferencesService.instance
-        .saveDownloadedIds(_downloadedIds, prefix: prefix);
+    await Future.wait([
+      PreferencesService.instance
+          .saveDownloadedIds(_downloadedIds, prefix: prefix),
+      PreferencesService.instance.saveDownloadedMetadata(
+        _downloadedMetadata.values,
+        prefix: prefix,
+      ),
+    ]);
     if (!_isCurrentOperation(generation, seriesId)) return;
     _reduceTotalBytes(freed);
     notifyListeners();
@@ -473,11 +593,19 @@ class DownloadsProvider extends ChangeNotifier {
         if (!_isCurrentOperation(generation, seriesId)) return;
         _statuses[lecture.id] = DownloadStatus.notDownloaded;
         _downloadedIds.remove(lecture.id);
+        _downloadedMetadata.remove(lecture.id);
+        _unavailableMetadata.remove(lecture.id);
         _reduceTotalBytes(freed);
       }
     }
-    await PreferencesService.instance
-        .saveDownloadedIds(_downloadedIds, prefix: prefix);
+    await Future.wait([
+      PreferencesService.instance
+          .saveDownloadedIds(_downloadedIds, prefix: prefix),
+      PreferencesService.instance.saveDownloadedMetadata(
+        _downloadedMetadata.values,
+        prefix: prefix,
+      ),
+    ]);
     if (!_isCurrentOperation(generation, seriesId)) return;
     notifyListeners();
   }
@@ -502,8 +630,13 @@ class DownloadsProvider extends ChangeNotifier {
     _statuses.clear();
     _failures.clear();
     _downloadedIds.clear();
+    _downloadedMetadata.clear();
+    _unavailableMetadata.clear();
     _totalDownloadedBytes = 0;
-    await PreferencesService.instance.saveDownloadedIds({}, prefix: prefix);
+    await Future.wait([
+      PreferencesService.instance.saveDownloadedIds({}, prefix: prefix),
+      PreferencesService.instance.saveDownloadedMetadata({}, prefix: prefix),
+    ]);
     if (!_isCurrentOperation(generation, seriesId)) return;
     notifyListeners();
   }
@@ -521,9 +654,17 @@ class DownloadsProvider extends ChangeNotifier {
         : DownloadStatus.notDownloaded;
     if (!stillDownloaded) {
       _downloadedIds.remove(lectureId);
+      _downloadedMetadata.remove(lectureId);
+      _unavailableMetadata.remove(lectureId);
       unawaited(
         PreferencesService.instance
             .saveDownloadedIds(_downloadedIds, prefix: _prefix),
+      );
+      unawaited(
+        PreferencesService.instance.saveDownloadedMetadata(
+          _downloadedMetadata.values,
+          prefix: _prefix,
+        ),
       );
     }
     _progress.remove(lectureId);
@@ -542,6 +683,18 @@ class DownloadsProvider extends ChangeNotifier {
   void seedDownloadedForTest(String lectureId) {
     _statuses[lectureId] = DownloadStatus.downloaded;
     _downloadedIds.add(lectureId);
+  }
+
+  @visibleForTesting
+  void seedDownloadedMetadataForTest(SavedLectureMetadata row) {
+    _statuses[row.id] = DownloadStatus.downloaded;
+    _downloadedIds.add(row.id);
+    _downloadedMetadata[row.id] = row;
+  }
+
+  @visibleForTesting
+  void seedUnavailableMetadataForTest(SavedLectureMetadata row) {
+    _unavailableMetadata[row.id] = row;
   }
 
   @visibleForTesting

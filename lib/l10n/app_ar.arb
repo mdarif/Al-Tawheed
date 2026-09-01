@@ -312,5 +312,8 @@
     "placeholders": { "size": { "type": "String" } }
   },
   "offlinePrepSave": "تنزيل",
-  "downloadComplete": "اكتمل التنزيل"
+  "downloadComplete": "اكتمل التنزيل",
+  "libraryContentUnavailable": "المحتوى المحفوظ غير متاح",
+  "libraryContentUnavailableHint": "أعد الاتصال لتحديث الفهرس. ستبقى العناصر المحفوظة هنا عندما تتوفر بياناتها.",
+  "libraryLocalFileMissing": "لم يعد هذا التنزيل متاحًا على هذا الجهاز. أزِله ثم نزّله مرة أخرى."
 }

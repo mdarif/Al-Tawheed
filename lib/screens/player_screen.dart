@@ -612,7 +612,10 @@ class _BookmarkButton extends StatelessWidget {
     final lectureId = context.select<PlayerNotifier, String?>(
       (player) => player.current?.id,
     );
-    if (lectureId == null) return const SizedBox.shrink();
+    final lecture = context.select<PlayerNotifier, Lecture?>(
+      (player) => player.current,
+    );
+    if (lectureId == null || lecture == null) return const SizedBox.shrink();
 
     final isBookmarked = context.select<ProgressProvider, bool>(
       (p) => p.isBookmarked(lectureId),
@@ -625,8 +628,7 @@ class _BookmarkButton extends StatelessWidget {
         isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
         color: isBookmarked ? context.brandColor : context.primaryTextColor,
       ),
-      onPressed: () =>
-          context.read<ProgressProvider>().toggleBookmark(lectureId),
+      onPressed: () => context.read<ProgressProvider>().toggleBookmark(lecture),
     );
   }
 }

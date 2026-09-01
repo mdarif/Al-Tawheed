@@ -610,4 +610,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadComplete => 'Download complete';
+
+  @override
+  String get libraryContentUnavailable => 'Your saved content is unavailable';
+
+  @override
+  String get libraryContentUnavailableHint =>
+      'Reconnect to refresh the catalogue. Your saved rows will remain here when their data is available.';
+
+  @override
+  String get libraryLocalFileMissing =>
+      'This download is no longer available on this device. Remove it and download it again.';
 }

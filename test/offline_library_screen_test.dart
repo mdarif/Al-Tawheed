@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -112,14 +113,18 @@ Catalog _arabicCatalog() => Catalog(
 Widget _wrap(
   DownloadsProvider downloads, {
   Catalog? catalog,
+  bool catalogLoaded = true,
   SeriesProvider? series,
   Locale? locale,
 }) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(
-        create: (_) =>
-            CatalogProvider()..setCatalogForTest(catalog ?? _catalog()),
+        create: (_) {
+          final provider = CatalogProvider();
+          if (catalogLoaded) provider.setCatalogForTest(catalog ?? _catalog());
+          return provider;
+        },
       ),
       ChangeNotifierProvider.value(value: downloads),
       ChangeNotifierProvider(
@@ -164,6 +169,28 @@ void main() {
     });
   });
 
+  testWidgets('shows persisted download metadata without a catalogue',
+      (tester) async {
+    final downloads = DownloadsProvider()
+      ..seedDownloadedMetadataForTest(
+        const SavedLectureMetadata(
+          id: 'offline-1',
+          number: 1,
+          chapterId: 'ch-1',
+          title: {'en': 'Offline title'},
+          audioUrl: 'https://example.test/offline-1.mp3',
+          durationSeconds: 60,
+          fileSizeBytes: 100,
+        ),
+      );
+
+    await tester.pumpWidget(_wrap(downloads, catalogLoaded: false));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Offline title'), findsOneWidget);
+    expect(find.text('No downloads yet'), findsNothing);
+  });
+
   // ── Populated state ───────────────────────────────────────────────────────
 
   group('OfflineLibraryScreen — populated state', () {
@@ -180,6 +207,35 @@ void main() {
       expect(find.text('Part 2'), findsOneWidget);
       // Chapter Two has no downloads → not shown
       expect(find.text('Chapter Two'), findsNothing);
+    });
+
+    testWidgets('renders a corrupt local row as unavailable with recovery',
+        (tester) async {
+      final downloads = DownloadsProvider()
+        ..seedUnavailableMetadataForTest(
+          const SavedLectureMetadata(
+            id: 'l1',
+            number: 1,
+            chapterId: 'ch-1',
+            title: {'en': 'Part 1'},
+            audioUrl: 'https://example.test/l1.mp3',
+            durationSeconds: 60,
+            fileSizeBytes: 1048576,
+          ),
+        );
+
+      await tester.pumpWidget(_wrap(downloads));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Part 1'), findsOneWidget);
+      expect(
+        find.textContaining('no longer available on this device'),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Retry download'), findsOneWidget);
+      await tester.tap(find.text('Part 1'));
+      await tester.pump();
+      expect(find.text('Player'), findsNothing);
     });
 
     testWidgets('chapter header shows correct downloaded / total count',

@@ -606,4 +606,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get downloadComplete => 'اكتمل التنزيل';
+
+  @override
+  String get libraryContentUnavailable => 'المحتوى المحفوظ غير متاح';
+
+  @override
+  String get libraryContentUnavailableHint =>
+      'أعد الاتصال لتحديث الفهرس. ستبقى العناصر المحفوظة هنا عندما تتوفر بياناتها.';
+
+  @override
+  String get libraryLocalFileMissing =>
+      'لم يعد هذا التنزيل متاحًا على هذا الجهاز. أزِله ثم نزّله مرة أخرى.';
 }

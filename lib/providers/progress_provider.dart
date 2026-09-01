@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -17,6 +18,7 @@ class ProgressProvider extends ChangeNotifier {
   String? _lastLectureId;
   int _lastPositionSeconds = 0;
   Set<String> _bookmarks = {};
+  Map<String, SavedLectureMetadata> _bookmarkMetadata = {};
 
   /// Load saved state synchronously — requires [PreferencesService.init]
   /// to have been called before this provider is created.
@@ -26,6 +28,10 @@ class ProgressProvider extends ChangeNotifier {
     _lastLectureId = _prefs.lastLectureIdFor(prefix);
     _lastPositionSeconds = _prefs.lastPositionSecondsFor(prefix);
     _bookmarks = _prefs.loadBookmarks(prefix: prefix);
+    _bookmarkMetadata = {
+      for (final row in _prefs.loadBookmarkMetadata(prefix: prefix))
+        row.id: row,
+    };
     notifyListeners();
   }
 
@@ -62,15 +68,23 @@ class ProgressProvider extends ChangeNotifier {
 
   bool isBookmarked(String lectureId) => _bookmarks.contains(lectureId);
   Set<String> get bookmarkedIds => Set.unmodifiable(_bookmarks);
+  List<SavedLectureMetadata> get bookmarkedMetadata => _bookmarkMetadata.values
+      .where((row) => _bookmarks.contains(row.id))
+      .toList(growable: false);
 
-  Future<void> toggleBookmark(String lectureId) async {
-    if (_bookmarks.contains(lectureId)) {
-      _bookmarks.remove(lectureId);
+  Future<void> toggleBookmark(Lecture lecture) async {
+    if (_bookmarks.contains(lecture.id)) {
+      _bookmarks.remove(lecture.id);
+      _bookmarkMetadata.remove(lecture.id);
     } else {
-      _bookmarks.add(lectureId);
+      _bookmarks.add(lecture.id);
+      _bookmarkMetadata[lecture.id] = SavedLectureMetadata.fromLecture(lecture);
     }
     notifyListeners();
-    await _prefs.saveBookmarks(_bookmarks, prefix: _prefix);
+    await Future.wait([
+      _prefs.saveBookmarks(_bookmarks, prefix: _prefix),
+      _prefs.saveBookmarkMetadata(_bookmarkMetadata.values, prefix: _prefix),
+    ]);
   }
 
   // ── Commands ─────────────────────────────────────────────────────────────

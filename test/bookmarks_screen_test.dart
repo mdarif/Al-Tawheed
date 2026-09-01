@@ -59,7 +59,8 @@ Future<ProgressProvider> _pump(
 }) async {
   final progress = ProgressProvider()..load();
   for (final id in bookmarked) {
-    await progress.toggleBookmark(id);
+    await progress
+        .toggleBookmark(_lectures.firstWhere((lecture) => lecture.id == id));
   }
   final catalog = CatalogProvider();
   if (loaded) catalog.setCatalogForTest(_catalog());
@@ -142,11 +143,50 @@ void main() {
     final progress = await _pump(tester, bookmarked: ['l1', 'l2']);
     expect(find.text('Bookmarks (2)'), findsOneWidget);
 
-    await progress.toggleBookmark('l1');
+    await progress.toggleBookmark(_lectures.first);
     await tester.pumpAndSettle();
 
     expect(find.text('Lecture 1'), findsNothing);
     expect(find.text('Bookmarks (1)'), findsOneWidget);
+  });
+
+  testWidgets('uses persisted bookmark metadata when catalogue is unavailable',
+      (tester) async {
+    final progress = ProgressProvider()..load();
+    await progress.toggleBookmark(_lectures.first);
+    final catalog = CatalogProvider()..setErrorForTest(Exception('offline'));
+    final downloads = DownloadsProvider();
+    final connectivity = ConnectivityProvider.testOffline();
+    final player = PlayerNotifier(
+      TawheedAudioHandler(),
+      progress,
+      downloads,
+      connectivity,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: progress),
+          ChangeNotifierProvider.value(value: catalog),
+          ChangeNotifierProvider.value(value: player),
+          ChangeNotifierProvider.value(value: downloads),
+          ChangeNotifierProvider.value(value: connectivity),
+          ChangeNotifierProvider.value(value: SeriesProvider()..load(false)),
+          ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+          ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const BookmarksScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lecture 1'), findsOneWidget);
   });
 
   testWidgets('tapping a bookmarked lecture opens the player', (tester) async {

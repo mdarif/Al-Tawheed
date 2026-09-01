@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
@@ -18,11 +19,7 @@ class BookmarksScreen extends StatelessWidget {
     final catalog = context.watch<CatalogProvider>();
     final l10n = context.l10n;
 
-    final lectures = catalog.status == CatalogStatus.loaded
-        ? catalog.catalog!.lectures
-            .where((l) => progress.isBookmarked(l.id))
-            .toList()
-        : <Lecture>[];
+    final lectures = _lectures(progress, catalog);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,14 +41,14 @@ class BookmarksBody extends StatelessWidget {
     final progress = context.watch<ProgressProvider>();
     final catalog = context.watch<CatalogProvider>();
 
-    final lectures = catalog.status == CatalogStatus.loaded
-        ? catalog.catalog!.lectures
-            .where((l) => progress.isBookmarked(l.id))
-            .toList()
-        : <Lecture>[];
+    final lectures = _lectures(progress, catalog);
 
     return lectures.isEmpty
-        ? _EmptyState(isLoading: catalog.status == CatalogStatus.loading)
+        ? _EmptyState(
+            isLoading: catalog.status == CatalogStatus.loading,
+            unavailable: progress.bookmarkedIds.isNotEmpty &&
+                catalog.status != CatalogStatus.loaded,
+          )
         : ListView.builder(
             itemCount: lectures.length,
             itemBuilder: (context, i) => Column(
@@ -79,9 +76,21 @@ class BookmarksBody extends StatelessWidget {
   }
 }
 
+List<Lecture> _lectures(ProgressProvider progress, CatalogProvider catalog) {
+  if (catalog.status == CatalogStatus.loaded) {
+    return catalog.catalog!.lectures
+        .where((lecture) => progress.isBookmarked(lecture.id))
+        .toList();
+  }
+  return progress.bookmarkedMetadata
+      .map((SavedLectureMetadata row) => row.toLecture())
+      .toList();
+}
+
 class _EmptyState extends StatelessWidget {
   final bool isLoading;
-  const _EmptyState({required this.isLoading});
+  final bool unavailable;
+  const _EmptyState({required this.isLoading, required this.unavailable});
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +99,17 @@ class _EmptyState extends StatelessWidget {
     if (isLoading) {
       return Center(
         child: CircularProgressIndicator(color: context.brandColor),
+      );
+    }
+    if (unavailable) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            l10n.libraryContentUnavailable,
+            textAlign: TextAlign.center,
+          ),
+        ),
       );
     }
     return Center(

@@ -198,6 +198,16 @@ void main() {
       expect(provider.loadedSeriesId, 'tawheed-ar');
     });
 
+    test('records whether a served catalogue cache is stale', () async {
+      await PreferencesService.instance
+          .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
+      final provider = CatalogProvider();
+      await provider.load();
+
+      expect(provider.status, CatalogStatus.loaded);
+      expect(provider.isStaleCache, isFalse);
+    });
+
     test('switching series updates loadedSeriesId and the catalog', () async {
       await PreferencesService.instance
           .saveRemoteJson('catalog', jsonEncode(_catalogJson('legacy-book')));
@@ -251,7 +261,7 @@ void main() {
 
     test('tryStartQueuedDownload starts after coming online', () async {
       final provider = DownloadsProvider();
-      provider.queueDownload(_lec('next'));
+      await provider.queueDownload(_lec('next'));
 
       // No queued lecture should start while Wi‑Fi-only is false but URL empty
       // will fail quickly — we only assert the queue is consumed.

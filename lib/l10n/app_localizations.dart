@@ -1108,6 +1108,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download complete'**
   String get downloadComplete;
+
+  /// No description provided for @libraryContentUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved content is unavailable'**
+  String get libraryContentUnavailable;
+
+  /// No description provided for @libraryContentUnavailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to refresh the catalogue. Your saved rows will remain here when their data is available.'**
+  String get libraryContentUnavailableHint;
+
+  /// No description provided for @libraryLocalFileMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This download is no longer available on this device. Remove it and download it again.'**
+  String get libraryLocalFileMissing;
 }
 
 class _AppLocalizationsDelegate

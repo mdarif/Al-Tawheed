@@ -331,5 +331,8 @@
     "placeholders": { "size": { "type": "String" } }
   },
   "offlinePrepSave": "Download",
-  "downloadComplete": "Download complete"
+  "downloadComplete": "Download complete",
+  "libraryContentUnavailable": "Your saved content is unavailable",
+  "libraryContentUnavailableHint": "Reconnect to refresh the catalogue. Your saved rows will remain here when their data is available.",
+  "libraryLocalFileMissing": "This download is no longer available on this device. Remove it and download it again."
 }
