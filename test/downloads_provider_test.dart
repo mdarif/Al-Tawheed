@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/saved_lecture_metadata.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/services/download_service.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -133,6 +134,27 @@ void main() {
       expect(restored.statusFor('cold-start'), DownloadStatus.failed);
     });
 
+    test('leaves restored work queued on a confirmed-offline cold launch',
+        () async {
+      final first = DownloadsProvider();
+      await first
+          .queueDownload(_lec('offline-cold-start', audioUrl: 'not a URL'));
+
+      final restored = DownloadsProvider(
+        null,
+        ConnectivityProvider.testOffline(),
+      );
+      await restored.load();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(restored.statusFor('offline-cold-start'), DownloadStatus.queued);
+      expect(restored.queuedDownloadCount, 1);
+      expect(
+        PreferencesService.instance.loadQueuedDownloads().single.id,
+        'offline-cold-start',
+      );
+    });
+
     test('cancels queued work durably before it starts', () async {
       final provider = DownloadsProvider();
       await provider.queueDownload(_lec('cancel-queued'));
@@ -144,6 +166,17 @@ void main() {
         PreferencesService.instance.loadQueuedDownloads(),
         isEmpty,
       );
+    });
+
+    test('deleteAll clears queued work in memory and preferences', () async {
+      final provider = DownloadsProvider();
+      await provider.queueDownload(_lec('delete-all-queued-a'));
+      await provider.queueDownload(_lec('delete-all-queued-b'));
+
+      await provider.deleteAll();
+
+      expect(provider.queuedDownloadCount, 0);
+      expect(PreferencesService.instance.loadQueuedDownloads(), isEmpty);
     });
 
     test('reconciles every queued chapter job after a provider restart',
@@ -172,7 +205,7 @@ void main() {
       await restored.load();
       expect(restored.isDownloaded('chapter-b'), isTrue);
       expect(restored.queuedDownloadCount, chapter.length - 1);
-      await restored.tryStartQueuedDownload(isWifi: true);
+      await restored.tryStartQueuedDownload(isOnline: true, isWifi: true);
       expect(restored.queuedDownloadCount, chapter.length - 1);
     });
   });

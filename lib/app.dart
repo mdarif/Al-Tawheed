@@ -249,8 +249,10 @@ class MyApp extends StatelessWidget {
           )..load(),
         ),
         ChangeNotifierProvider(
-          create: (ctx) =>
-              DownloadsProvider(ctx.read<SeriesProvider>())..load(),
+          create: (ctx) => DownloadsProvider(
+            ctx.read<SeriesProvider>(),
+            ctx.read<ConnectivityProvider>(),
+          )..load(),
         ),
         ChangeNotifierProvider(
           create: (ctx) => PlayerNotifier(

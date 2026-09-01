@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/saved_lecture_metadata.dart';
+import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/download_notification_service.dart';
@@ -12,13 +13,15 @@ import 'package:myapp/services/preferences_service.dart';
 enum DownloadStatus { notDownloaded, queued, downloading, downloaded, failed }
 
 class DownloadsProvider extends ChangeNotifier {
-  DownloadsProvider([this._series]) : _seriesForTest = null;
+  DownloadsProvider([this._series, this._connectivity]) : _seriesForTest = null;
 
   @visibleForTesting
-  DownloadsProvider.forSeries(this._seriesForTest) : _series = null;
+  DownloadsProvider.forSeries(this._seriesForTest, [this._connectivity])
+      : _series = null;
 
   final SeriesProvider? _series;
   final SeriesConfig Function()? _seriesForTest;
+  final ConnectivityProvider? _connectivity;
   static int _nextProviderIdentity = 0;
   final int _providerIdentity = ++_nextProviderIdentity;
 
@@ -171,10 +174,19 @@ class DownloadsProvider extends ChangeNotifier {
     }
     _totalDownloadedBytes = totalBytes;
     notifyListeners();
-    // Connectivity begins optimistically on Wi-Fi and does not emit when its
-    // first platform result agrees. Reconcile durable work immediately; a
-    // genuinely offline transfer fails safely and remains queued for retry.
-    unawaited(tryStartQueuedDownload(isWifi: true));
+    // The app wires a confirmed connectivity result before this provider.
+    // Keep the legacy no-connectivity constructor optimistic for lightweight
+    // callers/tests, but never attempt restored jobs when it is confirmed
+    // offline.
+    final isOnline = _connectivity?.isOnline ?? true;
+    if (isOnline) {
+      unawaited(
+        tryStartQueuedDownload(
+          isOnline: true,
+          isWifi: _connectivity?.isWifi ?? true,
+        ),
+      );
+    }
   }
 
   /// Re-scopes all in-memory state to the current series and reloads from
@@ -303,7 +315,11 @@ class DownloadsProvider extends ChangeNotifier {
   }
 
   /// Starts a queued download once online (and on Wi‑Fi if required).
-  Future<void> tryStartQueuedDownload({required bool isWifi}) async {
+  Future<void> tryStartQueuedDownload({
+    required bool isOnline,
+    required bool isWifi,
+  }) async {
+    if (!isOnline) return;
     if (_queuedDownloads.isEmpty) return;
     if (downloadOnWifiOnly && !isWifi) return;
     final generation = _generation;
@@ -331,8 +347,16 @@ class DownloadsProvider extends ChangeNotifier {
       unawaited(queueDownload(lecture));
       return false;
     }
-    unawaited(download(lecture));
+    // Persist the request before opening the transfer. Completion is the only
+    // normal path that removes this intent, so a process death during transfer
+    // (or after file promotion but before preference writes) is recoverable.
+    unawaited(_queueThenDownload(lecture));
     return true;
+  }
+
+  Future<void> _queueThenDownload(Lecture lecture) async {
+    await queueDownload(lecture);
+    await download(lecture);
   }
 
   /// Starts a chapter now or durably queues each remaining lecture under the
@@ -692,10 +716,12 @@ class DownloadsProvider extends ChangeNotifier {
     _downloadedIds.clear();
     _downloadedMetadata.clear();
     _unavailableMetadata.clear();
+    _queuedDownloads.clear();
     _totalDownloadedBytes = 0;
     await Future.wait([
       PreferencesService.instance.saveDownloadedIds({}, prefix: prefix),
       PreferencesService.instance.saveDownloadedMetadata({}, prefix: prefix),
+      PreferencesService.instance.saveQueuedDownloads({}, prefix: prefix),
     ]);
     if (!_isCurrentOperation(generation, seriesId)) return;
     notifyListeners();

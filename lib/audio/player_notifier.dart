@@ -448,7 +448,10 @@ class PlayerNotifier extends ChangeNotifier {
 
     if (_connectivity.isOnline) {
       unawaited(
-        _downloads.tryStartQueuedDownload(isWifi: _connectivity.isWifi),
+        _downloads.tryStartQueuedDownload(
+          isOnline: _connectivity.isOnline,
+          isWifi: _connectivity.isWifi,
+        ),
       );
     }
   }

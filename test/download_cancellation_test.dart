@@ -98,6 +98,36 @@ void main() {
     expect(DownloadService.existsSync('x'), isFalse);
   });
 
+  test('online individual download remains durably recoverable after restart',
+      () async {
+    final (:server, :baseUrl) = await _startSlowServer();
+    addTearDown(() => server.close(force: true));
+
+    final lecture = _lec('restart-mid-transfer', audioUrl: baseUrl);
+    final first = DownloadsProvider();
+    expect(
+      first.downloadNowOrQueue(
+        lecture: lecture,
+        isOnline: true,
+        isWifi: true,
+      ),
+      isTrue,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(first.isDownloading(lecture.id), isTrue);
+
+    // A fresh provider models a process restart while the original transfer
+    // has not yet persisted completion. Its durable request must survive.
+    final restored = DownloadsProvider();
+    await restored.load();
+
+    expect(restored.queuedDownloadCount, 1);
+    expect(
+      PreferencesService.instance.loadQueuedDownloads().single.id,
+      lecture.id,
+    );
+  });
+
   test('immediate cancel and retry keeps the newer attempt authoritative',
       () async {
     final (:server, :baseUrl) = await _startServer(128);

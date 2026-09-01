@@ -265,7 +265,7 @@ void main() {
 
       // No queued lecture should start while Wi‑Fi-only is false but URL empty
       // will fail quickly — we only assert the queue is consumed.
-      await provider.tryStartQueuedDownload(isWifi: true);
+      await provider.tryStartQueuedDownload(isOnline: true, isWifi: true);
       // Queue cleared even if download fails (network unavailable in test).
     });
   });
