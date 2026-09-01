@@ -101,7 +101,7 @@ jobs:
           exit 1
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -154,7 +154,7 @@ jobs:
       # fetch-depth: 0 — the duplicate-tag guard needs every tag, and the
       # changelog in `publish` needs full history.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ steps.resolve.outputs.ref }}
@@ -225,7 +225,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ needs.prepare.outputs.ref }}
@@ -244,7 +244,7 @@ jobs:
 
       # Java 21 — matches android/app/build.gradle compileOptions
       - name: Set up Java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -256,7 +256,7 @@ jobs:
           cache: true
 
       - name: Cache Gradle
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
@@ -332,7 +332,7 @@ jobs:
       # costs minutes and saves nothing. if-no-files-found: error so a silent
       # rename change cannot produce an empty "successful" release.
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-release
           path: release-artifacts/*
@@ -360,13 +360,13 @@ jobs:
 
       - name: Checkout repository
         if: inputs.skip_verify != true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare.outputs.ref }}
 
       - name: Download Android artifacts
         if: inputs.skip_verify != true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: android-release
           path: release-artifacts
@@ -377,7 +377,7 @@ jobs:
       # would otherwise have no Java.
       - name: Set up Java 21
         if: inputs.skip_verify != true
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -422,7 +422,7 @@ jobs:
       # crashed or blank first screen are the entire point of this upload.
       - name: Upload verification evidence
         if: ${{ !cancelled() && inputs.skip_verify != true }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: verify-evidence
           path: verify-evidence
@@ -446,13 +446,13 @@ jobs:
     steps:
       # fetch-depth: 0 — git-cliff walks every tag to build the range.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ needs.prepare.outputs.ref }}
 
       - name: Download Android artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: android-release
           path: release-artifacts
@@ -635,7 +635,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # Push to the protected `develop` branch as the repo owner (admin) so
