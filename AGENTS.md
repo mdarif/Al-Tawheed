@@ -90,11 +90,12 @@ lib/screens (13)  providers (13)  services (8)  models (8)
    provide the same providers the app wires globally, or it throws
    `ProviderNotFoundException`. A green `make test` is the floor, not the goal —
    don't wait to be asked for tests.
-8. **Work test-first (TDD).** Write the test before the implementation, run
-   it and confirm it fails for the expected reason, then write the minimum
-   code to make it pass. Don't write the test and implementation together
-   and treat a passing run as equivalent — the failing run has to actually
-   happen first.
+8. **Work test-first: Red, then Green.** Write the test before the
+   implementation, run it and confirm it fails for the expected reason
+   (Red), then write the code to make it pass (Green). Stop there — no
+   separate refactor step. Don't write the test and implementation together
+   and treat a passing run as equivalent to having watched it fail — the
+   Red run has to actually happen first.
 
 ---
 
