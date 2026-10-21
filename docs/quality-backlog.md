@@ -113,7 +113,8 @@ the quality truth that active docs should use.
 ## Documentation rules
 
 - Do not describe Home or Daily Benefit as a current navigation surface; the
-  shell currently exposes Lectures, optional Book/Study, and Settings.
+  shell currently exposes Lectures, Read (Book/Study, when the edition has
+  them), Library, and Settings.
 - Do not describe the offline plan as a future feature: it is shipped, with
   physical-device QA still open.
 - Do not revive the deferred remote tab-list proposal; see

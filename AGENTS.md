@@ -16,8 +16,10 @@ book *Kitab at-Tawheed*, with full lock-screen/notification playback.
 
 - **Multi-series:** more than one content series ships in one app — an **Urdu**
   series (Shaikh Abdullah Nasir Rahmani) and an **Arabic** series (Shaikh Salih
-  al-Fawzan). Series differ in language, RTL, and available tabs (the Arabic
-  series has a Book tab, no Study tab). Series config is remote-driven.
+  al-Fawzan). Series differ in language, RTL, and available tabs (the bottom nav
+  is Lectures · Read · Library · Settings; Read merges Book and Study behind an
+  in-screen toggle, so the Arabic series' Read shows Book only and an audio-only
+  edition has no Read tab). Series config is remote-driven.
 - **4 UI locales (ARB):** `app_en`, `app_ar`, `app_ur`, `app_ur_roman`.
   **Content language and UI language are independent** — see gotchas.
 - **Remote-config driven:** brand strings, feature flags, and content URLs come

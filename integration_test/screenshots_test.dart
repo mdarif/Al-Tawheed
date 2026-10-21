@@ -171,7 +171,7 @@ void main() {
       // ── Switch to the Urdu series (English chrome) ───────────────────────────
       await switchSeries(tester, 'اردو');
 
-      // Urdu lectures — English "Class 01 — Part 01", Study tab visible.
+      // Urdu lectures — English "Class 01 — Part 01", Read tab (Study) visible.
       await tapTab(tester, ['Lectures']);
       await AppFlow.waitForCatalog(tester);
       await shot(tester, '05-lectures-ur');

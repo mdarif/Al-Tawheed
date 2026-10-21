@@ -96,9 +96,9 @@ chromes: Urdu = **English** UI (Now Playing, Study Mode), Arabic = **Arabic** UI
 | 1 | `01-welcome-framed.png`        | **Generic welcome** — everyone's first screen | neutral |
 | 2 | `02-choose-series-framed.png`  | Choose-Series picker (Arabic + Urdu)      | English |
 | 3 | `03-welcome-ar-framed.png`     | Arabic series welcome — al-Fawzan         | Arabic |
-| 4 | `04-book-ar-framed.png`        | Book tab الكتاب — full Arabic text (new)   | Arabic |
+| 4 | `04-book-ar-framed.png`        | Read tab, Book view الكتاب — full Arabic text (new)   | Arabic |
 | 5 | `05-player-ar-framed.png`      | Player يُشغَّل الآن                          | Arabic |
-| 6 | `06-lectures-ur-framed.png`    | Urdu lectures — Class 01, Study tab       | English |
+| 6 | `06-lectures-ur-framed.png`    | Urdu lectures — Class 01, Read tab (Study) in nav       | English |
 | 7 | `07-study-ur-framed.png`       | Study Mode — Urdu-only feature            | English |
 | 8 | `08-player-ur-framed.png`      | Now Playing                               | English |
 | 9 | `09-lectures-ar-framed.png`    | Arabic lectures الدروس (swap-in)          | Arabic |
@@ -201,7 +201,7 @@ Sharah Kitab at-Tawheed is a complete audio companion for studying the foundatio
 Choose your series when you open the app, and switch anytime from Settings.
 
 📖 READ THE BOOK (ARABIC SERIES)
-The Arabic series includes the full text of Kitab at-Tawheed in a dedicated Book tab — read the chapters (abwab) alongside the audio, with clear verse and hadith highlighting.
+The Arabic series includes the full text of Kitab at-Tawheed in the Read tab's Book view — read the chapters (abwab) alongside the audio, with clear verse and hadith highlighting.
 
 📈 STUDY MODE (URDU SERIES)
 Go beyond listening. Study Mode tracks your progress class by class across all 15 classes, so you always know where you left off and how far you've come.
@@ -248,7 +248,7 @@ Adjust emoji if you prefer a plainer tone (Google allows them; some publishers r
 
 1. **Grow** → **Store presence** → **Main store listing**
 2. Upload **Feature graphic** (1024×500)
-3. Upload **Phone screenshots** (drag to order: Welcome → picker → Arabic Book/player → Urdu Lectures/Study/player)
+3. Upload **Phone screenshots** (drag to order: Welcome → picker → Arabic Read (Book)/player → Urdu Lectures/Read (Study)/player)
 4. Paste **Short** and **Full** description
 5. **Save** → review preview
 6. If using **Custom store listing** per country, duplicate or localize Urdu for Pakistan

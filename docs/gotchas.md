@@ -77,8 +77,9 @@ is portable memory: any LLM working the repo should read and extend it.
   navigates the shell by stable tab identity (`AppFlow.navigateToTab(tester,
   AppTab.lectures)`),
   so retiring/renaming a tab makes it fail with `Found 0 widgets with text
-  "<tab>"`. The current tabs are `lectures · book · study · settings` (Home was
-  retired in `f793a78`). This bit us right before the 2.4.0 release: the nav had
+  "<tab>"`. The current tabs are `lectures · read · library · settings` (Book
+  and Study share Read behind an in-screen toggle; Home was retired in
+  `f793a78`). This bit us right before the 2.4.0 release: the nav had
   changed on the branch but the E2E test still tapped "Home". **Why CI didn't
   catch it earlier:** the regression workflow runs only
   `flutter test integration_test/app_test.dart`, and it fires on **PRs into
