@@ -199,12 +199,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
             ),
             _lectureList(catalog.lecturesForChapter(chapter.id), lectures),
           ],
-        // Bottom padding that adapts to whether the mini player is visible.
-        // Uses a Selector widget so context.select is properly inside a build method.
+        // The shell draws the mini-player and NavigationBar over the body
+        // (`extendBody: true`) and reports their height as the bottom
+        // padding. A CustomScrollView applies no automatic inset, so add it
+        // here (it grows and shrinks with the mini-player) plus a small gap,
+        // or the last lecture ends up underneath them.
         SliverToBoxAdapter(
-          child: Selector<PlayerNotifier, bool>(
-            selector: (_, p) => p.hasAudio,
-            builder: (_, hasAudio, __) => SizedBox(height: hasAudio ? 80 : 24),
+          child: Builder(
+            builder: (context) =>
+                SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
           ),
         ),
       ],

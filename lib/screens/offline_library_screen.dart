@@ -23,6 +23,11 @@ class OfflineLibraryBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>().catalog;
     final downloads = context.watch<DownloadsProvider>();
+    // The shell draws the mini-player and NavigationBar over the body
+    // (`extendBody: true`) and reports their height as the bottom padding.
+    // An explicit `padding` replaces ListView's automatic MediaQuery inset,
+    // so add it back or the last row ends up underneath them.
+    final bottomPadding = 32 + MediaQuery.paddingOf(context).bottom;
 
     if (catalog == null) {
       final saved = [
@@ -31,7 +36,7 @@ class OfflineLibraryBody extends StatelessWidget {
       ];
       if (saved.isNotEmpty) {
         return ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 32),
+          padding: EdgeInsets.only(top: 8, bottom: bottomPadding),
           itemCount: saved.length,
           itemBuilder: (context, index) => _LectureTile(
             lecture: saved[index].toLecture(),
@@ -67,7 +72,7 @@ class OfflineLibraryBody extends StatelessWidget {
         ...orphaned,
       ];
       return ListView.builder(
-        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        padding: EdgeInsets.only(top: 8, bottom: bottomPadding),
         itemCount: saved.length,
         itemBuilder: (context, index) => _LectureTile(
           lecture: saved[index],
@@ -88,7 +93,7 @@ class OfflineLibraryBody extends StatelessWidget {
       return saved.isEmpty
           ? const _EmptyState()
           : ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 32),
+              padding: EdgeInsets.only(top: 8, bottom: bottomPadding),
               itemCount: saved.length,
               itemBuilder: (context, i) => _LectureTile(
                 lecture: saved[i],
@@ -119,7 +124,7 @@ class OfflineLibraryBody extends StatelessWidget {
     return chaptersWithDownloads.isEmpty
         ? const _EmptyState()
         : ListView.builder(
-            padding: const EdgeInsets.only(bottom: 32),
+            padding: EdgeInsets.only(bottom: bottomPadding),
             itemCount: chaptersWithDownloads.length,
             itemBuilder: (context, i) =>
                 _ChapterSection(group: chaptersWithDownloads[i]),

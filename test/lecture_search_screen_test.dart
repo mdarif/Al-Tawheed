@@ -29,8 +29,10 @@ import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_semantic_colors.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/utils/duration_formatter.dart';
+import 'package:myapp/widgets/mini_player.dart';
 
 import 'support/fake_audio_playback.dart';
+import 'support/ignore_render_flex_overflow.dart';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -1367,6 +1369,85 @@ void main() {
   });
 
   // ── Layout: RTL, 2x text, dark ───────────────────────────────────────────
+
+  // The shell draws the mini-player and NavigationBar over the body
+  // (`extendBody: true`); the results list must clear them or its last hit is
+  // unreachable.
+  group('bottom inset', () {
+    for (final (name, loc, query, scale) in [
+      ('LTR', _en, 'class', 1.0),
+      ('LTR', _en, 'class', 2.0),
+      ('RTL (ur)', _ur, 'درس', 1.0),
+      ('RTL (ur)', _ur, 'درس', 2.0),
+    ]) {
+      testWidgets(
+          'results clear the mini-player: the last hit is tappable '
+          '($name, ${scale}x text)', (tester) async {
+        // Unrelated rows already overflow at 2x text: not this test's subject.
+        if (scale > 1) ignoreRenderFlexOverflow(addTearDown);
+        final catalog = _urduCatalog();
+        final app = await _pumpApp(
+          tester,
+          catalog: _StubCatalog(catalog: catalog),
+          locale: loc,
+          textScaler: TextScaler.linear(scale),
+          size: const Size(360, 800),
+          initialLocation: '/lectures/search',
+        );
+        // A lecture is loaded, so the shell shows the mini-player.
+        await app.player.loadAndPlay(catalog.lectures.first, catalog.lectures);
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byType(MiniPlayer), findsOneWidget);
+        expect(find.byType(NavigationBar), findsOneWidget);
+
+        await _type(tester, query);
+        final results = find.byKey(WidgetKeys.searchResults);
+        expect(results, findsOneWidget);
+        final position = _scroll(tester, results);
+        // Rows far down only have estimated extents: re-jump until the
+        // extent is measured and we really are at the end.
+        for (var i = 0; i < 5; i++) {
+          position.jumpTo(position.maxScrollExtent);
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+
+        // Hits are ranked, so the last built lecture row is the last hit.
+        final lastRow = find
+            .byWidgetPredicate(
+              (w) =>
+                  w.key is ValueKey<String> &&
+                  (w.key! as ValueKey<String>)
+                      .value
+                      .startsWith('search.lecture-row.'),
+            )
+            .last;
+        final lastId = (tester.widget(lastRow).key! as ValueKey<String>)
+            .value
+            .split('.')
+            .last;
+        expect(lastId, isNot(catalog.lectures.first.id));
+        final loadsBefore = app.playback.loads.length;
+        final rowBottom = tester.getBottomLeft(lastRow).dy;
+        final miniTop = tester.getTopLeft(find.byType(MiniPlayer)).dy;
+        expect(
+          rowBottom,
+          lessThanOrEqualTo(miniTop),
+          reason: 'last hit ($rowBottom) must end above the '
+              'mini-player ($miniTop)',
+        );
+
+        // And it is actually hit by a tap, which plays that lecture.
+        expect(lastRow.hitTestable(), findsOneWidget);
+        await tester.tap(lastRow, warnIfMissed: true);
+        await _pumpRoute(tester);
+        expect(app.playback.loads.length, loadsBefore + 1);
+        expect(app.playback.loads.last.lecture.id, lastId);
+        expect(find.byType(PlayerScreen), findsOneWidget);
+        // The fake backend never reports ready; stop the load watchdog.
+        app.player.dispose();
+      });
+    }
+  });
 
   group('layout', () {
     for (final loc in [_ar, _ur]) {

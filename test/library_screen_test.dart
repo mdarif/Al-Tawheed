@@ -8,6 +8,7 @@ import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/saved_lecture_metadata.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
@@ -16,14 +17,19 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
+import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
+import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/widgets/lecture_tile.dart';
+import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/section_tab_header.dart';
 
 import 'support/fake_audio_playback.dart';
+import 'support/ignore_render_flex_overflow.dart';
 
 Lecture _lecture(String id, int number) => Lecture(
       id: id,
@@ -431,6 +437,231 @@ void main() {
       expect(downloads.deleteAllCalls, 1);
       expect(find.text('Clear all downloads?'), findsNothing);
     });
+  });
+
+  // The shell draws the mini-player and NavigationBar over the body
+  // (`extendBody: true`). A list that fixes its own bottom padding drops the
+  // inset the shell reports and leaves its last row underneath them.
+  group('Library lists clear the mini-player', () {
+    const total = 20;
+    final lectures = [for (var n = 1; n <= total; n++) _lecture('lec-$n', n)];
+
+    Catalog chaptered() => Catalog(
+          version: 1,
+          book: const Book(
+            id: 'book',
+            title: {'en': 'Book'},
+            speaker: {'en': 'Speaker'},
+            totalDurationSeconds: 0,
+            lectureCount: 0,
+            coverImageUrl: '',
+            language: 'Urdu',
+          ),
+          chapters: [
+            for (var c = 1; c <= 4; c++)
+              Chapter(
+                id: 'class-$c',
+                number: c,
+                title: {'en': 'Class $c'},
+                lectureCount: 5,
+              ),
+          ],
+          lectures: [
+            for (final l in lectures)
+              Lecture(
+                id: l.id,
+                number: l.number,
+                chapterId: 'class-${(l.number - 1) ~/ 5 + 1}',
+                title: l.title,
+                audioUrl: l.audioUrl,
+                durationSeconds: l.durationSeconds,
+                fileSizeBytes: l.fileSizeBytes,
+              ),
+          ],
+          dailyBenefits: const [],
+        );
+
+    SavedLectureMetadata snapshot(Lecture l) =>
+        SavedLectureMetadata.fromLecture(l);
+
+    final surfaces = <String,
+        ({
+      bool downloadsTab,
+      Type body,
+      Catalog? Function() catalog,
+      Future<void> Function(ProgressProvider, DownloadsProvider) seed,
+    })>{
+      'Bookmarks': (
+        downloadsTab: false,
+        body: BookmarksBody,
+        catalog: () => _catalog(lectures),
+        seed: (progress, downloads) async {
+          for (final l in lectures) {
+            await progress.toggleBookmark(l);
+          }
+        },
+      ),
+      'Downloads (catalogue not loaded)': (
+        downloadsTab: true,
+        body: OfflineLibraryBody,
+        catalog: () => null,
+        seed: (progress, downloads) async {
+          for (final l in lectures) {
+            downloads.seedDownloadedMetadataForTest(snapshot(l));
+          }
+        },
+      ),
+      'Downloads (saved lectures gone from the catalogue)': (
+        downloadsTab: true,
+        body: OfflineLibraryBody,
+        catalog: () => _catalog(lectures.take(10).toList()),
+        seed: (progress, downloads) async {
+          for (final l in lectures.take(10)) {
+            downloads.seedDownloadedForTest(l.id);
+          }
+          for (final l in lectures.skip(10)) {
+            downloads.seedDownloadedMetadataForTest(snapshot(l));
+          }
+        },
+      ),
+      'Downloads (flat series)': (
+        downloadsTab: true,
+        body: OfflineLibraryBody,
+        catalog: () => _catalog(lectures),
+        seed: (progress, downloads) async {
+          for (final l in lectures) {
+            downloads.seedDownloadedForTest(l.id);
+          }
+        },
+      ),
+      'Downloads (grouped by class)': (
+        downloadsTab: true,
+        body: OfflineLibraryBody,
+        catalog: chaptered,
+        seed: (progress, downloads) async {
+          for (final l in lectures) {
+            downloads.seedDownloadedForTest(l.id);
+          }
+        },
+      ),
+    };
+
+    for (final MapEntry(key: surface, value: spec) in surfaces.entries) {
+      for (final (name, locale, scale) in [
+        ('LTR', null, 1.0),
+        ('LTR', null, 2.0),
+        ('RTL (ur)', const Locale('ur'), 1.0),
+        ('RTL (ur)', const Locale('ur'), 2.0),
+      ]) {
+        testWidgets(
+            '$surface: the last row is tappable above the mini-player '
+            '($name, ${scale}x text)', (tester) async {
+          tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+          tester.view.devicePixelRatio = 3;
+          addTearDown(tester.view.reset);
+          // Unrelated rows already overflow at some scales/locales (the
+          // LectureTile badge row): not this test's subject.
+          ignoreRenderFlexOverflow(addTearDown);
+
+          final progress = ProgressProvider()..load();
+          final downloads = DownloadsProvider();
+          final player = PlayerNotifier(
+            FakeAudioPlayback(),
+            progress,
+            downloads,
+            ConnectivityProvider.testOnline(),
+          );
+          addTearDown(player.dispose);
+          await spec.seed(progress, downloads);
+          await tester.pumpWidget(
+            _library(
+              downloadsEnabled: true,
+              progress: progress,
+              downloads: downloads,
+              player: player,
+              catalog: spec.catalog(),
+              locale: locale,
+              textScale: scale,
+            ),
+          );
+          await tester.pumpAndSettle();
+          if (spec.downloadsTab) {
+            await tester.tap(find.byKey(WidgetKeys.libraryTabDownloads));
+            await tester.pumpAndSettle();
+          }
+
+          // A lecture outside every list is loaded, so the shell shows the
+          // mini-player.
+          final playing = _lecture('now-playing', 99);
+          await player.loadAndPlay(playing, [playing]);
+          await tester.pumpAndSettle();
+          expect(find.byType(MiniPlayer), findsOneWidget);
+          expect(find.byType(NavigationBar), findsOneWidget);
+
+          final scrollable = find
+              .descendant(
+                of: find.byType(spec.body),
+                matching: find.byType(Scrollable),
+              )
+              .first;
+          final position = tester.state<ScrollableState>(scrollable).position;
+          position.jumpTo(position.maxScrollExtent);
+          await tester.pumpAndSettle();
+
+          final lastRow = find
+              .descendant(
+                of: find.byType(spec.body),
+                matching: find.byType(
+                  spec.downloadsTab ? ListTile : LectureTile,
+                ),
+              )
+              .last;
+          expect(find.text('Lecture $total'), findsOneWidget);
+          final rowBottom = tester.getBottomLeft(lastRow).dy;
+          final miniTop = tester.getTopLeft(find.byType(MiniPlayer)).dy;
+          expect(
+            rowBottom,
+            lessThanOrEqualTo(miniTop),
+            reason: 'last row ($rowBottom) must end above the '
+                'mini-player ($miniTop)',
+          );
+
+          // And it is actually hit by a tap, which performs the row's action.
+          expect(lastRow.hitTestable(), findsOneWidget);
+          if (spec.downloadsTab) {
+            // A downloaded row's trailing action asks to remove the download.
+            await tester.tap(
+              find.descendant(
+                of: lastRow,
+                matching: find.byIcon(Icons.delete_outline_rounded),
+              ),
+              warnIfMissed: true,
+            );
+            await tester.pumpAndSettle();
+            expect(find.byType(AlertDialog), findsOneWidget);
+            // Cancel is the first action (its label follows the chrome locale).
+            await tester.tap(
+              find
+                  .descendant(
+                    of: find.byType(AlertDialog),
+                    matching: find.byType(TextButton),
+                  )
+                  .first,
+            );
+            await tester.pumpAndSettle();
+            expect(find.byType(AlertDialog), findsNothing);
+          } else {
+            // A bookmarked row plays it and opens the Player.
+            await tester.tap(lastRow, warnIfMissed: true);
+            await tester.pumpAndSettle();
+            expect(player.current?.id, 'lec-$total');
+            expect(find.text('Player'), findsOneWidget);
+          }
+          expect(tester.takeException(), isNull);
+          await player.stop();
+        });
+      }
+    }
   });
 
   group('/library?tab= selects the tab (production router)', () {

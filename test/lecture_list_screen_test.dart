@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
@@ -19,12 +20,18 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
+import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
+import 'package:myapp/widgets/mini_player.dart';
+
+import 'support/fake_audio_playback.dart';
+import 'support/ignore_render_flex_overflow.dart';
 
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
@@ -153,6 +160,88 @@ Widget _wrap({
     ),
   );
 }
+
+/// The real app shell (production router, `/lectures` branch) around the real
+/// Lectures list, with a controllable audio backend so a mini-player can be
+/// raised. Unlike [_wrap], this has the NavigationBar + MiniPlayer that the
+/// shell draws over the body (`extendBody: true`).
+Widget _shell({
+  required Catalog catalog,
+  Locale? locale,
+  double textScale = 1.0,
+  SeriesConfig? edition,
+}) {
+  final series = SeriesProvider()..load(false);
+  if (edition != null) series.setCurrentSeriesForTest(edition);
+  final progress = ProgressProvider()..load();
+  final downloads = DownloadsProvider();
+  final connectivity = ConnectivityProvider.testOnline();
+  final catalogProvider = CatalogProvider()
+    ..setCatalogForTest(catalog, seriesId: series.currentSeries.id);
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider.value(value: series),
+      ChangeNotifierProvider.value(value: catalogProvider),
+      ChangeNotifierProvider.value(value: progress),
+      ChangeNotifierProvider.value(value: downloads),
+      ChangeNotifierProvider.value(value: connectivity),
+      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      ChangeNotifierProvider(create: (_) => AnnouncementsProvider()),
+      ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+      ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
+      ChangeNotifierProvider(
+        create: (_) => PlayerNotifier(
+          FakeAudioPlayback(),
+          progress,
+          downloads,
+          connectivity,
+        ),
+      ),
+    ],
+    child: MaterialApp.router(
+      theme: AppTheme.light,
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: child!,
+      ),
+      routerConfig: createAppRouter(initialLocation: '/lectures'),
+    ),
+  );
+}
+
+/// [classes] chapters of [perClass] lectures each, as one parsed catalogue.
+Catalog _bigCatalog({int classes = 4, int perClass = 6}) => Catalog.fromJson(
+      _catalogJson(
+        bookId: 'book',
+        chapters: [
+          for (var c = 1; c <= classes; c++)
+            {
+              'id': 'class-$c',
+              'number': c,
+              'title': {'en': 'Class $c'},
+              'lectureCount': perClass,
+            },
+        ],
+        lectures: [
+          for (var c = 1; c <= classes; c++)
+            for (var p = 1; p <= perClass; p++)
+              {
+                'id': 'lec-$c-$p',
+                'number': p,
+                'chapterId': 'class-$c',
+                'title': {'en': 'Class $c - Part $p'},
+                'audioUrl': 'https://example.com/lec-$c-$p.mp3',
+                'durationSeconds': 60,
+                'fileSizeBytes': 1000,
+              },
+        ],
+      ),
+    );
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -593,6 +682,105 @@ void main() {
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('Sharah Kitab at-Tawheed'), findsNothing);
+  });
+
+  // The shell draws the mini-player and NavigationBar over the body
+  // (`extendBody: true`). A CustomScrollView takes no automatic inset, so its
+  // end spacer must clear them or the last lecture is unreachable.
+  for (final (name, locale, scale) in [
+    ('LTR', null, 1.0),
+    ('LTR', null, 2.0),
+    ('RTL (ur)', const Locale('ur'), 1.0),
+    ('RTL (ur)', const Locale('ur'), 2.0),
+  ]) {
+    testWidgets(
+        'Lectures clears the mini-player: the last lecture is tappable '
+        '($name, ${scale}x text)', (tester) async {
+      tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      // The Lectures hero and LectureTile badge row already overflow at 2x
+      // text: separate layout bugs, not this test's subject.
+      if (scale > 1) ignoreRenderFlexOverflow(addTearDown);
+
+      final catalog = _bigCatalog();
+      await tester.pumpWidget(
+        _shell(catalog: catalog, locale: locale, textScale: scale),
+      );
+      await tester.pumpAndSettle();
+
+      // A lecture is loaded, so the shell shows the mini-player.
+      final shell = tester.element(find.byType(ShellScreen));
+      final player = shell.read<PlayerNotifier>();
+      await player.loadAndPlay(catalog.lectures.first, catalog.lectures);
+      await tester.pumpAndSettle();
+      expect(find.byType(MiniPlayer), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+
+      final scrollable = find
+          .descendant(
+            of: find.byType(LectureListScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      final position = tester.state<ScrollableState>(scrollable).position;
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+
+      final last = catalog.lectures.last;
+      final lastTile = find.byWidgetPredicate(
+        (w) => w is LectureTile && w.lecture.id == last.id,
+      );
+      expect(lastTile, findsOneWidget);
+      final tileBottom = tester.getBottomLeft(lastTile).dy;
+      final miniTop = tester.getTopLeft(find.byType(MiniPlayer)).dy;
+      expect(
+        tileBottom,
+        lessThanOrEqualTo(miniTop),
+        reason: 'last lecture ($tileBottom) must end above the '
+            'mini-player ($miniTop)',
+      );
+
+      // And it is actually hit by a tap, which plays that lecture.
+      expect(lastTile.hitTestable(), findsOneWidget);
+      await tester.tap(lastTile, warnIfMissed: true);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(player.current?.id, last.id);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Lectures with no audio still ends above the NavigationBar',
+      (tester) async {
+    tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final catalog = _bigCatalog();
+    await tester.pumpWidget(_shell(catalog: catalog));
+    await tester.pumpAndSettle();
+    expect(find.byType(MiniPlayer), findsOneWidget);
+    expect(tester.getSize(find.byType(MiniPlayer)).height, 0);
+
+    final scrollable = find
+        .descendant(
+          of: find.byType(LectureListScreen),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final position = tester.state<ScrollableState>(scrollable).position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+
+    final last = catalog.lectures.last;
+    final lastTile = find.byWidgetPredicate(
+      (w) => w is LectureTile && w.lecture.id == last.id,
+    );
+    expect(
+      tester.getBottomLeft(lastTile).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(NavigationBar)).dy),
+    );
+    expect(lastTile.hitTestable(), findsOneWidget);
   });
 
   group('search action and Go to class', () {
