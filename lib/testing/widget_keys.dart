@@ -90,6 +90,9 @@ abstract final class WidgetKeys {
   static const settingsTextSizeValue = ValueKey<String>(
     'settings.text-size.value',
   );
+  static const settingsTextSizeSlider = ValueKey<String>(
+    'settings.text-size.slider',
+  );
   static const settingsTextSizePreview = ValueKey<String>(
     'settings.text-size.preview',
   );

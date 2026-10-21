@@ -10,7 +10,7 @@ import 'package:myapp/utils/book_typography.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 
-/// Stepper increment, in points, for the −/+ buttons. The bounds themselves
+/// Step, in points: one slider notch and one tap of an `A` button. The bounds themselves
 /// live on [ReadingProvider], which clamps every write.
 const double kTextSizeStep = 2;
 
@@ -44,8 +44,9 @@ BookChapter? _previewChapter(BookContent? book) {
   );
 }
 
-/// Book text-size control: a −/+ stepper over [ReadingProvider.bookFontSize]
-/// with a live preview in the book's own font and direction.
+/// Book text-size control: a small `A` - slider - large `A` row over
+/// [ReadingProvider.bookFontSize], with a live preview in the book's own font
+/// and direction (the same control as the Al Quran reader's font-size row).
 ///
 /// Used by Settings › Reading and by the reader's "Aa" sheet. Both read and
 /// write the same [ReadingProvider] value as the reader's pinch gesture, so a
@@ -75,97 +76,59 @@ class TextSizeSetting extends StatelessWidget {
     final chapter = _previewChapter(bookProvider.book);
     final value = context.localizedDigits('${size.round()}');
 
-    // Read the live value, not the one captured at build: a second tap can
-    // land before the first write has notified and rebuilt this widget.
-    void step(double delta) {
-      final current = context.read<ReadingProvider>();
-      current.setBookFontSize(current.bookFontSize + delta);
-    }
-
     return Padding(
       key: WidgetKeys.settingsTextSize,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // A Wrap, not a Row: at 2× text (or a long translation) the stepper
-          // drops under the title instead of overflowing.
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
+          // Title at the start, the current size at the end. The title is
+          // Expanded so at 2x text (or a long translation) it wraps instead
+          // of overflowing.
+          Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: context.semantic.brandSubtle,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.text_fields_rounded,
-                      color: context.brandColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Flexible(
-                    child: Text(
-                      l10n.settingsBookFontSize,
-                      style: context.textTheme.bodyLarge,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: context.semantic.brandSubtle,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.text_fields_rounded,
+                  color: context.brandColor,
+                  size: 20,
+                ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton.outlined(
-                    key: WidgetKeys.settingsTextSizeDecrease,
-                    tooltip: l10n.settingsTextSizeSmaller,
-                    constraints:
-                        const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: const Icon(Icons.remove_rounded),
-                    onPressed: size > ReadingProvider.minBookFontSize
-                        ? () => step(-kTextSizeStep)
-                        : null,
-                  ),
-                  // The value is a live region so TalkBack / VoiceOver
-                  // announce each change without the user re-focusing it.
-                  Semantics(
-                    key: WidgetKeys.settingsTextSizeValue,
-                    liveRegion: true,
-                    label: '${l10n.settingsBookFontSize} $value',
-                    excludeSemantics: true,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 40),
-                      child: Text(
-                        value,
-                        textAlign: TextAlign.center,
-                        style: context.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  l10n.settingsBookFontSize,
+                  style: context.textTheme.bodyLarge,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // The value is a live region so TalkBack / VoiceOver announce
+              // each change without the user re-focusing it.
+              Semantics(
+                key: WidgetKeys.settingsTextSizeValue,
+                liveRegion: true,
+                label: '${l10n.settingsBookFontSize} $value',
+                excludeSemantics: true,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 40),
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.end,
+                    style: context.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton.outlined(
-                    key: WidgetKeys.settingsTextSizeIncrease,
-                    tooltip: l10n.settingsTextSizeLarger,
-                    constraints:
-                        const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: const Icon(Icons.add_rounded),
-                    onPressed: size < ReadingProvider.maxBookFontSize
-                        ? () => step(kTextSizeStep)
-                        : null,
-                  ),
-                ],
+                ),
               ),
             ],
           ),
+          const _TextSizeSlider(),
           if (chapter != null) ...[
             const SizedBox(height: 14),
             _BookPreview(
@@ -187,6 +150,145 @@ class TextSizeSetting extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The `A` - slider - `A` row.
+///
+/// Direction follows the chrome (Material convention): a [Row] and a [Slider]
+/// both mirror in RTL, so the small `A` and the slider's minimum sit at the
+/// start (the right in Arabic / Urdu) and dragging toward the end (left)
+/// makes the text larger, the same way a back arrow and a progress bar flip.
+///
+/// Writes: during a drag the size is applied live (the preview and the open
+/// reader repaint) and persisted once on drag end, like the reader's pinch;
+/// the `A` buttons and screen-reader / keyboard adjustments, which arrive as
+/// bare `onChanged` calls with no drag, persist immediately.
+class _TextSizeSlider extends StatefulWidget {
+  const _TextSizeSlider();
+
+  @override
+  State<_TextSizeSlider> createState() => _TextSizeSliderState();
+}
+
+class _TextSizeSliderState extends State<_TextSizeSlider> {
+  static const _min = ReadingProvider.minBookFontSize;
+  static const _max = ReadingProvider.maxBookFontSize;
+
+  bool _dragging = false;
+
+  void _step(double delta) =>
+      _set(context.read<ReadingProvider>().bookFontSize + delta);
+
+  // Read the live value, not one captured at build: a second tap can land
+  // before the first write has notified and rebuilt this widget.
+  void _set(double next) {
+    final reading = context.read<ReadingProvider>();
+    final v = next.clamp(_min, _max).roundToDouble();
+    if (v == reading.bookFontSize) return;
+    if (_dragging) {
+      reading.setBookFontSizeLive(v);
+    } else {
+      reading.setBookFontSize(v);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final size = context.watch<ReadingProvider>().bookFontSize;
+    // The brand gold (#D4AF37) is only 2.1:1 on the white light-theme card,
+    // under the 3:1 WCAG asks of a control's visible parts, so the light
+    // theme uses its darker brand tone (3.5:1). Dark's gold is already ample.
+    final cs = context.colorScheme;
+    final accent = context.isDarkTheme ? cs.primary : cs.secondary;
+
+    return Row(
+      children: [
+        _StepGlyph(
+          buttonKey: WidgetKeys.settingsTextSizeDecrease,
+          glyphSize: 14,
+          tooltip: l10n.settingsTextSizeSmaller,
+          onPressed: size > _min ? () => _step(-kTextSizeStep) : null,
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              activeTrackColor: accent,
+              thumbColor: accent,
+              overlayColor: accent.withValues(alpha: 0.16),
+              thumbShape: const RoundSliderThumbShape(
+                enabledThumbRadius: 9,
+                elevation: 1,
+              ),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+              activeTickMarkColor: Colors.transparent,
+              inactiveTickMarkColor: Colors.transparent,
+            ),
+            child: Slider(
+              key: WidgetKeys.settingsTextSizeSlider,
+              value: size.clamp(_min, _max),
+              min: _min,
+              max: _max,
+              divisions: ((_max - _min) / kTextSizeStep).round(),
+              semanticFormatterCallback: (v) =>
+                  context.localizedDigits('${v.round()}'),
+              onChangeStart: (_) => _dragging = true,
+              onChanged: _set,
+              onChangeEnd: (_) {
+                _dragging = false;
+                context.read<ReadingProvider>().commitBookFontSize();
+              },
+            ),
+          ),
+        ),
+        _StepGlyph(
+          buttonKey: WidgetKeys.settingsTextSizeIncrease,
+          glyphSize: 22,
+          tooltip: l10n.settingsTextSizeLarger,
+          onPressed: size < _max ? () => _step(kTextSizeStep) : null,
+        ),
+      ],
+    );
+  }
+}
+
+/// The flanking `A` buttons: the glyph size *is* the affordance, so they are
+/// text rather than icons. Standard density on purpose: compact would shrink
+/// the box to 40dp, under the 48dp tap-target minimum.
+class _StepGlyph extends StatelessWidget {
+  // Not `key`: the key must land on the IconButton itself (what tests and
+  // tap-target checks look up), not on this wrapper as well.
+  final Key buttonKey;
+  final double glyphSize;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  const _StepGlyph({
+    required this.buttonKey,
+    required this.glyphSize,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = context.colorScheme.onSurface;
+    return IconButton(
+      key: buttonKey,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Text(
+        'A',
+        style: TextStyle(
+          fontSize: glyphSize,
+          fontWeight: FontWeight.w600,
+          color:
+              onPressed == null ? onSurface.withValues(alpha: 0.3) : onSurface,
+        ),
       ),
     );
   }
@@ -245,7 +347,7 @@ class _BookPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Scripture is shown for its look, not announced on every size change —
-    // the stepper's live region carries the feedback.
+    // the value's live region carries the feedback.
     return ExcludeSemantics(
       child: Container(
         width: double.infinity,

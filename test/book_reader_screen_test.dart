@@ -814,6 +814,28 @@ void main() {
       expect(_spanFor(tester, 'نص الباب الأول')?.style?.fontSize, 22.0);
     });
 
+    testWidgets('its slider resizes the open chapter live and persists', (
+      tester,
+    ) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      final reading = ReadingProvider()..load();
+
+      await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.byKey(WidgetKeys.settingsTextSizeSlider),
+        const Offset(400, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(reading.bookFontSize, 32.0);
+      expect(PreferencesService.instance.bookFontSize, 32.0);
+      expect(_spanFor(tester, 'نص الباب الأول')?.style?.fontSize, 32.0);
+    });
+
     testWidgets('clamps at 14 and 32 and disables the end buttons', (
       tester,
     ) async {

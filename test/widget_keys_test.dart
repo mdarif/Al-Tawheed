@@ -39,6 +39,7 @@ void main() {
       WidgetKeys.settingsTextSizeDecrease,
       WidgetKeys.settingsTextSizeIncrease,
       WidgetKeys.settingsTextSizeValue,
+      WidgetKeys.settingsTextSizeSlider,
       WidgetKeys.settingsTextSizePreview,
       WidgetKeys.settingsAbout,
       WidgetKeys.settingsShareApp,

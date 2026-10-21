@@ -689,7 +689,33 @@ void main() {
       expect(find.text('Text size'), findsNothing);
     });
 
-    testWidgets('the stepper moves ±2 within 14–32 and persists',
+    testWidgets('the slider spans 14–32 and a drag persists on release',
+        (tester) async {
+      final series = SeriesProvider()
+        ..setAvailableSeriesForTest([_seriesUrduBook])
+        ..setCurrentSeriesForTest(_seriesUrduBook);
+      final reading = ReadingProvider(series)..load();
+
+      await tester.pumpWidget(_wrap(series: series, reading: reading));
+      await tester.pumpAndSettle();
+
+      final slider = tester.widget<Slider>(
+        find.byKey(WidgetKeys.settingsTextSizeSlider),
+      );
+      expect(slider.min, 14);
+      expect(slider.max, 32);
+      expect(slider.divisions, 9);
+
+      await tester.drag(
+        find.byKey(WidgetKeys.settingsTextSizeSlider),
+        const Offset(400, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(reading.bookFontSize, 32.0);
+      expect(PreferencesService.instance.bookFontSize, 32.0);
+    });
+
+    testWidgets('the A buttons move ±2 within 14–32 and persist',
         (tester) async {
       final series = SeriesProvider()
         ..setAvailableSeriesForTest([_seriesUrduBook])

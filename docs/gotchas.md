@@ -380,6 +380,14 @@ is portable memory: any LLM working the repo should read and extend it.
   [book_typography.dart](../lib/utils/book_typography.dart), used by both the
   reader and [text_size_setting.dart](../lib/widgets/settings/text_size_setting.dart);
   change them there, never in one place only.
+- **The text-size `Slider` only calls `onChangeEnd` for touch drags/taps.**
+  Screen-reader increase/decrease and keyboard arrows fire a bare `onChanged`,
+  so `text_size_setting.dart` persists those immediately and uses
+  `setBookFontSizeLive` + `commitBookFontSize` only between `onChangeStart` and
+  `onChangeEnd`. Also, the light-theme brand gold (#D4AF37) is just 2.1:1 on
+  the white card (under WCAG 3:1 for controls), so that slider uses the theme's
+  darker gold (`colorScheme.secondary`); dark keeps `primary`. In RTL the whole
+  row mirrors (small `A` and slider minimum on the right) by design.
 - **Only the first `RenderFlex overflowed` report in a test names the
   widget**; later ones are bare. To find a 2×-text overflow, bisect by turning
   sections/flags off, or walk the render tree for `RenderFlex` with overflow.

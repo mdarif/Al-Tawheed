@@ -34,40 +34,48 @@ class OfflineStatusBanner extends StatelessWidget {
         onTap: () => context.go('/library?tab=downloads'),
         child: SafeArea(
           bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 14,
-                  color: const Color(0xFFE65100),
+          // The strip keeps its slim 6dp padding, but the tap target is the
+          // 48dp Material minimum: the row is centred in a minHeight box
+          // rather than padded out, so it does not look any heavier.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Center(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      size: 14,
+                      color: const Color(0xFFE65100),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.offlineBadge,
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFFE65100),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.offlineBadgeViewLibrary,
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFFE65100),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 14,
+                      color: const Color(0xFFE65100),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  l10n.offlineBadge,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFFE65100),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.offlineBadgeViewLibrary,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFFE65100),
-                    fontWeight: FontWeight.w700,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 14,
-                  color: const Color(0xFFE65100),
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -97,4 +97,43 @@ void main() {
     expect(find.text('Library tab=downloads'), findsOneWidget);
     expect(find.text('Lectures'), findsNothing);
   });
+
+  testWidgets('"View Library" is not underlined (the chevron signals the tap)',
+      (tester) async {
+    await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: true));
+    await tester.pumpAndSettle();
+
+    final text = tester.widget<Text>(find.text('View Library'));
+    final decoration = text.style?.decoration;
+    expect(decoration == null || decoration == TextDecoration.none, isTrue);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+  });
+
+  testWidgets('the whole banner is a tap target at least 48dp tall',
+      (tester) async {
+    await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: true));
+    await tester.pumpAndSettle();
+
+    final banner = tester.getRect(find.byKey(WidgetKeys.offlineStatusBanner));
+    expect(banner.height, greaterThanOrEqualTo(48));
+    // …and the InkWell (what actually receives the tap) fills it.
+    final ink = tester.getRect(
+      find.descendant(
+        of: find.byKey(WidgetKeys.offlineStatusBanner),
+        matching: find.byType(InkWell),
+      ),
+    );
+    expect(ink.height, greaterThanOrEqualTo(48));
+    expect(ink.width, banner.width);
+  });
+
+  testWidgets('the label stays vertically centred in the taller target',
+      (tester) async {
+    await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: true));
+    await tester.pumpAndSettle();
+
+    final banner = tester.getRect(find.byKey(WidgetKeys.offlineStatusBanner));
+    final label = tester.getRect(find.text('Offline'));
+    expect(label.center.dy, closeTo(banner.center.dy, 1));
+  });
 }
