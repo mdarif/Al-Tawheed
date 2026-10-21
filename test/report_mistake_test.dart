@@ -49,15 +49,76 @@ void main() {
       expect(Uri.parse(uri).queryParameters['body'], 'two words');
     });
 
-    test('round-trips a body with newlines and Arabic', () {
-      final body = 'سطر ۱\nسطر ۲';
+    test('round-trips a body with newlines (as CRLF) and Arabic', () {
       final uri = buildMistakeReportUri(
         email: 'a@b.co',
         subject: 's',
-        body: body,
+        body: 'سطر ۱\nسطر ۲',
       )!;
 
-      expect(Uri.parse(uri).queryParameters['body'], body);
+      expect(Uri.parse(uri).queryParameters['body'], 'سطر ۱\r\nسطر ۲');
+    });
+
+    test('encodes every line break in the body as %0D%0A, never a bare %0A',
+        () {
+      final uri = buildMistakeReportUri(
+        email: 'help@example.com',
+        subject: 's',
+        body: 'Edition: tawheed-ur\nChapter: 9\nApp: 2.4.0',
+      )!;
+
+      // RFC 6068 §5: a line break in a mailto body is CRLF. Some mail clients
+      // drop a bare LF and run the lines together, so each %0A must follow %0D.
+      expect(uri, contains('%0D%0A'));
+      expect(RegExp('(?<!%0D)%0A').hasMatch(uri), isFalse);
+    });
+
+    test('does not double-convert a body that already has CRLF', () {
+      final uri = buildMistakeReportUri(
+        email: 'help@example.com',
+        subject: 's',
+        body: 'one\r\ntwo',
+      )!;
+
+      expect(uri, isNot(contains('%0D%0D%0A')));
+      expect(Uri.parse(uri).queryParameters['body'], 'one\r\ntwo');
+    });
+
+    test('decodes back to the original lines, in order', () {
+      final uri = buildMistakeReportUri(
+        email: 'help@example.com',
+        subject: 's',
+        body: 'Edition: tawheed-ur\nChapter: 9 — باب\nApp: 2.4.0 (19)',
+      )!;
+
+      final lines = Uri.parse(uri).queryParameters['body']!.split('\r\n');
+      expect(lines, [
+        'Edition: tawheed-ur',
+        'Chapter: 9 — باب',
+        'App: 2.4.0 (19)',
+      ]);
+    });
+
+    // A subject is a single header line: a line break there must never be
+    // encoded (it would be header injection at worst, a broken subject at
+    // best), so it collapses to a space.
+    test('collapses line breaks in the subject to a single space', () {
+      final uri = buildMistakeReportUri(
+        email: 'help@example.com',
+        subject: 'line one\nline two\r\nthree',
+        body: 'b',
+      )!;
+
+      final subject = uri.substring(
+        uri.indexOf('subject=') + 'subject='.length,
+        uri.indexOf('&body='),
+      );
+      expect(subject, isNot(contains('%0A')));
+      expect(subject, isNot(contains('%0D')));
+      expect(
+        Uri.parse(uri).queryParameters['subject'],
+        'line one line two three',
+      );
     });
 
     test('returns null when there is no usable address', () {

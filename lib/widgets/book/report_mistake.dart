@@ -13,9 +13,11 @@ import 'package:myapp/utils/safe_url_launcher.dart';
 /// Hand-assembled rather than via `Uri(queryParameters: …)`, which encodes
 /// spaces as `+`. That is correct for form bodies and wrong here: mail clients
 /// show the `+` literally, so a prefilled body arrives full of them. Percent
-/// encoding via [Uri.encodeComponent] is what `mailto:` wants (RFC 6068). The
-/// address itself is left un-encoded — `%40` for `@` is legal but not every
-/// client resolves it.
+/// encoding via [Uri.encodeComponent] is what `mailto:` wants (RFC 6068). Line
+/// breaks are normalised to CRLF first: RFC 6068 §5 requires `%0D%0A` in a
+/// mailto body, and some mail clients drop a bare LF (`%0A`), running the lines
+/// together. The address itself is left un-encoded — `%40` for `@` is legal but
+/// not every client resolves it.
 ///
 /// Returns null when there is no address to send to, so the caller can hide the
 /// affordance rather than offer an action that cannot work.
@@ -26,9 +28,18 @@ String? buildMistakeReportUri({
 }) {
   if (!email.contains('@') || email.trim().isEmpty) return null;
   return 'mailto:${email.trim()}'
-      '?subject=${Uri.encodeComponent(subject)}'
-      '&body=${Uri.encodeComponent(body)}';
+      '?subject=${Uri.encodeComponent(_oneLine(subject))}'
+      '&body=${Uri.encodeComponent(_toCrlf(body))}';
 }
+
+final _lineBreak = RegExp(r'\r\n|\r|\n');
+
+/// Rewrites every line break (CRLF, lone CR or LF) to CRLF in one pass, so an
+/// existing `\r\n` is kept as-is rather than becoming `\r\r\n`.
+String _toCrlf(String text) => text.replaceAll(_lineBreak, '\r\n');
+
+/// A subject is one header line: any line break collapses to a single space.
+String _oneLine(String text) => text.replaceAll(_lineBreak, ' ');
 
 /// The diagnostic block appended under the reader's own words.
 ///
