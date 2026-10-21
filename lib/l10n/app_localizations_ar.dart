@@ -698,4 +698,125 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get libraryLocalFileMissing =>
       'لم يعد هذا التنزيل متاحًا على هذا الجهاز. أزِله ثم نزّله مرة أخرى.';
+
+  @override
+  String get searchLectures => 'ابحث في الدروس';
+
+  @override
+  String get searchHint => 'ابحث بالرقم أو العنوان';
+
+  @override
+  String get searchClear => 'مسح البحث';
+
+  @override
+  String get searchTry => 'جرّب';
+
+  @override
+  String get searchGoToClass => 'الانتقال إلى الصف';
+
+  @override
+  String searchClassesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صف',
+      many: '$count صفًا',
+      few: '$count صفوف',
+      two: 'صفان',
+      one: 'صف واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchLecturesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count درس',
+      many: '$count درسًا',
+      few: '$count دروس',
+      two: 'درسان',
+      one: 'درس واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchLegendFinished => 'مكتمل';
+
+  @override
+  String get searchLegendContinue => 'تابع من هنا';
+
+  @override
+  String get searchInProgress => 'قيد الاستماع';
+
+  @override
+  String searchResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count نتيجة',
+      many: '$count نتيجة',
+      few: '$count نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة واحدة',
+      zero: 'لا نتائج',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return 'لا نتائج لـ «$query»';
+  }
+
+  @override
+  String searchNoMatchesBody(String classes, String parts) {
+    return 'تحتوي هذه النسخة على $classes و$parts. تحقّق من الرقم أو جرّب كلمات أقل.';
+  }
+
+  @override
+  String searchNoMatchesBodyFlat(String lectures) {
+    return 'تحتوي هذه النسخة على $lectures. تحقّق من الرقم أو جرّب كلمات أقل.';
+  }
+
+  @override
+  String get searchBrowseClasses => 'تصفّح كل الصفوف';
+
+  @override
+  String get searchUnavailableTitle => 'لم تُحمَّل الدروس بعد';
+
+  @override
+  String get searchUnavailableMessage =>
+      'يعمل البحث دون إنترنت بعد تحميل قائمة الدروس. اتصل بالإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get searchOpenDownloads => 'افتح التنزيلات في المكتبة';
+
+  @override
+  String get searchIdleHint => 'اكتب رقم الدرس أو كلمة من عنوانه.';
+
+  @override
+  String searchLectureNumber(String number) {
+    return 'الدرس $number';
+  }
+
+  @override
+  String searchTimeLeft(String time) {
+    return '$time متبقٍّ';
+  }
+
+  @override
+  String searchClassCell(String state, String number, String parts) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'finished': 'الصف $number، $parts، مكتمل',
+        'current': 'الصف $number، $parts، قيد الاستماع',
+        'other': 'الصف $number، $parts',
+      },
+    );
+    return '$_temp0';
+  }
 }

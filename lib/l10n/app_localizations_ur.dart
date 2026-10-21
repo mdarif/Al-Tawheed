@@ -680,6 +680,106 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get libraryLocalFileMissing =>
       'یہ ڈاؤن لوڈ اب اس آلے پر دستیاب نہیں ہے۔ اسے حذف کر کے دوبارہ ڈاؤن لوڈ کریں۔';
+
+  @override
+  String get searchLectures => 'دروس میں تلاش کریں';
+
+  @override
+  String get searchHint => 'نمبر یا عنوان سے تلاش کریں';
+
+  @override
+  String get searchClear => 'تلاش صاف کریں';
+
+  @override
+  String get searchTry => 'آزمائیں';
+
+  @override
+  String get searchGoToClass => 'کلاس پر جائیں';
+
+  @override
+  String searchClassesCount(int count) {
+    return '$count کلاسیں';
+  }
+
+  @override
+  String searchLecturesCount(int count) {
+    return '$count دروس';
+  }
+
+  @override
+  String get searchLegendFinished => 'مکمل';
+
+  @override
+  String get searchLegendContinue => 'یہاں سے جاری رکھیں';
+
+  @override
+  String get searchInProgress => 'جاری';
+
+  @override
+  String searchResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count نتائج',
+      one: '$count نتیجہ',
+      zero: 'کوئی نتیجہ نہیں',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return '“$query” کے لیے کوئی نتیجہ نہیں ملا';
+  }
+
+  @override
+  String searchNoMatchesBody(String classes, String parts) {
+    return 'اس ایڈیشن میں $classes اور $parts ہیں۔ نمبر دیکھ لیں یا کم الفاظ آزمائیں۔';
+  }
+
+  @override
+  String searchNoMatchesBodyFlat(String lectures) {
+    return 'اس ایڈیشن میں $lectures ہیں۔ نمبر دیکھ لیں یا کم الفاظ آزمائیں۔';
+  }
+
+  @override
+  String get searchBrowseClasses => 'تمام کلاسیں دیکھیں';
+
+  @override
+  String get searchUnavailableTitle => 'دروس ابھی لوڈ نہیں ہوئے';
+
+  @override
+  String get searchUnavailableMessage =>
+      'دروس کی فہرست لوڈ ہونے کے بعد تلاش آف لائن بھی کام کرتی ہے۔ انٹرنیٹ سے جڑیں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get searchOpenDownloads => 'لائبریری میں اپنے ڈاؤن لوڈز کھولیں';
+
+  @override
+  String get searchIdleHint => 'درس کا نمبر یا اس کے عنوان کا کوئی لفظ لکھیں۔';
+
+  @override
+  String searchLectureNumber(String number) {
+    return 'درس $number';
+  }
+
+  @override
+  String searchTimeLeft(String time) {
+    return '$time باقی';
+  }
+
+  @override
+  String searchClassCell(String state, String number, String parts) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'finished': 'کلاس $number، $parts، مکمل',
+        'current': 'کلاس $number، $parts، جاری',
+        'other': 'کلاس $number، $parts',
+      },
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for Urdu (`ur_roman`).
@@ -1365,4 +1465,105 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String get libraryLocalFileMissing =>
       'Yeh download ab is device par dastiyab nahin hai. Ise hata kar dobara download karein.';
+
+  @override
+  String get searchLectures => 'Duroos mein talash karein';
+
+  @override
+  String get searchHint => 'Number ya unwan se talash karein';
+
+  @override
+  String get searchClear => 'Talash saaf karein';
+
+  @override
+  String get searchTry => 'Aazmayein';
+
+  @override
+  String get searchGoToClass => 'Class par jayein';
+
+  @override
+  String searchClassesCount(int count) {
+    return '$count classes';
+  }
+
+  @override
+  String searchLecturesCount(int count) {
+    return '$count dars';
+  }
+
+  @override
+  String get searchLegendFinished => 'Mukammal';
+
+  @override
+  String get searchLegendContinue => 'Yahin se jaari rakhein';
+
+  @override
+  String get searchInProgress => 'Jaari';
+
+  @override
+  String searchResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nateeje',
+      one: '$count nateeja',
+      zero: 'Koi nateeja nahin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return '“$query” ke liye koi nateeja nahin mila';
+  }
+
+  @override
+  String searchNoMatchesBody(String classes, String parts) {
+    return 'Is edition mein $classes aur $parts hain. Number dekh lein ya kam alfaz aazmayein.';
+  }
+
+  @override
+  String searchNoMatchesBodyFlat(String lectures) {
+    return 'Is edition mein $lectures hain. Number dekh lein ya kam alfaz aazmayein.';
+  }
+
+  @override
+  String get searchBrowseClasses => 'Tamam classes dekhein';
+
+  @override
+  String get searchUnavailableTitle => 'Dars abhi load nahin hue';
+
+  @override
+  String get searchUnavailableMessage =>
+      'Dars ki fehrist load hone ke baad talash offline bhi kaam karti hai. Internet se judein aur dobara koshish karein.';
+
+  @override
+  String get searchOpenDownloads => 'Library mein apne downloads kholein';
+
+  @override
+  String get searchIdleHint =>
+      'Dars ka number ya us ke unwan ka koi lafz likhein.';
+
+  @override
+  String searchLectureNumber(String number) {
+    return 'Dars $number';
+  }
+
+  @override
+  String searchTimeLeft(String time) {
+    return '$time baqi';
+  }
+
+  @override
+  String searchClassCell(String state, String number, String parts) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'finished': 'Class $number, $parts, mukammal',
+        'current': 'Class $number, $parts, jaari',
+        'other': 'Class $number, $parts',
+      },
+    );
+    return '$_temp0';
+  }
 }

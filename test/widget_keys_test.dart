@@ -48,6 +48,24 @@ void main() {
       WidgetKeys.settingsYouTube,
       WidgetKeys.settingsOtherAppsSection,
       WidgetKeys.readerTextSize,
+      WidgetKeys.lecturesSearchAction,
+      WidgetKeys.searchBack,
+      WidgetKeys.searchField,
+      WidgetKeys.searchClear,
+      WidgetKeys.searchIdle,
+      WidgetKeys.searchLoading,
+      WidgetKeys.searchResults,
+      WidgetKeys.searchNoResults,
+      WidgetKeys.searchUnavailable,
+      WidgetKeys.searchError,
+      WidgetKeys.searchResultCount,
+      WidgetKeys.searchSectionClasses,
+      WidgetKeys.searchSectionLectures,
+      WidgetKeys.searchRetry,
+      WidgetKeys.searchOpenDownloads,
+      WidgetKeys.searchClearAction,
+      WidgetKeys.searchBrowseClasses,
+      WidgetKeys.searchClassGrid,
     ];
 
     expect(keys.map((key) => key.value).toSet(), hasLength(keys.length));
@@ -70,6 +88,36 @@ void main() {
     expect(
       WidgetKeys.settingsOtherApp('com.almarfa.alquran'),
       isNot(equals(WidgetKeys.settingsOtherApp('com.almarfa.assunnah'))),
+    );
+
+    // Search and chapter-jump keys that carry a domain id (never a label).
+    expect(
+      WidgetKeys.searchClassCell('class-01'),
+      equals(WidgetKeys.searchClassCell('class-01')),
+    );
+    expect(
+      WidgetKeys.searchClassCell('class-01'),
+      isNot(equals(WidgetKeys.searchClassCell('class-02'))),
+    );
+    expect(
+      WidgetKeys.searchClassRow('class-01'),
+      isNot(equals(WidgetKeys.searchClassCell('class-01'))),
+    );
+    expect(
+      WidgetKeys.searchLectureRow('lec-001'),
+      isNot(equals(WidgetKeys.searchLectureRow('lec-002'))),
+    );
+    expect(
+      WidgetKeys.searchChip('12'),
+      isNot(equals(WidgetKeys.searchChip('Part 03'))),
+    );
+    expect(
+      WidgetKeys.lecturesChapterHeader('class-15'),
+      equals(WidgetKeys.lecturesChapterHeader('class-15')),
+    );
+    expect(
+      WidgetKeys.lecturesChapterHeader('class-15'),
+      isNot(equals(WidgetKeys.lecturesChapterHeader('class-14'))),
     );
   });
 }

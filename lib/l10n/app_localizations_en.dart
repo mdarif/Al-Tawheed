@@ -703,4 +703,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get libraryLocalFileMissing =>
       'This download is no longer available on this device. Remove it and download it again.';
+
+  @override
+  String get searchLectures => 'Search lectures';
+
+  @override
+  String get searchHint => 'Search by number or title';
+
+  @override
+  String get searchClear => 'Clear search';
+
+  @override
+  String get searchTry => 'Try';
+
+  @override
+  String get searchGoToClass => 'Go to class';
+
+  @override
+  String searchClassesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count classes',
+      one: '$count class',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchLecturesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lectures',
+      one: '$count lecture',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchLegendFinished => 'Finished';
+
+  @override
+  String get searchLegendContinue => 'Continue here';
+
+  @override
+  String get searchInProgress => 'In progress';
+
+  @override
+  String searchResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '$count result',
+      zero: 'No results',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return 'No matches for “$query”';
+  }
+
+  @override
+  String searchNoMatchesBody(String classes, String parts) {
+    return 'This edition has $classes and $parts. Check the number, or try fewer words.';
+  }
+
+  @override
+  String searchNoMatchesBodyFlat(String lectures) {
+    return 'This edition has $lectures. Check the number, or try fewer words.';
+  }
+
+  @override
+  String get searchBrowseClasses => 'Browse all classes';
+
+  @override
+  String get searchUnavailableTitle => 'Lectures haven’t loaded yet';
+
+  @override
+  String get searchUnavailableMessage =>
+      'Search works offline once the lecture list has loaded. Connect to the internet and try again.';
+
+  @override
+  String get searchOpenDownloads => 'Open your downloads in Library';
+
+  @override
+  String get searchIdleHint =>
+      'Type a lecture number or a word from its title.';
+
+  @override
+  String searchLectureNumber(String number) {
+    return 'Lecture $number';
+  }
+
+  @override
+  String searchTimeLeft(String time) {
+    return '$time left';
+  }
+
+  @override
+  String searchClassCell(String state, String number, String parts) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'finished': 'Class $number, $parts, finished',
+        'current': 'Class $number, $parts, in progress',
+        'other': 'Class $number, $parts',
+      },
+    );
+    return '$_temp0';
+  }
 }

@@ -139,7 +139,7 @@ class _TileContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          _ProgressBadge(lecture: lecture),
+          LectureProgressBadge(lecture: lecture),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -353,9 +353,12 @@ class _OfflineCue extends StatelessWidget {
   }
 }
 
-class _ProgressBadge extends StatelessWidget {
+/// The square lecture-number badge: the global lecture number, a progress ring
+/// while it is part-listened, a check once finished. Shared by the Lectures
+/// rows and the Search results so both show the same state the same way.
+class LectureProgressBadge extends StatelessWidget {
   final Lecture lecture;
-  const _ProgressBadge({required this.lecture});
+  const LectureProgressBadge({super.key, required this.lecture});
 
   @override
   Widget build(BuildContext context) {

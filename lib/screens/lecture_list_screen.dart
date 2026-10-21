@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/audio/player_notifier.dart';
@@ -30,6 +31,25 @@ class _LectureListScreenState extends State<LectureListScreen> {
   // once when the active series changes (e.g. restored from prefs or switched
   // after this screen mounted) instead of only loading at initState.
   String? _requestedSeriesId;
+
+  // Owned here (not by the CustomScrollView) so "Go to class" from Search can
+  // move the list programmatically.
+  final ScrollController _scrollController = ScrollController();
+
+  // One GlobalKey per chapter header. Every chapter is its own pair of slivers
+  // — a header adapter and a lazy list of its lectures — so the header exists
+  // (and can be measured) even when the lectures around it were never built.
+  // A single flat lazy SliverList could not address an unbuilt chapter.
+  final Map<String, GlobalKey> _headerKeys = {};
+
+  GlobalKey _headerKey(String chapterId) =>
+      _headerKeys.putIfAbsent(chapterId, GlobalKey.new);
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   /// Reloads the catalog whenever the active series changes so the displayed
   /// lectures always match the series the rest of the app (nav, chrome) shows
@@ -147,22 +167,8 @@ class _LectureListScreenState extends State<LectureListScreen> {
     final lectures = catalog.lectures;
     if (lectures.isEmpty) return _buildEmpty();
 
-    final items = <_ListItem>[];
-    if (catalog.chapters.isEmpty) {
-      // Flat series (e.g. standalone duroos) — no chapter headers.
-      for (final lecture in lectures) {
-        items.add(_ListItem.lecture(lecture));
-      }
-    } else {
-      for (final chapter in catalog.chapters) {
-        items.add(_ListItem.chapter(chapter));
-        for (final lecture in catalog.lecturesForChapter(chapter.id)) {
-          items.add(_ListItem.lecture(lecture));
-        }
-      }
-    }
-
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         _buildAppBar(catalog),
         // Resume-where-you-left-off, atop the list. Self-hides when there's
@@ -176,40 +182,23 @@ class _LectureListScreenState extends State<LectureListScreen> {
             child: const _AllLecturesCompleteBanner(),
           ),
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = items[index];
-              if (item.isChapter) {
-                return ChapterHeader(
-                  chapter: item.chapter!,
-                  chapterLectures: catalog.lecturesForChapter(item.chapter!.id),
-                );
-              }
-              // Divider sits between consecutive lectures only — suppressed on
-              // the last lecture of a chapter (next item is a header) and at
-              // the very end of the list, so no hairline dangles.
-              final hasLectureBelow =
-                  index < items.length - 1 && !items[index + 1].isChapter;
-              return Column(
-                children: [
-                  LectureTile(
-                    lecture: item.lecture!,
-                    onTap: () => _onLectureTap(item.lecture!, lectures),
-                  ),
-                  if (hasLectureBelow)
-                    Divider(
-                      height: 1,
-                      indent: 70,
-                      endIndent: 16,
-                      color: context.dividerColor,
-                    ),
-                ],
-              );
-            },
-            childCount: items.length,
-          ),
-        ),
+        if (catalog.chapters.isEmpty)
+          // Flat series (e.g. standalone duroos) — no chapter headers.
+          _lectureList(lectures, lectures)
+        else
+          for (final chapter in catalog.chapters) ...[
+            SliverToBoxAdapter(
+              child: KeyedSubtree(
+                key: _headerKey(chapter.id),
+                child: ChapterHeader(
+                  key: WidgetKeys.lecturesChapterHeader(chapter.id),
+                  chapter: chapter,
+                  chapterLectures: catalog.lecturesForChapter(chapter.id),
+                ),
+              ),
+            ),
+            _lectureList(catalog.lecturesForChapter(chapter.id), lectures),
+          ],
         // Bottom padding that adapts to whether the mini player is visible.
         // Uses a Selector widget so context.select is properly inside a build method.
         SliverToBoxAdapter(
@@ -220,6 +209,90 @@ class _LectureListScreenState extends State<LectureListScreen> {
         ),
       ],
     );
+  }
+
+  /// A lazy list of [rows] (one chapter, or the whole flat series). Playing a
+  /// row queues [queue], the whole catalogue.
+  SliverList _lectureList(List<Lecture> rows, List<Lecture> queue) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          // Divider sits between consecutive lectures only — suppressed on the
+          // last lecture of a chapter and at the very end of the list, so no
+          // hairline dangles.
+          return Column(
+            children: [
+              LectureTile(
+                lecture: rows[index],
+                onTap: () => _onLectureTap(rows[index], queue),
+              ),
+              if (index < rows.length - 1)
+                Divider(
+                  height: 1,
+                  indent: 70,
+                  endIndent: 16,
+                  color: context.dividerColor,
+                ),
+            ],
+          );
+        },
+        childCount: rows.length,
+      ),
+    );
+  }
+
+  /// Opens Search. When it pops a chapter id ("Go to class"), scroll that
+  /// chapter's header to the top of the list.
+  Future<void> _openSearch() async {
+    final chapterId = await context.push<String>('/lectures/search');
+    if (chapterId == null || !mounted) return;
+    await _scrollToChapter(chapterId);
+  }
+
+  /// Brings the header of [chapterId] flush under the pinned app bar, even when
+  /// that chapter is far below and was never built.
+  ///
+  /// The lectures of unbuilt chapters only have *estimated* extents, so the
+  /// first offset is approximate: it is animated to, which builds the rows near
+  /// the target and replaces the estimate with real sizes. The offset is then
+  /// re-measured and corrected until it stops moving (a few passes at most). A
+  /// chapter too close to the end to reach the top simply stops at the end of
+  /// the list.
+  Future<void> _scrollToChapter(String chapterId) async {
+    final key = _headerKeys[chapterId];
+    if (key == null) return;
+    for (var pass = 0; pass < 5; pass++) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _headerScrollOffset(key);
+      if (target == null) return;
+      final position = _scrollController.position;
+      if ((target - position.pixels).abs() < 0.5) return;
+      if (pass == 0 && !MediaQuery.disableAnimationsOf(context)) {
+        await _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+      // Let the viewport lay out at the new offset before measuring again.
+      await WidgetsBinding.instance.endOfFrame;
+    }
+  }
+
+  /// The scroll offset that puts the header behind [key] right under the pinned
+  /// (collapsed) app bar, or null while it is not laid out.
+  double? _headerScrollOffset(GlobalKey key) {
+    final header = key.currentContext?.findRenderObject();
+    if (header == null || !header.attached) return null;
+    final viewport = RenderAbstractViewport.maybeOf(header);
+    if (viewport == null) return null;
+    final position = _scrollController.position;
+    // getOffsetToReveal already backs off by the extent of the pinned slivers
+    // in front of the header (the collapsed app bar, status bar included).
+    final offset = viewport.getOffsetToReveal(header, 0.0).offset;
+    return offset.clamp(position.minScrollExtent, position.maxScrollExtent);
   }
 
   SliverAppBar _buildAppBar(Catalog? catalog) {
@@ -331,9 +404,17 @@ class _LectureListScreenState extends State<LectureListScreen> {
       // system-reserved.
       expandedHeight: catalog != null ? 150 : 80,
       automaticallyImplyLeading: false,
-      // No ⋮ here — the lecture list is the busiest screen and the bell is
-      // enough. Bookmarks/About stay reachable from the Book and Study tabs.
-      actions: const [AnnouncementsBell()],
+      // No ⋮ here — the lecture list is the busiest screen. Search comes
+      // before the bell.
+      actions: [
+        IconButton(
+          key: WidgetKeys.lecturesSearchAction,
+          tooltip: context.l10n.searchLectures,
+          icon: const Icon(Icons.search_rounded),
+          onPressed: _openSearch,
+        ),
+        const AnnouncementsBell(),
+      ],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           // The bar is collapsed once its height shrinks to the pinned toolbar.
@@ -445,19 +526,6 @@ class _StatsChip extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ListItem {
-  final Chapter? chapter;
-  final Lecture? lecture;
-  bool get isChapter => chapter != null;
-
-  const _ListItem.chapter(Chapter c)
-      : chapter = c,
-        lecture = null;
-  const _ListItem.lecture(Lecture l)
-      : lecture = l,
-        chapter = null;
 }
 
 class _AllLecturesCompleteBanner extends StatelessWidget {

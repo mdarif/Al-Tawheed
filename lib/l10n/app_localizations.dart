@@ -1276,6 +1276,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This download is no longer available on this device. Remove it and download it again.'**
   String get libraryLocalFileMissing;
+
+  /// No description provided for @searchLectures.
+  ///
+  /// In en, this message translates to:
+  /// **'Search lectures'**
+  String get searchLectures;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by number or title'**
+  String get searchHint;
+
+  /// No description provided for @searchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get searchClear;
+
+  /// No description provided for @searchTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try'**
+  String get searchTry;
+
+  /// No description provided for @searchGoToClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to class'**
+  String get searchGoToClass;
+
+  /// No description provided for @searchClassesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} class} other{{count} classes}}'**
+  String searchClassesCount(int count);
+
+  /// No description provided for @searchLecturesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} lecture} other{{count} lectures}}'**
+  String searchLecturesCount(int count);
+
+  /// No description provided for @searchLegendFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get searchLegendFinished;
+
+  /// No description provided for @searchLegendContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue here'**
+  String get searchLegendContinue;
+
+  /// No description provided for @searchInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get searchInProgress;
+
+  /// No description provided for @searchResultsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No results} one{{count} result} other{{count} results}}'**
+  String searchResultsCount(int count);
+
+  /// No description provided for @searchNoMatchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches for “{query}”'**
+  String searchNoMatchesTitle(String query);
+
+  /// Placeholders arrive pre-rendered: classes is searchClassesCount and parts is partsCount, in the chrome numerals.
+  ///
+  /// In en, this message translates to:
+  /// **'This edition has {classes} and {parts}. Check the number, or try fewer words.'**
+  String searchNoMatchesBody(String classes, String parts);
+
+  /// For an edition with no classes (flat lecture list). lectures is searchLecturesCount, pre-rendered.
+  ///
+  /// In en, this message translates to:
+  /// **'This edition has {lectures}. Check the number, or try fewer words.'**
+  String searchNoMatchesBodyFlat(String lectures);
+
+  /// No description provided for @searchBrowseClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse all classes'**
+  String get searchBrowseClasses;
+
+  /// No description provided for @searchUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lectures haven’t loaded yet'**
+  String get searchUnavailableTitle;
+
+  /// No description provided for @searchUnavailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search works offline once the lecture list has loaded. Connect to the internet and try again.'**
+  String get searchUnavailableMessage;
+
+  /// No description provided for @searchOpenDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your downloads in Library'**
+  String get searchOpenDownloads;
+
+  /// No description provided for @searchIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a lecture number or a word from its title.'**
+  String get searchIdleHint;
+
+  /// No description provided for @searchLectureNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecture {number}'**
+  String searchLectureNumber(String number);
+
+  /// No description provided for @searchTimeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} left'**
+  String searchTimeLeft(String time);
+
+  /// Screen-reader label of one cell of the Go to class grid. state is finished, current (the class to continue) or other. number and parts arrive pre-rendered in the chrome numerals.
+  ///
+  /// In en, this message translates to:
+  /// **'{state, select, finished{Class {number}, {parts}, finished} current{Class {number}, {parts}, in progress} other{Class {number}, {parts}}}'**
+  String searchClassCell(String state, String number, String parts);
 }
 
 class _AppLocalizationsDelegate

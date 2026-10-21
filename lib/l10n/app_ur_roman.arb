@@ -221,5 +221,103 @@
   "downloadComplete": "Download mukammal",
   "libraryContentUnavailable": "Aap ka mehfooz shuda mawaad dastiyab nahin hai",
   "libraryContentUnavailableHint": "Catalogue taza karne ke liye dobara connect karein. Data dastiyab hone par aap ki mehfooz fehrist yahin rahe gi.",
-  "libraryLocalFileMissing": "Yeh download ab is device par dastiyab nahin hai. Ise hata kar dobara download karein."
+  "libraryLocalFileMissing": "Yeh download ab is device par dastiyab nahin hai. Ise hata kar dobara download karein.",
+
+  "searchLectures": "Duroos mein talash karein",
+  "searchHint": "Number ya unwan se talash karein",
+  "searchClear": "Talash saaf karein",
+  "searchTry": "Aazmayein",
+  "searchGoToClass": "Class par jayein",
+  "searchClassesCount": "{count} classes",
+  "@searchClassesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLecturesCount": "{count} dars",
+  "@searchLecturesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLegendFinished": "Mukammal",
+  "searchLegendContinue": "Yahin se jaari rakhein",
+  "searchInProgress": "Jaari",
+  "searchResultsCount": "{count, plural, =0{Koi nateeja nahin} one{{count} nateeja} other{{count} nateeje}}",
+  "@searchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNoMatchesTitle": "“{query}” ke liye koi nateeja nahin mila",
+  "@searchNoMatchesTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBody": "Is edition mein {classes} aur {parts} hain. Number dekh lein ya kam alfaz aazmayein.",
+  "@searchNoMatchesBody": {
+    "description": "Placeholders arrive pre-rendered: classes is searchClassesCount and parts is partsCount, in the chrome numerals.",
+    "placeholders": {
+      "classes": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBodyFlat": "Is edition mein {lectures} hain. Number dekh lein ya kam alfaz aazmayein.",
+  "@searchNoMatchesBodyFlat": {
+    "description": "For an edition with no classes (flat lecture list). lectures is searchLecturesCount, pre-rendered.",
+    "placeholders": {
+      "lectures": {
+        "type": "String"
+      }
+    }
+  },
+  "searchBrowseClasses": "Tamam classes dekhein",
+  "searchUnavailableTitle": "Dars abhi load nahin hue",
+  "searchUnavailableMessage": "Dars ki fehrist load hone ke baad talash offline bhi kaam karti hai. Internet se judein aur dobara koshish karein.",
+  "searchOpenDownloads": "Library mein apne downloads kholein",
+  "searchIdleHint": "Dars ka number ya us ke unwan ka koi lafz likhein.",
+  "searchLectureNumber": "Dars {number}",
+  "@searchLectureNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTimeLeft": "{time} baqi",
+  "@searchTimeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "searchClassCell": "{state, select, finished{Class {number}, {parts}, mukammal} current{Class {number}, {parts}, jaari} other{Class {number}, {parts}}}",
+  "@searchClassCell": {
+    "description": "Screen-reader label of one cell of the Go to class grid. state is finished, current (the class to continue) or other. number and parts arrive pre-rendered in the chrome numerals.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -28,6 +28,7 @@ import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/edition_missing_screen.dart';
 import 'package:myapp/widgets/missing_edition_guard.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
+import 'package:myapp/screens/lecture_search_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
@@ -78,6 +79,15 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
                 GoRoute(
                   path: '/lectures',
                   builder: (context, state) => const LectureListScreen(),
+                  routes: [
+                    // Search lives INSIDE the Lectures branch so the bottom nav
+                    // and mini-player stay visible; it pops a chapter id back
+                    // to Lectures for "Go to class".
+                    GoRoute(
+                      path: 'search',
+                      builder: (context, state) => const LectureSearchScreen(),
+                    ),
+                  ],
                 ),
               ],
             ),

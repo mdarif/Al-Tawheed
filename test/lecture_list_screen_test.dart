@@ -21,6 +21,7 @@ import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 import 'package:myapp/widgets/chapter_header.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
@@ -85,7 +86,27 @@ Map<String, dynamic> _catalogJson({
       'dailyBenefits': <Map<String, dynamic>>[],
     };
 
-Widget _wrap({required SeriesProvider series, Locale? locale}) {
+/// Stands in for the Search screen: pops [pick] (a chapter id, or null for
+/// "Back without choosing") exactly as the real route does for Go to class.
+class _SearchStub extends StatelessWidget {
+  final String? pick;
+  const _SearchStub({required this.pick});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: TextButton(
+          key: const ValueKey('search-stub-pick'),
+          onPressed: () => context.pop(pick),
+          child: const Text('pick'),
+        ),
+      );
+}
+
+Widget _wrap({
+  required SeriesProvider series,
+  Locale? locale,
+  String? searchPick,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
@@ -116,6 +137,12 @@ Widget _wrap({required SeriesProvider series, Locale? locale}) {
           GoRoute(
             path: '/lectures',
             builder: (_, __) => const LectureListScreen(),
+            routes: [
+              GoRoute(
+                path: 'search',
+                builder: (_, __) => _SearchStub(pick: searchPick),
+              ),
+            ],
           ),
           GoRoute(
             path: '/player',
@@ -566,5 +593,192 @@ void main() {
     expect(find.text('كتاب التوحيد'), findsOneWidget);
     expect(find.text('الدرس الأول'), findsOneWidget);
     expect(find.text('Sharah Kitab at-Tawheed'), findsNothing);
+  });
+
+  group('search action and Go to class', () {
+    // The real Urdu edition's shape: 15 classes, 50 parts.
+    const counts = [2, 3, 3, 3, 4, 4, 2, 4, 2, 4, 4, 5, 3, 5, 2];
+
+    Future<void> seedFifteenClasses() async {
+      final chapters = <Map<String, dynamic>>[];
+      final lectures = <Map<String, dynamic>>[];
+      var n = 0;
+      for (var c = 1; c <= counts.length; c++) {
+        final id = 'class-${c.toString().padLeft(2, '0')}';
+        chapters.add({
+          'id': id,
+          'number': c,
+          'title': {'en': 'Class ${c.toString().padLeft(2, '0')}'},
+          'lectureCount': counts[c - 1],
+        });
+        for (var p = 1; p <= counts[c - 1]; p++) {
+          n++;
+          lectures.add({
+            ..._lectureJson('lec-${n.toString().padLeft(3, '0')}', n),
+            'chapterId': id,
+            'title': {'en': 'Class $c - Part $p'},
+          });
+        }
+      }
+      await PreferencesService.instance.saveRemoteJson(
+        'catalog',
+        jsonEncode(
+          _catalogJson(
+            bookId: 'legacy-book',
+            chapters: chapters,
+            lectures: lectures,
+          ),
+        ),
+      );
+    }
+
+    ScrollPosition lecturesScroll(WidgetTester tester) => tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(LectureListScreen),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+
+    Future<void> pickFromSearch(WidgetTester tester) async {
+      await tester.tap(find.byKey(WidgetKeys.lecturesSearchAction));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('search-stub-pick')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the app bar has one Search action, at least 48dp, first',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+      await tester.pumpAndSettle();
+
+      final action = find.byKey(WidgetKeys.lecturesSearchAction);
+      expect(action, findsOneWidget);
+      expect(tester.widget<IconButton>(action).tooltip, 'Search lectures');
+      expect(tester.getSize(action).shortestSide, greaterThanOrEqualTo(48));
+
+      // Before the announcements bell, not after it.
+      final actions =
+          tester.widget<SliverAppBar>(find.byType(SliverAppBar)).actions!;
+      expect(actions, hasLength(2));
+      expect(actions.first.key, WidgetKeys.lecturesSearchAction);
+    });
+
+    testWidgets('Search is offered on a load error too', (tester) async {
+      // Nothing cached and no network: the screen lands on its error state.
+      await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(WidgetKeys.lecturesSearchAction), findsOneWidget);
+    });
+
+    testWidgets(
+        'Go to class jumps from the top to the LAST class (Class 15), '
+        'whose header was never built', (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(
+        _wrap(series: SeriesProvider()..load(false), searchPick: 'class-15'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(lecturesScroll(tester).pixels, 0);
+      final header = find.byKey(WidgetKeys.lecturesChapterHeader('class-15'));
+      // 15 chapters of 2-5 rows each: Class 15 is far below the first screen.
+      expect(
+        header.evaluate().isEmpty || tester.getTopLeft(header).dy > 600,
+        isTrue,
+      );
+
+      await pickFromSearch(tester);
+
+      expect(header, findsOneWidget);
+      final position = lecturesScroll(tester);
+      expect(position.pixels, greaterThan(0));
+      // The last class cannot scroll to the very top of a viewport taller than
+      // itself, so it settles at the end of the list with its header on screen.
+      expect(position.pixels, position.maxScrollExtent);
+      final top = tester.getTopLeft(header).dy;
+      expect(top, greaterThanOrEqualTo(kToolbarHeight));
+      expect(top, lessThan(600));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Go to class puts a middle class header under the app bar',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(
+        _wrap(series: SeriesProvider()..load(false), searchPick: 'class-08'),
+      );
+      await tester.pumpAndSettle();
+
+      await pickFromSearch(tester);
+
+      final header = find.byKey(WidgetKeys.lecturesChapterHeader('class-08'));
+      expect(header, findsOneWidget);
+      // Flush with the pinned app bar's bottom edge, not hidden beneath it.
+      expect(tester.getTopLeft(header).dy, closeTo(kToolbarHeight, 1.0));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Go to class also works when the list is already scrolled down',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(
+        _wrap(series: SeriesProvider()..load(false), searchPick: 'class-02'),
+      );
+      await tester.pumpAndSettle();
+      lecturesScroll(tester).jumpTo(2000);
+      await tester.pumpAndSettle();
+
+      await pickFromSearch(tester);
+
+      final header = find.byKey(WidgetKeys.lecturesChapterHeader('class-02'));
+      expect(header, findsOneWidget);
+      expect(tester.getTopLeft(header).dy, closeTo(kToolbarHeight, 1.0));
+    });
+
+    testWidgets('Back from Search without choosing leaves the scroll alone',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+      await tester.pumpAndSettle();
+      lecturesScroll(tester).jumpTo(300);
+      await tester.pumpAndSettle();
+
+      await pickFromSearch(tester);
+
+      expect(lecturesScroll(tester).pixels, 300);
+    });
+
+    testWidgets('an unknown chapter id is ignored without throwing',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(
+        _wrap(series: SeriesProvider()..load(false), searchPick: 'class-99'),
+      );
+      await tester.pumpAndSettle();
+
+      await pickFromSearch(tester);
+
+      expect(lecturesScroll(tester).pixels, 0);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('chapter headers are keyed and lecture rows still build',
+        (tester) async {
+      await seedFifteenClasses();
+      await tester.pumpWidget(_wrap(series: SeriesProvider()..load(false)));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(WidgetKeys.lecturesChapterHeader('class-01')),
+        findsOneWidget,
+      );
+      expect(find.text('Class 1 - Part 1'), findsOneWidget);
+    });
   });
 }

@@ -110,4 +110,38 @@ abstract final class WidgetKeys {
       ValueKey<String>('settings.other-app.$packageId');
 
   static const readerTextSize = ValueKey<String>('reader.text-size');
+
+  // ── Lectures: search, class grid and chapter jump
+  static const lecturesSearchAction = ValueKey<String>('lectures.search');
+  static ValueKey<String> lecturesChapterHeader(String chapterId) =>
+      ValueKey<String>('lectures.chapter-header.$chapterId');
+
+  static const searchBack = ValueKey<String>('search.back');
+  static const searchField = ValueKey<String>('search.field');
+  static const searchClear = ValueKey<String>('search.clear');
+  static const searchIdle = ValueKey<String>('search.idle');
+  static const searchLoading = ValueKey<String>('search.loading');
+  static const searchResults = ValueKey<String>('search.results');
+  static const searchNoResults = ValueKey<String>('search.no-results');
+  static const searchUnavailable = ValueKey<String>('search.unavailable');
+  static const searchError = ValueKey<String>('search.error');
+  static const searchResultCount = ValueKey<String>('search.result-count');
+  static const searchSectionClasses =
+      ValueKey<String>('search.section.classes');
+  static const searchSectionLectures = ValueKey<String>(
+    'search.section.lectures',
+  );
+  static const searchRetry = ValueKey<String>('search.retry');
+  static const searchOpenDownloads = ValueKey<String>('search.open-downloads');
+  static const searchClearAction = ValueKey<String>('search.clear-action');
+  static const searchBrowseClasses = ValueKey<String>('search.browse-classes');
+  static const searchClassGrid = ValueKey<String>('search.class-grid');
+  static ValueKey<String> searchChip(String query) =>
+      ValueKey<String>('search.chip.$query');
+  static ValueKey<String> searchClassRow(String chapterId) =>
+      ValueKey<String>('search.class-row.$chapterId');
+  static ValueKey<String> searchLectureRow(String lectureId) =>
+      ValueKey<String>('search.lecture-row.$lectureId');
+  static ValueKey<String> searchClassCell(String chapterId) =>
+      ValueKey<String>('search.class-cell.$chapterId');
 }

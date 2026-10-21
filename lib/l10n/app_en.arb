@@ -356,5 +356,103 @@
   "downloadComplete": "Download complete",
   "libraryContentUnavailable": "Your saved content is unavailable",
   "libraryContentUnavailableHint": "Reconnect to refresh the catalogue. Your saved rows will remain here when their data is available.",
-  "libraryLocalFileMissing": "This download is no longer available on this device. Remove it and download it again."
+  "libraryLocalFileMissing": "This download is no longer available on this device. Remove it and download it again.",
+
+  "searchLectures": "Search lectures",
+  "searchHint": "Search by number or title",
+  "searchClear": "Clear search",
+  "searchTry": "Try",
+  "searchGoToClass": "Go to class",
+  "searchClassesCount": "{count, plural, one{{count} class} other{{count} classes}}",
+  "@searchClassesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLecturesCount": "{count, plural, one{{count} lecture} other{{count} lectures}}",
+  "@searchLecturesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLegendFinished": "Finished",
+  "searchLegendContinue": "Continue here",
+  "searchInProgress": "In progress",
+  "searchResultsCount": "{count, plural, =0{No results} one{{count} result} other{{count} results}}",
+  "@searchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNoMatchesTitle": "No matches for “{query}”",
+  "@searchNoMatchesTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBody": "This edition has {classes} and {parts}. Check the number, or try fewer words.",
+  "@searchNoMatchesBody": {
+    "description": "Placeholders arrive pre-rendered: classes is searchClassesCount and parts is partsCount, in the chrome numerals.",
+    "placeholders": {
+      "classes": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBodyFlat": "This edition has {lectures}. Check the number, or try fewer words.",
+  "@searchNoMatchesBodyFlat": {
+    "description": "For an edition with no classes (flat lecture list). lectures is searchLecturesCount, pre-rendered.",
+    "placeholders": {
+      "lectures": {
+        "type": "String"
+      }
+    }
+  },
+  "searchBrowseClasses": "Browse all classes",
+  "searchUnavailableTitle": "Lectures haven’t loaded yet",
+  "searchUnavailableMessage": "Search works offline once the lecture list has loaded. Connect to the internet and try again.",
+  "searchOpenDownloads": "Open your downloads in Library",
+  "searchIdleHint": "Type a lecture number or a word from its title.",
+  "searchLectureNumber": "Lecture {number}",
+  "@searchLectureNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTimeLeft": "{time} left",
+  "@searchTimeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "searchClassCell": "{state, select, finished{Class {number}, {parts}, finished} current{Class {number}, {parts}, in progress} other{Class {number}, {parts}}}",
+  "@searchClassCell": {
+    "description": "Screen-reader label of one cell of the Go to class grid. state is finished, current (the class to continue) or other. number and parts arrive pre-rendered in the chrome numerals.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  }
 }

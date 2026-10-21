@@ -21,6 +21,8 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
+import 'package:myapp/screens/lecture_list_screen.dart';
+import 'package:myapp/screens/lecture_search_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
@@ -97,10 +99,16 @@ Widget _wrap({
   // content edition, so Arabic-chrome expectations require an Arabic UI locale.
   Locale? locale,
   bool useProductionRouter = false,
+  // Marks the injected catalogue as the active series' own, so the real
+  // Lectures screen does not try to reload it over the (absent) network.
+  bool catalogInSync = false,
 }) {
   final catalogProvider = CatalogProvider();
   if (catalog != null) {
-    catalogProvider.setCatalogForTest(catalog);
+    catalogProvider.setCatalogForTest(
+      catalog,
+      seriesId: catalogInSync ? series.currentSeries.id : null,
+    );
   }
 
   return MultiProvider(
@@ -677,6 +685,65 @@ void main() {
       '/lectures',
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'production router: /lectures/search is a Lectures-branch child — the '
+      'nav bar stays and system Back returns to Lectures', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        catalog: _arabicCatalog(),
+        catalogInSync: true,
+        useProductionRouter: true,
+        initialLocation: '/lectures',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+
+    unawaited(router.push<String>('/lectures/search'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LectureSearchScreen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      0,
+    );
+    // Lectures is still mounted underneath, so its scroll survives.
+    expect(find.byType(LectureListScreen, skipOffstage: false), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LectureSearchScreen), findsNothing);
+    expect(find.byType(LectureListScreen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'production router: opening /lectures/search directly keeps Lectures '
+      'underneath', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        catalog: _arabicCatalog(),
+        catalogInSync: true,
+        useProductionRouter: true,
+        initialLocation: '/lectures/search',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LectureSearchScreen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LectureListScreen), findsOneWidget);
   });
 
   testWidgets('legacy Library routes from Player preserve Player and pop back',

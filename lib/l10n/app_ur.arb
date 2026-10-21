@@ -223,5 +223,103 @@
   "downloadComplete": "ڈاؤن لوڈ مکمل",
   "libraryContentUnavailable": "آپ کا محفوظ شدہ مواد دستیاب نہیں ہے",
   "libraryContentUnavailableHint": "کیٹلاگ تازہ کرنے کے لیے دوبارہ کنیکٹ کریں۔ جب ڈیٹا دستیاب ہوگا تو آپ کی محفوظ فہرست یہیں رہے گی۔",
-  "libraryLocalFileMissing": "یہ ڈاؤن لوڈ اب اس آلے پر دستیاب نہیں ہے۔ اسے حذف کر کے دوبارہ ڈاؤن لوڈ کریں۔"
+  "libraryLocalFileMissing": "یہ ڈاؤن لوڈ اب اس آلے پر دستیاب نہیں ہے۔ اسے حذف کر کے دوبارہ ڈاؤن لوڈ کریں۔",
+
+  "searchLectures": "دروس میں تلاش کریں",
+  "searchHint": "نمبر یا عنوان سے تلاش کریں",
+  "searchClear": "تلاش صاف کریں",
+  "searchTry": "آزمائیں",
+  "searchGoToClass": "کلاس پر جائیں",
+  "searchClassesCount": "{count} کلاسیں",
+  "@searchClassesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLecturesCount": "{count} دروس",
+  "@searchLecturesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLegendFinished": "مکمل",
+  "searchLegendContinue": "یہاں سے جاری رکھیں",
+  "searchInProgress": "جاری",
+  "searchResultsCount": "{count, plural, =0{کوئی نتیجہ نہیں} one{{count} نتیجہ} other{{count} نتائج}}",
+  "@searchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNoMatchesTitle": "“{query}” کے لیے کوئی نتیجہ نہیں ملا",
+  "@searchNoMatchesTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBody": "اس ایڈیشن میں {classes} اور {parts} ہیں۔ نمبر دیکھ لیں یا کم الفاظ آزمائیں۔",
+  "@searchNoMatchesBody": {
+    "description": "Placeholders arrive pre-rendered: classes is searchClassesCount and parts is partsCount, in the chrome numerals.",
+    "placeholders": {
+      "classes": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoMatchesBodyFlat": "اس ایڈیشن میں {lectures} ہیں۔ نمبر دیکھ لیں یا کم الفاظ آزمائیں۔",
+  "@searchNoMatchesBodyFlat": {
+    "description": "For an edition with no classes (flat lecture list). lectures is searchLecturesCount, pre-rendered.",
+    "placeholders": {
+      "lectures": {
+        "type": "String"
+      }
+    }
+  },
+  "searchBrowseClasses": "تمام کلاسیں دیکھیں",
+  "searchUnavailableTitle": "دروس ابھی لوڈ نہیں ہوئے",
+  "searchUnavailableMessage": "دروس کی فہرست لوڈ ہونے کے بعد تلاش آف لائن بھی کام کرتی ہے۔ انٹرنیٹ سے جڑیں اور دوبارہ کوشش کریں۔",
+  "searchOpenDownloads": "لائبریری میں اپنے ڈاؤن لوڈز کھولیں",
+  "searchIdleHint": "درس کا نمبر یا اس کے عنوان کا کوئی لفظ لکھیں۔",
+  "searchLectureNumber": "درس {number}",
+  "@searchLectureNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTimeLeft": "{time} باقی",
+  "@searchTimeLeft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "searchClassCell": "{state, select, finished{کلاس {number}، {parts}، مکمل} current{کلاس {number}، {parts}، جاری} other{کلاس {number}، {parts}}}",
+  "@searchClassCell": {
+    "description": "Screen-reader label of one cell of the Go to class grid. state is finished, current (the class to continue) or other. number and parts arrive pre-rendered in the chrome numerals.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      },
+      "parts": {
+        "type": "String"
+      }
+    }
+  }
 }
