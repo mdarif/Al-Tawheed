@@ -98,16 +98,37 @@ class DownloadButton extends StatelessWidget {
           ),
           onPressed: () => _confirmDelete(context),
         ),
-      DownloadStatus.failed => IconButton(
-          padding: EdgeInsets.zero,
-          constraints: BoxConstraints(minWidth: size + 8, minHeight: size + 8),
-          tooltip: l10n.retryDownload,
-          icon: Icon(
-            Icons.error_outline_rounded,
-            size: size,
-            color: Theme.of(context).colorScheme.error,
-          ),
-          onPressed: () => _startDownload(context),
+      // A failed attempt keeps its durable queue entry, so offer the same two
+      // choices as the Library's unavailable row: try again, or discard it.
+      DownloadStatus.failed => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints:
+                  BoxConstraints(minWidth: size + 8, minHeight: size + 8),
+              tooltip: l10n.retryDownload,
+              icon: Icon(
+                Icons.error_outline_rounded,
+                size: size,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => _startDownload(context),
+            ),
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints:
+                  BoxConstraints(minWidth: size + 8, minHeight: size + 8),
+              tooltip: l10n.offlineRemoveDownload,
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: size,
+                color: context.mutedIconColor,
+              ),
+              onPressed: () =>
+                  context.read<DownloadsProvider>().delete(lecture.id),
+            ),
+          ],
         ),
     };
   }

@@ -24,6 +24,7 @@ import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
+import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
@@ -697,6 +698,67 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets(
+      'production router: /player -> /bookmarks and /offline-library keep '
+      'Player and PlayerNotifier state, and Back returns to Player',
+      (tester) async {
+    // Same journey as the substitute-router test above, but against the real
+    // `createAppRouter` topology (root-navigator routes over the stateful
+    // shell), so a re-parented route cannot silently drop the Player.
+    final progress = ProgressProvider()..load();
+    final downloads = DownloadsProvider();
+    final connectivity = ConnectivityProvider.testOffline();
+    final player =
+        PlayerNotifier(FakeAudioPlayback(), progress, downloads, connectivity);
+    addTearDown(player.dispose);
+    final lecture = _arabicLec();
+    await player.loadAndPlay(lecture, [lecture]);
+
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        catalog: _arabicCatalog(),
+        player: player,
+        progress: progress,
+        downloads: downloads,
+        connectivity: connectivity,
+        downloadsEnabled: true,
+        useProductionRouter: true,
+        initialLocation: '/lectures',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+
+    for (final route in ['/bookmarks', '/offline-library']) {
+      unawaited(router.push('/player'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PlayerScreen), findsOneWidget);
+
+      unawaited(router.push(route));
+      await tester.pumpAndSettle();
+      expect(
+        route == '/bookmarks'
+            ? find.byType(BookmarksScreen)
+            : find.byType(OfflineLibraryScreen),
+        findsOneWidget,
+      );
+      // Player is still on the root stack, underneath the Library route.
+      expect(find.byType(PlayerScreen, skipOffstage: false), findsOneWidget);
+      expect(identical(player.current, lecture), isTrue);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(PlayerScreen), findsOneWidget);
+      expect(identical(player.current, lecture), isTrue);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(PlayerScreen), findsNothing);
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

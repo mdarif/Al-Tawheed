@@ -75,18 +75,10 @@ the quality truth that active docs should use.
   hand-off UI) can start.
 - Configure a local release signing store/key so the release APK gate can package
   a signed artifact; debug APK packaging is green.
-- A1's legacy-route regression test (`/player` → `/bookmarks`/`/offline-library`
-  → Back) runs against a substitute router, not `createAppRouter`; it does not
-  yet prove the production root-navigator topology preserves `PlayerNotifier`
-  state. Close this with A5T's integration-harness work.
 - A1's Library screen does not reset its Saved/Downloads segment on Back —
   Back always returns straight to Lectures regardless of the selected segment.
   This is a deliberate simplification (the segment is view state, not a route),
   revisit only if user feedback wants segment-aware Back.
-- A2's inline download button (`download_button.dart`) only offers Retry for
-  a `failed` download, no way to cancel/discard the durable queue entry —
-  unlike the Library's unavailable-row UI, which offers both Retry and
-  Remove. Add a cancel/delete action to the failed-state button to match.
 - A3's edition switcher lacks a dedicated widget test for switching while
   offline and for a manifest-fetch failure mid-switch (catalog loading's
   existing offline/stale-cache handling is exercised elsewhere, but not from
