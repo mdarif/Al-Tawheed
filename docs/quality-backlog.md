@@ -1,123 +1,132 @@
 # Quality backlog
 
-Canonical snapshot of maintenance work for the current multi-series app. The
-completed maintenance sequence remains in
-[maintenance-roadmap.md](plans/maintenance-roadmap.md); the complete multi-release
-information architecture program is sequenced in the
-[IA user-journey roadmap](plans/ia-user-journey-roadmap.md). This page records
-the quality truth that active docs should use.
+The current quality truth for active docs: what is verified, what is still open,
+and what was accepted. Completed maintenance work is in
+[maintenance-roadmap.md](plans/maintenance-roadmap.md); the information
+architecture program is in the [IA user-journey roadmap](plans/ia-user-journey-roadmap.md).
 
 ## Verified shipped safeguards
 
+Current as of the 2.4.2 release candidate (2026-10-21):
+
+- **Test suite:** `make test` gives **1780 passed, 2 skipped**. `make test-tooling`
+  gives **175 tests**. Both run in `flutter-ci.yml`, and `make test` runs in the
+  release `quality` job.
 - **Content integrity:** both bundled book editions are checked for chapter
-  continuity, numbering, non-empty content, balanced markup, citation shape,
-  and Urdu ayah truncation. See `test/book_content_integrity_test.dart`.
-  The external print/ayah-pairing validator is a future reproducibility
-  candidate; it is not currently scheduled.
-- **Localization:** all four ARB files have matching keys and placeholders.
-  See `test/arb_parity_test.dart`.
-- **Remote content:** catalog, app config, feature flags, announcements, and
-  the series manifest use cached stale-while-revalidate loading. A cold offline
-  launch reports that content needs a connection instead of showing a spinner.
-- **Offline playback:** connectivity is observable and its first real check
-  is awaited (`ConnectivityProvider.ready`) before restored downloads are
-  ever attempted; local playback, blocked streaming, next-part guards,
-  download progress, cancellation, durable individual/chapter queue intent
-  across process death, edition-switch-safe queueing, corrupt/missing-file
-  recovery rows, and the Offline Library are implemented and covered by
-  focused tests.
+  continuity, numbering, non-empty content, balanced markup, citation shape and
+  Urdu ayah truncation (`test/book_content_integrity_test.dart`).
+- **Localization:** all four ARB files have matching keys and placeholders
+  (`test/arb_parity_test.dart`).
+- **Remote content:** catalog, app config, feature flags, announcements and the
+  series manifest use cached stale-while-revalidate loading. A cold offline launch
+  reports that content needs a connection instead of showing a spinner.
+- **Offline playback:** connectivity is observable and its first real check is
+  awaited before restored downloads are attempted. Local playback, blocked
+  streaming, next-part guards, progress, cancellation, durable queue intent across
+  process death, edition-switch-safe queueing, corrupt or missing-file recovery and
+  the Offline Library are covered by focused tests.
+- **Upgrade from 2.4.1, in process:** `test/upgrade_from_2_4_1_test.dart` seeds the
+  2.4.1 preferences and download layout and proves they read back identically under
+  the 2.4.2 providers. The real process-restart check is the owner-run Step 1b in
+  [release-runbook.md](release-runbook.md).
+- **Layout overflow:** `test/overflow_smoke_test.dart` renders every user-facing
+  screen in all four chrome locales at text scale 1.0 and 2.0 on a 360x640 phone,
+  with real Urdu and Arabic chapter titles, and fails on any `RenderFlex` overflow.
 - **Player reliability:** `PlayerNotifier` consumes the narrow `AudioPlayback`
-  interface implemented by `TawheedAudioHandler`. Its direct tests drive real
-  notifier transitions for resume boundaries, sources, buffering/reconnect,
-  backend errors and retry, completion, deletion, queue policy, persistence,
-  and stale callbacks without a platform audio backend.
-- **Navigation:** Lectures/Read/Library/Settings tabs come from
-  `SeriesConfig.hasBook`/`hasStudyMode` (Read merges Book and Study behind
-  one destination with an in-screen toggle); route guards enforce the same
-  capabilities.
-- **Release evidence:** the current baseline is **616 passing unit/widget
-  tests**, with two intentional skips, plus **16 release-tool tests**. Three
-  goldens pass. Android integration and orientation suites pass. Patrol reports
-  **5 passing, 0 failing, and 1 intentional skip** on the stock Android
-  emulator. The three-scenario emulator performance smoke also passes. Goldens
-  remain macOS-only and skipped by default; live CDN contract tests are tagged
-  and run separately.
-- **Design accessibility:** secondary text now uses semantic theme roles with
-  WCAG AA contrast in both themes; the book reader exposes clean line semantics
-  (ornate print punctuation is visual only) and covers 2.0 text scaling. See
-  [design-system.md](design-system.md), `test/app_theme_test.dart`, and
-  `test/book_reader_screen_test.dart`.
+  interface. Its tests drive real transitions: resume boundaries, sources,
+  buffering and reconnect, backend errors and retry, completion, deletion, queue
+  policy, persistence and stale callbacks.
+- **Navigation (2.4.2):** four bottom-nav tabs: Lectures, Read, Library, Settings.
+  Read holds the Book and Study pages, selected through `/read?tab=` (Study completion
+  goes to `Read › Study`). Library has a plain title and Bookmarks and Downloads
+  tabs. Settings has Reading, About and Our other apps. The ⋮ overflow menu is gone.
+  Route guards enforce the edition's capabilities.
+- **Lecture search and class grid (2.4.2, B1c):** local search over lecture
+  metadata with a class grid and a Go to class action, multi-script matching for
+  Arabic, Urdu, Roman Urdu and English. Covered by `test/lecture_search_test.dart`,
+  `test/lecture_search_screen_test.dart` and `test/class_grid_test.dart`.
+- **Reader text size (2.4.2):** a text-size slider in Settings › Reading and an
+  "Aa" control in the reader share one value.
+- **Release tooling:** the version computation, the release commit and the atomic
+  push are covered by `test/tool/`. The workflow tests check the job graph, the dry-run
+  gating and the secret scoping structurally.
+- **Design accessibility:** secondary text uses semantic theme roles with WCAG AA
+  contrast in both themes. The book reader exposes clean line semantics and covers
+  2.0 text scaling. See [design-system.md](design-system.md),
+  `test/app_theme_test.dart` and `test/book_reader_screen_test.dart`.
+- **Goldens:** three golden masters of the book chapter list (Urdu and Arabic
+  editions, light and dark themes). They run tagged and skipped by default: in CI on macOS only
+  (`flutter-golden.yml`) and locally with `make test-goldens`. They are not part of
+  the release gate.
+- **Patrol:** reported, not gated, for 2.4.2 (owner decision). See
+  [testing.md](testing.md).
 
 ## Open work
 
-- Execute the Claude Opus PASS-reviewed IA/user-journey roadmap. It covers
-  stateful navigation, a stable Library destination, truthful offline
-  collections, safe edition switching, contextual notification permission,
-  discovery/continuity, and data-backed Book/Study/audio hand-offs.
-- Capture and review a physical-device profile-mode performance baseline;
-  emulator smoke timings are not a substitute.
-- B1c (deferred): lecture/chapter search and a chapter jump affordance from
-  Lectures, per the roadmap's B1 "Search/jump" journey row. B1a (reading
-  resume, cross-edition leak fix, stale-route recovery) and B1b (Player-entry
-  consistency proof) are done; search is deliberately not scoped in detail
-  yet — it's genuinely greenfield (no existing `TextEditingController`/search
-  pattern anywhere in `lib/`) and touches Arabic/Urdu/Roman Urdu/English
-  multi-script matching, worth iterating live with screenshots rather than
-  speccing blind. Pick up as its own pass when ready.
-- C1 build-side work is done: `Chapter.bookChapterId` (ADR-0003), the
-  `content_mapping_validator.dart` service, and the repeatable
-  `tool/validate_content_mapping.dart` CLI gate are shipped and tested,
-  including the cross-edition "wrong book" case. **C1's external gate is
-  still open** and is content curation, not code — Mohammad Arif (named
-  Release C content owner) needs to decide the real `bookChapterId` mapping
-  for every chapter in both editions, publish it to the CDN `catalog.json`,
-  and validate it with the new CLI tool before C2 (the Book/Study/audio
-  hand-off UI) can start.
-- Configure a local release signing store/key so the release APK gate can package
-  a signed artifact; debug APK packaging is green.
-- A1's Library screen does not reset its Saved/Downloads segment on Back —
-  Back always returns straight to Lectures regardless of the selected segment.
-  This is a deliberate simplification (the segment is view state, not a route),
-  revisit only if user feedback wants segment-aware Back.
-- A3's edition switcher lacks a dedicated widget test for switching while
-  offline and for a manifest-fetch failure mid-switch (catalog loading's
-  existing offline/stale-cache handling is exercised elsewhere, but not from
-  this specific entry point). Low priority — the underlying behavior is
-  already covered by `catalog_provider_test.dart`.
-- A4's notification-permission recovery has no in-app Settings deep link
-  (text instructions only) and no "permanently denied" distinction —
-  `flutter_local_notifications` alone can't tell denied from permanently
-  denied, or open system Settings; that needs a `permission_handler`-class
-  dependency this app doesn't otherwise carry. Revisit if real users report
-  the manual-instructions recovery is insufficient.
-- A5's local Patrol gate cannot currently produce a clean automated pass on
-  either device available on this machine: the real phone (Oppo CPH2767) is
-  Android 16/API 36, where Patrol 4.4.0 discovers `Total: 0` tests (a known
-  CLI/API-36 incompatibility, documented in `testing.md`); the only remaining
-  API 35 AVD is tablet-form (`Nexus_7` — the phone-form AVDs on this machine
-  drifted to API 36, see `gotchas.md`), and its airplane-mode native
-  automation is flaky enough that native/Arabic-suite runs land around 4-9 of
-  11 passing rather than consistently green. `integration_test/app_test.dart`
-  (the Flutter-side validation gate) is solid on both. Closing this needs
-  either a working API 35 phone AVD, a Patrol CLI update that fixes API 36
-  discovery, or a real device on API ≤35 — none available right now.
+- **Release C content mapping (owner).** The C1 build side is done
+  (`Chapter.bookChapterId` per ADR-0003, the validator service, and
+  `tool/validate_content_mapping.dart`). The external gate is content, not code:
+  the named Release C content owner (Mohammad Arif) decides the `bookChapterId`
+  mapping for every chapter in both editions, publishes it to the CDN
+  `catalog.json`, and validates it with the CLI. C2 (Book, Study and audio
+  hand-offs) waits on this.
+- **Physical-device performance baseline.** Capture a profile-mode baseline on a
+  real device (`make perf DEVICE=<id>`, `MODE=full`). Emulator smoke timings are
+  not a substitute.
+- **Patrol notification-shade test on API 34.** Known and non-blocking. It is
+  reported, not gated, for 2.4.2.
+- **Arabic and Urdu translations of new strings need a native-speaker read.** All
+  new strings are in all four ARB locales, and the parity test passes, but the
+  wording has not been reviewed by a native speaker.
+- **iOS "Our other apps" is hidden.** The section shows only on Android today
+  (`lib/widgets/settings/other_apps_section.dart`). It stays hidden on iOS until
+  the App Store IDs for the listed apps exist.
+
+- **Edition switcher test gap (A3).** No dedicated widget test for switching
+  edition while offline or for a manifest-fetch failure mid-switch. Low
+  priority: `catalog_provider_test.dart` covers the underlying offline and
+  stale-cache handling, just not from this entry point.
+- **Notification-permission recovery has no Settings deep link (A4).** Text
+  instructions only, and no "permanently denied" state:
+  `flutter_local_notifications` cannot tell the two apart or open system
+  Settings without a `permission_handler`-class dependency. Revisit if users
+  report the instructions are not enough.
+
+### Accepted trade-offs
+
+These are known and accepted. They are not open work.
+
+- **Library does not reset its Bookmarks/Downloads tab on Back (A1).** The tab
+  is view state, not a route, so Back always returns to Lectures. Revisit only
+  if users want tab-aware Back.
+
+- **`release_git.py assert-build` can pass vacuously.** It cross-checks
+  `output-metadata.json` from AGP against the release version. If AGP moves or
+  renames that file, the check finds nothing, prints a notice and passes. The
+  pubspec read-back still checks the version.
+- **Workflow-structure tests identify state-changing jobs by name.** The dry-run
+  test uses a hard-coded list (`GATED_ON_DRY_RUN` in
+  `test/tool/test_workflows.py`). A new state-changing job is not caught
+  automatically. It must be added to that list.
+
+## Priority status (maintenance roadmap)
 
 | Priority | Follow-up | Owner phase |
 |---|---|---|
-| P1 | ✅ Complete — stable E2E keys, separated validation/screenshots, truthful Patrol discovery gate, and documented Android compatibility limits. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
-| P2 | ✅ Complete — atomic `.part` audio downloads with integrity/transfer/cancellation failure types, plus durable queue persistence across process death (A2). | [P2](plans/maintenance-roadmap.md#p2--verified-atomic-audio-downloads) |
-| P3 | ✅ Complete — injectable player seam and direct coverage of load, recovery, queue, deletion, persistence, and stale-callback paths. | [P3](plans/maintenance-roadmap.md#p3--player-reliability) |
-| P4 | ✅ Complete for the delivered scope — semantic status colors, accessibility/large-text coverage, component vocabulary, and the initial multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
-| P5 | 🟡 Partial — cold-start automation and local navigation policy are complete; physical-device performance evidence remains open. | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
+| P1 | ✅ Complete: stable E2E keys, separated validation and screenshots, truthful Patrol discovery gate, documented Android compatibility limits. | [P1](plans/maintenance-roadmap.md#p1--stable-e2e-and-truthful-release-gate) |
+| P2 | ✅ Complete: atomic `.part` audio downloads with integrity, transfer and cancellation failure types, and durable queue persistence across process death. | [P2](plans/maintenance-roadmap.md#p2--verified-atomic-audio-downloads) |
+| P3 | ✅ Complete: injectable player seam and direct coverage of load, recovery, queue, deletion, persistence and stale-callback paths. | [P3](plans/maintenance-roadmap.md#p3--player-reliability) |
+| P4 | ✅ Complete for the delivered scope: semantic status colours, accessibility and large-text coverage, component vocabulary, and the initial multi-script goldens. | [P4](plans/maintenance-roadmap.md#p4--design-accessibility-and-goldens) |
+| P5 | 🟡 Partial: cold-start automation and local navigation policy are complete. Physical-device performance evidence is open (see above). | [P5](plans/maintenance-roadmap.md#p5--performance-and-navigation-policy) |
 
 ## Documentation rules
 
-- Do not describe Home or Daily Benefit as a current navigation surface; the
-  shell currently exposes Lectures, Read (Book/Study, when the edition has
-  them), Library, and Settings.
-- Do not describe the offline plan as a future feature: it is shipped, with
+- Do not describe Home or Daily Benefit as a current navigation surface. The shell
+  exposes Lectures, Read (Book and Study, when the edition has them), Library and
+  Settings.
+- Do not describe the offline plan as a future feature. It is shipped, with
   physical-device QA still open.
 - Do not revive the deferred remote tab-list proposal; see
   [todo-feature-flag-navigation.md](todo-feature-flag-navigation.md).
-- Historical release notes remain unchanged, even when they contain old
-  counts or feature wording.
+- Historical release notes remain unchanged, even when they contain old counts or
+  feature wording.

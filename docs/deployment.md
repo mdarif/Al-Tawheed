@@ -1,47 +1,20 @@
-# Deployment Guide
+# Deployment and machine setup
 
-Everything needed to set up your machine, build, and update the app.
-Captures hard-won lessons from the v2 migration and first Play Store submission.
+Machine setup, local builds, and remote content operations. This file does not
+describe CI or the release pipeline.
 
-> For the step-by-step production release process, see
-> [release-runbook.md](release-runbook.md).
-
----
-
-## Branching Strategy
-
-```
-master   ← production (Play Store). Force-pushes and branch deletion are blocked;
-           direct merges/pushes are allowed (no PR or review required — verified
-           live via `gh api .../branches/master/protection`, 2026-06-07).
-develop  ← all active development. Requires the `Flutter CI` status check to pass
-           before merging. Branch from here for features.
-```
-
-**Day-to-day flow:**
-```sh
-git checkout develop
-# ... make changes, commit ...
-git push origin develop        # triggers CI (analyze + test)
-# when ready to release, see docs/release-runbook.md
-```
-
-After a `make release`, the bot commits the version bump to master and creates a
-GitHub Release with the debug APK. The signed AAB for Play Store is still built
-locally (see below).
-
-> **Note:** `master` has no PR/review requirement configured — a direct
-> `git merge develop && git push origin master` works and is the normal way to
-> promote a release candidate. If you want PR review enforced before production
-> releases, see the note in `docs/ci-cd.md` → "Setup Status".
+- Release procedure: [release-runbook.md](release-runbook.md)
+- CI and release machinery: [ci-cd.md](ci-cd.md)
+- Branches and commits: [git-workflow.md](git-workflow.md)
 
 ---
 
-## One-time Machine Setup
+## One-time machine setup
 
 ### Java 21 for Gradle
 
-The project requires Java 21. Android Studio ships it. Point Gradle to it once:
+The project requires Java 21 (`android/app/build.gradle` compiles with 21). Android
+Studio ships a suitable JDK. Point Gradle at it once:
 
 ```sh
 # Add to ~/.gradle/gradle.properties (applies to ALL projects on this machine)
@@ -49,107 +22,109 @@ echo 'org.gradle.java.home=/Applications/Android Studio.app/Contents/jbr/Content
   >> ~/.gradle/gradle.properties
 ```
 
-Without this, Gradle uses whatever Java is on PATH, which often isn't 21.
+Without this, Gradle uses whatever Java is on `PATH`, which is often not 21. See
+[gotchas.md](gotchas.md) ("Build & environment") for the global-file trap.
 
-### Android signing (key.properties)
+### Android signing (`android/key.properties`)
 
-The keystore lives on Dropbox, not in git. After cloning on a new machine:
+The upload keystore lives in Dropbox, not in git. `android/key.properties` is
+gitignored and machine-specific:
 
-```
-Keystore:     /Users/mohammadarif/Library/CloudStorage/Dropbox/Al-Marfa/Al-Tawheed/Keys/upload-keystore.jks
-key.properties location: android/key.properties  (gitignored)
-```
-
-Create `android/key.properties` pointing to the keystore:
 ```properties
 storePassword=<password>
 keyPassword=<password>
 keyAlias=upload
-storeFile=/Users/mohammadarif/Library/CloudStorage/Dropbox/Al-Marfa/Al-Tawheed/Keys/upload-keystore.jks
+storeFile=<absolute path to upload-keystore.jks>
 ```
 
-### GitHub CLI auth (for `make release`)
+Without this file the `release` signing config has no store file, so
+`make release-apk` and `make release-android` do not produce a Play-ready artifact.
+
+### GitHub CLI (`gh`)
+
+`make release` and `make ci-logs` call `gh`. Log in with the `repo` and `workflow`
+scopes:
 
 ```sh
-# Needs repo + workflow scopes
 gh auth login
-# Select: GitHub.com → HTTPS → Login with browser
 ```
 
 If `make release` returns HTTP 403, the token is missing the `workflow` scope.
-Create a new PAT at github.com/settings/tokens with `repo` + `workflow` checked,
-then `gh auth login --with-token` in the terminal (never paste tokens in chat).
+Create a token with both scopes and pass it with `gh auth login --with-token` in
+the terminal. Never paste tokens into a chat window.
 
 ### Git hooks
 
 ```sh
-make setup-hooks    # activates .githooks/pre-push (analyze + test before every push)
+make setup-hooks    # activates .githooks/pre-push
 ```
 
 ---
 
-## Building
+## Local builds
 
-### Debug APK (for device testing)
+| Artifact | Command | Output |
+|---|---|---|
+| Debug APK (device testing) | `make build-android` or `flutter build apk --debug` | `build/app/outputs/flutter-apk/app-debug.apk` |
+| Signed release APK (local gate) | `make release-apk DEVICE=<id>` | `build/app/outputs/flutter-apk/app-release.apk` |
+| Signed release APK only | `flutter build apk --release` | same path |
+| Play bundle (AAB) | `make release-android` | `build/app/outputs/bundle/release/app-release.aab` |
+| iOS simulator | `flutter build ios --simulator --no-codesign` | `build/ios/iphonesimulator/Runner.app` |
 
-```sh
-flutter build apk --debug
-# Output: build/app/outputs/flutter-apk/app-debug.apk
+A debug APK is for testing on a device. It is not a release artifact. The signed
+release APK and AAB come from the release pipeline (see [ci-cd.md](ci-cd.md)) or
+from the local gate in [release-runbook.md](release-runbook.md), Step 1.
 
-# Install on connected device:
-adb install build/app/outputs/flutter-apk/app-debug.apk
-```
+`make release-apk` builds the APK but does not install it. Install it with
+`adb install -r build/app/outputs/flutter-apk/app-release.apk` or
+`flutter install -d <device_id>`.
 
-**Common issue — Java version mismatch:**
-```
-error: invalid source release: 21
-```
-Fix: ensure `org.gradle.java.home` is set in `~/.gradle/gradle.properties` (see setup above).
+**Common issue: `error: invalid source release: 21`.** Set `org.gradle.java.home`
+as above.
 
-**Common issue — MainActivity ClassNotFoundException:**
-The app installs but crashes immediately. Caused by `android.builtInKotlin=true`
-silently skipping Kotlin compilation. The fix is in `android/app/build.gradle`
-(Kotlin plugin applied explicitly — already done, do not revert).
+**Common issue: app installs and crashes at launch with `ClassNotFoundException`
+for `MainActivity`.** Caused by `android.builtInKotlin=true`. The project applies
+the Kotlin plugin explicitly. Do not re-enable `builtInKotlin`.
 
-### Signed release AAB (for Play Store)
-
-```sh
-flutter build appbundle --release
-# Output: build/app/outputs/bundle/release/app-release.aab
-# Requires: android/key.properties with correct storeFile path
-```
-
-For the full release process (local gate, tagging, Play Store submission),
-see [release-runbook.md](release-runbook.md).
-
-### iOS Simulator build
+### iOS simulator
 
 ```sh
 flutter build ios --simulator --no-codesign
-# Output: build/ios/iphonesimulator/Runner.app
-
-# Install on a running simulator:
+xcrun simctl list devices                                   # find a UDID
 xcrun simctl install <UDID> build/ios/iphonesimulator/Runner.app
 xcrun simctl launch <UDID> com.testing.tawheed
 ```
 
-List available simulators: `xcrun simctl list devices`
+---
+
+## Store screenshots
+
+`make screenshots DEVICE=<id>` runs the capture harness on a connected device or
+simulator, then frames the images with `scripts/frame_screenshots.py`. Output goes
+to `docs/play-store/v3/framed/` (phone) and `docs/play-store/v3/framed-tablet/`
+(tablet). This target generates assets. It is not a validation gate.
+
+The feature graphic (1024x500) spec is in `docs/store-assets/`.
 
 ---
 
-## Content Updates (No App Release Needed)
+## Remote content (no app release needed)
 
-All content lives in the `Al-Tawheed-Content` GitHub repo, deployed to
-Cloudflare Pages. Edit files → push → Cloudflare redeploys in ~60s.
+Content lives in the `Al-Tawheed-Content` repository, served from Cloudflare
+Pages. Edit a file, push, and Cloudflare redeploys in about a minute.
 
 | File | Controls |
 |---|---|
 | `tawheed/catalog.json` | Lecture titles (all languages), chapters, daily benefits |
 | `tawheed/app-config.json` | Links, contact email, share text |
-| `tawheed/feature-flags.json` | Toggle features on/off remotely |
+| `tawheed/feature-flags.json` | Feature toggles |
 | `tawheed/announcements.json` | In-app banners |
 
-**Example — add an announcement:**
+Clients cache these files, so a change can take up to about 30 minutes to reach
+installed apps.
+
+**Example: an announcement**
+
 ```json
 {
   "announcements": [
@@ -166,170 +141,47 @@ Cloudflare Pages. Edit files → push → Cloudflare redeploys in ~60s.
   ]
 }
 ```
-Push to main → live within 30 minutes (cache TTL).
 
-**Example — enable a feature flag:**
+**Example: a feature flag**
+
 ```json
 { "features": { "studyMode": true } }
 ```
 
 ---
 
-## Taking Play Store Screenshots
+## Audio hosting
 
-Screenshots are saved in `docs/play-store/`.
+| Service | Purpose |
+|---|---|
+| Cloudflare Pages | Serves `catalog.json`, app config and announcements |
+| Cloudflare R2 | Serves audio files, with HTTP Range support |
 
-### Automated via Flutter
-
-```sh
-flutter run -d <UDID>    # start the app on a simulator
-```
-
-Then in a separate terminal:
-```sh
-flutter screenshot --out /tmp/screen.png
-```
-
-Navigate through screens manually, call `flutter screenshot` for each.
-
-### Wrapping in device frames
-
-A Python script is used to add iPhone/iPad frames:
+Cloudflare Pages does not return `206 Partial Content` for Range requests, so
+audio must be served from R2. Check that Range requests work (seeking depends on
+them):
 
 ```sh
-python3 -m venv /tmp/imgenv && /tmp/imgenv/bin/pip install Pillow arabic-reshaper python-bidi
-```
-
-Then run the framing script (see session history — generates framed PNGs at ~1662×3185).
-
-### Feature graphic (1024×500)
-
-Generated by the same Python environment using Pillow.
-Source: `docs/store-assets/feature-graphic-spec.md`
-Output: `docs/store-assets/play-store-feature-graphic-1024x500.png`
-
----
-
-## CI Pipeline
-
-GitHub Actions runs on every push to `develop`, `master`, and PRs into both:
-
-1. Java 21 setup
-2. Flutter stable
-3. Gradle + pub cache
-4. `flutter pub get`
-5. `flutter analyze --fatal-warnings`
-6. `flutter test --reporter=expanded`
-7. `flutter build apk --debug`
-8. Upload APK artifact (7-day retention)
-
-Local equivalent: `make ci`
-
-On-device tests (integration + Patrol) are **not** in CI yet — run locally before release:
-
-```sh
-make integration-test DEVICE=<device_id>
-make patrol-test DEVICE=<device_id>    # optional native scenarios
-make release-apk DEVICE=<device_id>    # full gate: format + tooling + tests + integration + patrol + release APK
-```
-
-See `docs/testing.md` for full test documentation.
-
-Check latest CI run: `make ci-logs`
-
----
-
-## Audio / Content Infrastructure
-
-| Service | URL | Purpose |
-|---|---|---|
-| Cloudflare Pages | `al-tawheed-content.pages.dev` | Serves `catalog.json`, config, announcements |
-| Cloudflare R2 | `pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev` | Serves audio MP3s (Range requests) |
-
-Audio files: 50 MP3s, ~390 MB total, `lec-001.mp3` → `lec-050.mp3`
-
-**Verify Range requests work (required for audio seeking):**
-```sh
-curl -sI -H "Range: bytes=0-999" \
-  https://pub-8a0d3971e9fd4d7c991d2300ca9bdca5.r2.dev/lec-001.mp3 \
-  | grep "HTTP\|content-range"
+curl -sI -H "Range: bytes=0-999" <audio URL> | grep "HTTP\|content-range"
 # Expect: HTTP/1.1 206 Partial Content
 ```
 
 ---
 
-## Useful Commands
+## Hard-won lessons
 
-```sh
-make help              # all available make targets
-make ci                # run CI pipeline locally (analyze + unit/widget + debug APK)
-make ci-logs           # fetch latest failed GitHub Actions run
-make release BUMP=patch # trigger automated GitHub release workflow
-make setup-hooks       # install pre-push git hook
+**Commit to `develop`, not `master`.** The release workflow moves `master`. Local
+commits on `master` conflict with the next release. See
+[git-workflow.md](git-workflow.md).
 
-# On-device testing (network + real device/emulator required)
-make integration-test DEVICE=<device_id>
-make patrol-test DEVICE=<device_id>
-make release-apk DEVICE=<device_id>
+**`android.builtInKotlin=true` breaks Kotlin compilation.** It silently skips
+`MainActivity.kt`. The Kotlin plugin is applied explicitly. Do not re-enable it.
 
-flutter devices        # list connected devices/simulators
-flutter run -d <UDID>  # run on specific device
-flutter build apk --debug
-flutter build apk --release
-flutter build appbundle --release
-flutter test --reporter=expanded
-flutter test integration_test/ -d <device_id> --timeout 15m
-patrol test -t patrol_test/native_test.dart --timeout 10m
-flutter analyze --fatal-warnings
+**`audio_service` on Android needs `AudioServiceActivity`.** `MainActivity` must
+extend it and override `provideFlutterEngine`.
 
-adb devices                                         # list Android devices
-adb install build/app/outputs/flutter-apk/app-debug.apk
-xcrun simctl list devices                           # list iOS simulators
-```
+**The signing key path is machine-specific.** `storeFile` in
+`android/key.properties` must match where the keystore is on this machine.
 
----
-
-## Key Files
-
-| File | Purpose |
-|---|---|
-| `android/key.properties` | Signing config — gitignored, machine-specific |
-| `android/local.properties` | SDK paths — gitignored, machine-specific |
-| `~/.gradle/gradle.properties` | User-level Gradle config (Java home override) |
-| `lib/app_config.dart` | All remote content URLs and version constants |
-| `Al-Tawheed-Content/tawheed/` | All remotely-managed content |
-| `docs/release-runbook.md` | Step-by-step production release process |
-| `docs/ci-cd.md` | CI/CD pipeline reference |
-| `docs/testing.md` | Unit, integration, and Patrol test guide |
-| `docs/i18n-architecture.md` | Multilingual architecture (ADR-003) |
-| `docs/remote-content-strategy.md` | Remote content strategy (ADR-002) |
-
----
-
-## Hard-Won Lessons
-
-**Don't work directly on master.**
-The release workflow commits to master. If you have uncommitted local changes on
-master, merge conflicts happen on the next release. Always work on develop.
-
-**`android.builtInKotlin=true` breaks Kotlin compilation.**
-This flag (added by Flutter's migrator) silently skips compiling `MainActivity.kt`,
-causing `ClassNotFoundException` at launch. The project now applies the Kotlin plugin
-explicitly and `builtInKotlin` is commented out. Do not re-enable it.
-
-**audio_service on Android requires `AudioServiceActivity`.**
-`MainActivity` must extend `AudioServiceActivity` (not plain `FlutterActivity`) and
-override `provideFlutterEngine` so the audio plugin can locate the FlutterEngine.
-
-**Cloudflare Pages does not support HTTP Range requests.**
-Audio files served from Pages return `200` for range requests (not `206`). All audio
-must be served from Cloudflare R2, which does support Range requests natively.
-
-**Signing key path is machine-specific.**
-`android/key.properties` → `storeFile` must match the actual keystore location on
-the current machine. The keystore lives on Dropbox and the path changes per machine.
-Update `storeFile` in `key.properties` locally after cloning on a new machine.
-
-**Never paste secrets in Claude Code chat.**
-GitHub PATs exposed in the conversation are immediately compromised. Always paste
-tokens directly in the terminal, never in the chat window.
+**Never paste secrets into a chat.** A token pasted there is compromised. Enter it
+in the terminal.

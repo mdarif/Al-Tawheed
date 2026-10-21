@@ -15,6 +15,11 @@ is portable memory: any LLM working the repo should read and extend it.
   `Nothing to be done for 'docs'` with exit 0, and `-B` does not change that.
   Prove a target is gone by grepping the Makefile for `^<name>:` (and
   `.PHONY`), never by exit status alone.
+- **`make test-tooling` and the pre-push hook need PyYAML 6.0.3 installed
+  locally.** `test/tool/test_workflows.py` parses the workflows with PyYAML.
+  Without it, every graph test fails with "PyYAML is required"; none is
+  skipped. CI installs the same pin in a venv, so run
+  `python3 -m pip install PyYAML==6.0.3` once on this machine.
 - **Java 21 is required** (`android/app/build.gradle` sets `JavaVersion.VERSION_21`,
   `jvmTarget = '21'`). A build failing with `invalid source release: 21` means
   Gradle is using an older JDK.
@@ -94,9 +99,11 @@ is portable memory: any LLM working the repo should read and extend it.
   `f793a78`). This bit us right before the 2.4.0 release: the nav had
   changed on the branch but the E2E test still tapped "Home". **Why CI didn't
   catch it earlier:** the regression workflow runs only
-  `flutter test integration_test/app_test.dart`, and it fires on **PRs into
-  master + nightly** — not on the `develop` push — so a nav change sitting on
-  `develop` is unguarded until the release PR. Run `make integration-test
+  `flutter test integration_test/app_test.dart`, and at the time it fired on
+  **PRs into master and a nightly schedule**, not on the `develop` push. (The
+  nightly was removed on 2026-08-31. The Android emulator run now also covers
+  PRs into `develop`, but it is non-blocking.) A nav change sitting on `develop`
+  stays unguarded until it reaches `master`. Run `make integration-test
   DEVICE=<id>` locally before cutting a release.
 - **Validation and screenshot generation are separate targets.** `make
   integration-test` runs only `integration_test/app_test.dart`; the two
@@ -361,8 +368,8 @@ is portable memory: any LLM working the repo should read and extend it.
   book, even inside Arabic āyāt), via `localizedDigitsInString(text,
   widget.language)` in the reader.
 - **The Urdu series renders 4 bottom-nav tabs** (Lectures · Read · Library ·
-  Settings). Book and Study merged into one Read destination with Book /
-  Study tabs (A3/D1 amendment, then 2.4.2 P3) rather than two bottom-nav
+  Settings). Book and Study are one Read destination with an underline tab
+  bar inside it (decided in D1, shipped in 2.4.2) rather than two bottom-nav
   destinations, since a fifth felt cramped on small devices — Read shows the
   tab bar only when the edition has both `hasBook` and `hasStudyMode`; Arabic
   (book only, no study) shows Book alone with no tabs. `/read?tab=book|study`
@@ -451,18 +458,18 @@ is portable memory: any LLM working the repo should read and extend it.
   in the Lectures app bar (tap → bottom sheet of `AnnouncementCard`s). Daily
   Benefit + the offline-prep nudge were dropped. `/read` redirects to
   `/lectures` (not `/home`) for a series with neither Book nor Study.
-- **The Urdu Book tab is enabled client-side, not via `series.json`.**
+- **The Urdu Book (Read › Book) is enabled client-side, not via `series.json`.**
   `SeriesConfig.fromJson` defaults `hasBook` to `true` for the legacy Urdu
   series (`id == legacyId`) because this app version bundles
   `book_tawheed-ur.json`. This deliberately **decouples** the tab from a
   coordinated `series.json` deploy: older app versions have neither the default
-  nor the asset, so a shared `series.json` can never strand them with a Book
-  tab whose asset is missing. **Do not** add `hasBook:true` to `series.json`
+  nor the asset, so a shared `series.json` can never strand them with a Read ›
+  Book whose asset is missing. **Do not** add `hasBook:true` to `series.json`
   for `tawheed-ur` — it's unnecessary and would break not-yet-updated installs.
   An explicit `hasBook:false` in the manifest still disables it.
 - **Switching series must clear the book, not keep it.** `BookProvider.load`
   short-circuits once loaded, so `switchSeries` calls `BookProvider.reload()`
-  (clear to idle); the Book tab lazy-loads the current series' book on open.
+  (clear to idle); Read › Book lazy-loads the current series' book on open.
   Eager-loading inside `switchSeries` blocks the switch on `rootBundle` I/O and
   hangs `pumpAndSettle` in tests (the load future doesn't resolve under fake
   async) — clear-only avoids both.
@@ -473,6 +480,22 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## CI / release
 
+- **After `finalize-git` has pushed, resume with "Re-run failed jobs", never
+  "Re-run all jobs".** "Re-run all jobs" starts `prepare` again. `prepare`
+  recomputes the version, finds the tag `finalize-git` created, and aborts with
+  "Tag … already exists". That abort is correct, but it means the run cannot
+  finish. "Re-run failed jobs" keeps the earlier outputs (version, source SHA,
+  AAB SHA-256) and resumes at the failed job. A fresh dispatch from an
+  already-bumped `master` is a new release, not a resume.
+- **Atomic-push tests need a per-ref `update` hook. A `pre-receive` hook is
+  all-or-nothing and passes without `--atomic`.**
+  `test_a_rejected_master_update_leaves_no_tag_on_origin` in
+  `test/tool/test_release_git.py` installs an `update` hook that rejects only
+  `refs/heads/master`. Git runs that hook once per ref, so the tag update is
+  still attempted and only `git push --atomic` keeps the tag off origin. A
+  `pre-receive` hook decides for the whole push, rejecting both refs at once, so
+  the test would pass even without `--atomic` and would prove nothing about
+  atomicity.
 - **`dart format` and the `require_trailing_commas` lint fight each other:**
   formatting can introduce lint infos, and `flutter analyze
   --fatal-warnings` exits 1 on infos. Run `dart format` then `dart fix
@@ -490,12 +513,13 @@ is portable memory: any LLM working the repo should read and extend it.
   line (or call out to a shell script file instead).
 - **GitHub Actions `needs:` propagates SKIPS transitively.** If an upstream
   job is skipped, every job with a plain `needs: [upstream]` skips too by
-  default — so a dry run (which intentionally skips `promote`) can
-  cascade-skip the entire release pipeline and still report a green run that
-  built and verified nothing. Downstream jobs that must run even when an
-  upstream job was *legitimately* skipped (not failed) need
+  default, and the run can still show green while building and verifying
+  nothing. Read the step summary, not the colour. Downstream jobs that must run
+  even when an upstream job was *legitimately* skipped (not failed) need
   `if: always() && needs.X.result == 'success'`, checked explicitly rather
-  than relying on the implicit skip-on-skip default.
+  than relying on the implicit skip-on-skip default. The release graph avoids
+  depending on skips: each state-changing job carries `if: inputs.dry_run !=
+  true` itself.
 - **A scheduled workflow tests `origin`, not your laptop — an unpushed fix
   looks like a permanent failure.** The nightly golden job failed four runs
   straight with `ProviderNotFoundException<ShellChromeProvider>` while
@@ -506,12 +530,12 @@ is portable memory: any LLM working the repo should read and extend it.
   bug to find. Corollary: schedules on a branch you push to rarely will
   reliably lie to you, which is one reason golden now runs on push with a
   paths filter instead of nightly.
-- **The one-click release runs in detached HEAD — push with `HEAD:master`,
-  not `master`.** When dispatched from `develop`, every job checks out the
-  promote SHA (`ref: needs.prepare.outputs.ref`), so the `publish` job that
-  does the commit/tag/push has no local `master` branch. `git push origin master` fails with `src refspec master does
-  not match any`; use `git push origin HEAD:master`. (Latent until the first
-  release that actually reached the commit/tag/push step.)
+- **The release runs in detached HEAD, so the push names its refs explicitly.**
+  Every release job checks out the pinned source SHA, which leaves no local
+  `master` branch. `git push origin
+  master` fails with `src refspec master does not match any`.
+  `tool/release_git.py finalize` pushes `<sha>:refs/heads/master` and the tag in
+  one `--atomic` push. Do not replace it with a plain `git push`.
 - **`sync-develop` pushes to protected `develop` with an admin PAT, not the bot
   token.** `develop`'s protection ("Flutter CI" required status check) rejects a
   push from `github-actions[bot]` (`GH006: Protected branch update failed`), and
@@ -537,23 +561,23 @@ is portable memory: any LLM working the repo should read and extend it.
   the step dies with exit 127. Pass it via the step's `env:` block instead — env
   values are not re-parsed by the shell. (Fixed in `flutter-release.yml` for both
   the Play Store notes and GitHub Release steps.)
-- **Always dry-run a release first:** `make release MODE=dry BUMP=minor` (or
-  `make release MODE=develop BUMP=minor DRY_RUN=true`). It runs `prepare`,
-  `build-android` and `verify-android` — so it signs the AAB and installs the
-  APK on an emulator — but publishes nothing.
-  **What a dry run no longer covers:** since the six-job split, changelog and
-  Play-notes generation live in `publish`, which a dry run skips entirely. The
-  changelog-quoting bug below was caught by a dry run under the old monolithic
-  job; it would NOT be caught now. Treat the notes steps as unexercised until a
-  real release runs them.
-  **And a dry run that finishes in under a minute with no artifacts is a
-  failure, not a pass** — see the `needs:`-skip landmine above.
+- **A dry run does not exercise publishing.** `make release MODE=dry BUMP=patch`
+  (or `make release MODE=develop BUMP=patch DRY_RUN=true`) runs `prepare`,
+  `quality`, `build-android` and `verify-android`, so it signs the artifacts
+  and installs the APK on an emulator. It skips `finalize-git`, `publish-play`,
+  `github-release` and `sync-develop`. The changelog and Play "What's new"
+  generation (`git-cliff --latest`) run only in `publish-play` and
+  `github-release`, so a dry run never exercises them. Treat that part as
+  unverified until a real release runs it. Use a dry run before the first
+  release of a workflow change.
+  **A dry run that finishes in under a minute with no artifacts is a failure,
+  not a pass** — see the `needs:`-skip landmine above.
 - **Auto-deploy stops at the Play Store *internal* track** (`status: completed`).
   Promoting internal → production is a **manual** step in Play Console, on purpose.
 - **A freshly-invited Play Store service account 403s until permission
   propagates** (`The caller does not have permission`). Setup can be correct and
   still fail on the first run made seconds after inviting it — wait minutes to ~an
-  hour and re-run. `make release MODE=develop` is idempotent (promote becomes a no-op).
+  hour and re-run, using **Re-run failed jobs** on the same run (see the entry above).
 - **The service account needs a Play Console *invite*, not just the JSON.** Create
   it in Google Cloud (enable "Google Play Android Developer API"), then in Play
   Console → Users and permissions → invite its email. The old "API access → link

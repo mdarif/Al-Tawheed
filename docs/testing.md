@@ -13,6 +13,7 @@ have actually shipped here.
 | Layer | Command | Needs device |
 |-------|---------|--------------|
 | Unit + widget | `flutter test` or `make test` | No |
+| Release tooling and workflow structure | `make test-tooling` (needs PyYAML 6.0.3) | No |
 | Integration validation (Flutter UI) | `make integration-test DEVICE=<id>` | Yes |
 | Screenshot asset generation | `make screenshots DEVICE=<id>` | Yes |
 | Patrol (native OS) | `make patrol-test DEVICE=<id>` | Yes |
@@ -63,14 +64,12 @@ make integration-test DEVICE=<simulator_id>
 2. **iOS** — plug in via USB/network, trust the computer on the device, and make sure the device is registered to a signing team in Xcode (`open ios/Runner.xcworkspace` → Signing & Capabilities).
 3. Confirm it shows up: `flutter devices`, then use its ID with `-d` / `DEVICE=`.
 
-The automated stock Android API 35 emulator run currently reports five passing
-scenarios, zero failures, and one intentional skip. For final confidence,
-verify Patrol's native automator features on a physical stock-Android device
-when available. Android 16/API 36 currently reports zero discovered tests and
-cannot satisfy the truthful Patrol gate. OEM-skinned phones can still make
-native network-toggle automation unreliable. Realistic download/Wi-Fi-only
-testing is best on a physical device because emulators proxy network through
-the host.
+Patrol native results are reported for 2.4.2, not treated as a release gate (owner
+decision). Android 16/API 36 discovers zero Patrol tests, so it cannot produce a
+meaningful native result; use a stock device or emulator below API 36. OEM-skinned
+phones can make native network-toggle automation unreliable. Realistic
+download and Wi-Fi-only testing is best on a physical device, because emulators
+proxy the network through the host.
 
 ### Network
 
@@ -94,8 +93,24 @@ genhtml coverage/lcov.info -o coverage/html   # macOS, requires lcov
 open coverage/html/index.html
 ```
 
-CI runs the same command on every push/PR (`flutter-ci.yml`). The current local
-snapshot is 582 passing unit/widget tests with two intentional skips.
+CI runs `flutter test --coverage --reporter=expanded` on every push to `develop` and
+on PRs into `develop` and `master` (`flutter-ci.yml`). The 2.4.2 local snapshot
+is **1780 passed, 2 skipped** from `make test`. Release tooling and workflow
+structure tests (`make test-tooling`) are **175 tests**.
+
+### 2.4.2 proof tests
+
+- `test/overflow_smoke_test.dart`: every user-facing screen, in all four chrome
+  locales, at text scale 1.0 and 2.0, on a 360x640 phone, with real Urdu and
+  Arabic chapter titles. A `RenderFlex overflowed` report fails the test, and the
+  message lists every overflow on the screen with its `lib/` widget.
+- `test/upgrade_from_2_4_1_test.dart`: seeds the exact SharedPreferences keys and
+  download layout that 2.4.1 writes, builds the 2.4.2 providers over them, tears
+  them down and rebuilds them, then asserts edition, onboarding, bookmarks,
+  progress, text size and downloaded-lecture records read back identically. It
+  runs in `make test`. It is in-process only: it cannot prove that downloaded audio
+  plays after a real process restart. That is the manual Step 1b in
+  [release-runbook.md](release-runbook.md).
 
 ---
 
@@ -106,7 +121,7 @@ Flutter SDK `integration_test` — same `WidgetTester` API as widget tests, runs
 **Validation scenarios covered**
 
 - Welcome → catalog → lecture list  
-- Shell tabs (Lectures, Read when available, Library, Settings)
+- Shell tabs (Lectures, Read with Book / Study when the edition has them, Library, Settings)
 - Player + mini player  
 - Offline sheet, download, local playback  
 - Offline library (sheet + Settings)  
@@ -234,19 +249,24 @@ A real Pixel device works too. If both native toggle paths fail on an OEM-skinne
 ## Local CI mirror
 
 ```bash
-make ci                  # analyze + unit/widget tests + debug APK (no device)
-make release-apk DEVICE=<id>   # format + tooling + validation + discovered Patrol gate + APK
+make ci                        # format-check, test-tooling, analyze, unit/widget tests, debug APK (no device)
+make release-apk DEVICE=<id>   # format-check, test-tooling, analyze, unit/widget tests, integration, Patrol, release APK
 ```
 
 `make release-apk` runs `integration_test/app_test.dart`, never the screenshot
-generators, then runs Patrol and requires at least one discovered test. A
-successful process with `Total: 0` is intentionally rejected; Android 16/API
-36 therefore cannot satisfy this release gate with the current Patrol pins.
-The local release APK packaging step additionally requires the signing
-`storeFile`; without that local keystore, debug APK builds and the preceding
-validation gates can still pass, but a signed release artifact cannot be made.
+generators, then runs Patrol through `make patrol-test`. That target rejects a run
+that discovers zero tests, so Android 16/API 36 cannot pass it with the current
+Patrol pins. Packaging the release APK needs `android/key.properties` (see
+[setup.md](setup.md)); without it, the debug build and the validation gates still
+pass, but no signed artifact is produced.
 
-Pre-push hook (`.githooks/pre-push`): `flutter analyze` + `flutter test` — no device tests.
+For 2.4.2 the owner decided that Patrol results are reported, not a release gate.
+The Makefile still includes Patrol in `release-apk`, so a local run that reaches
+that step does fail on zero discovered tests. The GitHub release workflow does not
+run Patrol at all.
+
+Pre-push hook (`.githooks/pre-push`): `flutter analyze --fatal-warnings`, `flutter test`,
+`make format-check` and `python3 -m unittest discover -s test/tool`. No device tests.
 
 ---
 
@@ -267,4 +287,4 @@ patrol develop -t patrol_test/native_test.dart   # hot restart while writing tes
 - [Integration tests](https://docs.flutter.dev/testing/integration-tests)  
 - [Patrol documentation](https://patrol.leancode.co/documentation)  
 
-**Last updated:** June 2026
+**Last updated:** 2026-10-21 (2.4.2 test state)

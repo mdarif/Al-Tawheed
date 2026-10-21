@@ -67,7 +67,6 @@
 ## Security Checklist
 - [ ] No secrets in code
 - [ ] API keys in environment variables
-- [ ] Firebase rules are secure
 - [ ] No sensitive data in logs
 - [ ] HTTPS used for all requests
 

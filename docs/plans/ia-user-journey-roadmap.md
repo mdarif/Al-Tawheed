@@ -1,6 +1,6 @@
 # Information architecture and user-journey roadmap
 
-**Status:** Claude Opus final PASS recheck completed on 1 September 2026
+**Status:** B1c (lecture search and class grid) shipped in 2.4.2; release pending owner device test. Earlier planning status: Claude Opus final PASS recheck completed on 1 September 2026.
 **Planning date:** 31 August 2026
 **Target:** Complete IA program delivered through three independently shippable releases
 **Execution manifest:** [ia-phases.yml](ia-phases.yml)
@@ -154,6 +154,7 @@ A0 → A1 → A2 → A3 → A4 → A5T → A5D → ship gate A
 
 Release B — Discovery and continuity
 B1 → B2T → B2D → ship gate B
+# Boundary status: B1c (search + class grid) shipped in 2.4.2; release pending owner device test.
 
 Release C — Connected learning
 C1 (schema/data/CDN) → C2 (UI) → C3T → C3D → ship gate C

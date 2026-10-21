@@ -135,6 +135,6 @@ first. That is what makes this a second brain rather than a static readme.
 - [remote-content-strategy.md](docs/remote-content-strategy.md) — CDN config/catalog
 - [offline-mode-plan.md](docs/offline-mode-plan.md) — download/offline design
 - [onboarding-flows.md](docs/onboarding-flows.md) — welcome/series selection
-- [git-workflow.md](docs/git-workflow.md) — branch + PR flow
+- [git-workflow.md](docs/git-workflow.md) — branches; work lands by direct commits to `develop`, releases via `make release`
 - [android-xcode-setup.md](docs/android-xcode-setup.md) · [website-architecture.md](docs/website-architecture.md)
 - [play-store-listing.md](docs/play-store-listing.md) · [checklist.md](docs/checklist.md)

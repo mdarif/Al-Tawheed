@@ -1,366 +1,238 @@
 # Al-Tawheed Project Setup Guide
 
-## Overview
-This document provides complete setup instructions for the Sharah Kitab at-Tawheed Flutter application, including local development environment configuration, testing setup, and troubleshooting.
+Local development setup for the Sharah Kitab at-Tawheed Flutter app: toolchain,
+signing, running, and the test commands. CI and release are in
+[ci-cd.md](ci-cd.md); the release procedure is in
+[release-runbook.md](release-runbook.md).
 
 ## Prerequisites
+
 - macOS (Intel or Apple Silicon)
-- Xcode 14.0+
-- Android Studio 2021.3+
+- Xcode and Android Studio, current versions
 - Flutter SDK **3.47.4** (exact) — pinned in `pubspec.yaml` (`environment: flutter:`); CI reads the version from there (`flutter-version-file: pubspec.yaml`), so bump it in that one place
-- Dart SDK 3.0.0 or higher
+- Java 21 for Gradle (see [deployment.md](deployment.md))
+- Dart SDK `>=3.0.0 <4.0.0` (set in `pubspec.yaml`; the Flutter SDK ships its own Dart)
+- Python 3, with PyYAML pinned to 6.0.3, for the release tooling tests (`make test-tooling`)
 
-## 1. Environment Setup
+## 1. Environment
 
-### 1.1 Install Flutter
+### 1.1 Install Flutter 3.47.4
+
+Install the Flutter SDK at exactly 3.47.4 by your usual method. Then:
+
 ```bash
-# Clone Flutter repository (if not already installed)
-git clone https://github.com/flutter/flutter.git -b stable
-export PATH="$PATH:`pwd`/flutter/bin"
-
-# Verify installation
+flutter --version     # must print 3.47.4 (the same version CI reads from pubspec.yaml)
 flutter doctor
 ```
 
-### 1.2 Check System Requirements
+Expect ✓ for Flutter, the Android toolchain, Xcode (on macOS) and Android Studio.
+
+### 1.2 Install the Python test dependency
+
 ```bash
-flutter doctor
+python3 -m pip install PyYAML==6.0.3
 ```
 
-Expected output should show:
-- ✓ Flutter (Channel stable)
-- ✓ Android toolchain
-- ✓ Xcode
-- ✓ Android Studio
-- ✓ VS Code
+`make test-tooling` and the pre-push hook need it. The workflow-structure tests
+fail with a clear message if it is missing.
 
-## 2. Project Setup
+## 2. Project setup
 
-### 2.1 Clone and Navigate to Project
+### 2.1 Clone and install
+
 ```bash
-cd /Users/mohammadarif/code/Al-Tawheed
+cd <your clone of Al-Tawheed>
+make setup          # installs the pre-push hook (core.hooksPath) and runs flutter pub get
 ```
 
-### 2.2 Get Flutter Dependencies
-```bash
-flutter pub get
-```
+### 2.2 Android configuration
 
-### 2.3 Update Android Configuration
-The project has been configured with:
-- **minSdkVersion**: 34 (Android 14) - Required for Google Play Store
-- **targetSdkVersion**: 34 (Android 14)
-- **compileSdkVersion**: 34
+These come from `android/app/build.gradle`:
 
-This resolves the "app isn't available for your device" error.
+- `compileSdk 36`, `targetSdk 36`
+- `minSdkVersion flutter.minSdkVersion`: the minimum SDK comes from the Flutter SDK,
+  not from a number in this repo. Do not hard-code it.
+- `applicationId "com.almarfa.tawheed"`
 
-### 2.4 Configure Local Properties
-Create or update `local.properties`:
+Java 21 is required; see [deployment.md](deployment.md).
+
+### 2.3 Local properties
+
+`android/local.properties` is written by Flutter from the SDK path and the
+`pubspec.yaml` version. Do not edit the version there. It is gitignored. For example,
+`version: 2.4.1+20` in `pubspec.yaml` gives `versionName` 2.4.1 and `versionCode` 20. If Gradle
+says `flutter.sdk not set`, run the build through `flutter build apk` or
+`make build-android`, not `./gradlew` directly.
+
+### 2.4 Release signing (for release builds only)
+
+Create `android/key.properties` (gitignored; the keystore lives in Dropbox):
+
 ```properties
-flutter.sdk=/path/to/flutter/sdk
-flutter.buildMode=debug
-flutter.versionName=1.0.1
-flutter.versionCode=5
-```
-
-### 2.5 Setup Android Signing (for Release)
-Create `android/key.properties`:
-```properties
-storeFile=/path/to/keystore.jks
+storeFile=/absolute/path/to/upload-keystore.jks
 storePassword=your_keystore_password
-keyAlias=your_key_alias
+keyAlias=upload
 keyPassword=your_key_password
 ```
 
-## 3. Development Setup
+Debug builds do not need it. The local release gate needs it:
+`make release-apk DEVICE=<id>`.
 
-### 3.1 Running on iOS Simulator
+## 3. Development
+
+### 3.1 Run on a simulator or emulator
+
 ```bash
-flutter run
+make run-ios                       # flutter run -d "iPhone 15 Pro"
+make run-android                   # launches the emulator and runs on emulator-5554
+flutter emulators                  # list what is installed
 ```
 
-Or for specific device:
+### 3.2 Run on a physical device
+
 ```bash
-flutter run -d "iPhone 15 Pro"
-```
-
-### 3.2 Running on Android Emulator
-```bash
-# List available emulators
-flutter emulators
-
-# Launch an emulator
-flutter emulators --launch <emulator_id>
-
-# Run app
-flutter run -d emulator-5554
-```
-
-### 3.3 Running on Physical Device
-
-**iOS:**
-```bash
-# Connect physical device via USB
+flutter devices                    # copy the device id
 flutter run -d <device_id>
 ```
 
-**Android:**
+Android: enable Developer Options and USB debugging. iOS: trust the computer and
+pick a signing team in Xcode (`open ios/Runner.xcworkspace`).
+
+### 3.3 Run modes
+
 ```bash
-# Enable Developer Mode and USB Debugging
-# Connect device
-flutter devices
-flutter run -d <device_id>
-```
-
-### 3.4 Development Commands
-```bash
-# Run with verbose output
-flutter run -v
-
-# Run in profile mode (performance testing)
-flutter run --profile
-
-# Run in release mode
+flutter run -v                     # verbose
+flutter run --profile              # profile mode (performance work)
 flutter run --release
-
-# Hot reload (after code changes)
-# Press 'r' in terminal
-
-# Hot restart (full restart, resets app state)
-# Press 'R' in terminal
 ```
 
-## 4. Testing Setup
+Hot reload is `r` in the terminal. Hot restart is `R`.
 
-### 4.1 Run Unit Tests
+## 4. Testing
+
+| Command | What it runs | Device |
+|---|---|---|
+| `make test` | `flutter test --reporter=expanded` (unit and widget tests) | no |
+| `make test-tooling` | `python3 -m unittest discover -s test/tool` (release tooling and workflow structure) | no |
+| `make test-goldens` | Golden (pixel) tests, macOS only | no |
+| `make analyze` | `flutter analyze --fatal-warnings` | no |
+| `make format-check` | `dart format --set-exit-if-changed` (no rewrite) | no |
+| `make integration-test DEVICE=<id>` | `integration_test/app_test.dart` | yes |
+| `make orientation-test DEVICE=<id>` | Portrait and landscape flip suite | yes |
+| `make release-apk DEVICE=<id>` | The full local release gate | yes |
+
+Run a single test file with `flutter test test/<file>_test.dart`. Coverage:
+`make coverage`.
+
+`make ci` runs format-check, test-tooling, analyze, the unit and widget tests, and
+a debug APK build on this machine. See [testing.md](testing.md) for the test layers.
+
+## 5. Package management
+
 ```bash
-# Run all tests
-flutter test
-
-# Run specific test file
-flutter test test/widget_test.dart
-
-# Run with verbose output
-flutter test --verbose
-
-# Generate coverage report
-flutter test --coverage
+flutter pub outdated               # what is out of date
+flutter pub get                    # install the resolved versions
+flutter pub add <package>          # add a dependency
+flutter pub add --dev <package>    # add a dev dependency
+flutter pub remove <package>
 ```
 
-### 4.2 Run Widget/Integration Tests
-```bash
-# Widget tests
-flutter test test/widget_test.dart
+Only add a dependency when a change needs it. Check `pubspec.yaml` first.
 
-# Integration tests
-flutter drive --target=test_driver/app.dart
+## 6. Build
+
+| Artifact | Command |
+|---|---|
+| Debug APK | `make build-android` (`flutter build apk --debug`) |
+| Play bundle (AAB) | `make release-android` (`flutter build appbundle --release`) |
+| iOS release build | `make release-ios` (`flutter build ios --release`) |
+
+Play Store uploads use the AAB, not an APK. The release procedure, including
+signing and the release workflow, is in [release-runbook.md](release-runbook.md).
+
+## 7. Project structure
+
 ```
-
-### 4.3 Check Code Quality
-```bash
-# Analyze code
-flutter analyze
-
-# Format code
-dart format .
-
-# Run linter
-dart analyze
-```
-
-## 5. Package Management
-
-### 5.1 Update Dependencies
-```bash
-# Check for outdated packages
-flutter pub outdated
-
-# Upgrade all packages
-flutter pub upgrade
-
-# Get latest compatible versions
-flutter pub get
-```
-
-### 5.2 Add New Dependencies
-```bash
-flutter pub add package_name
-
-# For dev dependencies
-flutter pub add --dev package_name
-```
-
-### 5.3 Remove Dependencies
-```bash
-flutter pub remove package_name
-```
-
-## 6. Build & Release
-
-### 6.1 Android Release Build
-```bash
-# Create release build
-flutter build apk
-
-# Create split APKs (recommended for Google Play)
-flutter build apk --split-per-abi
-
-# Create App Bundle (required for Google Play Store)
-flutter build appbundle
-```
-
-### 6.2 iOS Release Build
-```bash
-# Create iOS build
-flutter build ios --release
-
-# Archive for App Store
-xcode_project_path=$(find . -name "Runner.xcworkspace" -type d)
-xcodebuild -workspace "$xcode_project_path" -scheme Runner -configuration Release -archivePath build/Runner.xcarchive archive
-```
-
-## 7. Firebase Configuration
-
-### 7.1 Android Firebase Setup
-```bash
-# The project includes Firebase dependencies:
-# - firebase_core: ^2.31.0
-# - firebase_analytics: ^10.8.0
-# - firebase_database: ^10.4.0
-
-# Ensure google-services.json is in android/app/
-# This file should be downloaded from Firebase Console
-```
-
-### 7.2 iOS Firebase Setup
-```bash
-# Run pod install to get Firebase pods
-cd ios
-pod install
-cd ..
+Al-Tawheed/
+├── lib/                 # app code: screens/, widgets/, providers/, services/, models/, l10n/
+├── android/             # Android project (build.gradle, key.properties and local.properties are gitignored)
+├── ios/                 # iOS project (Runner, Podfile)
+├── test/                # unit and widget tests; test/tool/ holds the release-tooling tests
+├── integration_test/    # on-device validation, orientation, performance, screenshots
+├── patrol_test/         # Patrol native tests (airplane mode, notifications)
+├── tool/                # release tooling (version, git, Play, APK verification) and CLIs
+├── .github/workflows/   # CI and release workflows
+├── .githooks/           # pre-push hook
+├── docs/                # documentation (start at AGENTS.md)
+├── pubspec.yaml         # dependencies, version, and the pinned Flutter SDK
+└── assets/              # bundled fonts, images, and the Urdu book content
 ```
 
 ## 8. Troubleshooting
 
-### Issue: "This app isn't available for your device"
-**Solution**: Ensure minSdkVersion is 34 (FIXED in this setup)
+### Gradle: `invalid source release: 21`
 
-### Issue: Pod install fails on iOS
-**Solution**: 
+Gradle is using an older JDK. Set `org.gradle.java.home` in
+`~/.gradle/gradle.properties` (see [deployment.md](deployment.md)).
+
+### `flutter --version` does not print 3.47.4
+
+Switch to the pinned SDK before running anything. The CI pin is `pubspec.yaml`, and
+the `flutter` on your `PATH` must match it.
+
+### Pods fail to install on iOS
+
 ```bash
 cd ios
-rm Podfile.lock
+rm -f Podfile.lock
 pod install
 cd ..
 ```
 
-### Issue: Gradle build fails
-**Solution**:
+### Gradle build fails after a change in dependencies
+
 ```bash
-flutter clean
+make clean
 flutter pub get
-flutter pub upgrade
-flutter run
+make build-android
 ```
 
-### Issue: Flutter not found in PATH
-**Solution**:
+### `flutter` not found in PATH
+
 ```bash
 # Add to ~/.zshrc
 export PATH="$PATH:/path/to/flutter/bin"
 source ~/.zshrc
 ```
 
-### Issue: Android SDK not found
-**Solution**:
+### Android SDK not found
+
 ```bash
 flutter config --android-sdk /path/to/android-sdk
 flutter doctor
 ```
 
-## 9. Project Structure
-```
-Al-Tawheed/
-├── lib/                          # Flutter app code
-│   ├── main.dart                # App entry point
-│   ├── models/                  # Data models
-│   ├── screens/                 # UI screens
-│   └── services/                # API and services
-├── android/                      # Android-specific code
-│   ├── app/
-│   │   ├── build.gradle         # Gradle config (minSdkVersion: 34)
-│   │   └── google-services.json # Firebase config
-│   └── gradle.properties        # Gradle properties
-├── ios/                          # iOS-specific code
-│   ├── Podfile                  # CocoaPods dependencies
-│   └── Runner/                  # iOS app project
-├── test/                         # Unit tests
-├── pubspec.yaml                 # Flutter dependencies (Dart 3.0+)
-└── assets/                       # App resources
-```
+### `make test-tooling` fails with "PyYAML is required"
 
-## 10. Important Changes Made
+Install the pinned version: `python3 -m pip install PyYAML==6.0.3`.
 
-### Android Configuration
-- **minSdkVersion**: Updated from 24 → 34 (required for Google Play)
-- **compileSdkVersion**: Confirmed 34
-- **targetSdkVersion**: Confirmed 34
-
-### Dart/Flutter Version
-- **SDK**: Updated from `>=2.12.0 <3.0.0` → `>=3.0.0 <4.0.0`
-- Dart 3.0+ features available (records, patterns, etc.)
-
-### Dependencies Updated
-- `firebase_analytics`: ^10.4.4 → ^10.8.0
-- `firebase_core`: ^2.15.0 → ^2.31.0
-- `firebase_database`: ^10.2.4 → ^10.4.0
-- `url_launcher`: ^6.1.12 → ^6.2.6
-- `cupertino_icons`: ^1.0.5 → ^1.0.8
-- Added: `flutter_inappwebview`: ^6.0.0
-- Added: `flutter_lints`: ^4.0.0 (for code quality)
-
-## 11. Continuous Integration Tips
-
-### Local Testing Before Commit
-```bash
-# Run complete test suite
-flutter analyze && flutter test && flutter build apk
-```
-
-### Firebase Emulator (Optional)
-```bash
-# Install Firebase emulator
-npm install -g firebase-tools
-
-# Start emulator
-firebase emulators:start
-```
-
-## 12. Useful Commands Reference
+## 9. Command reference
 
 | Command | Purpose |
-|---------|---------|
-| `flutter doctor` | Check environment setup |
-| `flutter pub get` | Install dependencies |
-| `flutter run` | Run on connected device |
-| `flutter test` | Run unit tests |
-| `flutter analyze` | Check code quality |
-| `dart format .` | Format code |
-| `flutter clean` | Clean build artifacts |
-| `flutter build apk` | Build Android release |
-| `flutter build ios` | Build iOS release |
-| `flutter pub outdated` | Check for updates |
-
-## 13. Support & Documentation
-
-- Flutter Docs: https://flutter.dev/docs
-- Firebase Flutter: https://firebase.flutter.dev
-- Dart Documentation: https://dart.dev/guides
-- Android Developer: https://developer.android.com
+|---|---|
+| `make help` | Every make target with a description |
+| `make setup` | Hooks plus `flutter pub get` |
+| `make pub-get` | Install dependencies |
+| `make analyze` | Static analysis (CI gate) |
+| `make test` | Unit and widget tests |
+| `make format-check` | Formatting check (CI gate) |
+| `make ci` | Local approximation of CI |
+| `make ci-logs` | Latest failed GitHub Actions run logs |
+| `make clean` | Clean build artifacts |
+| `flutter doctor` | Check the environment |
 
 ---
 
-**Last Updated**: February 2026
-**Flutter Version**: 3.47.4 (pinned in `pubspec.yaml`)
-**Dart Version**: 3.0.0+
-**Min Android Version**: 34 (Android 14)
+**Flutter version**: 3.47.4 (pinned in `pubspec.yaml`)
+**Dart SDK**: `>=3.0.0 <4.0.0`
+**Last updated**: 2026-10-21

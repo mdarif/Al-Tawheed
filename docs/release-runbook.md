@@ -10,9 +10,9 @@ commands, see [deployment.md](deployment.md).
 Follow these steps **in order** — each one says what to run, what success
 looks like, and what to do if it doesn't go to plan.
 
-> ### Note — Urdu Book tab (raised 2026-07-12, resolved on `feature/urdu-book`)
+> ### Note — Urdu Book (Read › Book) (raised 2026-07-12, resolved on `feature/urdu-book`)
 >
-> The Urdu Book tab is enabled **client-side** and ships automatically with the
+> The Urdu Book (Read › Book) is enabled **client-side** and ships automatically with the
 > `feature/urdu-book` release — `SeriesConfig.fromJson` defaults `hasBook` to
 > `true` for the Urdu series because the app bundles the book asset. **No
 > `series.json` change is needed** (and adding `hasBook:true` there would break
@@ -30,10 +30,12 @@ looks like, and what to do if it doesn't go to plan.
 - [ ] No uncommitted changes anywhere you're about to switch branches from:
       `git status`
 - [ ] A supported Android device is connected and authorized: `flutter devices`
-      (required for Step 1 — Flutter validation plus the Patrol discovery gate).
-      For the current `patrol 4.6.1` pin, use `patrol_cli 4.4.0` on a stock
-      Android target below API 36; Android 16/API 36 currently discovers zero
-      Patrol tests and cannot satisfy this gate.
+      (required for Step 1 — Flutter validation on-device). Step 1 also runs
+      Patrol and prints its result, but **Patrol is reported, not a release
+      gate** (owner decision, 2.4.2): a Patrol failure prints a warning and the
+      APK is still built. For meaningful Patrol numbers use `patrol_cli 4.4.0`
+      on a stock Android target below API 36 (e.g. the `p4a_api34` AVD);
+      Android 16/API 36 discovers zero Patrol tests.
 - [ ] Golden (pixel-snapshot) tests are green on `develop`:
       `gh run list --workflow flutter-golden.yml --branch develop --limit 1`.
       They run automatically on any push to `develop` touching `lib/**`,
@@ -77,7 +79,7 @@ Runs, in order: `pub get` → `dart format --set-exit-if-changed` →
 `flutter test integration_test/app_test.dart` (Flutter validation on-device)
 → `patrol test` (native scenarios — airplane mode, notifications, lock-screen
 controls — plus the Arabic-edition suite in `arabic_series_test.dart`;
-must discover at least one test) → `flutter build apk --release`.
+reported, not a gate) → `flutter build apk --release`.
 
 The format and tooling checks are first because they cost seconds and
 `build-android` gates on them too — without them here, Step 1 can pass locally
@@ -94,8 +96,9 @@ make goldens-update        # re-bake masters after a REVIEWED intentional change
 asset jobs and are not part of the release gate (`make screenshots
 DEVICE=<device_id>`).
 
-**Success** looks like the final line (and requires Patrol to report a non-zero
-discovered test count):
+**Success** looks like the final line. Read the Patrol summary above it and
+record its pass/fail/skip counts in the release evidence; a Patrol failure
+does not block the build:
 ```
 ✓ Release APK: build/app/outputs/flutter-apk/app-release.apk
 ```
@@ -670,7 +673,7 @@ right?"**
 Yes, as of the live-verified state on 2026-06-07: `master` only blocks
 force-pushes and branch deletions, nothing requires PRs or reviews on either
 branch (only `develop` requires the `Flutter CI` status check to merge *into*
-it). See `docs/ci-cd.md` → "Setup Status" for the full picture and how to add
+it). See `docs/ci-cd.md` → "Branch rules the workflows rely on" for the current settings and how to add
 PR review back if you want it.
 
 **"Can I require PRs on master without breaking the release bot?"**

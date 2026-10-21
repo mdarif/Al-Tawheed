@@ -8,7 +8,7 @@
 | [deployment.md](deployment.md) | Build & machine setup guide — Java, signing, building, lessons learned |
 | [release-runbook.md](release-runbook.md) | Step-by-step production release process and troubleshooting |
 | [website-architecture.md](website-architecture.md) | kitabattawheed.com architecture — Astro, Cloudflare Pages, SEO, app conversion strategy (ADR-004) |
-| [git-workflow.md](git-workflow.md) | Branching strategy, commit conventions, PR process |
+| [git-workflow.md](git-workflow.md) | Branches, commit conventions, hooks (no PR workflow: work lands by direct commits) |
 | [checklist.md](checklist.md) | Pre-commit and pre-release checklists |
 | [testing.md](testing.md) | Running tests, coverage, writing new tests |
 | [quality-backlog.md](quality-backlog.md) | Canonical current quality backlog and shipped safeguards |

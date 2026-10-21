@@ -89,8 +89,8 @@ JSON.** You avoid an app-store release for every content or wording change.
 - **Automate the whole release to one command**, but keep **production promotion a
   manual human gate** (auto-ship to an internal/testing track; a person promotes to
   prod).
-- **Always dry-run first** — it catches build/signing/changelog issues before
-  anything ships.
+- **Dry-run a workflow change first** — it proves the build, signing and device
+  check, but not the changelog or the store upload, which only a real run exercises.
 - **Store-console API access is fiddly:** service accounts need app-level (not just
   account-level) permissions, and grants take time to propagate. Budget for it.
 - **Never inline free text into a shell `run:` step** in CI (`"${{ ... }}"`) — commit

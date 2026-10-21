@@ -6,9 +6,9 @@ backlog is [quality-backlog.md](quality-backlog.md).
 
 ## How this is prioritized
 
-**Not by coverage %.** The suite has 582 passing unit/widget tests (with two
-intentional skips), plus 16 release-tool tests, and the gaps are not where the
-percentage is lowest. Every item below is ranked by:
+**Not by coverage %.** The suite has 1780 passing unit/widget tests (with two
+intentional skips), plus 175 release-tool and workflow-structure tests, and the
+gaps are not where the percentage is lowest. Every item below is ranked by:
 
 > *Has this class of bug actually shipped in this repo?* × *what does it cost
 > when it does?*
@@ -123,8 +123,8 @@ repo's characteristic failure.
   `https://api.example.com` — none of which exist in this app. It is scaffolding
   from a template. Deleted. ✅
 - **`test/book_service_test.dart`** — false "placeholder" comment fixed. ✅
-- **`make test-units`** ran `flutter test test/unit_tests.dart` (a file that never
-  existed) — target removed. ✅
+- **The old unit-test make target** ran a test file that never existed; the
+  target was removed. ✅
 - **`make format`** ran `flutter format .`, removed from the Flutter CLI — now
   `dart format .` (and the doc references with it). ✅
 - **`codecov.yml`** ignored `app_localizations_ur_roman.dart` and
@@ -280,15 +280,20 @@ Stated so nobody "fixes" these later:
 
 ## CI gates — recommended changes
 
-Today a PR into `develop` gets **only** analyze + unit/widget + debug build.
-Integration runs on PRs into `master` and nightly; the Android emulator workflow
-is explicitly non-blocking.
+As of 2.4.2, `flutter-ci.yml` runs format-check, analyze, the unit and widget tests
+with coverage, the release-tooling tests, and a debug APK build on every push to
+`develop` and every PR into `develop` or `master`. The Android emulator
+integration workflow runs on PRs into `master` or `develop` that touch `lib/`,
+`integration_test/` or itself, and is non-blocking. The iOS regression workflow
+runs on PRs into `master` and on demand. The Regression, Golden and emulator
+nightlies were removed on 2026-08-31, and Patrol is not in CI.
 
 - **Already on every PR:** Book content validation (P0.1) and ARB parity (P0.2)
-  gate automatically — `flutter-ci.yml` runs the unqualified `flutter test` on
-  every PR into `develop`/`master`, so both new pure-Dart suites are in the gate.
-  No extra wiring needed.
-- **Nightly:** remote-config contract tests (§6) run on their own ubuntu job
-  (`flutter-live-contract.yml`, 03:00 UTC), tagged `live` and skipped by every
-  PR/pre-push run. ✅ done.
-- Leave integration on `master`/nightly. That split is sound.
+  gate automatically, because `flutter-ci.yml` runs the unqualified `flutter test`
+  set on every PR into `develop`/`master`. No extra wiring needed.
+- **Live contract:** remote-config contract tests (§6) run on their own ubuntu job
+  (`flutter-live-contract.yml`, 03:00 UTC daily), tagged `live` and skipped by
+  every PR and pre-push run. ✅ done.
+- Keep the device-level integration runs on PRs into `master` and the emulator
+  workflow. That split is sound. See [ci-cd.md](ci-cd.md) for every workflow's
+  triggers.

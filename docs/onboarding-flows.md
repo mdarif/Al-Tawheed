@@ -228,3 +228,31 @@ edition shows its WelcomeScreen first, then its CTA goes to `/lectures`.
    `SeriesProvider.hasMissingSelectedSeries` becomes true. See
    `lib/widgets/missing_edition_guard.dart` and
    `lib/screens/edition_missing_screen.dart`.
+
+---
+
+## After onboarding: the shell (2.4.2)
+
+Once onboarding is done, the user lands on `/lectures` inside a four-tab shell:
+**Lectures · Read · Library · Settings**. Onboarding does not change after this
+point; these are the destinations it hands over to.
+
+| Destination | Route | What is there |
+|---|---|---|
+| Lectures | `/lectures`, search at `/lectures/search` | The lecture list. Search covers lectures and shows a class grid with a "Go to class" action. |
+| Read | `/read?tab=book` or `/read?tab=study` | The Book and Study pages, switched by an underline tab bar. The bar appears only when the edition has both. A book-only edition shows Book with no tabs. An edition with neither has no Read tab, and `/read` redirects to `/lectures`. |
+| Library | `/library?tab=bookmarks` or `?tab=downloads` | A plain "Library" title with Bookmarks and Downloads tabs. |
+| Settings | `/settings` | Reading (text size), About (full-screen `/about`), Downloads (Wi-Fi only, with a hint), and Our other apps (Android only). |
+
+Other routes:
+
+- `/player` is the full-screen player, above the shell, so the nav bar is hidden.
+- `/book/:chapterId` is the chapter reader, also above the shell.
+- `/study/complete?chapterId=…` is the Study completion screen. Its "Back to
+  overview" goes to `/read?tab=study`. Without a chapter it goes straight there.
+- `/bookmarks` and `/offline-library` are adapters for the Library tabs. They show
+  the same `LibraryScreen` on the matching tab, outside the shell.
+- `/choose-series` is the edition picker, and `/edition-missing` is the recovery
+  screen for a saved edition that no longer resolves (see Edge Case 6).
+
+The ⋮ overflow menu is gone as of 2.4.2.
