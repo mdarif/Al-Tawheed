@@ -9,6 +9,7 @@ import 'package:patrol/patrol.dart';
 
 import '../integration_test/support/app_flow.dart';
 import 'support/patrol_flow.dart';
+import 'support/slow_audio_downloads.dart';
 
 // Native scenarios that integration_test cannot cover (OS dialogs, airplane mode,
 // notification shade). Requires Patrol CLI + device/emulator.
@@ -254,39 +255,84 @@ void main() {
         timeout: const Duration(seconds: 15),
         reason: 'lecture list before reading notification title',
       );
+      // DownloadsProvider posts `lecture.title.en` — the English catalogue
+      // title, whatever the edition or chrome language — so that is what the
+      // shade must show. (The media notification, by contrast, shows the
+      // edition-resolved title; see docs/gotchas.md.)
       final lectureTitle =
           $.tester.widget<LectureTile>(tiles.first).lecture.title.en;
-      await AppFlow.openFirstLecture($.tester);
-      if ($.tester.any(find.text('Saved for offline'))) {
-        await AppFlow.removeDownloadFromPlayer($.tester);
-      }
-      await AppFlow.dismissPlayer($.tester);
 
-      await AppFlow.startDownloadFromListTile($.tester);
-      await AppFlow.openFirstLecture($.tester);
-      var shadeOpened = false;
-      try {
-        await AppFlow.waitForDownloadProgressOrComplete($.tester);
-        if (!$.tester.any(find.textContaining('Downloading'))) {
-          return;
-        }
-
-        await $.platform.mobile.openNotifications();
-        shadeOpened = true;
-        // getNotifications() traverses legacy SystemUI container IDs that
-        // time out on API 35. The download title is stable and identifies
-        // this notification without depending on SystemUI's container tree.
-        await $.platform.mobile.waitUntilVisible(
-          Selector(text: lectureTitle),
-          timeout: const Duration(seconds: 15),
-        );
-      } finally {
-        if (shadeOpened) {
-          await $.platform.mobile.closeNotifications();
-        }
-        await AppFlow.cancelDownloadFromPlayer($.tester);
-        await AppFlow.dismissPlayer($.tester);
+      // Work from the list tile only: opening the player would start playback
+      // and post a second (media) notification, and Android 14 then folds both
+      // into one collapsed group whose header shows the media title, hiding the
+      // download row from the shade.
+      final firstTile = tiles.first;
+      final alreadySaved = find.descendant(
+        of: firstTile,
+        matching: find.byIcon(Icons.download_done_rounded),
+      );
+      if ($.tester.any(alreadySaved)) {
+        await $.tester.tap(alreadySaved);
+        await AppFlow.pumpFrames($.tester, count: 3);
+        await $.tester.tap(find.widgetWithText(TextButton, 'Delete'));
+        await AppFlow.pumpFrames($.tester, count: 5);
       }
+
+      final startDownload = find.descendant(
+        of: firstTile,
+        matching: find.byTooltip('Download for offline'),
+      );
+      final cancelDownload = find.descendant(
+        of: firstTile,
+        matching: find.byTooltip('Cancel download'),
+      );
+
+      // A lecture is ~8 MB: left alone it finishes before the shade is open and
+      // there is nothing in progress to observe. Throttle it so the test always
+      // sees the download mid-flight, and fails if it does not.
+      await withSlowAudioDownloads(() async {
+        var shadeOpened = false;
+        try {
+          await $.tester.tap(startDownload);
+          await AppFlow.pumpFrames($.tester, count: 3);
+
+          // The first download action asks for notification permission
+          // contextually: an in-app rationale, then the system dialog. Without
+          // the grant the OS silently drops every notification the app posts,
+          // so the shade never shows one.
+          await AppFlow.dismissNotificationRationaleIfShown($.tester);
+          await PatrolFlow.grantNotificationsIfPrompted($);
+
+          await AppFlow.waitFor(
+            $.tester,
+            cancelDownload,
+            timeout: const Duration(seconds: 20),
+            reason: 'tile to show the download in progress',
+          );
+
+          await $.platform.mobile.openNotifications();
+          shadeOpened = true;
+          // Title row of the download notification (android:id/title) ...
+          await $.platform.mobile.waitUntilVisible(
+            Selector(text: lectureTitle),
+            timeout: const Duration(seconds: 15),
+          );
+          // ... and its progress bar, which only the in-progress notification
+          // has (the completed one swaps it for "Download complete").
+          await $.platform.mobile.waitUntilVisible(
+            Selector(resourceId: 'android:id/progress'),
+            timeout: const Duration(seconds: 15),
+          );
+        } finally {
+          if (shadeOpened) {
+            await $.platform.mobile.closeNotifications();
+          }
+          if ($.tester.any(cancelDownload)) {
+            await $.tester.tap(cancelDownload);
+            await AppFlow.pumpFrames($.tester, count: 5);
+          }
+        }
+      });
     },
     timeout: patrolTimeout,
   );

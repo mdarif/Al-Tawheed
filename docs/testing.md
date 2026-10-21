@@ -192,6 +192,16 @@ patrol doctor
 | Skip-next blocked | Airplane mode → **Not available offline** dialog |
 | Download notification (Android) | Notification shade while download in progress |
 
+The download-notification scenario is deliberately constructed so it cannot
+pass vacuously: it grants the contextual notification permission (rationale
+"Allow" + the system dialog), works from the list tile only (opening the player
+adds a media notification and Android 14 groups the two, hiding the download
+row), throttles `.mp3` downloads (`patrol_test/support/slow_audio_downloads.dart`)
+so the download is still running when the shade opens, and requires both the
+lecture title (`android:id/title`) and the progress bar (`android:id/progress`)
+to be visible. If the download is never observed in progress the test fails.
+Details and the failure signatures: *Patrol* in [gotchas.md](gotchas.md).
+
 ### Run
 
 ```bash

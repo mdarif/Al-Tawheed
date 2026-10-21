@@ -196,6 +196,48 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Patrol (native device tests)
 
+- **The download-notification shade test needs three things, and its old
+  form had none (root-caused on the API 34 emulator).** (1) *Grant the system
+  dialog that follows the in-app rationale.* The first download action shows the
+  rationale, then Android 13+'s POST_NOTIFICATIONS dialog; if nothing taps it,
+  `dumpsys package` shows `POST_NOTIFICATIONS: granted=false`, `dumpsys
+  notification` shows `AppSettings: com.almarfa.tawheed importance=NONE`, and
+  the OS silently drops every `showProgress` — the shade has no download row at
+  all (only `AndroidX Test Services` + `Serial console enabled`), so
+  `waitUntilVisible(Selector(text: 'Class 01 — Part 01'))` 404s. The grant in
+  `PatrolFlow.bootstrapToLectures` runs *before* this contextual prompt and so
+  never sees it; call `PatrolFlow.grantNotificationsIfPrompted` after
+  `AppFlow.dismissNotificationRationaleIfShown`. (2) *Don't open the player.*
+  Playback posts a second notification (the audio_service media one); Android
+  14 then folds both into an auto group (`tag=ranker_group`) whose collapsed
+  header shows only the media title (the edition-resolved Urdu
+  `درس ۰۱ — حصہ ۰۱`), so the English download title is not in the visible tree
+  and `textContains 'Class 01'` finds nothing. With only the download
+  notification posted, the shade tree has `android:id/title` =
+  `Class 01 — Part 01` and an `android:id/progress` bar, and
+  `getNotifications()` works on API 34. (3) *Throttle the `.mp3`.* A lecture is
+  ~8 MB and completes before Patrol has opened the shade; the old test
+  `return`ed when it saw "Saved for offline", i.e. passed vacuously.
+  `patrol_test/support/slow_audio_downloads.dart` (`HttpOverrides`) holds it at
+  ~100 KB/s so the in-progress notification is always observable and the test
+  fails if it is not.
+- **`uiautomator dump` (and anything else that opens a second UiAutomation
+  connection) breaks a running Patrol test** — Patrol's own `initialize()` then
+  fails and the test hangs on the Patrol overlay. To inspect the shade during a
+  run use Patrol's `$.native.getNativeViews(null)` (full tree) or `adb shell
+  dumpsys notification --noredact` / `screencap`, never `uiautomator dump`.
+- **Killing a Patrol run mid-test (`pkill`) can leave the notification shade
+  open**, which hides the next run's system permission dialog from
+  `isPermissionDialogVisible`. `adb shell cmd statusbar collapse` before
+  re-running.
+- **The download notification's text is English-only and ignores the
+  edition** (`DownloadsProvider` passes `lecture.title.en`; "Download complete"
+  and the "Downloads" channel name are hard-coded in
+  `DownloadNotificationService`), unlike the media notification, which uses the
+  resolved title. Not what broke the Patrol test, but it breaks the
+  all-4-ARB-locales rule. Open follow-up: it needs `DownloadsProvider` to pass
+  a resolved title and the service to take localized strings, which was out of
+  scope for the Patrol fix.
 - **Version dead-end + Android 16 (as of 2026-07).** The repo pins
   `patrol 4.6.1`, whose ONLY compatible CLI is `patrol_cli 4.4.0` (Patrol's own
   version check rejects everything else). But 4.4.0 discovers **0 tests**
