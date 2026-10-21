@@ -511,6 +511,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get editionMissingChooseAnother => 'دوسرا ایڈیشن منتخب کریں';
 
   @override
+  String get editionMissingStillUnavailable =>
+      'یہ ایڈیشن اب بھی سرور کی تازہ ترین فہرست میں موجود نہیں۔ بعد میں دوبارہ کوشش کریں یا کوئی دوسرا ایڈیشن منتخب کریں۔';
+
+  @override
+  String get editionMissingUnreachable =>
+      'سرور سے رابطہ نہیں ہو سکا۔ اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔';
+
+  @override
   String get bookChapterNotFoundTitle => 'باب نہیں ملا';
 
   @override
@@ -1299,6 +1307,14 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
 
   @override
   String get editionMissingChooseAnother => 'Doosra edition muntakhib karein';
+
+  @override
+  String get editionMissingStillUnavailable =>
+      'Yeh edition ab bhi server ki tazah tareen fehrist mein maujood nahin. Baad mein dobara koshish karein ya koi doosra edition muntakhib karein.';
+
+  @override
+  String get editionMissingUnreachable =>
+      'Server se rabta nahin ho saka. Apna internet connection check karein aur dobara koshish karein.';
 
   @override
   String get bookChapterNotFoundTitle => 'Bab nahi mila';

@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/services/series_manifest_service.dart';
@@ -135,6 +138,87 @@ void main() {
 
       final manifest = await service.fetchManifest();
       expect(manifest, [SeriesConfig.legacyUrduFallback]);
+    });
+  });
+  group('fetchManifest — forceRefresh', () {
+    const urdu = 'tawheed-ur';
+    const arabic = 'tawheed-ar';
+    Map<String, dynamic> manifestWith(List<String> ids) => {
+          'series': [
+            for (final id in ids)
+              _entry(
+                id,
+                id == arabic ? 'ar' : 'ur',
+                catalogUrl: 'https://example.com/$id/catalog.json',
+              ),
+          ],
+        };
+
+    late int networkCalls;
+    setUp(() {
+      networkCalls = 0;
+      addTearDown(() => service.httpClientForTest = null);
+    });
+
+    void serveNetwork(List<String> ids) {
+      service.httpClientForTest = MockClient((request) async {
+        networkCalls++;
+        return http.Response(jsonEncode(manifestWith(ids)), 200);
+      });
+    }
+
+    test(
+        'a normal fetch serves a fresh cache that lacks the edition, '
+        'without touching the network', () async {
+      await _seed(manifestWith([urdu])); // fresh (just stamped)
+      serveNetwork([urdu, arabic]);
+
+      final manifest = await service.fetchManifest();
+
+      expect(manifest.map((s) => s.id), [urdu]);
+      expect(networkCalls, 0);
+    });
+
+    test(
+        'forceRefresh bypasses the fresh cache and returns the network '
+        'manifest, then persists it', () async {
+      await _seed(manifestWith([urdu]));
+      serveNetwork([urdu, arabic]);
+
+      final manifest = await service.fetchManifest(forceRefresh: true);
+
+      expect(manifest.map((s) => s.id), [urdu, arabic]);
+      expect(networkCalls, 1);
+      expect(service.cachedManifest()!.map((s) => s.id), [urdu, arabic]);
+    });
+
+    test(
+        'forceRefresh throws when the network is unreachable and leaves '
+        'the cache untouched', () async {
+      await _seed(manifestWith([urdu]));
+      service.httpClientForTest =
+          MockClient((request) async => throw const SocketException('down'));
+
+      await expectLater(
+        service.fetchManifest(forceRefresh: true),
+        throwsA(anything),
+      );
+      expect(service.cachedManifest()!.map((s) => s.id), [urdu]);
+    });
+
+    test(
+        'forceRefresh throws when the server answers with an unusable '
+        'manifest, rather than returning the Urdu fallback', () async {
+      await _seed(manifestWith([urdu, arabic]));
+      service.httpClientForTest = MockClient(
+        (request) async =>
+            http.Response(jsonEncode({'series': <dynamic>[]}), 200),
+      );
+
+      await expectLater(
+        service.fetchManifest(forceRefresh: true),
+        throwsA(anything),
+      );
     });
   });
 }

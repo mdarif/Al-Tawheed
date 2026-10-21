@@ -162,6 +162,8 @@
   "editionMissingTitle": "Aap ka edition abhi dastyaab nahin",
   "editionMissingMessage": "Humein aap ka aakhri istemal kiya gaya edition nahin mila. Yeh internet connection na hone ya edition hataye jaane ki wajah se ho sakta hai. Aap ka intekhaab mahfooz hai — dobara koshish karein ya koi doosra edition muntakhib karein.",
   "editionMissingChooseAnother": "Doosra edition muntakhib karein",
+  "editionMissingStillUnavailable": "Yeh edition ab bhi server ki tazah tareen fehrist mein maujood nahin. Baad mein dobara koshish karein ya koi doosra edition muntakhib karein.",
+  "editionMissingUnreachable": "Server se rabta nahin ho saka. Apna internet connection check karein aur dobara koshish karein.",
 
   "bookChapterNotFoundTitle": "Bab nahi mila",
   "bookChapterNotFoundMessage": "Yeh bab ka link ab durust nahi hai.",

@@ -346,6 +346,17 @@ is portable memory: any LLM working the repo should read and extend it.
   navigation-time half. `/edition-missing` itself is deliberately *not*
   redirected away when the edition resolves (the overflow smoke test opens it
   directly); the screen leaves via `context.go('/')` after a successful Retry.
+- **Retry on `/edition-missing` must bypass the manifest cache.**
+  `SeriesManifestService.fetchManifest` serves a *fresh* (1h TTL) cache without
+  touching the network, so a plain `loadManifest()` re-reads the same list that
+  lacks the edition and Retry looks dead. Retry calls
+  `loadManifest(forceRefresh: true)`; a forced fetch **throws** (rather than
+  returning the Urdu fallback) when the network gives nothing usable, and the
+  provider then returns `false` with state untouched — that is how the screen
+  tells "couldn't reach the server" from "still not in the latest list". Tests
+  inject the HTTP side via `SeriesManifestService.httpClientForTest`; any widget
+  test that taps Retry must set it (default to an offline client) or it will try
+  the real CDN.
 - **The edition supplies the *default* chrome language; an explicit pick wins.**
   `LanguageProvider.language` resolves `explicit ?? seriesDefault ?? device`
   (see [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)).

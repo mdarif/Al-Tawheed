@@ -1,14 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/l10n/app_localizations_en.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/navigation/missing_edition_refresh.dart';
@@ -31,6 +35,7 @@ import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/services/series_manifest_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
 
@@ -56,28 +61,48 @@ const _arabic = SeriesConfig(
 
 const _missingPath = '/edition-missing';
 
-/// Writes the cache entry `SeriesManifestService.fetchManifest` reads, so
-/// `SeriesProvider.loadManifest()` (and so the screen's Retry) sees exactly
-/// this manifest — fresh, so no network is involved.
+String _manifestBody(List<SeriesConfig> series) => jsonEncode({
+      'series': [
+        for (final s in series)
+          {
+            'id': s.id,
+            'catalogUrl': s.catalogUrl,
+            'storagePrefix': s.storagePrefix,
+            'hasStudyMode': s.hasStudyMode,
+            'hasBook': s.hasBook,
+            'language': s.language,
+            'displayName': s.displayName,
+            'speakerName': s.speakerName,
+          },
+      ],
+    });
+
+/// Writes the cache entry `SeriesManifestService.fetchManifest` reads, so a
+/// normal `SeriesProvider.loadManifest()` sees exactly this manifest — fresh,
+/// so no network is involved. (Retry does NOT read this: it forces a refetch,
+/// which goes to [_serveNetwork].)
 Future<void> _serveManifest(List<SeriesConfig> series) =>
-    PreferencesService.instance.saveRemoteJson(
-      'series_manifest',
-      jsonEncode({
-        'series': [
-          for (final s in series)
-            {
-              'id': s.id,
-              'catalogUrl': s.catalogUrl,
-              'storagePrefix': s.storagePrefix,
-              'hasStudyMode': s.hasStudyMode,
-              'hasBook': s.hasBook,
-              'language': s.language,
-              'displayName': s.displayName,
-              'speakerName': s.speakerName,
-            },
-        ],
-      }),
-    );
+    PreferencesService.instance
+        .saveRemoteJson('series_manifest', _manifestBody(series));
+
+/// What the CDN answers when Retry forces a refetch. Returns the number of
+/// requests made, as a counter the test can read.
+List<int> _serveNetwork(List<SeriesConfig> series) {
+  final calls = [0];
+  SeriesManifestService.instance.httpClientForTest = MockClient((_) async {
+    calls[0]++;
+    return http.Response(_manifestBody(series), 200);
+  });
+  return calls;
+}
+
+/// The device is offline: every request fails.
+void _goOffline() {
+  SeriesManifestService.instance.httpClientForTest =
+      MockClient((_) async => throw const SocketException('offline'));
+}
+
+final _en = AppLocalizationsEn();
 
 Catalog _catalog() => Catalog(
       version: 1,
@@ -204,6 +229,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+    // No test may reach the real CDN; Retry forces a network refetch.
+    _goOffline();
+    addTearDown(() => SeriesManifestService.instance.httpClientForTest = null);
   });
 
   testWidgets('(1) launch with the saved edition missing lands on recovery',
@@ -227,18 +255,70 @@ void main() {
     await tester.pumpWidget(_app(series: series, router: router));
     await tester.pumpAndSettle();
     _expectRecoveryVisible(router);
+    final calls = _serveNetwork([_urdu]); // server really lacks it
+    expect(find.text(_en.editionMissingStillUnavailable), findsNothing);
 
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
 
     _expectOnlyRecovery(router);
+    expect(calls[0], 1, reason: 'Retry must actually ask the server');
     expect(series.hasMissingSelectedSeries, isTrue);
     expect(series.selectedSeriesId, _arabic.id);
     expect(PreferencesService.instance.selectedSeriesId, _arabic.id);
+    // The user is told why nothing happened: reachable, but still not listed.
+    expect(find.text(_en.editionMissingStillUnavailable), findsOneWidget);
+    expect(find.text(_en.editionMissingUnreachable), findsNothing);
 
     // And again: a second failed Retry is no different from the first.
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
+    _expectOnlyRecovery(router);
+    expect(calls[0], 2);
+    expect(find.text(_en.editionMissingStillUnavailable), findsOneWidget);
+  });
+
+  testWidgets(
+      '(2b) Retry while offline stays on recovery and says to check the '
+      'connection, keeping the cached state', (tester) async {
+    final series = await _returningArabicUser(manifest: [_urdu]);
+    final router = _router(series);
+    await tester.pumpWidget(_app(series: series, router: router));
+    await tester.pumpAndSettle();
+    _expectRecoveryVisible(router);
+    final before = series.availableSeries;
+    _goOffline();
+
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+
+    _expectOnlyRecovery(router);
+    expect(find.text(_en.editionMissingUnreachable), findsOneWidget);
+    expect(find.text(_en.editionMissingStillUnavailable), findsNothing);
+    expect(series.availableSeries, same(before));
+    expect(series.hasMissingSelectedSeries, isTrue);
+    expect(series.selectedSeriesId, _arabic.id);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      '(2c) a message from a failed Retry is cleared by the next attempt, '
+      'and replaced by the new outcome', (tester) async {
+    final series = await _returningArabicUser(manifest: [_urdu]);
+    final router = _router(series);
+    await tester.pumpWidget(_app(series: series, router: router));
+    await tester.pumpAndSettle();
+
+    _goOffline();
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text(_en.editionMissingUnreachable), findsOneWidget);
+
+    _serveNetwork([_urdu]); // back online, edition still absent
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text(_en.editionMissingUnreachable), findsNothing);
+    expect(find.text(_en.editionMissingStillUnavailable), findsOneWidget);
     _expectOnlyRecovery(router);
   });
 
@@ -258,17 +338,20 @@ void main() {
   });
 
   testWidgets(
-      '(4) Retry after the manifest now lists the edition lands on that '
-      "edition's Lectures", (tester) async {
+      '(4) Retry after the server now lists the edition lands on that '
+      "edition's Lectures, even though the cached manifest is still fresh and "
+      'lacks it', (tester) async {
     final series = await _returningArabicUser(manifest: [_urdu]);
     final router = _router(series);
     await tester.pumpWidget(_app(series: series, router: router));
     await tester.pumpAndSettle();
     _expectRecoveryVisible(router);
 
-    await _serveManifest([_urdu, _arabic]);
+    final calls = _serveNetwork([_urdu, _arabic]);
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
+
+    expect(calls[0], 1);
 
     expect(series.hasMissingSelectedSeries, isFalse);
     expect(series.currentSeries.id, _arabic.id);

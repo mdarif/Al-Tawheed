@@ -176,12 +176,26 @@ class SeriesProvider extends ChangeNotifier {
   /// Fetches the `series.json` manifest. Falls back to
   /// `[SeriesConfig.legacyUrduFallback]` on any failure — never blocks
   /// onboarding on the network.
-  Future<void> loadManifest() async {
-    _available = await SeriesManifestService.instance.fetchManifest();
+  ///
+  /// [forceRefresh] bypasses the manifest cache and asks the network (used by
+  /// the edition-missing screen's Retry). Returns `false`, leaving every piece
+  /// of state untouched and notifying nobody, when a forced fetch could not
+  /// get a usable manifest (offline, server error); `true` whenever a manifest
+  /// was applied. An unforced load always returns `true`.
+  Future<bool> loadManifest({bool forceRefresh = false}) async {
+    final List<SeriesConfig> fetched;
+    try {
+      fetched = await SeriesManifestService.instance
+          .fetchManifest(forceRefresh: forceRefresh);
+    } catch (_) {
+      return false; // only a forced fetch throws; keep the prior state
+    }
+    _available = fetched;
     _manifestApplied = true;
     _maybeDefaultToArabic();
     _isLoading = false;
     notifyListeners();
+    return true;
   }
 
   /// On a genuinely fresh install (no selection yet), silently default to

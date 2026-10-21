@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:myapp/app_config.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/services/preferences_service.dart';
@@ -15,15 +16,29 @@ class SeriesManifestService {
   /// Falls back to `[SeriesConfig.legacyUrduFallback]` on any fetch/parse
   /// failure, or if the manifest is empty — onboarding never blocks on the
   /// network.
-  Future<List<SeriesConfig>> fetchManifest() async {
+  ///
+  /// With [forceRefresh] the cache (even a fresh one) is bypassed and the
+  /// network is asked, for a caller that has a reason to distrust the cached
+  /// list (the edition-missing screen's Retry). A forced fetch that cannot
+  /// produce a usable manifest **throws** instead of returning the fallback,
+  /// so the caller can tell "couldn't reach the server" from "the server's
+  /// list lacks it" and keep whatever state it already had.
+  Future<List<SeriesConfig>> fetchManifest({bool forceRefresh = false}) async {
     try {
       final body = await RemoteContentService.fetch(
         url: AppConfig.seriesManifestUrl,
         cacheKey: _cacheKey,
         ttlMs: AppConfig.seriesManifestCacheTtlMs,
+        forceRefresh: forceRefresh,
+        client: httpClientForTest,
       );
-      return _parse(body) ?? const [SeriesConfig.legacyUrduFallback];
+      final parsed = _parse(body);
+      if (parsed == null && forceRefresh) {
+        throw const FormatException('series manifest has no usable series');
+      }
+      return parsed ?? const [SeriesConfig.legacyUrduFallback];
     } catch (e) {
+      if (forceRefresh) rethrow;
       debugPrint('SeriesManifestService: fetch failed, using fallback: $e');
       return const [SeriesConfig.legacyUrduFallback];
     }
@@ -42,6 +57,10 @@ class SeriesManifestService {
     final body = PreferencesService.instance.loadRemoteJson(_cacheKey);
     return body == null ? null : _parse(body);
   }
+
+  /// HTTP client used for the network fetch — tests only.
+  @visibleForTesting
+  http.Client? httpClientForTest;
 
   static const _cacheKey = 'series_manifest';
 

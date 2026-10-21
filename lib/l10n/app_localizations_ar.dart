@@ -517,6 +517,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editionMissingChooseAnother => 'اختر إصدارًا آخر';
 
   @override
+  String get editionMissingStillUnavailable =>
+      'ما زال هذا الإصدار غير موجود في أحدث قائمة من الخادم. حاول مرة أخرى لاحقًا أو اختر إصدارًا آخر.';
+
+  @override
+  String get editionMissingUnreachable =>
+      'تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت ثم أعد المحاولة.';
+
+  @override
   String get bookChapterNotFoundTitle => 'الفصل غير موجود';
 
   @override

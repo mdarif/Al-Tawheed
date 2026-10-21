@@ -989,6 +989,18 @@ abstract class AppLocalizations {
   /// **'Choose another edition'**
   String get editionMissingChooseAnother;
 
+  /// No description provided for @editionMissingStillUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This edition is still not in the latest list from the server. Try again later, or choose another edition.'**
+  String get editionMissingStillUnavailable;
+
+  /// No description provided for @editionMissingUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Check your internet connection and try again.'**
+  String get editionMissingUnreachable;
+
   /// No description provided for @bookChapterNotFoundTitle.
   ///
   /// In en, this message translates to:

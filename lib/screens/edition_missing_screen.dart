@@ -18,16 +18,38 @@ class EditionMissingScreen extends StatefulWidget {
   State<EditionMissingScreen> createState() => _EditionMissingScreenState();
 }
 
+/// Why the last Retry did not leave the screen.
+enum _RetryFailure {
+  /// The server answered, but its list still lacks the saved edition.
+  stillMissing,
+
+  /// The server could not be reached (or gave nothing usable).
+  unreachable,
+}
+
 class _EditionMissingScreenState extends State<EditionMissingScreen> {
   bool _retrying = false;
+  _RetryFailure? _failure;
 
   Future<void> _retry(BuildContext context) async {
     if (_retrying) return;
-    setState(() => _retrying = true);
+    setState(() {
+      _retrying = true;
+      _failure = null;
+    });
     final series = context.read<SeriesProvider>();
-    await series.loadManifest();
+    // Force the network: a fresh (1h) cached manifest that lacks the edition
+    // would otherwise be re-read and make Retry look broken.
+    final reached = await series.loadManifest(forceRefresh: true);
     if (!mounted) return;
-    setState(() => _retrying = false);
+    setState(() {
+      _retrying = false;
+      _failure = !reached
+          ? _RetryFailure.unreachable
+          : series.hasMissingSelectedSeries
+              ? _RetryFailure.stillMissing
+              : null;
+    });
     // Still missing: stay here. The router-level redirect (RouteGuards.
     // missingEdition) confines the app to this screen and the edition picker
     // while hasMissingSelectedSeries holds, so there is nowhere else to go —
@@ -65,6 +87,21 @@ class _EditionMissingScreenState extends State<EditionMissingScreen> {
                   style: context.textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),
+                if (_failure != null) ...[
+                  const SizedBox(height: 16),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _failure == _RetryFailure.unreachable
+                          ? l10n.editionMissingUnreachable
+                          : l10n.editionMissingStillUnavailable,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 28),
                 FilledButton.icon(
                   onPressed: _retrying ? null : () => _retry(context),

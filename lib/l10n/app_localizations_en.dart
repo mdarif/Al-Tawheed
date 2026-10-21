@@ -522,6 +522,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editionMissingChooseAnother => 'Choose another edition';
 
   @override
+  String get editionMissingStillUnavailable =>
+      'This edition is still not in the latest list from the server. Try again later, or choose another edition.';
+
+  @override
+  String get editionMissingUnreachable =>
+      'Couldn\'t reach the server. Check your internet connection and try again.';
+
+  @override
   String get bookChapterNotFoundTitle => 'Chapter not found';
 
   @override

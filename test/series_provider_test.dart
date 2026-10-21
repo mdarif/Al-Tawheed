@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/services/series_manifest_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _arabicSeries = SeriesConfig(
@@ -307,6 +311,125 @@ void main() {
       await provider.loadManifest();
 
       expect(provider.hasSelectedSeries, isFalse);
+      expect(provider.hasMissingSelectedSeries, isFalse);
+    });
+  });
+
+  group('loadManifest — forceRefresh (Retry on the edition-missing screen)',
+      () {
+    late int networkCalls;
+
+    Future<SeriesProvider> missingProvider() async {
+      // Saved Arabic edition; the FRESH cache lacks it.
+      await PreferencesService.instance.saveSelectedSeriesId('tawheed-ar');
+      await _cacheManifest([SeriesConfig.legacyUrduFallback]);
+      return SeriesProvider()
+        ..load(true, definitive: true)
+        ..setDeviceLanguageCodeForTest('en');
+    }
+
+    void serveNetwork(List<SeriesConfig> series) {
+      SeriesManifestService.instance.httpClientForTest =
+          MockClient((request) async {
+        networkCalls++;
+        return http.Response(
+          jsonEncode({
+            'series': [
+              for (final s in series)
+                {
+                  'id': s.id,
+                  'catalogUrl': s.catalogUrl,
+                  'storagePrefix': s.storagePrefix,
+                  'hasStudyMode': s.hasStudyMode,
+                  'hasBook': s.hasBook,
+                  'language': s.language,
+                  'displayName': s.displayName,
+                  'speakerName': s.speakerName,
+                },
+            ],
+          }),
+          200,
+        );
+      });
+    }
+
+    setUp(() {
+      networkCalls = 0;
+      addTearDown(
+        () => SeriesManifestService.instance.httpClientForTest = null,
+      );
+    });
+
+    test('a normal load keeps using the fresh cache (no network)', () async {
+      final provider = await missingProvider();
+      serveNetwork([SeriesConfig.legacyUrduFallback, _arabicSeries]);
+
+      await provider.loadManifest();
+
+      expect(networkCalls, 0);
+      expect(provider.hasMissingSelectedSeries, isTrue);
+    });
+
+    test('forceRefresh refetches, so an edition the cache lacked resolves',
+        () async {
+      final provider = await missingProvider();
+      await provider.loadManifest();
+      expect(provider.hasMissingSelectedSeries, isTrue);
+      serveNetwork([SeriesConfig.legacyUrduFallback, _arabicSeries]);
+
+      final ok = await provider.loadManifest(forceRefresh: true);
+
+      expect(ok, isTrue);
+      expect(networkCalls, 1);
+      expect(provider.hasMissingSelectedSeries, isFalse);
+      expect(provider.currentSeries.id, 'tawheed-ar');
+    });
+
+    test(
+        'a forced refresh that finds it still missing returns true and '
+        'stays missing', () async {
+      final provider = await missingProvider();
+      await provider.loadManifest();
+      serveNetwork([SeriesConfig.legacyUrduFallback]);
+
+      final ok = await provider.loadManifest(forceRefresh: true);
+
+      expect(ok, isTrue);
+      expect(networkCalls, 1);
+      expect(provider.hasMissingSelectedSeries, isTrue);
+    });
+
+    test(
+        'a forced refresh that fails returns false and keeps the prior '
+        'state (no crash, no fallback swap)', () async {
+      final provider = await missingProvider();
+      await provider.loadManifest();
+      final before = provider.availableSeries;
+      var notified = 0;
+      provider.addListener(() => notified++);
+      SeriesManifestService.instance.httpClientForTest =
+          MockClient((request) async => throw const SocketException('down'));
+
+      final ok = await provider.loadManifest(forceRefresh: true);
+
+      expect(ok, isFalse);
+      expect(provider.availableSeries, same(before));
+      expect(provider.hasMissingSelectedSeries, isTrue);
+      expect(provider.selectedSeriesId, 'tawheed-ar');
+      expect(notified, 0);
+    });
+
+    test(
+        'a forced refresh that fails before any manifest applied does not '
+        'flag the edition missing', () async {
+      // Cache-hydrated only: offline must not turn into "edition removed".
+      final provider = await missingProvider();
+      SeriesManifestService.instance.httpClientForTest =
+          MockClient((request) async => throw const SocketException('down'));
+
+      final ok = await provider.loadManifest(forceRefresh: true);
+
+      expect(ok, isFalse);
       expect(provider.hasMissingSelectedSeries, isFalse);
     });
   });

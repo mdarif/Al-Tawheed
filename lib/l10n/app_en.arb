@@ -252,6 +252,8 @@
   "editionMissingTitle": "Your edition isn't available right now",
   "editionMissingMessage": "We couldn't find the content edition you last used. This can happen if there's no internet connection or it was removed. Your selection is remembered — try again, or choose a different edition.",
   "editionMissingChooseAnother": "Choose another edition",
+  "editionMissingStillUnavailable": "This edition is still not in the latest list from the server. Try again later, or choose another edition.",
+  "editionMissingUnreachable": "Couldn't reach the server. Check your internet connection and try again.",
 
   "bookChapterNotFoundTitle": "Chapter not found",
   "bookChapterNotFoundMessage": "This chapter link is no longer valid.",
