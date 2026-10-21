@@ -252,7 +252,7 @@ jobs:
       - name: Set up Flutter (pinned)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.41.1
+          flutter-version-file: pubspec.yaml
           cache: true
 
       - name: Cache Gradle

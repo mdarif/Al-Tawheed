@@ -7,7 +7,7 @@ This document provides complete setup instructions for the Sharah Kitab at-Tawhe
 - macOS (Intel or Apple Silicon)
 - Xcode 14.0+
 - Android Studio 2021.3+
-- Flutter SDK 3.0.0 or higher
+- Flutter SDK **3.47.4** (exact) — pinned in `pubspec.yaml` (`environment: flutter:`); CI reads the version from there (`flutter-version-file: pubspec.yaml`), so bump it in that one place
 - Dart SDK 3.0.0 or higher
 
 ## 1. Environment Setup
@@ -361,6 +361,6 @@ firebase emulators:start
 ---
 
 **Last Updated**: February 2026
-**Flutter Version**: 3.0.0+
+**Flutter Version**: 3.47.4 (pinned in `pubspec.yaml`)
 **Dart Version**: 3.0.0+
 **Min Android Version**: 34 (Android 14)

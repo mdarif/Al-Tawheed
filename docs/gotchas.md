@@ -17,8 +17,15 @@ is portable memory: any LLM working the repo should read and extend it.
   the machine.** Another Flutter project writing `org.gradle.java.home` there can
   silently break this app's build. If Gradle picks the wrong JDK, check that file
   first, not just this repo. CI pins Java 21 explicitly, so it's a local-only trap.
-- **Flutter is pinned to 3.41.1 in CI** (`.github/workflows/*.yml`). Match it
-  locally when reproducing a CI-only failure.
+- **Flutter is pinned ONCE, in `pubspec.yaml`** (`environment: flutter:
+  3.47.4`, an exact version — `subosito/flutter-action`'s
+  `flutter-version-file` rejects ranges). Every workflow reads it from there;
+  `test/tool/test_workflows.py` fails if any workflow hard-codes a
+  `flutter-version:` again. To bump the SDK, change the pin, run `flutter pub
+  get` once, and **commit whatever the SDK's migrators rewrite**
+  (`analysis_options.yaml` excludes, `android/gradle.properties` flags,
+  `pubspec.lock`) — leaving them uncommitted is why every `flutter` run used
+  to dirty the tree when local (3.47.4) and CI (3.41.1) disagreed.
 - **A newly-added file in a directory-declared asset folder needs a build-cache
   bust before `flutter test`/`flutter run` sees it.** `pubspec.yaml` lists
   `assets/images/` (the *directory*), so the asset build cache keys off pubspec
