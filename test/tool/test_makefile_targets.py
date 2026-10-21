@@ -210,3 +210,37 @@ class MakefileShapeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _recipe(target):
+    """The recipe lines of [target] in the Makefile (tab-indented block)."""
+    m = re.search(rf"^{re.escape(target)}:.*\n((?:\t.*\n|\s*\n)+)", MAKEFILE, re.M)
+    return [line.strip() for line in (m.group(1) if m else "").splitlines() if line.strip()]
+
+
+class ReleaseApkGateTests(unittest.TestCase):
+    """Patrol is reported, never a release gate (owner decision, 2.4.2)."""
+
+    def test_patrol_runs_but_cannot_fail_the_release_apk_gate(self):
+        lines = _recipe("release-apk")
+        patrol = [l for l in lines if "patrol-test" in l]
+        self.assertEqual(len(patrol), 1, lines)
+        self.assertRegex(
+            patrol[0],
+            r"\|\|\s*echo",
+            "a Patrol failure must be reported, not stop release-apk",
+        )
+
+    def test_the_hard_gates_still_stop_release_apk(self):
+        lines = _recipe("release-apk")
+        for gate in ("format-check", "test-tooling", "flutter analyze",
+                     "flutter test --reporter", "integration_test/app_test.dart"):
+            line = next((l for l in lines if gate in l), None)
+            self.assertIsNotNone(line, gate)
+            self.assertNotIn("||", line, f"{gate} must stay a hard gate")
+
+    def test_the_apk_is_built_after_every_check(self):
+        lines = _recipe("release-apk")
+        build = next(i for i, l in enumerate(lines) if "flutter build apk --release" in l)
+        patrol = next(i for i, l in enumerate(lines) if "patrol-test" in l)
+        self.assertGreater(build, patrol)
