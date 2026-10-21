@@ -177,7 +177,7 @@ void main() {
       await shot(tester, '05-lectures-ur');
 
       // Study Mode — Urdu-only feature (not present in Arabic).
-      if (await tapTab(tester, ['Study'])) {
+      if (await AppFlow.openStudyTab(tester)) {
         await AppFlow.pumpFrames(tester, count: 6);
         await shot(tester, '06-study-ur');
       }

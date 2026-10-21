@@ -122,6 +122,77 @@ $ANDROID_SDK/build-tools/<version>/apksigner verify --print-certs \
 then restart from Step 1. Don't proceed to Step 2 with a failing gate — it's
 the thing standing between you and shipping a broken build.
 
+### Step 1b — Upgrade proof: real process restart (manual, owner-run)
+
+The automated half of the upgrade proof is
+`test/upgrade_from_2_4_1_test.dart`: it seeds the exact 2.4.1 preferences and
+download layout, builds the current providers over them twice, and asserts
+edition/onboarding, bookmarks, progress, font size and the downloaded-lecture
+record read back identically. It runs in `make test`, so it is part of the
+gate above and needs no device.
+
+It cannot prove that downloaded audio **plays after a genuine process
+restart**: `AudioService` initialises once per process, so no in-process test
+(`integration_test`, or a second `app.main()`) can model a restart. That is
+this manual step. Nothing in the automated gate covers it; do not record it as
+passed until you have run it.
+
+Use a stock Android emulator or device with the **same signing key** for both
+builds (an upgrade only installs over a build signed by the same key; a debug
+APK will fail with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`). The 2.4.1 release APK
+is attached to its GitHub release; the 2.4.2 candidate is the release APK from
+Step 1.
+
+```sh
+PKG=com.almarfa.tawheed
+DEVICE=<device_id>            # from `flutter devices` / `adb devices`
+
+# 1. Start from a clean install of 2.4.1 and create state worth keeping.
+adb -s $DEVICE uninstall $PKG
+gh release download 2.4.1 --pattern '*.apk' --dir /tmp/tawheed-2.4.1
+adb -s $DEVICE install /tmp/tawheed-2.4.1/*.apk
+adb -s $DEVICE shell am start -n $PKG/.MainActivity
+#    In the app: START LISTENING, open the first lecture, tap the download
+#    control and wait for "Saved for offline"; bookmark it; let it play for
+#    ~20 s so a position is saved; then, in the Urdu edition, set a
+#    non-default Book text size (2.4.1: open a Book chapter and pinch).
+
+# 2. Upgrade in place (keeps data). Confirm the version really changed.
+adb -s $DEVICE install -r build/app/outputs/flutter-apk/app-release.apk
+adb -s $DEVICE shell dumpsys package $PKG | grep versionName     # expect 2.4.2
+
+# 3. Kill the process, then cold-launch. This is the restart under test.
+adb -s $DEVICE shell am force-stop $PKG
+adb -s $DEVICE shell am start -n $PKG/.MainActivity
+
+# 4. Go offline so playback can only come from the downloaded file.
+adb -s $DEVICE shell cmd connectivity airplane-mode enable
+```
+
+Then, in the app, with no network:
+
+- [ ] It opens on **Lectures** (no Welcome / series picker): onboarding and the
+      edition survived.
+- [ ] **Library > Downloads** lists the lecture you downloaded; **Library >
+      Bookmarks** lists the one you bookmarked.
+- [ ] Tap the downloaded lecture: the Player opens, shows **Saved for
+      offline**, and the position **advances** (play icon becomes pause, the
+      clock moves) with the radio off. It resumes from the position saved in
+      2.4.1, not from zero.
+- [ ] (Urdu edition) **Settings > Reading** shows the text size you pinched to
+      in 2.4.1, and a Book chapter opens at that size.
+- [ ] Repeat the restart once more (`am force-stop`, `am start`) and play the
+      same lecture again: a second cold launch behaves identically.
+
+```sh
+adb -s $DEVICE shell cmd connectivity airplane-mode disable   # always restore
+```
+
+**Pass** = every box ticks. **Fail** = any lecture missing from Downloads,
+a Welcome screen for a returning user, or a downloaded lecture that stays
+buffering offline: stop the release and file it against the migration, with
+`adb -s $DEVICE logcat -d` attached.
+
 ## Step 2 — Trigger the release
 
 ### Recommended: one click, from develop

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 import 'package:patrol/patrol.dart';
 
@@ -61,7 +63,8 @@ void main() {
 
       await AppFlow.openFirstLecture($.tester);
 
-      expect(find.text('يتم التشغيل الآن'), findsOneWidget);
+      // ARB `nowPlaying` (ar) — the canonical wording.
+      expect(find.text('يُشغَّل الآن'), findsOneWidget);
 
       // Online path: streaming strip uses Arabic label
       if ($.tester.any(find.text('بث مباشر'))) {
@@ -92,14 +95,21 @@ void main() {
         reason: 'Read tab must exist for Arabic series',
       );
 
-      // Chapter list loads — wait for either the list or a loading spinner
+      // The chapter list is a CustomScrollView whose SliverList only exists
+      // once the book has loaded (a spinner until then). The Arabic edition
+      // has a Book and no Study, so Read shows it directly under the title,
+      // with no Book/Study tab bar.
       await AppFlow.waitFor(
         $.tester,
-        find.byType(ListView),
+        find.descendant(
+          of: find.byType(BookChapterListBody),
+          matching: find.byType(SliverList),
+        ),
         timeout: const Duration(seconds: 30),
         reason: 'book chapter list',
       );
-      expect(find.byType(ListView), findsWidgets);
+      expect(find.byKey(WidgetKeys.readTabStudy), findsNothing);
+      expect(find.byKey(WidgetKeys.readTabBook), findsNothing);
 
       await AppFlow.navigateToLecturesTab($.tester);
       await PatrolFlow.restoreToUrduSeries($);
@@ -113,8 +123,15 @@ void main() {
       if (!await PatrolFlow.bootstrapToArabicLectures($)) return;
 
       await PatrolFlow.withAirplaneMode($, () async {
-        // Offline status banner shows Arabic badge
-        expect($('بلا إنترنت'), findsOneWidget);
+        // The shell's offline banner shows the Arabic badge. The same word also
+        // labels undownloaded lecture rows, so scope the check to the banner.
+        expect(
+          find.descendant(
+            of: find.byKey(WidgetKeys.offlineStatusBanner),
+            matching: find.text('بلا إنترنت'),
+          ),
+          findsOneWidget,
+        );
 
         // Tapping an undownloaded lecture shows the Arabic snackbar
         final tiles = find.byType(LectureTile);

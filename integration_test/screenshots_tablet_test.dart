@@ -94,7 +94,7 @@ void main() {
       await shot(tester, 't-02-lectures');
 
       // Study Mode.
-      if (await tapTab(tester, ['Study'])) {
+      if (await AppFlow.openStudyTab(tester)) {
         await AppFlow.pumpFrames(tester, count: 6);
         await shot(tester, 't-03-study');
       }

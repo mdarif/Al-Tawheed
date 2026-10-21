@@ -401,6 +401,22 @@ is portable memory: any LLM working the repo should read and extend it.
   Several real overflows (Study dashboard duration row, edition-switcher
   `CapabilityChip`) stayed hidden for releases because the widget sat in an
   offstage `IndexedStack` that tests never rendered at 2×.
+- **Device tests that find a screen by its widget TYPE go stale silently.**
+  Patrol/integration finders like `find.byType(ListView)` or an `AppBar`
+  title broke without warning when the Book chapter list became a
+  `CustomScrollView` (B1a) and Library/Read swapped `AppBar`s for
+  `SectionTabHeader` (2.4.2). Prefer `WidgetKeys` over types/text in E2E, and
+  re-run Patrol on an API ≤35 AVD (e.g. `p4a_api34` — API 36 discovers 0
+  tests) after any screen restructure.
+- **2.4.1 → 2.4.2 upgrade has two pinned, accepted behaviours**
+  (`test/upgrade_from_2_4_1_test.dart`): (1) 2.4.1 kept ONE unprefixed
+  `book_scroll_offsets` for all editions; 2.4.2 reads `ar_book_scroll_offsets`
+  for Arabic, so Arabic readers start chapters from the top once (the
+  cross-edition leak fix). (2) A 2.4.1 download whose file size differs from
+  the catalogue's `fileSizeBytes` is dropped after metadata backfill (2.4.1
+  never checked sizes). All 50 live Urdu files match today; **re-encoding CDN
+  audio without updating `fileSizeBytes` would silently drop users'
+  downloads.**
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)

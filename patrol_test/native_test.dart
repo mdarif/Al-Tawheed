@@ -26,6 +26,17 @@ void main() {
       await PatrolFlow.bootstrapToLectures($);
       await PatrolFlow.withAirplaneMode($, () async {
         expect(find.byKey(WidgetKeys.offlineStatusBanner), findsOneWidget);
+
+        // The banner's link goes to Library › Downloads (the one home for
+        // downloads — Settings only hints at it), which works offline.
+        await $.tester.tap(find.byKey(WidgetKeys.offlineStatusBanner));
+        await AppFlow.waitFor(
+          $.tester,
+          find.byKey(WidgetKeys.libraryTabDownloads),
+          timeout: const Duration(seconds: 15),
+          reason: 'Library after tapping the offline banner',
+        );
+        AppFlow.expectLibraryTab($.tester, 1);
       });
     },
     timeout: patrolTimeout,

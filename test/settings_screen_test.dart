@@ -33,6 +33,7 @@ import 'package:myapp/services/download_notification_service.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/widgets/capability_chip.dart';
 import 'package:myapp/widgets/settings/text_size_setting.dart';
 
 Map<String, dynamic> _catalogJson(String bookId) => {
@@ -873,6 +874,16 @@ void main() {
           await tester.pumpAndSettle();
 
           expect(tester.takeException(), isNull);
+          // The edition switcher's capability chips (Audio · Study · Book) sit
+          // bare in a Wrap: the chip itself gives way, no FittedBox around it.
+          expect(find.byType(CapabilityChip), findsWidgets);
+          expect(
+            find.ancestor(
+              of: find.byType(CapabilityChip),
+              matching: find.byType(FittedBox),
+            ),
+            findsNothing,
+          );
           expect(find.byType(TextSizeSetting), findsOneWidget);
           expect(
             find.byKey(WidgetKeys.settingsOtherAppsSection),
@@ -946,7 +957,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(WidgetKeys.settingsDownloadOnWifiOnly), findsOneWidget);
-      expect(find.byKey(WidgetKeys.settingsOfflineLibrary), findsNothing);
+      // The row (and its WidgetKeys entry) are gone; the literal key proves no
+      // widget still carries it.
+      expect(
+        find.byKey(const ValueKey<String>('settings.offline-library')),
+        findsNothing,
+      );
       expect(find.byIcon(Icons.storage_rounded), findsNothing);
       expect(find.text('No downloads yet'), findsNothing);
       expect(find.text('Clear all downloads'), findsNothing);

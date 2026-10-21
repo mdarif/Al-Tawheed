@@ -23,6 +23,7 @@ import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/widgets/capability_chip.dart';
 
 const _urduSeries = SeriesConfig.legacyUrduFallback;
 
@@ -92,7 +93,11 @@ Map<String, dynamic> _catalogJson(String bookId) => {
       'dailyBenefits': <Map<String, dynamic>>[],
     };
 
-Widget _wrap({required SeriesProvider series}) {
+Widget _wrap({
+  required SeriesProvider series,
+  Locale? locale,
+  double textScale = 1,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: series),
@@ -122,8 +127,17 @@ Widget _wrap({required SeriesProvider series}) {
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: textScale == 1
+          ? null
+          : (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(textScale),
+                ),
+                child: child!,
+              ),
       routerConfig: GoRouter(
         initialLocation: '/choose-series',
         routes: [
@@ -592,5 +606,29 @@ void main() {
 
       expect(find.byIcon(Icons.auto_stories_rounded), findsOneWidget);
     });
+  });
+  group('ChooseSeriesScreen — RTL and 2× text', () {
+    // The capability chips (Audio · Study Mode · Book) used to be a fixed-width
+    // Row: at 2× text in Arabic/Urdu one chip overflowed its card.
+    for (final locale in [const Locale('ar'), const Locale('ur')]) {
+      testWidgets('capability chips do not overflow in $locale',
+          (tester) async {
+        tester.view.physicalSize = const Size(360, 2400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final series = SeriesProvider()
+          ..load(false)
+          ..setAvailableSeriesForTest(const [_urduSeries, _arabicSeries]);
+
+        await tester.pumpWidget(
+          _wrap(series: series, locale: locale, textScale: 2),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CapabilityChip), findsWidgets);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

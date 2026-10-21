@@ -31,7 +31,6 @@ void main() {
       WidgetKeys.offlineDownloadChapter,
       WidgetKeys.offlineCancelChapter,
       WidgetKeys.offlineManageDownloads,
-      WidgetKeys.settingsOfflineLibrary,
       WidgetKeys.settingsDownloadOnWifiOnly,
       WidgetKeys.settingsDownloadsHint,
       WidgetKeys.settingsReadingSection,

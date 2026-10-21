@@ -63,13 +63,6 @@ abstract final class WidgetKeys {
     'offline.manage-downloads',
   );
 
-  // The Offline-library row left Settings (it lives in Library › Downloads).
-  // Kept only so integration_test/support/app_flow.dart still compiles until
-  // its P6T update repoints `openOfflineLibraryFromSettings`; nothing in lib/
-  // attaches it any more.
-  static const settingsOfflineLibrary = ValueKey<String>(
-    'settings.offline-library',
-  );
   static const settingsDownloadsHint = ValueKey<String>(
     'settings.downloads-hint',
   );

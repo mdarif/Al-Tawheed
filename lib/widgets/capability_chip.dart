@@ -3,6 +3,11 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 
 /// Small pill used to preview an edition's capabilities — e.g. Audio, Study
 /// Mode, Book — on the chooser cards and the Settings edition-switcher rows.
+///
+/// Hugs its content when there is room. When the slot it is given is narrower
+/// than its natural width (a long translation, or 2x text in Arabic/Urdu on a
+/// small phone) the label wraps onto a second line inside the pill instead of
+/// overflowing — so callers need no `FittedBox` around it.
 class CapabilityChip extends StatelessWidget {
   final IconData? icon;
   final String label;
@@ -19,16 +24,19 @@ class CapabilityChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 13, color: context.brandColor),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: context.textTheme.labelSmall?.copyWith(
-              color: context.secondaryTextColor,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: context.secondaryTextColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

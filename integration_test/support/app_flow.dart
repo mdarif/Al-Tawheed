@@ -176,9 +176,18 @@ class AppFlow {
     );
   }
 
+  /// The back button of a Library header that was PUSHED (the `/bookmarks`
+  /// and `/offline-library` adapters). The shell's own Library tab has none.
+  static Finder get _pushedLibraryBack => find.descendant(
+        of: find.byKey(WidgetKeys.libraryHeader),
+        matching: find.byType(BackButton),
+      );
+
+  /// Pops a pushed Library (e.g. "Manage downloads" from the offline sheet),
+  /// returning to whatever pushed it. No-op on the shell's Library tab.
   static Future<void> dismissOfflineLibrary(WidgetTester tester) async {
-    if (!tester.any(find.widgetWithText(AppBar, 'Downloads'))) return;
-    await tester.tap(find.byType(BackButton));
+    if (!tester.any(_pushedLibraryBack)) return;
+    await tester.tap(_pushedLibraryBack);
     await pumpFrames(tester, count: 3);
   }
 
@@ -313,45 +322,123 @@ class AppFlow {
     );
   }
 
+  /// "Manage downloads" in the player's offline sheet pushes `/offline-library`,
+  /// the legacy adapter that renders Library on its Downloads tab.
   static Future<void> openOfflineLibraryFromSheet(WidgetTester tester) async {
     await openOfflineSheetFromPlayer(tester);
     await tester.tap(find.byKey(WidgetKeys.offlineManageDownloads));
     await waitFor(
       tester,
-      find.widgetWithText(AppBar, 'Downloads'),
+      _pushedLibraryBack,
       timeout: const Duration(seconds: 15),
-      reason: 'offline library screen',
+      reason: 'pushed Library (offline-library adapter)',
+    );
+    expectLibraryTab(tester, 1);
+  }
+
+  /// The selected tab index of the Library header (0 Bookmarks, 1 Downloads).
+  static int libraryTabIndex(WidgetTester tester) => tester
+      .widget<TabBar>(
+        find.descendant(
+          of: find.byKey(WidgetKeys.libraryHeader),
+          matching: find.byType(TabBar),
+        ),
+      )
+      .controller!
+      .index;
+
+  static void expectLibraryTab(WidgetTester tester, int index) {
+    expect(
+      libraryTabIndex(tester),
+      index,
+      reason: 'Library tab ${index == 0 ? 'Bookmarks' : 'Downloads'} selected',
     );
   }
 
-  static Future<void> openOfflineLibraryFromSettings(
+  /// Switches to the Library destination and selects its Bookmarks (0) or
+  /// Downloads (1) tab.
+  static Future<void> openLibraryTab(WidgetTester tester, int index) async {
+    await navigateToTab(tester, AppTab.library);
+    final tab = find.byKey(
+      index == 0
+          ? WidgetKeys.libraryTabBookmarks
+          : WidgetKeys.libraryTabDownloads,
+    );
+    await tester.tap(tab);
+    await pumpFrames(tester, count: 5);
+    expectLibraryTab(tester, index);
+  }
+
+  /// Settings' Downloads section no longer holds a library row, only a hint
+  /// that links to Library › Downloads. Follows that hint.
+  static Future<void> openDownloadsFromSettingsHint(
     WidgetTester tester,
   ) async {
     await navigateToTab(tester, AppTab.settings);
     await scrollToSettingsDownloads(tester);
-    final storageRow = find.byKey(WidgetKeys.settingsOfflineLibrary);
-    expect(storageRow, findsOneWidget);
-
+    final hint = find.byKey(WidgetKeys.settingsDownloadsHint);
+    expect(hint, findsOneWidget);
     // scrollToSettingsDownloads only checks the element tree, not the
-    // viewport — on small screens the row can exist via ListView's
-    // cacheExtent without being scrolled into view yet, so a tap on its
-    // (off-screen) center lands on the route overlay instead. Scroll it
-    // fully into view before tapping.
-    await tester.ensureVisible(storageRow);
+    // viewport; bring the hint fully into view before tapping it.
+    await tester.ensureVisible(hint);
     await pumpFrames(tester, count: 3);
-
-    final appBar = find.widgetWithText(AppBar, 'Downloads');
-    final end = DateTime.now().add(const Duration(seconds: 15));
-    while (DateTime.now().isBefore(end)) {
-      if (tester.any(appBar)) return;
-      if (tester.any(storageRow)) {
-        await tester.tap(storageRow, warnIfMissed: false);
-      }
-      await pumpFrames(tester, count: 2);
-    }
-    if (tester.any(appBar)) return;
-    fail('Timed out after 15s waiting for offline library from settings');
+    await tester.tap(hint);
+    await waitFor(
+      tester,
+      find.byKey(WidgetKeys.libraryTabDownloads),
+      timeout: const Duration(seconds: 15),
+      reason: 'Library after following the Settings downloads hint',
+    );
+    await pumpFrames(tester, count: 5);
+    expectLibraryTab(tester, 1);
   }
+
+  // ── Search, Library and Study journeys ─────────────────────────────────────
+
+  /// Closes the Player with its own close control and waits for [landing] —
+  /// the screen it must return to. (`dismissPlayer` insists on the Lectures
+  /// list, which is the wrong landing for Search or Library.)
+  static Future<void> closePlayerTo(WidgetTester tester, Finder landing) async {
+    await tester.tap(find.byKey(WidgetKeys.playerClose));
+    await pumpFrames(tester, count: 5);
+    await waitFor(
+      tester,
+      landing,
+      timeout: const Duration(seconds: 15),
+      reason: 'the screen under the Player after closing it',
+    );
+  }
+
+  /// Opens Lectures › Search (the one app-bar action) and waits for its field.
+  static Future<void> openSearch(WidgetTester tester) async {
+    await navigateToLecturesTab(tester);
+    await waitFor(
+      tester,
+      find.byKey(WidgetKeys.lecturesSearchAction),
+      timeout: const Duration(seconds: 15),
+      reason: 'the Lectures Search action',
+    );
+    await tester.tap(find.byKey(WidgetKeys.lecturesSearchAction));
+    await waitFor(
+      tester,
+      find.byKey(WidgetKeys.searchField),
+      timeout: const Duration(seconds: 15),
+      reason: 'the Search field',
+    );
+    await pumpFrames(tester, count: 3);
+  }
+
+  /// Types [query] into the Search field and waits out its 150 ms debounce.
+  static Future<void> typeSearchQuery(WidgetTester tester, String query) async {
+    await tester.enterText(find.byKey(WidgetKeys.searchField), query);
+    await pumpFrames(tester, count: 3);
+  }
+
+  /// The text currently in the Search field.
+  static String searchFieldText(WidgetTester tester) => tester
+      .widget<TextField>(find.byKey(WidgetKeys.searchField))
+      .controller!
+      .text;
 
   static Future<void> startDownloadFromListTile(WidgetTester tester) async {
     await dismissOverlays(tester);
@@ -466,6 +553,45 @@ class AppFlow {
       return true;
     }
     return false;
+  }
+
+  /// The selected tab index of the Read header (0 Book, 1 Study).
+  static int readTabIndex(WidgetTester tester) => tester
+      .widget<TabBar>(
+        find.descendant(
+          of: find.byKey(WidgetKeys.readHeader),
+          matching: find.byType(TabBar),
+        ),
+      )
+      .controller!
+      .index;
+
+  /// Scrolls the Lectures list back to its top, so later steps that tap
+  /// "the first lecture" really get lecture 1.
+  static Future<void> scrollLecturesToTop(WidgetTester tester) async {
+    await navigateToLecturesTab(tester);
+    final end = DateTime.now().add(const Duration(seconds: 30));
+    while (DateTime.now().isBefore(end)) {
+      final position =
+          tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      if (position.pixels <= 0) return;
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 1200));
+      await pumpFrames(tester, count: 3);
+    }
+    fail('Lectures list did not scroll back to the top within 30s');
+  }
+
+  /// Opens Read › Study: the Read destination, then its Study tab. Returns
+  /// false if the edition has no Study (Read absent, or Book-only with no tab
+  /// bar). Study is a tab of Read, not a bottom-nav destination, so it cannot
+  /// be reached by label from the navigation bar.
+  static Future<bool> openStudyTab(WidgetTester tester) async {
+    if (!await navigateToReadTab(tester)) return false;
+    final study = find.byKey(WidgetKeys.readTabStudy);
+    if (!tester.any(study)) return false;
+    await tester.tap(study);
+    await pumpFrames(tester, count: 5);
+    return true;
   }
 
   /// Switches to [seriesId] via the Settings series picker.

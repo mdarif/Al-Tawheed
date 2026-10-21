@@ -487,29 +487,24 @@ class _SeriesLanguageRow extends StatelessWidget {
           if (teacher.isNotEmpty)
             Text(teacher, style: context.textTheme.bodySmall),
           const SizedBox(height: 4),
-          // Each chip scales down rather than overflowing: at 2x text (or a
-          // long translation) one chip can be wider than the row's subtitle.
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              for (final chip in [
+              CapabilityChip(
+                icon: Icons.headphones_rounded,
+                label: l10n.audioLabel,
+              ),
+              if (series.hasStudyMode)
                 CapabilityChip(
-                  icon: Icons.headphones_rounded,
-                  label: l10n.audioLabel,
+                  icon: Icons.school_rounded,
+                  label: l10n.studyMode,
                 ),
-                if (series.hasStudyMode)
-                  CapabilityChip(
-                    icon: Icons.school_rounded,
-                    label: l10n.studyMode,
-                  ),
-                if (series.hasBook)
-                  CapabilityChip(
-                    icon: Icons.menu_book_rounded,
-                    label: l10n.tabBook,
-                  ),
-              ])
-                FittedBox(fit: BoxFit.scaleDown, child: chip),
+              if (series.hasBook)
+                CapabilityChip(
+                  icon: Icons.menu_book_rounded,
+                  label: l10n.tabBook,
+                ),
             ],
           ),
         ],
