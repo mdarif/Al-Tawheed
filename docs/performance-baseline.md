@@ -13,12 +13,14 @@ for every comparison:
 
 ```sh
 flutter devices
-make perf-test DEVICE=<physical-device-id>
+make perf DEVICE=<physical-device-id> MODE=full
 ```
 
-`make perf-test` is the strict physical-device regression gate; its
-`PERF_ENFORCE_THRESHOLDS` compile-time default is `true`. For emulator or
-harness smoke validation, use `make perf-smoke DEVICE=<android-emulator-id>`.
+`make perf MODE=full` (the default) is the strict physical-device regression
+gate; its `PERF_ENFORCE_THRESHOLDS` compile-time default is `true`. For emulator
+or harness smoke validation, use
+`make perf DEVICE=<android-emulator-id> MODE=smoke`, which passes
+`PERF_ENFORCE_THRESHOLDS=false`.
 Smoke mode executes every scenario and requires nonempty timing data, but does
 not fail on device-sensitive build/raster ceilings and must not be recorded as
 the physical baseline.

@@ -10,6 +10,11 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Build & environment
 
+- **`make <name>` can silently "succeed" for a deleted target.** When a file or
+  directory has the same name (`docs/` here), make finds no rule and prints
+  `Nothing to be done for 'docs'` with exit 0, and `-B` does not change that.
+  Prove a target is gone by grepping the Makefile for `^<name>:` (and
+  `.PHONY`), never by exit status alone.
 - **Java 21 is required** (`android/app/build.gradle` sets `JavaVersion.VERSION_21`,
   `jvmTarget = '21'`). A build failing with `invalid source release: 21` means
   Gradle is using an older JDK.
@@ -511,8 +516,8 @@ is portable memory: any LLM working the repo should read and extend it.
   the step dies with exit 127. Pass it via the step's `env:` block instead — env
   values are not re-parsed by the shell. (Fixed in `flutter-release.yml` for both
   the Play Store notes and GitHub Release steps.)
-- **Always dry-run a release first:** `make release-dry BUMP=minor` (or
-  `make release-auto BUMP=minor DRY_RUN=true`). It runs `prepare`,
+- **Always dry-run a release first:** `make release MODE=dry BUMP=minor` (or
+  `make release MODE=develop BUMP=minor DRY_RUN=true`). It runs `prepare`,
   `build-android` and `verify-android` — so it signs the AAB and installs the
   APK on an emulator — but publishes nothing.
   **What a dry run no longer covers:** since the six-job split, changelog and
@@ -527,7 +532,7 @@ is portable memory: any LLM working the repo should read and extend it.
 - **A freshly-invited Play Store service account 403s until permission
   propagates** (`The caller does not have permission`). Setup can be correct and
   still fail on the first run made seconds after inviting it — wait minutes to ~an
-  hour and re-run. `make release-auto` is idempotent (promote becomes a no-op).
+  hour and re-run. `make release MODE=develop` is idempotent (promote becomes a no-op).
 - **The service account needs a Play Console *invite*, not just the JSON.** Create
   it in Google Cloud (enable "Google Play Android Developer API"), then in Play
   Console → Users and permissions → invite its email. The old "API access → link
@@ -541,7 +546,7 @@ is portable memory: any LLM working the repo should read and extend it.
   tester lists** → Apply. Distinguish this from pure propagation delay: if
   account-level looks correct and it still 403s after ~30 min, it's the missing
   app-level grant, not time.
-- `make release-auto` must run from `develop`; `make release` from `master`. Each
+- `make release MODE=develop` must run from `develop`; `make release` from `master`. Each
   refuses the wrong branch on purpose.
 
 ## Networking / CDN

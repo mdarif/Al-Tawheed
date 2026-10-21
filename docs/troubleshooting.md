@@ -434,7 +434,7 @@ flutter run -v
 3. Use version constraints in pubspec.yaml
 4. Run `flutter analyze` regularly
 5. Test before committing
-6. Use `make pre-commit` before git commits
+6. Run `make format-check analyze test` before git commits
 
 ---
 

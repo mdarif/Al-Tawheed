@@ -5,7 +5,7 @@ Source: ~/Library/CloudStorage/Dropbox/Private/Islam/Tawheed/IslamHouse/
         kitab-at-tawheed-arabaic-islam-house-gs.docx  (edited islamhouse edition)
 
 Run once, then commit the generated JSON:
-  python3 tool/extract_book.py
+  python3 tool/archive/extract_book.py
 
 Requires: macOS textutil (built-in) for the .docx → .txt conversion step.
 

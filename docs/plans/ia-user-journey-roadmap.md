@@ -487,7 +487,7 @@ At every A, B, and C release boundary:
 
 ```sh
 make ci
-make perf-smoke DEVICE=<id>
+make perf DEVICE=<id> MODE=smoke
 ```
 
 On a machine with release signing configured, build and verify the actual
@@ -498,7 +498,7 @@ make release-apk DEVICE=<id>
 make verify-apk DEVICE=<id>
 ```
 
-The physical-device `make perf-test DEVICE=<id>` threshold run remains a
+The physical-device `make perf DEVICE=<id> MODE=full` threshold run remains a
 separate hardware gate; emulator smoke proves harness execution, not real-device
 frame-time performance. Missing release signing or a physical device must be
 reported as an external release prerequisite, never converted into a passing IA

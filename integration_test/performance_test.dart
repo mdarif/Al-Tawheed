@@ -14,9 +14,9 @@ import 'support/app_flow.dart';
 ///
 ///   `flutter drive --driver=test_driver/perf_driver.dart \`
 ///   `  --target=integration_test/performance_test.dart --profile -d DEVICE`
-///   (or: `make perf-test DEVICE=...`)
+///   (or: `make perf DEVICE=... MODE=full`)
 ///
-/// `make perf-smoke DEVICE=...` runs the same scenarios with
+/// `make perf DEVICE=... MODE=smoke` runs the same scenarios with
 /// `PERF_ENFORCE_THRESHOLDS=false` for emulator/harness validation. It still
 /// requires nonempty frame timings and executes every scenario, but is not a
 /// physical-device regression gate.

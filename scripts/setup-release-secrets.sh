@@ -6,7 +6,7 @@
 #
 # This is a ONE-TIME setup — re-run it only when a credential changes (key
 # rotation, a fresh Play Store service-account key, or a new machine/clone).
-# The per-release command stays `make release-auto BUMP=<level>`.
+# The per-release command stays `make release MODE=develop BUMP=<level>`.
 #
 # No secret VALUES live in this script — it reads them from the key vault and
 # android/key.properties at runtime and streams them straight to `gh secret

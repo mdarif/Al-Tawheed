@@ -56,7 +56,7 @@ lib/screens (13)  providers (13)  services (8)  models (8)
 | `make integration-test DEVICE=<id>` | On-device end-to-end |
 | `make orientation-test DEVICE=<id>` | On-device portrait/landscape flip suite |
 | `make setup-release-secrets` | One-time: push signing + Play creds to GitHub secrets |
-| `make release-auto BUMP=minor` | One-click release from `develop` → Play internal track |
+| `make release MODE=develop BUMP=minor` | One-click release from `develop` → Play internal track |
 
 `flutter devices` to find `<id>`. Java **21** required (see gotchas).
 
@@ -80,7 +80,7 @@ lib/screens (13)  providers (13)  services (8)  models (8)
 4. **Commits:** Conventional Commits (`type(scope): subject`). **Never** add a
    `Co-Authored-By` trailer. Releases derive the changelog from these.
 5. **Branches:** feature → `develop` → (release) → `master`. Releases are cut
-   with `make release-auto` from `develop`; never hand-tag.
+   with `make release MODE=develop` from `develop`; never hand-tag.
 6. **Before pushing:** `make analyze && make test` must be green (the pre-push
    hook enforces this).
 7. **Changes ship with tests — in the same change.** New or changed behaviour

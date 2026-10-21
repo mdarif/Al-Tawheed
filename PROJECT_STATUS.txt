@@ -87,7 +87,7 @@ Testing:
    make analyze                - Check code quality
 
 Building:
-   make build-android          - Build Android APK
+   make build-android          - Build a debug Android APK (release: make release-apk)
    make release-android        - Build for Play Store
    make release-ios            - Build for App Store
 

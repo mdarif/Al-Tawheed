@@ -1,57 +1,53 @@
-.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format format-check build release release-dry release-auto release-android release-ios release-apk integration-test perf-test perf-smoke patrol-test orientation-test screenshots run ci ci-logs test-tooling verify-apk
+.PHONY: help setup setup-hooks setup-release-secrets clean test analyze format format-check release release-android release-ios release-apk integration-test perf patrol-test orientation-test screenshots run ci ci-logs test-tooling verify-apk
 
 help:
 	@echo "Al-Tawheed Flutter App - Available Commands"
 	@echo ""
 	@echo "Setup & Maintenance:"
-	@echo "  make setup           - Complete project setup (installs hooks)"
-	@echo "  make setup-hooks     - Install git pre-push hook (run once after clone)"
-	@echo "  make clean           - Clean build artifacts"
-	@echo "  make pub-get         - Get pub dependencies"
-	@echo "  make pub-upgrade     - Upgrade all dependencies"
-	@echo "  make pub-outdated    - Check for outdated packages"
-	@echo ""
-	@echo "Development:"
-	@echo "  make run             - Run app on connected device"
-	@echo "  make run-android     - Run on Android emulator"
-	@echo "  make run-ios         - Run on iOS simulator"
-	@echo ""
-	@echo "CI / CD:"
-	@echo "  make ci                   - Run full CI pipeline locally (analyze + test + build)"
-	@echo "  make format-check         - dart format --set-exit-if-changed (mirrors CI's format gate)"
-	@echo "  make test-tooling         - Run the tool/ Python test suite (unittest discover)"
-	@echo "  make verify-apk           - Run tool/verify_release_apk.py (APK=..., optional DEVICE=...)"
-	@echo "  make release-apk          - Release pipeline: pub get, tests, integration, release APK"
-	@echo "  make integration-test     - Run validation app_test.dart on device (DEVICE required)"
-	@echo "  make orientation-test     - Run orientation flip test on device (DEVICE required)"
-	@echo "  make screenshots          - Generate + frame Play Store assets (not validation)"
-	@echo "  make patrol-test          - Run Patrol 4.6.1/CLI 4.4.0 native gate"
-	@echo "  make ci-logs              - Fetch latest failed GitHub Actions run logs"
+	@echo "  make setup                 - Complete project setup (installs hooks, pub get)"
+	@echo "  make setup-hooks           - Point git at .githooks (pre-push); run once after clone"
 	@echo "  make setup-release-secrets - One-time: push signing + Play Store creds to GitHub secrets"
-	@echo "  make release              - Trigger release workflow (BUMP=patch|minor|major), from master"
-	@echo "  make release-dry          - Dry-run the release workflow from develop (no ship, validates the graph)"
-	@echo "  make release-auto         - One-click release from develop (promotes, releases, syncs back)"
+	@echo "  make clean                 - Clean build artifacts"
+	@echo "  make pub-get               - Get pub dependencies"
+	@echo "  make doctor                - Run flutter doctor -v"
+	@echo "  make devices               - List connected devices"
+	@echo "  make version               - Show project and Flutter version"
+	@echo ""
+	@echo "Run:"
+	@echo "  make run                   - Run app on connected device"
+	@echo "  make run-android           - Launch Android emulator and run on it"
+	@echo "  make run-ios               - Run on iOS simulator"
 	@echo ""
 	@echo "Testing & Quality:"
-	@echo "  make test            - Run tests (mirrors CI)"
-	@echo "  make test-verbose    - Run tests with verbose output"
-	@echo "  make analyze         - Analyze code (--fatal-warnings, mirrors CI)"
-	@echo "  make format          - Format all code (dart format)"
-	@echo "  make coverage        - Generate test coverage report"
-	@echo "  make lint            - Run linter"
+	@echo "  make test                  - flutter test (unit + widget)"
+	@echo "  make test-verbose          - flutter test with verbose output"
+	@echo "  make test-goldens          - Verify golden (pixel) tests (macOS only)"
+	@echo "  make goldens-update        - Re-bake golden masters after a reviewed UI change"
+	@echo "  make test-tooling          - Python unittest suite in test/tool"
+	@echo "  make analyze               - flutter analyze --fatal-warnings"
+	@echo "  make lint                  - dart analyze"
+	@echo "  make format                - dart format . (rewrites files)"
+	@echo "  make format-check          - dart format --set-exit-if-changed (no rewrite)"
+	@echo "  make coverage              - flutter test --coverage (report in coverage/)"
+	@echo "  make ci                    - format-check, test-tooling, analyze, test, debug APK build"
 	@echo ""
-	@echo "Building:"
-	@echo "  make build-android   - Build Android APK"
-	@echo "  make build-ios       - Build iOS app"
-	@echo "  make build-web       - Build web version"
+	@echo "On-device:"
+	@echo "  make integration-test      - Validation app_test.dart on device (DEVICE required)"
+	@echo "  make orientation-test      - Portrait/landscape flip suite on device (DEVICE required)"
+	@echo "  make patrol-test           - Patrol native gate (DEVICE optional)"
+	@echo "  make perf                  - Frame-timing benchmarks (DEVICE required; MODE=full|smoke)"
+	@echo "  make cold-start-test       - Repeated Android cold-start measurement (DEVICE required)"
+	@echo "  make screenshots           - Generate + frame Play Store assets (DEVICE required; not validation)"
 	@echo ""
-	@echo "Release:"
-	@echo "  make release-android - Create Android App Bundle for Play Store"
-	@echo "  make release-ios     - Create iOS archive for App Store"
-	@echo ""
-	@echo "Other:"
-	@echo "  make doctor          - Run flutter doctor"
-	@echo "  make devices         - List connected devices"
+	@echo "Build & Release:"
+	@echo "  make build-android         - flutter build apk --debug"
+	@echo "  make build-ios             - flutter build ios"
+	@echo "  make release-apk           - Local release gate: checks, integration, Patrol, release APK (DEVICE required)"
+	@echo "  make verify-apk            - Inspect a signed release APK (APK=..., DEVICE optional)"
+	@echo "  make release               - Trigger release workflow (MODE=master|develop|dry, BUMP=patch|minor|major)"
+	@echo "  make release-android       - flutter build appbundle --release (Play Store AAB)"
+	@echo "  make release-ios           - flutter build ios --release (App Store archive)"
+	@echo "  make ci-logs               - Fetch latest failed GitHub Actions run logs"
 
 # Setup
 setup: setup-hooks
@@ -76,12 +72,6 @@ clean:
 pub-get:
 	flutter pub get
 
-pub-upgrade:
-	flutter pub upgrade
-
-pub-outdated:
-	flutter pub outdated
-
 # Development
 run:
 	flutter run
@@ -92,15 +82,6 @@ run-android:
 
 run-ios:
 	flutter run -d "iPhone 15 Pro"
-
-run-verbose:
-	flutter run -v
-
-run-profile:
-	flutter run --profile
-
-run-release:
-	flutter run --release
 
 # Testing
 test:
@@ -126,9 +107,8 @@ analyze:
 format:
 	dart format .
 
-# Format-only CHECK (no rewrite) — exact mirror of the `build-android` CI gate
-# added when the whole repo was reformatted for the new release pipeline.
-# Exits non-zero if anything is unformatted, without touching files.
+# Format-only CHECK (no rewrite). Covers lib, test, tool, integration_test and
+# patrol_test. Exits non-zero if any file is unformatted; never touches files.
 format-check:
 	dart format --set-exit-if-changed -o none lib test tool integration_test patrol_test
 
@@ -139,16 +119,15 @@ coverage:
 lint:
 	dart analyze
 
-# Python test suite for the release tooling (tool/compute_release_version.py,
-# tool/verify_release_apk.py, tool/play_release_preflight.py). Mirrors the
-# `python3 -m unittest discover -s test/tool` gate in `build-android`.
+# Runs `python3 -m unittest discover -s test/tool` and nothing else. The suite
+# currently covers test/tool/test_compute_release_version.py and
+# test/tool/test_workflows.py; it does not yet exercise verify_release_apk.py or
+# play_release_preflight.py.
 test-tooling:
 	python3 -m unittest discover -s test/tool
 
-check-quality: analyze lint test format-check test-tooling
-	@echo "✓ All quality checks passed!"
-
-# Device ID for on-device tests — required by integration-test and release-apk.
+# Device ID for on-device tests — required by integration-test, perf,
+# cold-start-test, screenshots, orientation-test and release-apk.
 # Run `flutter devices` and pass e.g. DEVICE=emulator-5554
 DEVICE ?=
 
@@ -165,33 +144,27 @@ integration-test: pub-get
 
 # On-device frame-timing benchmarks (lecture list + book reader scroll/paging).
 # MUST be a real device in --profile mode: debug build times are inflated and a
-# simulator's raster times are meaningless. Prints PERF[...] lines with build/
-# raster frame times and asserts a generous jank ceiling.
-perf-test: pub-get
+# simulator's raster times are meaningless. Prints PERF[...] lines.
+#   MODE=full (default): the strict regression gate. Build/raster ceilings are
+#     enforced (PERF_ENFORCE_THRESHOLDS defaults to true in the test).
+#   MODE=smoke: runs every scenario and requires nonempty timings, but passes
+#     PERF_ENFORCE_THRESHOLDS=false so device-sensitive ceilings are not enforced.
+#     For emulators or harness validation only; never a physical baseline.
+# Usage: make perf DEVICE=<id>               (MODE=full)
+#        make perf DEVICE=<id> MODE=smoke
+perf: MODE ?= full
+perf: pub-get
+	@case "$(MODE)" in full|smoke) ;; *) echo "Error: MODE must be full or smoke (got '$(MODE)')"; exit 1 ;; esac
 	@if [ -z "$(DEVICE)" ]; then \
-		echo "Error: DEVICE is required (a real device, not a simulator)."; \
+		echo "Error: DEVICE is required (MODE=full: a real device; MODE=smoke: an emulator or device)."; \
 		echo "  flutter devices"; \
-		echo "  make perf-test DEVICE=<device_id>"; \
+		echo "  make perf DEVICE=<device_id> MODE=$(MODE)"; \
 		exit 1; \
 	fi
 	flutter drive \
 		--driver=test_driver/perf_driver.dart \
 		--target=integration_test/performance_test.dart \
-		--profile -d $(DEVICE)
-
-# Profile-mode harness smoke run. It executes every performance scenario and
-# requires timings, but disables device-sensitive frame ceilings for emulators.
-perf-smoke: pub-get
-	@if [ -z "$(DEVICE)" ]; then \
-		echo "Error: DEVICE is required (an Android emulator/device)."; \
-		echo "  make perf-smoke DEVICE=<device_id>"; \
-		exit 1; \
-	fi
-	flutter drive \
-		--driver=test_driver/perf_driver.dart \
-		--target=integration_test/performance_test.dart \
-		--profile \
-		--dart-define=PERF_ENFORCE_THRESHOLDS=false \
+		--profile $(if $(filter smoke,$(MODE)),--dart-define=PERF_ENFORCE_THRESHOLDS=false,) \
 		-d $(DEVICE)
 
 # Repeated Android cold-start measurement. The runner clears app data before
@@ -267,14 +240,10 @@ patrol-test:
 	if [ "$$STATUS" -ne 0 ]; then exit "$$STATUS"; fi; \
 	exit "$$PARSE_STATUS"
 
-# Full release pipeline (local):
-#   pub get → format check → release-tooling tests → analyze → unit/widget
-#   tests → validation integration test → Patrol (must discover tests) →
-#   release APK.
-# The format and tooling checks are here because CI's build-android job gates
-# on them too; without them Step 1 of the runbook can pass locally and the
-# release still fail in CI on a stray format. Screenshot generation is not
-#   part of this gate; use `make screenshots DEVICE=<id>` separately.
+# Local release gate, run in this order: pub get → format-check → test-tooling →
+# analyze → unit/widget tests → validation integration test (DEVICE) → Patrol
+# (must discover tests) → `flutter build apk --release`.
+# Screenshot generation is not part of this gate; use `make screenshots DEVICE=<id>`.
 # Requires android/key.properties for signing and a connected DEVICE.
 release-apk: pub-get
 	$(MAKE) format-check
@@ -312,7 +281,10 @@ verify-apk:
 		python3 tool/verify_release_apk.py --apk $(APK) --device $(DEVICE) --evidence-dir verify-evidence; \
 	fi
 
-# Run the exact same steps as the GitHub Actions CI pipeline locally
+# Local CI approximation: runs, in order, format-check, test-tooling, analyze,
+# unit/widget tests and a debug APK build, on this machine. It does NOT run the
+# on-device, Patrol or release-signing gates (see release-apk), and it is not
+# the GitHub Actions run itself (CI uses its own runners and workflow files).
 ci: format-check test-tooling
 	@echo "Running CI pipeline locally..."
 	flutter analyze --fatal-warnings
@@ -327,20 +299,13 @@ ci-logs:
 	gh run view $$RUN_ID --log-failed
 
 # Building
+# build-android is a DEBUG APK. The signed release APK is `make release-apk`
+# (local gate) or the release workflow; the Play bundle is `make release-android`.
 build-android:
-	flutter build apk
-
-build-android-split:
-	flutter build apk --split-per-abi
+	flutter build apk --debug
 
 build-ios:
 	flutter build ios
-
-build-web:
-	flutter build web
-
-build-all: build-android build-ios build-web
-	@echo "✓ All builds complete!"
 
 # One-time (or key-rotation) setup: push the signing keystore + Play Store
 # service-account credentials into GitHub Actions secrets so the Release
@@ -352,65 +317,65 @@ setup-release-secrets:
 	@scripts/setup-release-secrets.sh
 
 # Release
-# Trigger the GitHub Actions release workflow (runs on master in CI).
-# Usage: make release BUMP=patch  (or minor / major)
+# Trigger the GitHub Actions release workflow (.github/workflows/flutter-release.yml).
+#   MODE=master (default)  Release from master. Usage: make release BUMP=patch
+#   MODE=develop           One-click release from develop: promotes develop to
+#                          master, releases, and syncs the bump back to develop.
+#                          Usage: make release MODE=develop BUMP=minor
+#                          Add DRY_RUN=true to validate without shipping.
+#   MODE=dry               Dry run from develop: prepare/build/verify only; no tag,
+#                          commit, Play upload or GitHub Release.
+#                          Usage: make release MODE=dry BUMP=patch
+#                          IMPORTANT: a dry run that finishes in under a minute with
+#                          no artifacts is a FAILURE (needs: cascade-skip), not a pass.
+# BUMP defaults to patch in every mode.
 BUMP ?= patch
-release:
-	@echo "Triggering release workflow (bump=$(BUMP))..."
-	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$BRANCH" != "master" ]; then \
-	  echo "Error: releases must be triggered from master (you are on $$BRANCH)"; \
-	  exit 1; \
-	fi
-	gh workflow run flutter-release.yml \
-	  --ref master \
-	  --field bump=$(BUMP)
-	@echo "✓ Release workflow triggered — watch it at:"
-	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
-
-# One-click release (CD Phase 1.5): promotes develop -> master, releases,
-# and syncs the version bump back to develop — all in CI. Must be run from
-# develop. Use DRY_RUN=true to validate analyze/test/build without pushing,
-# tagging, or releasing anything.
-# Usage: make release-auto BUMP=patch
-#        make release-auto BUMP=patch DRY_RUN=true
 DRY_RUN ?= false
-release-auto:
-	@echo "Triggering one-click release workflow (bump=$(BUMP), dry_run=$(DRY_RUN))..."
-	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$BRANCH" != "develop" ]; then \
-	  echo "Error: release-auto must be triggered from develop (you are on $$BRANCH)"; \
-	  exit 1; \
-	fi
-	gh workflow run flutter-release.yml \
-	  --ref develop \
-	  --field bump=$(BUMP) \
-	  --field confirm_promote=true \
-	  --field dry_run=$(DRY_RUN)
-	@echo "✓ Release workflow triggered — watch it at:"
-	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
-
-# Dry-run the release workflow from develop: runs prepare/build-android/
-# verify-android exactly as a real release would, but publishes nothing
-# (no tag, no commit, no Play upload, no GitHub Release).
-# IMPORTANT: a dry run that finishes in under a minute with no artifacts is a
-# FAILURE (a `needs:` cascade-skip through the job graph), not a pass — go
-# open the run and confirm build-android/verify-android actually executed and
-# uploaded the `android-release` / `verify-evidence` artifacts.
-release-dry:
-	@echo "Triggering release workflow dry run (bump=$(BUMP))..."
-	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$BRANCH" != "develop" ]; then \
-	  echo "Error: release-dry must be run from develop (you are on $$BRANCH)"; \
-	  exit 1; \
-	fi
-	gh workflow run flutter-release.yml \
-	  --ref develop \
-	  --field bump=$(BUMP) \
-	  --field dry_run=true \
-	  --field confirm_promote=false
-	@echo "✓ Dry-run release workflow triggered — watch it at:"
-	@echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml"
+release: MODE ?= master
+release:
+	@case "$(MODE)" in \
+	  master) \
+	    echo "Triggering release workflow (bump=$(BUMP))..."; \
+	    BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	    if [ "$$BRANCH" != "master" ]; then \
+	      echo "Error: releases must be triggered from master (you are on $$BRANCH)"; \
+	      exit 1; \
+	    fi; \
+	    gh workflow run flutter-release.yml \
+	      --ref master \
+	      --field bump=$(BUMP) && \
+	    echo "✓ Release workflow triggered — watch it at:" && \
+	    echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml" ;; \
+	  develop) \
+	    echo "Triggering one-click release workflow (bump=$(BUMP), dry_run=$(DRY_RUN))..."; \
+	    BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	    if [ "$$BRANCH" != "develop" ]; then \
+	      echo "Error: release MODE=develop must be triggered from develop (you are on $$BRANCH)"; \
+	      exit 1; \
+	    fi; \
+	    gh workflow run flutter-release.yml \
+	      --ref develop \
+	      --field bump=$(BUMP) \
+	      --field confirm_promote=true \
+	      --field dry_run=$(DRY_RUN) && \
+	    echo "✓ Release workflow triggered — watch it at:" && \
+	    echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml" ;; \
+	  dry) \
+	    echo "Triggering release workflow dry run (bump=$(BUMP))..."; \
+	    BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	    if [ "$$BRANCH" != "develop" ]; then \
+	      echo "Error: release MODE=dry must be run from develop (you are on $$BRANCH)"; \
+	      exit 1; \
+	    fi; \
+	    gh workflow run flutter-release.yml \
+	      --ref develop \
+	      --field bump=$(BUMP) \
+	      --field dry_run=true \
+	      --field confirm_promote=false && \
+	    echo "✓ Dry-run release workflow triggered — watch it at:" && \
+	    echo "  https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml" ;; \
+	  *) echo "Error: MODE must be master, develop or dry (got '$(MODE)')"; exit 1 ;; \
+	esac
 
 release-android:
 	@echo "Building Android App Bundle for Google Play Store..."
@@ -429,86 +394,7 @@ doctor:
 devices:
 	flutter devices
 
-upgrade-flutter:
-	flutter upgrade
-
 version:
 	@echo "Project Version Info:"
 	@grep "version:" pubspec.yaml
 	@flutter --version
-
-dependencies:
-	flutter pub deps
-
-# Firebase specific
-firebase-config:
-	@echo "Firebase configuration:"
-	@echo "Ensure google-services.json is in android/app/"
-	@echo "Ensure GoogleService-Info.plist is in ios/Runner/"
-
-# Development workflow
-dev-setup: setup analyze format
-	@echo "✓ Development setup complete!"
-
-pre-commit: lint analyze test
-	@echo "✓ Pre-commit checks passed!"
-
-# Advanced
-open-xcode:
-	open ios/Runner.xcworkspace
-
-open-android-studio:
-	open -a "Android Studio" .
-
-# Docker commands (if needed)
-docker-build:
-	docker build -t al-tawheed:latest .
-
-# Documentation
-docs:
-	@echo "Documentation files:"
-	@ls -la *.md
-
-help-verbose:
-	@echo "Al-Tawheed Flutter App - Complete Command Reference"
-	@echo ""
-	@echo "=== INITIAL SETUP ==="
-	@echo "make setup              - Run this first! Sets up everything"
-	@echo "make doctor             - Check your Flutter installation"
-	@echo ""
-	@echo "=== DEVELOPMENT ==="
-	@echo "make run                - Run app on default device"
-	@echo "make run-android        - Launch Android emulator and run"
-	@echo "make run-ios            - Run on iOS simulator"
-	@echo "make run-verbose        - Run with detailed output"
-	@echo ""
-	@echo "=== QUALITY ASSURANCE ==="
-	@echo "make analyze            - Check code for issues"
-	@echo "make format             - Auto-format code"
-	@echo "make test               - Run all unit tests"
-	@echo "make test-verbose       - Tests with detailed output"
-	@echo "make coverage           - Generate coverage report"
-	@echo "make check-quality      - Run all quality checks"
-	@echo ""
-	@echo "=== BUILDING ==="
-	@echo "make build-android      - Build debug APK"
-	@echo "make build-android-split- Build split APKs by ABI"
-	@echo "make build-ios          - Build iOS app"
-	@echo ""
-	@echo "=== RELEASING ==="
-	@echo "make release-android    - Build for Play Store"
-	@echo "make release-ios        - Build for App Store"
-	@echo ""
-	@echo "=== MAINTENANCE ==="
-	@echo "make clean              - Remove build artifacts"
-	@echo "make pub-upgrade        - Update all dependencies"
-	@echo "make pub-outdated       - Check for outdated packages"
-	@echo "make upgrade-flutter    - Update Flutter SDK"
-	@echo ""
-	@echo "=== UTILITIES ==="
-	@echo "make devices            - List connected devices"
-	@echo "make open-xcode         - Open Xcode workspace"
-	@echo "make open-android-studio- Open Android Studio"
-	@echo "make version            - Show version info"
-	@echo ""
-	@echo "Tip: Run 'make pre-commit' before git commits!"

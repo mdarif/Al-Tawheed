@@ -199,9 +199,9 @@ buffering offline: stop the release and file it against the migration, with
 
 ```sh
 git checkout develop   # if you aren't already
-make release-auto BUMP=patch     # bug fixes only            → 2.0.2 → 2.0.3
-make release-auto BUMP=minor     # new user-facing features  → 2.0.2 → 2.1.0
-make release-auto BUMP=major     # breaking changes          → 2.0.2 → 3.0.0
+make release MODE=develop BUMP=patch     # bug fixes only            → 2.0.2 → 2.0.3
+make release MODE=develop BUMP=minor     # new user-facing features  → 2.0.2 → 2.1.0
+make release MODE=develop BUMP=major     # breaking changes          → 2.0.2 → 3.0.0
 ```
 
 This dispatches `flutter-release.yml` from `develop` with
@@ -251,10 +251,10 @@ The workflow runs a six-job graph (plus a dry-run-only summary job):
 > `docs/gotchas.md` for the mechanics.
 
 > **First time, or testing a workflow change?** Add `DRY_RUN=true` (or run
-> `make release-dry BUMP=patch`) to run build + verify only — nothing is
+> `make release MODE=dry BUMP=patch`) to run build + verify only — nothing is
 > promoted, committed, tagged, pushed, or released:
 > ```sh
-> make release-auto BUMP=patch DRY_RUN=true
+> make release MODE=develop BUMP=patch DRY_RUN=true
 > ```
 > **A dry run that finishes in under a minute with no artifacts is a
 > FAILURE, not a pass.** `needs:` cascade-skips can make the whole graph
@@ -265,7 +265,7 @@ The workflow runs a six-job graph (plus a dry-run-only summary job):
 
 ### Fallback: manual promote + release from master
 
-Use this only if `make release-auto` can't be used — e.g. the `promote` job
+Use this only if `make release MODE=develop` can't be used — e.g. the `promote` job
 failed because `master` has genuinely diverged from `develop` and needs a
 human to resolve it (see Troubleshooting), or you need to re-trigger a
 release for code that's already on `master`.
@@ -387,7 +387,7 @@ breaks. Know which one you're in before you touch anything:
 No secrets are even present in this job, no upload has happened, no tag or
 commit exists. Fix the underlying issue (a real crash the on-device check
 caught, or infra flakiness in the emulator runner) and re-run
-`make release-auto` from scratch. If the check itself is the blocker and the
+`make release MODE=develop` from scratch. If the check itself is the blocker and the
 release is genuinely time-critical, `skip_verify=true` bypasses it — but that
 is an escape hatch for infra outages, not a way to ship past a real failure
 it found.
@@ -406,7 +406,7 @@ new tag/commit for it. Before doing anything:
    will try to reuse the same `versionCode` and get rejected — see "Version
    code N has already been used" below). Bump `pubspec.yaml`'s `+BUILD`,
    commit, tag, and push manually to reconcile, or bump `+BUILD` and let a
-   fresh `make release-auto` run produce a new tag pointing at the right code.
+   fresh `make release MODE=develop` run produce a new tag pointing at the right code.
 4. If neither Play nor the tag has it: the failure happened before any
    irreversible action — a plain re-run is safe.
 
@@ -495,7 +495,7 @@ found' / track not found"**
 Google requires at least one **manual** upload to a track via Play Console
 before the API can publish to it. Build the AAB locally (Step 4's fallback
 box), upload it to the **internal** track by hand once, then re-run
-`make release-auto`.
+`make release MODE=develop`.
 
 **"Release workflow failed at 'Upload to Play Store' with 'APK/Bundle
 ... versionCode ... has already been used'"**
@@ -512,19 +512,19 @@ Manager** access to Al-Tawheed yet, or that access hasn't propagated. Play
 Console → Users and permissions → confirm the service account's email has
 Release Manager (or Admin) on this app, then re-run.
 
-**"`release-auto` failed at `promote`: 'not possible to fast-forward'"**
+**"`release MODE=develop` failed at `promote`: 'not possible to fast-forward'"**
 `master` has diverged from `develop` — most likely someone pushed directly to
 `master` outside this workflow, or `sync-develop` failed on a previous
 release and was never reconciled. Use the **Fallback: manual promote**
 section above to reconcile `master` and `develop` by hand (resolve the
 `pubspec.yaml` version conflict, keeping the higher number), then re-run
-`make release-auto`.
+`make release MODE=develop`.
 
-**"`release-auto` failed at `promote`: 'Dispatched from develop without
+**"`release MODE=develop` failed at `promote`: 'Dispatched from develop without
 confirm_promote=true'"**
-`make release-auto` always sets `confirm_promote=true` — if you see this, the
+`make release MODE=develop` always sets `confirm_promote=true` — if you see this, the
 workflow was dispatched manually (GitHub UI or `gh workflow run`) without
-checking that input. Re-run via `make release-auto`, or tick
+checking that input. Re-run via `make release MODE=develop`, or tick
 `confirm_promote` if dispatching manually. This guard exists so an accidental
 `--ref develop` dispatch can't silently ship stale code from `master`.
 
@@ -594,11 +594,11 @@ is *not* a flaky-timing issue you can fix by waiting longer. Check
 native UI (permission requests, platform channel calls that wait on user
 interaction), and make sure those are fired without blocking startup.
 
-**"`make release-auto` says it must be run from develop" / "`make release`
+**"`make release MODE=develop` says it must be run from develop" / "`make release`
 says releases must be triggered from master"**
 Each target checks `git rev-parse --abbrev-ref HEAD` and refuses to run from
 the wrong branch (intentional — stops a release from being tagged off a
-feature branch by accident). `make release-auto` → `git checkout develop`.
+feature branch by accident). `make release MODE=develop` → `git checkout develop`.
 `make release` → `git checkout master && git pull origin master`.
 
 **"Tag already exists" in the release workflow**
@@ -606,7 +606,7 @@ The version in `pubspec.yaml` wasn't bumped since the last release, or you're
 re-running a workflow that already succeeded. Bump `pubspec.yaml` manually (or
 choose a higher `BUMP` level) and push before re-triggering.
 
-**"`make release` / `make release-auto` returns HTTP 403"**
+**"`make release` / `make release MODE=develop` returns HTTP 403"**
 Your `gh` token is missing the `workflow` scope — see `docs/deployment.md` →
 "GitHub CLI auth".
 

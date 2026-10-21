@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Mirrors the CI pipeline locally. Runs on every `git push`.
+# Local pre-push gate, run on every `git push`: analyze, unit/widget tests,
+# the format check (`make format-check`, same directories as the Makefile) and
+# the tool/ Python tests. It does not run the on-device or release gates.
 set -euo pipefail
 
 echo ""
 echo "┌─────────────────────────────────────┐"
-echo "│  Pre-push checks  (mirrors CI)      │"
+echo "│  Pre-push checks                    │"
 echo "└─────────────────────────────────────┘"
 
 echo ""
@@ -16,8 +18,8 @@ echo "▶  flutter test"
 flutter test --reporter=expanded
 
 echo ""
-echo "▶  dart format --set-exit-if-changed"
-dart format --set-exit-if-changed -o none lib test tool integration_test
+echo "▶  make format-check"
+make format-check
 
 echo ""
 echo "▶  python3 -m unittest discover -s test/tool"

@@ -34,7 +34,7 @@ tool/
   play_release_preflight.py     ← Play upload gate: PLAY_FGS_MEDIA_DECLARED + manifest checks
 test/tool/
   test_compute_release_version.py   ← 16 unit tests for the version/tag logic
-Makefile                    ← ci, ci-logs, release, release-dry, setup-hooks, format-check, test-tooling, verify-apk targets
+Makefile                    ← ci, ci-logs, release (MODE=master|develop|dry), setup-hooks, format-check, test-tooling, verify-apk targets
 ```
 
 ---
@@ -278,9 +278,9 @@ Or from the terminal:
 
 ```sh
 # One-click, from develop: promotes develop -> master, releases, syncs develop back
-make release-auto BUMP=patch
-make release-auto BUMP=patch DRY_RUN=true   # validate without shipping anything
-make release-dry BUMP=patch                 # same idea, dedicated target — see below
+make release MODE=develop BUMP=patch
+make release MODE=develop BUMP=patch DRY_RUN=true   # validate without shipping anything
+make release MODE=dry BUMP=patch                    # dry run from develop: build + verify, nothing shipped (see below)
 
 # Traditional, from master: release only (sync-develop still runs after)
 make release BUMP=patch
@@ -435,7 +435,7 @@ CI runs on the PR. Merge when green.
    device; Patrol must discover tests):
      make release-apk DEVICE=<device_id>
 2. Trigger the one-click release from develop:
-     make release-auto BUMP=patch     # or BUMP=minor / BUMP=major
+     make release MODE=develop BUMP=patch     # or BUMP=minor / BUMP=major
    CI promotes develop -> master, releases, and syncs develop back —
    no manual branch juggling needed. Watch it: gh run watch
 3. Verify it shipped: new tag + GitHub Release exist
@@ -470,7 +470,7 @@ CI runs on the PR. Merge when green.
 | `make release` | Trigger release workflow (patch bump) |
 | `make release BUMP=minor` | Trigger release workflow (minor bump) |
 | `make release BUMP=major` | Trigger release workflow (major bump) |
-| `make release-dry BUMP=<level>` | Dispatch a dry-run release from develop (build + verify, nothing shipped) |
+| `make release MODE=dry BUMP=<level>` | Dispatch a dry-run release from develop (build + verify, nothing shipped) |
 | `make analyze` | `flutter analyze --fatal-warnings` (matches CI) |
 | `make test` | Run the CI test files with expanded reporter |
 
