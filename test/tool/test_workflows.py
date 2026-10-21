@@ -490,6 +490,83 @@ class ReleaseNotesTest(unittest.TestCase):
         self.assertNotIn("gh release create", runs)
 
 
+class PlayWhatsNewWiringTest(unittest.TestCase):
+    """The Play "What's new" text is the curated docs/release-notes/<version>.md
+    block, produced and size-checked by tool/release_git.py. A blind byte
+    truncation of the changelog (`head -c`) can cut mid-line or mid-UTF-8
+    character, and a dry run never reaches publish-play, so the curated text is
+    also validated in `prepare`, which a dry run does run."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = (REPO / ".github" / "workflows" / "flutter-release.yml").read_text()
+        cls.jobs = load_workflow("flutter-release.yml")["jobs"]
+
+    @staticmethod
+    def index_of(steps, needle):
+        for i, st in enumerate(steps):
+            if needle in json.dumps(st):
+                return i
+        raise AssertionError(f"no step mentions {needle!r}")
+
+    def test_nothing_in_the_workflow_truncates_with_head_c(self):
+        self.assertNotIn("head -c", self.text)
+
+    def test_the_play_notes_step_uses_the_tool_and_writes_the_notes_file(self):
+        steps = self.jobs["publish-play"]["steps"]
+        step = steps[self.index_of(steps, "release_git.py play-notes")]
+        run = step["run"]
+        self.assertIn("--version", run)
+        self.assertIn("--out play-store-notes.txt", run)
+        self.assertIn("--changelog-file", run)  # git-cliff text is only the fallback
+
+    def test_the_changelog_still_reaches_the_tool_through_env_not_inline(self):
+        steps = self.jobs["publish-play"]["steps"]
+        step = steps[self.index_of(steps, "release_git.py play-notes")]
+        self.assertIn("steps.cliff.outputs.content", json.dumps(step.get("env", {})))
+        self.assertNotIn("steps.cliff.outputs.content", step["run"])
+
+    def test_notes_are_made_before_they_are_fanned_out_and_before_any_play_action(self):
+        steps = self.jobs["publish-play"]["steps"]
+        make = self.index_of(steps, "release_git.py play-notes")
+        fan_out = self.index_of(steps, "distribution/whatsnew/whatsnew-")
+        decide = self.index_of(steps, "play_release_preflight.py decide")
+        self.assertLess(make, fan_out)
+        self.assertLess(fan_out, decide)
+
+    def test_every_locale_still_gets_the_notes(self):
+        steps = self.jobs["publish-play"]["steps"]
+        run = steps[self.index_of(steps, "distribution/whatsnew/whatsnew-")]["run"]
+        for locale in ("en-US", "ar", "ur"):
+            self.assertIn(locale, run)
+
+    def test_prepare_validates_the_curated_text_before_anything_is_built(self):
+        steps = self.jobs["prepare"]["steps"]
+        step = steps[self.index_of(steps, "release_git.py play-notes")]
+        self.assertIn("--check", step["run"])
+        self.assertIn("steps.version.outputs.new_semver", step["run"])
+        self.assertLess(
+            self.index_of(steps, "compute_release_version.py"),
+            steps.index(step),
+            "it needs the version, so it runs after the version is computed",
+        )
+        for later in ("verify-android", "build-android", "quality", "finalize-git", "publish-play"):
+            self.assertIn("prepare", needs_of(self.jobs[later]) + sorted(ancestors(self.jobs, later)))
+
+    def test_the_validation_is_not_skipped_on_a_dry_run(self):
+        steps = self.jobs["prepare"]["steps"]
+        step = steps[self.index_of(steps, "release_git.py play-notes")]
+        self.assertNotIn("if", step, "a step-level condition could skip it on a dry run")
+        # ...and `prepare` itself runs on a dry run (it has no job-level `if`).
+        self.assertNotIn("if", self.jobs["prepare"])
+        self.assertIn("prepare", ancestors(self.jobs, "verify-android"))
+
+    def test_the_github_release_body_prefers_the_curated_section(self):
+        runs = "\n".join(run_steps(self.jobs["github-release"]))
+        self.assertIn("--release-notes-version", runs)
+        self.assertIn("new_semver", runs)
+
+
 class FormatAndMakeTargetsTest(unittest.TestCase):
     def test_every_dart_format_invocation_is_check_only(self):
         offenders = []

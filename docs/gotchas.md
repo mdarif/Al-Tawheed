@@ -621,11 +621,12 @@ is portable memory: any LLM working the repo should read and extend it.
   (or `make release MODE=develop BUMP=patch DRY_RUN=true`) runs `prepare`,
   `quality`, `build-android` and `verify-android`, so it signs the artifacts
   and installs the APK on an emulator. It skips `finalize-git`, `publish-play`,
-  `github-release` and `sync-develop`. The changelog and Play "What's new"
-  generation (`git-cliff --latest`) run only in `publish-play` and
-  `github-release`, so a dry run never exercises them. Treat that part as
-  unverified until a real release runs it. Use a dry run before the first
-  release of a workflow change.
+  `github-release` and `sync-develop`. The `git-cliff` changelog runs only in
+  `publish-play` and `github-release`, so a dry run never exercises it (it is
+  only the fallback). The curated Play "What's new" text is different: `prepare`
+  validates `docs/release-notes/<version>.md` (`release_git.py play-notes
+  --check`, 500-byte limit) on every run, so a dry run does catch an over-limit
+  text. Use a dry run before the first release of a workflow change.
   **A dry run that finishes in under a minute with no artifacts is a failure,
   not a pass** — see the `needs:`-skip landmine above.
 - **Auto-deploy stops at the Play Store *internal* track** (`status: completed`).

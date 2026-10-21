@@ -15,6 +15,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -599,3 +600,329 @@ class BuildMetadataTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------- #
+# Play "What's new": the curated text is what ships; never a blind truncation
+# --------------------------------------------------------------------------- #
+LIMIT = 500
+
+
+def _notes_repo(case, version="9.9.9", body=None):
+    """A temp repo root; writes docs/release-notes/<version>.md when body is given."""
+    tmp = tempfile.TemporaryDirectory()
+    case.addCleanup(tmp.cleanup)
+    root = Path(tmp.name)
+    if body is not None:
+        path = root / "docs" / "release-notes" / f"{version}.md"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(body if isinstance(body, bytes) else body.encode("utf-8"))
+    return root
+
+
+def _play_doc(block, *, heading='## Play "What\'s new" (under 500 characters)'):
+    return (
+        "# Kitab at-Tawheed 9.9.9: release notes\n\n"
+        "Some intro.\n\n"
+        "```\nnot the play text (a fence outside the Play section)\n```\n\n"
+        f"{heading}\n\n"
+        f"```\n{block}\n```\n\n"
+        "Length: whatever.\n\n"
+        "## GitHub Release notes (longer)\n\n"
+        "### Find things faster\n\n"
+        "- Search in four languages.\n\n"
+        "```\nnot the play text either\n```\n"
+    )
+
+
+class PlayWhatsNewCuratedTest(unittest.TestCase):
+    def setUp(self):
+        self.warnings = []
+
+    def play(self, root, changelog=None):
+        return rg.play_whats_new("9.9.9", root, changelog=changelog, warn=self.warnings.append)
+
+    def test_extracts_the_fenced_block_under_the_play_heading_only(self):
+        root = _notes_repo(self, body=_play_doc("• One.\n• Two."))
+        self.assertEqual(self.play(root), "• One.\n• Two.")
+        self.assertEqual(self.warnings, [])
+
+    def test_surrounding_blank_lines_and_crlf_are_normalised(self):
+        body = _play_doc("\n• One.\n• Two.\n").replace("\n", "\r\n")
+        self.assertEqual(self.play(_notes_repo(self, body=body)), "• One.\n• Two.")
+
+    def test_curated_text_wins_over_a_supplied_changelog(self):
+        root = _notes_repo(self, body=_play_doc("• Curated."))
+        self.assertEqual(self.play(root, changelog="### Fixes\n- raw commit subject"), "• Curated.")
+        self.assertEqual(self.warnings, [])
+
+    def test_exactly_500_bytes_is_accepted(self):
+        text = "a" * LIMIT
+        self.assertEqual(self.play(_notes_repo(self, body=_play_doc(text))), text)
+
+    def test_501_bytes_fails_loudly_and_is_never_truncated(self):
+        root = _notes_repo(self, body=_play_doc("a" * (LIMIT + 1)))
+        with self.assertRaises(rg.ReleaseAbort) as caught:
+            self.play(root)
+        message = str(caught.exception)
+        self.assertIn("501", message)
+        self.assertIn("500", message)
+        self.assertIn("9.9.9.md", message)
+
+    def test_the_limit_is_bytes_not_characters(self):
+        # 167 bullets are 167 characters but 501 UTF-8 bytes.
+        text = "•" * 167
+        self.assertEqual(len(text), 167)
+        self.assertEqual(len(text.encode("utf-8")), 501)
+        with self.assertRaises(rg.ReleaseAbort):
+            self.play(_notes_repo(self, body=_play_doc(text)))
+
+    def test_an_empty_block_is_an_error_not_a_fallback(self):
+        with self.assertRaises(rg.ReleaseAbort) as caught:
+            self.play(_notes_repo(self, body=_play_doc("  \n ")), changelog="- fallback")
+        self.assertIn("empty", str(caught.exception).lower())
+
+    def test_a_play_heading_without_a_fenced_block_is_an_error(self):
+        body = '# Notes\n\n## Play "What\'s new"\n\nJust prose, no fence.\n\n## Other\n'
+        with self.assertRaises(rg.ReleaseAbort) as caught:
+            self.play(_notes_repo(self, body=body), changelog="- fallback")
+        self.assertIn("fenced", str(caught.exception).lower())
+
+    def test_an_unterminated_fence_is_an_error(self):
+        body = '## Play "What\'s new"\n\n```\n• never closed\n'
+        with self.assertRaises(rg.ReleaseAbort):
+            self.play(_notes_repo(self, body=body))
+
+    def test_a_file_that_is_not_valid_utf8_is_an_error(self):
+        body = _play_doc("• ok").encode("utf-8") + b"\xff\xfe"
+        with self.assertRaises(rg.ReleaseAbort) as caught:
+            self.play(_notes_repo(self, body=body))
+        self.assertIn("utf-8", str(caught.exception).lower())
+
+
+class PlayWhatsNewFallbackTest(unittest.TestCase):
+    def setUp(self):
+        self.warnings = []
+
+    def play(self, root, changelog):
+        return rg.play_whats_new("9.9.9", root, changelog=changelog, warn=self.warnings.append)
+
+    def test_flattens_the_changelog_like_the_old_pipeline(self):
+        root = _notes_repo(self)
+        text = self.play(root, "### Features\n\n- **search:** four languages\n\n### Fixes\n- a fix\n")
+        self.assertEqual(text, "Features\n• search: four languages\nFixes\n• a fix")
+
+    def test_a_missing_notes_file_warns_and_falls_back(self):
+        text = self.play(_notes_repo(self), "- fix: one")
+        self.assertEqual(text, "• fix: one")
+        self.assertEqual(len(self.warnings), 1)
+        self.assertIn("9.9.9.md", self.warnings[0])
+        self.assertIn("git-cliff", self.warnings[0])
+
+    def test_a_notes_file_without_a_play_section_also_falls_back(self):
+        root = _notes_repo(self, body="# Notes\n\n## GitHub Release notes\n\n- stuff\n")
+        self.assertEqual(self.play(root, "- fix: one"), "• fix: one")
+        self.assertEqual(len(self.warnings), 1)
+
+    def test_no_notes_and_no_changelog_is_an_error(self):
+        with self.assertRaises(rg.ReleaseAbort):
+            rg.play_whats_new("9.9.9", _notes_repo(self), changelog=None, warn=self.warnings.append)
+
+    def test_an_empty_changelog_still_yields_non_empty_text(self):
+        self.assertEqual(self.play(_notes_repo(self), "\n\n"), "• Maintenance release")
+
+    def test_short_fallback_does_not_warn_about_truncation(self):
+        self.play(_notes_repo(self), "- fix: one")
+        self.assertFalse(any("truncat" in w.lower() for w in self.warnings))
+
+    def test_truncation_drops_whole_lines_and_never_splits_a_utf8_sequence(self):
+        # Three 203-byte lines (+ newlines): a blind 500-byte cut lands inside
+        # the third line, in the middle of a two-byte "é".
+        body = "x" + "é" * 99
+        changelog = "\n".join(f"- {body}" for _ in range(3))
+        flattened = "\n".join(f"• {body}" for _ in range(3))
+        blind = flattened.encode("utf-8")[:LIMIT]
+        with self.assertRaises(UnicodeDecodeError):
+            blind.decode("utf-8")  # the fixture really does hit the hazard
+
+        text = self.play(_notes_repo(self), changelog)
+
+        self.assertLessEqual(len(text.encode("utf-8")), LIMIT)
+        text.encode("utf-8").decode("utf-8")
+        self.assertEqual(text, "\n".join(flattened.split("\n")[:2]))
+        self.assertTrue(any("truncat" in w.lower() for w in self.warnings), self.warnings)
+
+    def test_truncation_ends_on_a_line_boundary(self):
+        changelog = "\n".join(f"- change number {i:03d} " + "x" * 40 for i in range(30))
+        text = self.play(_notes_repo(self), changelog)
+        flattened_lines = ["• " + l[2:] for l in changelog.split("\n")]
+        lines = text.split("\n")
+        self.assertLessEqual(len(text.encode("utf-8")), LIMIT)
+        self.assertEqual(lines, flattened_lines[: len(lines)])  # whole lines, in order
+        self.assertLess(len(lines), len(flattened_lines))
+        self.assertFalse(text.endswith("\n"))
+
+    def test_one_overlong_first_line_is_cut_at_a_character_boundary(self):
+        changelog = "- " + "é" * 400  # 800+ bytes in a single line
+        text = self.play(_notes_repo(self), changelog)
+        raw = text.encode("utf-8")
+        self.assertLessEqual(len(raw), LIMIT)
+        raw.decode("utf-8")
+        self.assertTrue(text.startswith("• é"))
+        self.assertTrue(any("single line" in w.lower() for w in self.warnings), self.warnings)
+
+
+class PlayWhatsNewRealNotesTest(unittest.TestCase):
+    """The shipped docs/release-notes/2.4.2.md is exactly what will be uploaded."""
+
+    EXPECTED = (
+        "• Search lectures and classes in English, Urdu, Roman Urdu or Arabic.\n"
+        "• Library: Bookmarks and Downloads in one place.\n"
+        "• Book and Study share one Read tab.\n"
+        "• Text-size slider in Settings and the reader's Aa button.\n"
+        "• Downloads continue after you close the app or lose signal.\n"
+        "• Your reading position is kept per edition.\n"
+        "• Safer switching between Urdu and Arabic editions.\n"
+        "• Lists no longer hide behind the mini-player.\n"
+        "• Text no longer overflows at larger sizes."
+    )
+
+    def test_2_4_2_uploads_the_curated_text_verbatim_and_within_the_limit(self):
+        warnings = []
+        text = rg.play_whats_new("2.4.2", REPO, warn=warnings.append)
+        self.assertEqual(text, self.EXPECTED)
+        self.assertEqual(len(text.encode("utf-8")), 481)
+        self.assertLessEqual(len(text.encode("utf-8")), LIMIT)
+        self.assertEqual(warnings, [])
+
+    def test_the_length_line_in_the_notes_matches_the_text(self):
+        doc = (REPO / "docs" / "release-notes" / "2.4.2.md").read_text(encoding="utf-8")
+        match = re.search(r"Length: (\d+) characters, (\d+) bytes", doc)
+        self.assertIsNotNone(match, "the notes file should state the text's length")
+        self.assertEqual(
+            (int(match.group(1)), int(match.group(2))),
+            (len(self.EXPECTED), len(self.EXPECTED.encode("utf-8"))),
+        )
+
+    def test_the_notes_no_longer_claim_a_head_c_truncation(self):
+        doc = (REPO / "docs" / "release-notes" / "2.4.2.md").read_text(encoding="utf-8")
+        self.assertNotIn("head -c", doc)
+        self.assertNotIn("truncates at 500", doc)
+
+
+class PlayNotesCliTest(unittest.TestCase):
+    def run_cli(self, *args):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            rc = rg.main(["play-notes", *args])
+        return rc, stdout.getvalue(), stderr.getvalue()
+
+    def test_writes_the_text_without_a_trailing_newline(self):
+        root = _notes_repo(self, body=_play_doc("• One.\n• Two."))
+        out = root / "play-store-notes.txt"
+        rc, _, _ = self.run_cli("--version", "9.9.9", "--repo-root", str(root), "--out", str(out))
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.read_bytes(), "• One.\n• Two.".encode("utf-8"))
+
+    def test_over_the_limit_exits_nonzero_with_a_message_and_writes_nothing(self):
+        root = _notes_repo(self, body=_play_doc("a" * 501))
+        out = root / "play-store-notes.txt"
+        rc, _, err = self.run_cli("--version", "9.9.9", "--repo-root", str(root), "--out", str(out))
+        self.assertEqual(rc, 1)
+        self.assertIn("::error::", err)
+        self.assertIn("501", err)
+        self.assertFalse(out.exists())
+
+    def test_check_validates_without_writing(self):
+        good = _notes_repo(self, body=_play_doc("• One."))
+        rc, out, _ = self.run_cli("--version", "9.9.9", "--repo-root", str(good), "--check")
+        self.assertEqual(rc, 0)
+        self.assertIn("bytes", out)
+        bad = _notes_repo(self, body=_play_doc("a" * 501))
+        rc, _, err = self.run_cli("--version", "9.9.9", "--repo-root", str(bad), "--check")
+        self.assertEqual(rc, 1)
+        self.assertIn("501", err)
+
+    def test_check_with_no_curated_text_warns_and_passes(self):
+        rc, _, err = self.run_cli("--version", "9.9.9", "--repo-root", str(_notes_repo(self)), "--check")
+        self.assertEqual(rc, 0)
+        self.assertIn("::warning::", err)
+
+    def test_a_changelog_file_supplies_the_fallback_when_there_are_no_notes(self):
+        root = _notes_repo(self)
+        changelog = root / "changelog.md"
+        changelog.write_text("### Fixes\n- fix: one\n", encoding="utf-8")
+        out = root / "play-store-notes.txt"
+        rc, _, err = self.run_cli(
+            "--version", "9.9.9", "--repo-root", str(root),
+            "--changelog-file", str(changelog), "--out", str(out),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.read_text(encoding="utf-8"), "Fixes\n• fix: one")
+        self.assertIn("::warning::", err)
+
+    def test_no_notes_and_no_changelog_file_fails_when_writing(self):
+        root = _notes_repo(self)
+        rc, _, err = self.run_cli(
+            "--version", "9.9.9", "--repo-root", str(root), "--out", str(root / "x.txt")
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn("::error::", err)
+
+
+class GithubReleaseCuratedBodyTest(unittest.TestCase):
+    """The curated long section is the release body; the verification line is still computed."""
+
+    def test_section_is_extracted_up_to_the_next_h2(self):
+        root = _notes_repo(self, body=_play_doc("• One."))
+        section = rg.github_release_changelog("9.9.9", root)
+        self.assertIsNotNone(section)
+        self.assertIn("### Find things faster", section)
+        self.assertIn("- Search in four languages.", section)
+        self.assertNotIn("GitHub Release notes", section)  # the heading itself is not repeated
+        self.assertNotIn("Play", section)
+
+    def test_absent_file_or_section_is_none(self):
+        self.assertIsNone(rg.github_release_changelog("9.9.9", _notes_repo(self)))
+        root = _notes_repo(self, body='## Play "What\'s new"\n\n```\n• One.\n```\n')
+        self.assertIsNone(rg.github_release_changelog("9.9.9", root))
+
+    def run_release(self, root, *extra):
+        notes = root / "notes.md"
+        changelog = root / "changelog.md"
+        changelog.write_text("- raw: commit subject\n", encoding="utf-8")
+        real = rg._gh
+        rg._gh = lambda args: subprocess.CompletedProcess(
+            args, 1 if args[:2] == ["release", "view"] else 0, "", "release not found"
+        )
+        stack = contextlib.ExitStack()
+        stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+        stack.enter_context(contextlib.redirect_stderr(io.StringIO()))
+        try:
+            rc = rg.main(
+                [
+                    "github-release", "--tag", "9.9.9", "--new-version", "9.9.9+30",
+                    "--apk-name", "a.apk", "--aab-sha256", "ab" * 32, "--verified", "false",
+                    "--changelog-file", str(changelog), "--notes-out", str(notes),
+                    "--title", "t", "--asset", "a.apk#APK", *extra,
+                ]
+            )
+        finally:
+            stack.close()
+            rg._gh = real
+        self.assertEqual(rc, 0)
+        return notes.read_text(encoding="utf-8")
+
+    def test_release_body_uses_the_curated_section_and_keeps_the_verification_line(self):
+        root = _notes_repo(self, body=_play_doc("• One."))
+        body = self.run_release(root, "--release-notes-version", "9.9.9", "--repo-root", str(root))
+        self.assertIn("- Search in four languages.", body)
+        self.assertNotIn("raw: commit subject", body)
+        self.assertIn("Device verification: SKIPPED", body)
+        self.assertIn("9.9.9+30", body)
+
+    def test_release_body_falls_back_to_the_changelog_without_curated_notes(self):
+        root = _notes_repo(self)
+        body = self.run_release(root, "--release-notes-version", "9.9.9", "--repo-root", str(root))
+        self.assertIn("- raw: commit subject", body)
+        self.assertIn("Device verification: SKIPPED", body)

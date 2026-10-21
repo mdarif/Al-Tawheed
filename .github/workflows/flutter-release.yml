@@ -171,6 +171,17 @@ jobs:
             --bump "${{ inputs.bump }}" \
             --github-output "$GITHUB_OUTPUT"
 
+      # The Play "What's new" text is the curated block in
+      # docs/release-notes/<version>.md. Validated HERE (no `if:`, so a dry run
+      # runs it too, unlike publish-play): an over-500-byte text fails in
+      # seconds, before the build, not at publish time. Absent text only warns;
+      # publish-play then falls back to the git-cliff changelog.
+      - name: Validate the curated Play "What's new" text
+        run: |
+          python3 tool/release_git.py play-notes \
+            --version "${{ steps.version.outputs.new_semver }}" \
+            --check
+
       # Checked here, not after the build: an empty secret makes Gradle fall
       # back to the DEBUG signing key silently.
       - name: Require signing secrets
@@ -609,28 +620,25 @@ jobs:
         env:
           GITHUB_REPO: ${{ github.repository }}
 
-      # Play Store "What's new": 500 characters per locale, hard limit.
-      # Pass the changelog via env, NOT inline `${{ }}` - commit subjects
-      # contain double quotes that would close the bash string.
+      # Play Store "What's new": 500 BYTES per locale, hard limit. The text is
+      # the curated block in docs/release-notes/<version>.md, validated (and
+      # never truncated) by tool/release_git.py; `prepare` already checked it.
+      # Only when there is no curated block does it fall back to the git-cliff
+      # changelog, cut on a whole line and never mid-character, with a warning.
+      # The changelog goes via env + file, NOT inline `${{ }}` - commit
+      # subjects contain double quotes that would close the bash string.
       - name: Generate Play Store release notes
         env:
           MARKDOWN: ${{ steps.cliff.outputs.content }}
         run: |
-          PLAIN=$(echo "$MARKDOWN" \
-            | sed 's/^### //g' \
-            | sed 's/\*\*//g' \
-            | sed 's/^- /• /g' \
-            | sed '/^$/d')
-
-          TRUNCATED=$(echo "$PLAIN" | head -c 500)
-          FULL_LEN=$(echo "$PLAIN" | wc -c | tr -d ' ')
-          if [ "$FULL_LEN" -gt 500 ]; then
-            echo "::warning::Play Store notes truncated to 500 chars (was ${FULL_LEN}). Review before promoting."
-          fi
-
-          echo "$TRUNCATED" > play-store-notes.txt
+          printf '%s\n' "$MARKDOWN" > changelog.md
+          python3 tool/release_git.py play-notes \
+            --version "${{ needs.prepare.outputs.new_semver }}" \
+            --changelog-file changelog.md \
+            --out play-store-notes.txt
           echo "Play Store notes:"
           cat play-store-notes.txt
+          echo
 
       # The app ships three notes locales; release notes are authored in
       # English only, so every locale gets the en-US text DELIBERATELY. See
@@ -747,8 +755,10 @@ jobs:
 
       # The notes (including the device-verification line) are built by
       # tool/release_git.py from `verified`, which verify-android sets only
-      # when the emulator check actually ran. Changelog goes via env + file:
-      # commit subjects contain quotes and backticks.
+      # when the emulator check actually ran. The body is the curated
+      # "GitHub Release notes" section of docs/release-notes/<version>.md when
+      # it exists, else the git-cliff changelog. The changelog goes via env +
+      # file: commit subjects contain quotes and backticks.
       - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -763,6 +773,7 @@ jobs:
             --aab-sha256 "${{ needs.build-android.outputs.aab_sha256 }}" \
             --verified "$VERIFIED" \
             --changelog-file changelog.md \
+            --release-notes-version "${{ needs.prepare.outputs.new_semver }}" \
             --title "Al-Tawheed ${{ needs.prepare.outputs.tag }}" \
             --asset "release-artifacts/${{ needs.prepare.outputs.apk }}#Al-Tawheed Android APK (release, signed)" \
             --asset "release-artifacts/${{ needs.prepare.outputs.aab }}#Al-Tawheed Android App Bundle (release, signed)" \

@@ -198,6 +198,32 @@ buffering offline: stop the release and file it against the migration, with
 
 ## Step 2 — Trigger the release
 
+### First: write the release notes (before `make release`)
+
+Release notes are written by hand, in `docs/release-notes/<version>.md`, where
+`<version>` is the version being released (`2.4.2` for `BUMP=patch` from
+2.4.1). Commit the file to the branch you dispatch from **before** `make
+release`: the workflow releases the dispatched commit, so a file that is not on
+it does not exist for the run. [`2.4.2.md`](release-notes/2.4.2.md) is the
+template. It has two parts:
+
+- `## Play "What's new"` — one fenced block (```` ``` ````) of plain text.
+  **At most 500 bytes**, which is Play's limit; a bullet `•` takes 3 bytes and
+  an Urdu or Arabic letter 2, so count bytes, not characters. This block is
+  uploaded as-is as the "What's new" text for `en-US`, `ar` and `ur`.
+- `## GitHub Release notes` — the longer notes. This section, followed by the
+  workflow's own "Device verification" line, is the GitHub Release body.
+
+Nothing is ever truncated for you. `prepare` checks the Play block on **every**
+run, a dry run included, and fails the release in seconds if it is empty or
+over 500 bytes. Check it yourself first:
+```sh
+python3 tool/release_git.py play-notes --version 2.4.2 --check
+```
+If the file (or its Play block) is missing, the run still goes ahead with a
+warning, and `publish-play` falls back to the raw `git-cliff` commit-subject
+changelog, cut on a whole line. That text is not curated: do not rely on it.
+
 ### Recommended: one click, from develop
 
 ```sh
@@ -233,7 +259,9 @@ only CI artifacts and read-only Play queries.
    computes the new version/tag **once** and exports it (no later job
    recomputes it from the bump), checks the signing secrets, the Play service
    account and the foreground-service declaration, and takes a read-only
-   snapshot of Play state. A missing secret or a stale tag fails in seconds.
+   snapshot of Play state. It also validates the curated Play "What's new"
+   text in `docs/release-notes/<version>.md` (see above), dry run or not. A
+   missing secret, a stale tag or an over-limit Play text fails in seconds.
 2. **`quality`** — `make format-check` (check only, never rewrites), `make
    analyze`, `make test`, `make test-tooling`. Different machine, same checks
    as Step 1.
@@ -261,12 +289,17 @@ only CI artifacts and read-only Play queries.
    Play's reported bundle SHA-256 equals the AAB's; otherwise the job fails
    with a conflict and writes nothing. It finishes by proving Play now shows
    the exact build as `completed` on the **internal track**
-   (Play "What's new" notes are the **same English text** for en-US/ar/ur —
-   release notes are authored in English only).
+   (Play "What's new" is the curated Play block of
+   `docs/release-notes/<version>.md`, the **same English text** for
+   en-US/ar/ur — release notes are authored in English only. It is not
+   truncated; `git-cliff` is only the warned-about fallback when the block is
+   missing.)
 7. **`github-release`** — creates the release for the tag, or edits it if a
    previous attempt already did, replacing the APK, AAB and
-   `play-store-notes.txt` assets. The body says "Device verification: PASSED"
-   or "Device verification: SKIPPED" depending on what actually ran.
+   `play-store-notes.txt` assets. The body is the "GitHub Release notes"
+   section of `docs/release-notes/<version>.md` (the `git-cliff` changelog if
+   there is none) plus a "Device verification: PASSED" or "Device
+   verification: SKIPPED" line, depending on what actually ran.
 8. **`sync-develop`** — no-op if `develop` already contains the tag;
    fast-forwards it (with a lease) only if `develop` still equals the source
    SHA; otherwise fails with merge instructions. It never overwrites commits
@@ -381,8 +414,9 @@ production on the Play Store.
 
 The `publish-play` job already uploaded `app-release.aab` to the
 **internal track** (status: completed) with the auto-generated
-`play-store-notes.txt` as the "What's new" text — nothing to build or upload
-manually.
+`play-store-notes.txt` (the curated Play block of
+`docs/release-notes/<version>.md`) as the "What's new" text — nothing to build
+or upload manually.
 
 1. play.google.com/console → Al-Tawheed → Testing → Internal testing → open
    the release for version `<TAG>` / build `<NEW_VERSION>`

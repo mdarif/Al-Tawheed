@@ -15,6 +15,11 @@ shell, because each has a rule that must hold and be tested:
 * `github-release` create-or-edit the release for the validated tag, assets with
                   `--clobber`; the notes never say verification happened unless
                   it did.
+* `play-notes`    the Play "What's new" text: the curated block in
+                  docs/release-notes/<version>.md, validated (non-empty, UTF-8,
+                  <= 500 BYTES) and never truncated; only if there is none, the
+                  git-cliff changelog cut on a whole line, with a warning.
+                  `--check` validates alone (run in `prepare`, dry runs too).
 * `stamp` / `assert-version` / `assert-build`  apply and re-check the EXACT
                   `new_version` computed once by `prepare`; nothing here ever
                   recomputes a version from `--bump`.
@@ -393,6 +398,188 @@ def github_release(
     return "updated" if exists else "created"
 
 
+# --------------------------------------------------------------------------- #
+# Release notes: Play "What's new" and the GitHub Release body
+# --------------------------------------------------------------------------- #
+PLAY_LIMIT_BYTES = 500  # Play's per-locale "What's new" limit, in UTF-8 bytes
+_RELEASE_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+_PLAY_HEADING = re.compile(r"""^##\s+Play\s+["“]What['’]s new["”]""", re.IGNORECASE)
+_GITHUB_HEADING = re.compile(r"^##\s+GitHub\s+Release\s+notes\b", re.IGNORECASE)
+
+
+def _warn_to_actions(message: str) -> None:
+    print(f"::warning::{message}", file=sys.stderr)
+
+
+def release_notes_path(version: str, repo_root: Path) -> Path:
+    if not _RELEASE_VERSION.match(version or ""):
+        raise ReleaseAbort(f"{version!r} is not an X.Y.Z release version.")
+    return Path(repo_root) / "docs" / "release-notes" / f"{version}.md"
+
+
+def _read_release_notes(version: str, repo_root: Path) -> tuple[Path, list[str] | None]:
+    """(path, lines) of docs/release-notes/<version>.md; lines is None if the file is absent."""
+    path = release_notes_path(version, repo_root)
+    if not path.is_file():
+        return path, None
+    try:
+        text = path.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ReleaseAbort(f"{path} is not valid UTF-8 ({error}).") from error
+    return path, text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+
+def _is_fence(line: str) -> bool:
+    return line.strip().startswith("```")
+
+
+def _find_section(lines: list[str], heading: re.Pattern[str]) -> list[str] | None:
+    """Lines under the first `## ` heading matching `heading`, up to the next `## `.
+
+    A `## ` inside a fenced block is not a heading. None if there is no such heading.
+    """
+    in_fence = False
+    start: int | None = None
+    for index, line in enumerate(lines):
+        if _is_fence(line):
+            in_fence = not in_fence
+        elif not in_fence and line.startswith("## "):
+            if start is not None:
+                return lines[start:index]
+            if heading.match(line):
+                start = index + 1
+    return None if start is None else lines[start:]
+
+
+def _first_fenced_block(section: list[str], where: str) -> list[str]:
+    inside = False
+    block: list[str] = []
+    for line in section:
+        if _is_fence(line):
+            if inside:
+                return block
+            inside = True
+        elif inside:
+            block.append(line)
+    if inside:
+        raise ReleaseAbort(f"{where}: the fenced block is never closed (missing the closing ```).")
+    raise ReleaseAbort(f"{where}: the Play heading has no fenced block (```) under it.")
+
+
+def validate_play_text(text: str, where: str) -> str:
+    """The text Play will show: non-empty, valid UTF-8, at most 500 BYTES. Never truncates."""
+    if not text.strip():
+        raise ReleaseAbort(f"{where}: the Play \"What's new\" block is empty.")
+    try:
+        size = len(text.encode("utf-8"))
+    except UnicodeEncodeError as error:
+        raise ReleaseAbort(f"{where}: the Play text is not valid UTF-8 ({error}).") from error
+    if size > PLAY_LIMIT_BYTES:
+        raise ReleaseAbort(
+            f"{where}: the Play \"What's new\" text is {size} bytes ({len(text)} characters), over "
+            f"Play's {PLAY_LIMIT_BYTES}-byte limit by {size - PLAY_LIMIT_BYTES}. Shorten it; nothing "
+            "is truncated for you. Bullets and non-ASCII letters take 2-3 bytes each."
+        )
+    return text
+
+
+def curated_play_text(version: str, repo_root: Path) -> str | None:
+    """The validated fenced block under `## Play "What's new"`, or None if there is none.
+
+    None means the file or the heading is absent (the caller may fall back). A
+    heading that is present but has no usable block is an error, not a fallback:
+    the author meant to curate it.
+    """
+    path, lines = _read_release_notes(version, repo_root)
+    if lines is None:
+        return None
+    section = _find_section(lines, _PLAY_HEADING)
+    if section is None:
+        return None
+    block = _first_fenced_block(section, str(path))
+    return validate_play_text("\n".join(block).strip(), str(path))
+
+
+def flatten_changelog(markdown: str) -> str:
+    """git-cliff markdown as plain bullets (the text the old pipeline produced)."""
+    out = []
+    for line in markdown.splitlines():
+        line = re.sub(r"^### ", "", line).replace("**", "")
+        line = re.sub(r"^- ", "• ", line).rstrip()
+        if line:
+            out.append(line)
+    return "\n".join(out)
+
+
+def truncate_on_line_boundary(text: str, limit: int = PLAY_LIMIT_BYTES) -> tuple[str, str | None]:
+    """(text, how) with at most `limit` UTF-8 bytes.
+
+    Drops whole trailing lines until it fits, so the result ends on a line
+    boundary and can never contain half a multi-byte character. `how` is None if
+    nothing was cut, "lines" if lines were dropped, or "single line" if even the
+    first line alone is too long and had to be cut (still at a character boundary).
+    """
+    if len(text.encode("utf-8")) <= limit:
+        return text, None
+    lines = text.split("\n")
+    while len(lines) > 1 and len("\n".join(lines).encode("utf-8")) > limit:
+        lines.pop()
+    kept = "\n".join(lines)
+    if len(kept.encode("utf-8")) <= limit:
+        return kept.rstrip(), "lines"
+    # decode(errors="ignore") discards the partial trailing sequence.
+    return kept.encode("utf-8")[:limit].decode("utf-8", errors="ignore").rstrip(), "single line"
+
+
+def play_whats_new(
+    version: str,
+    repo_root: Path,
+    changelog: str | None = None,
+    warn: Callable[[str], None] | None = None,
+) -> str:
+    """The Play "What's new" text for `version`, at most 500 bytes.
+
+    Curated text (docs/release-notes/<version>.md) wins and is validated, never
+    truncated: over the limit raises ReleaseAbort. Only when there is no curated
+    block does it fall back to the flattened git-cliff `changelog`, cut safely
+    (whole lines, never mid-UTF-8) and reported through `warn`.
+    """
+    warn = warn or _warn_to_actions
+    curated = curated_play_text(version, repo_root)
+    if curated is not None:
+        return curated
+    path = release_notes_path(version, repo_root)
+    if changelog is None:
+        raise ReleaseAbort(
+            f"{path} has no Play \"What's new\" block and there is no changelog to fall back on."
+        )
+    missing = "section missing" if path.is_file() else "file missing"
+    warn(
+        f"{path} has no curated Play \"What's new\" block ({missing}); falling back to the raw "
+        "git-cliff changelog, which is not curated. Write docs/release-notes/<version>.md "
+        "before the next release."
+    )
+    text = flatten_changelog(changelog) or "• Maintenance release"
+    text, how = truncate_on_line_boundary(text)
+    if how:
+        where = "a line boundary" if how == "lines" else "a character boundary inside its single line"
+        warn(
+            f"the git-cliff fallback was over {PLAY_LIMIT_BYTES} bytes and was truncated at {where}. "
+            "Review it before promoting."
+        )
+    return text
+
+
+def github_release_changelog(version: str, repo_root: Path) -> str | None:
+    """The curated `## GitHub Release notes` section of the notes file, or None."""
+    _, lines = _read_release_notes(version, repo_root)
+    if lines is None:
+        return None
+    section = _find_section(lines, _GITHUB_HEADING)
+    text = "\n".join(section).strip() if section is not None else ""
+    return text or None
+
+
 def _gh(args: list[str]) -> subprocess.CompletedProcess:
     proc = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)
     if proc.stdout:
@@ -445,6 +632,27 @@ def main(argv: list[str] | None = None) -> int:
     p_rel.add_argument("--notes-out", type=Path, default=Path("release-notes.md"))
     p_rel.add_argument("--title", required=True)
     p_rel.add_argument("--asset", action="append", default=[], required=True)
+    p_rel.add_argument(
+        "--release-notes-version",
+        help="X.Y.Z; use the curated `## GitHub Release notes` section of "
+        "docs/release-notes/<version>.md as the body when it exists (else --changelog-file)",
+    )
+    p_rel.add_argument("--repo-root", type=Path, default=Path("."))
+
+    p_play = sub.add_parser(
+        "play-notes", help="the Play 'What's new' text from docs/release-notes/<version>.md (<= 500 bytes)"
+    )
+    p_play.add_argument("--version", required=True, help="X.Y.Z (the tag)")
+    p_play.add_argument("--repo-root", type=Path, default=Path("."))
+    p_play.add_argument(
+        "--changelog-file", type=Path, help="git-cliff markdown, used only if there is no curated text"
+    )
+    p_play.add_argument("--out", type=Path, help="write the text here (no trailing newline)")
+    p_play.add_argument(
+        "--check",
+        action="store_true",
+        help="validate the curated text only (fail if over the limit); warn and pass if there is none",
+    )
 
     args = parser.parse_args(argv)
     repo = Path.cwd()
@@ -471,10 +679,38 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "sync-develop":
             sync_develop(repo, source_sha=args.source_sha, release_sha=args.release_sha, tag=args.tag)
+        elif args.command == "play-notes":
+            if args.check:
+                curated = curated_play_text(args.version, args.repo_root)
+                if curated is None:
+                    _warn_to_actions(
+                        f"no curated Play \"What's new\" for {args.version} in "
+                        f"{release_notes_path(args.version, args.repo_root)}; the release will fall back "
+                        "to the raw git-cliff changelog, truncated."
+                    )
+                else:
+                    print(
+                        f"Curated Play \"What's new\" for {args.version}: "
+                        f"{len(curated.encode('utf-8'))} bytes (limit {PLAY_LIMIT_BYTES}), OK"
+                    )
+            else:
+                changelog = args.changelog_file.read_text(encoding="utf-8") if args.changelog_file else None
+                text = play_whats_new(args.version, args.repo_root, changelog=changelog)
+                if args.out:
+                    args.out.write_bytes(text.encode("utf-8"))
+                print(f"Play \"What's new\" for {args.version}: {len(text.encode('utf-8'))} bytes")
         elif args.command == "github-release":
+            changelog = args.changelog_file.read_text(encoding="utf-8")
+            if args.release_notes_version:
+                curated = github_release_changelog(args.release_notes_version, args.repo_root)
+                if curated is None:
+                    print("GitHub Release body: no curated section; using the git-cliff changelog.")
+                else:
+                    print("GitHub Release body: using the curated section of the release notes.")
+                    changelog = curated
             args.notes_out.write_text(
                 build_release_notes(
-                    changelog=args.changelog_file.read_text(encoding="utf-8"),
+                    changelog=changelog,
                     new_version=args.new_version,
                     apk_name=args.apk_name,
                     aab_sha256=args.aab_sha256,
