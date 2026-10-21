@@ -43,35 +43,56 @@ class OfflineStatusBanner extends StatelessWidget {
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // A Wrap, not a Row: at large text or with a long translation
+                // the two labels flow onto a second line instead of
+                // overflowing the strip. Each group is a min-size Row whose
+                // text is Flexible, so even one label wider than the strip
+                // wraps inside itself.
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 2,
                   children: [
-                    Icon(
-                      Icons.wifi_off_rounded,
-                      size: 14,
-                      color: const Color(0xFFE65100),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.wifi_off_rounded,
+                          size: 14,
+                          color: const Color(0xFFE65100),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            l10n.offlineBadge,
+                            style: context.textTheme.labelSmall?.copyWith(
+                              color: const Color(0xFFE65100),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      l10n.offlineBadge,
-                      style: context.textTheme.labelSmall?.copyWith(
-                        color: const Color(0xFFE65100),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.offlineBadgeViewLibrary,
-                      style: context.textTheme.labelSmall?.copyWith(
-                        color: const Color(0xFFE65100),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 14,
-                      color: const Color(0xFFE65100),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            l10n.offlineBadgeViewLibrary,
+                            style: context.textTheme.labelSmall?.copyWith(
+                              color: const Color(0xFFE65100),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 14,
+                          color: const Color(0xFFE65100),
+                        ),
+                      ],
                     ),
                   ],
                 ),

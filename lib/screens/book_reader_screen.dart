@@ -783,38 +783,42 @@ class _ColorKeySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    // Scrollable: at large text the key is taller than the sheet's maximum
+    // height.
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.bookColorKey,
-              style: context.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.bookColorKey,
+                style: context.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            _ColorKeyRow(
-              sample: '\u{FD3F}\u{2026}\u{FD3E}',
-              color: context.bookVerseColor,
-              label: l10n.bookLegendVerse,
-            ),
-            const SizedBox(height: 16),
-            _ColorKeyRow(
-              sample: '[\u{2026}]',
-              color: context.bookCitationColor,
-              label: l10n.bookLegendCitation,
-            ),
-            const SizedBox(height: 16),
-            _ColorKeyRow(
-              sample: '\u{00AB}\u{2026}\u{00BB}',
-              color: context.bookHadithColor,
-              label: l10n.bookLegendHadith,
-            ),
-          ],
+              const SizedBox(height: 20),
+              _ColorKeyRow(
+                sample: '\u{FD3F}\u{2026}\u{FD3E}',
+                color: context.bookVerseColor,
+                label: l10n.bookLegendVerse,
+              ),
+              const SizedBox(height: 16),
+              _ColorKeyRow(
+                sample: '[\u{2026}]',
+                color: context.bookCitationColor,
+                label: l10n.bookLegendCitation,
+              ),
+              const SizedBox(height: 16),
+              _ColorKeyRow(
+                sample: '\u{00AB}\u{2026}\u{00BB}',
+                color: context.bookHadithColor,
+                label: l10n.bookLegendHadith,
+              ),
+            ],
+          ),
         ),
       ),
     );

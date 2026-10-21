@@ -53,54 +53,58 @@ class _AllLecturesCompleteListenerState
       builder: (_) => Directionality(
         textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: context.brandColor.withValues(alpha: 0.12),
-                  ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    color: context.brandColor,
-                    size: 36,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    l10n.allLecturesComplete,
-                    textAlign: TextAlign.center,
-                    style: context.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+          // Scrollable: at large text the message is taller than the sheet's
+          // maximum height.
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: context.brandColor.withValues(alpha: 0.12),
+                    ),
+                    child: Icon(
+                      Icons.workspace_premium_rounded,
                       color: context.brandColor,
-                      fontFamily: isRtl ? 'NotoNaskhArabic' : null,
-                      letterSpacing: isRtl ? 0 : null,
+                      size: 36,
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    l10n.allLecturesCompleteMessage,
-                    textAlign: TextAlign.center,
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      color: context.secondaryTextColor,
-                      height: 1.5,
-                      fontFamily: isRtl ? 'NotoNaskhArabic' : null,
-                      letterSpacing: isRtl ? 0 : null,
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      l10n.allLecturesComplete,
+                      textAlign: TextAlign.center,
+                      style: context.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: context.brandColor,
+                        fontFamily: isRtl ? 'NotoNaskhArabic' : null,
+                        letterSpacing: isRtl ? 0 : null,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      l10n.allLecturesCompleteMessage,
+                      textAlign: TextAlign.center,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.secondaryTextColor,
+                        height: 1.5,
+                        fontFamily: isRtl ? 'NotoNaskhArabic' : null,
+                        letterSpacing: isRtl ? 0 : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),

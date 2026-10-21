@@ -151,11 +151,16 @@ class _BrandLink extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: context.textTheme.labelSmall?.copyWith(
-                color: color,
-                fontWeight: muted ? FontWeight.w400 : FontWeight.w600,
+            // Flexible: a long brand/publisher line wraps instead of running
+            // off the edge of a narrow phone.
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: muted ? FontWeight.w400 : FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(width: 2),

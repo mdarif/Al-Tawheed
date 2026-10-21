@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/centered_scroll_body.dart';
 
 /// Shown instead of silently falling back to Urdu (BLK-06) when the saved
 /// content edition isn't in the loaded manifest — either it was genuinely
@@ -38,11 +39,11 @@ class _EditionMissingScreenState extends State<EditionMissingScreen> {
     final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
-        child: Center(
+        child: CenteredScrollBody(
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.error_outline_rounded,

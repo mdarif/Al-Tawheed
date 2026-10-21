@@ -72,98 +72,102 @@ class _OfflineSheetContent extends StatelessWidget {
       downloads.chapterTotalBytes(chapterLectures),
     );
 
+    // Scrollable: with large text or a longer translation the actions are
+    // taller than the sheet's maximum height.
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _handle(context),
-            const SizedBox(height: 12),
-            _header(context, isDownloaded),
-            const Divider(height: 24),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _handle(context),
+              const SizedBox(height: 12),
+              _header(context, isDownloaded),
+              const Divider(height: 24),
 
-            // ── This lecture ────────────────────────────────────────────────
-            if (isDownloading) ...[
-              _ProgressRow(lectureId: lecture.id),
-              const SizedBox(height: 4),
-              _SheetTile(
-                key: WidgetKeys.offlineCancelDownload,
-                icon: Icons.cancel_outlined,
-                label: l10n.offlineCancelDownload,
-                color: context.colorScheme.error,
-                onTap: () {
-                  Navigator.pop(context);
-                  downloads.cancelDownload(lecture.id);
-                },
-              ),
-            ] else if (isDownloaded) ...[
-              _SheetTile(
-                key: WidgetKeys.offlineRemoveDownload,
-                icon: Icons.delete_outline_rounded,
-                label: l10n.offlineRemoveDownload,
-                color: context.colorScheme.error,
-                onTap: () => _confirmDeleteLecture(context, downloads),
-              ),
-            ] else ...[
-              _SheetTile(
-                key: WidgetKeys.offlineDownloadLecture,
-                icon: Icons.download_rounded,
-                label: l10n.offlineDownloadLecture(sizeMb),
-                onTap: () => _startDownload(context, downloads, connectivity),
-              ),
-            ],
-
-            // ── Whole chapter ───────────────────────────────────────────────
-            if (chapterLectures.length > 1) ...[
-              if (isChapterDownloading) ...[
+              // ── This lecture ────────────────────────────────────────────────
+              if (isDownloading) ...[
+                _ProgressRow(lectureId: lecture.id),
+                const SizedBox(height: 4),
                 _SheetTile(
-                  key: WidgetKeys.offlineCancelChapter,
-                  icon: Icons.stop_circle_outlined,
-                  label: l10n.cancelChapterDownload,
+                  key: WidgetKeys.offlineCancelDownload,
+                  icon: Icons.cancel_outlined,
+                  label: l10n.offlineCancelDownload,
                   color: context.colorScheme.error,
                   onTap: () {
                     Navigator.pop(context);
-                    downloads.cancelChapterDownload(lecture.chapterId);
+                    downloads.cancelDownload(lecture.id);
                   },
                 ),
-              ] else if (!chapterFull) ...[
+              ] else if (isDownloaded) ...[
                 _SheetTile(
-                  key: WidgetKeys.offlineDownloadChapter,
-                  icon: Icons.download_for_offline_outlined,
-                  label: l10n.downloadChapterAll(chapterTotalMb),
-                  onTap: () =>
-                      _startChapterDownload(context, downloads, connectivity),
+                  key: WidgetKeys.offlineRemoveDownload,
+                  icon: Icons.delete_outline_rounded,
+                  label: l10n.offlineRemoveDownload,
+                  color: context.colorScheme.error,
+                  onTap: () => _confirmDeleteLecture(context, downloads),
+                ),
+              ] else ...[
+                _SheetTile(
+                  key: WidgetKeys.offlineDownloadLecture,
+                  icon: Icons.download_rounded,
+                  label: l10n.offlineDownloadLecture(sizeMb),
+                  onTap: () => _startDownload(context, downloads, connectivity),
                 ),
               ],
-            ],
 
-            const SizedBox(height: 4),
-            _SheetTile(
-              key: WidgetKeys.offlineManageDownloads,
-              icon: Icons.folder_open_rounded,
-              label: l10n.offlineManageDownloads,
-              color: context.secondaryTextColor,
-              onTap: () {
-                // The sheet only opens over the full-screen Player, so this
-                // pushes the root-navigator Library adapter (Downloads tab)
-                // and Back returns to the Player. `go('/library?tab=…')` would
-                // drop the Player from the stack, and `push`ing the shell
-                // route does not render (see shell_screen_test).
-                //
-                // Capture the router and delay the push to the next frame.
-                // Navigator.pop (direct) + router.push (via GoRouter) in the
-                // same sync block causes Navigator._updatePages to see
-                // duplicate ValueKeys while the sheet pop is in-flight.
-                final router = GoRouter.of(context);
-                Navigator.pop(context);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  router.push('/offline-library');
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+              // ── Whole chapter ───────────────────────────────────────────────
+              if (chapterLectures.length > 1) ...[
+                if (isChapterDownloading) ...[
+                  _SheetTile(
+                    key: WidgetKeys.offlineCancelChapter,
+                    icon: Icons.stop_circle_outlined,
+                    label: l10n.cancelChapterDownload,
+                    color: context.colorScheme.error,
+                    onTap: () {
+                      Navigator.pop(context);
+                      downloads.cancelChapterDownload(lecture.chapterId);
+                    },
+                  ),
+                ] else if (!chapterFull) ...[
+                  _SheetTile(
+                    key: WidgetKeys.offlineDownloadChapter,
+                    icon: Icons.download_for_offline_outlined,
+                    label: l10n.downloadChapterAll(chapterTotalMb),
+                    onTap: () =>
+                        _startChapterDownload(context, downloads, connectivity),
+                  ),
+                ],
+              ],
+
+              const SizedBox(height: 4),
+              _SheetTile(
+                key: WidgetKeys.offlineManageDownloads,
+                icon: Icons.folder_open_rounded,
+                label: l10n.offlineManageDownloads,
+                color: context.secondaryTextColor,
+                onTap: () {
+                  // The sheet only opens over the full-screen Player, so this
+                  // pushes the root-navigator Library adapter (Downloads tab)
+                  // and Back returns to the Player. `go('/library?tab=…')` would
+                  // drop the Player from the stack, and `push`ing the shell
+                  // route does not render (see shell_screen_test).
+                  //
+                  // Capture the router and delay the push to the next frame.
+                  // Navigator.pop (direct) + router.push (via GoRouter) in the
+                  // same sync block causes Navigator._updatePages to see
+                  // duplicate ValueKeys while the sheet pop is in-flight.
+                  final router = GoRouter.of(context);
+                  Navigator.pop(context);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    router.push('/offline-library');
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

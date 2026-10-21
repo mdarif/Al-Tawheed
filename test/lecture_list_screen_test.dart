@@ -31,7 +31,6 @@ import 'package:myapp/widgets/lecture_tile.dart';
 import 'package:myapp/widgets/mini_player.dart';
 
 import 'support/fake_audio_playback.dart';
-import 'support/ignore_render_flex_overflow.dart';
 
 const _arabicSeries = SeriesConfig(
   id: 'tawheed-ar',
@@ -699,9 +698,6 @@ void main() {
       tester.view.physicalSize = const Size(360 * 3, 800 * 3);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
-      // The Lectures hero and LectureTile badge row already overflow at 2x
-      // text: separate layout bugs, not this test's subject.
-      if (scale > 1) ignoreRenderFlexOverflow(addTearDown);
 
       final catalog = _bigCatalog();
       await tester.pumpWidget(

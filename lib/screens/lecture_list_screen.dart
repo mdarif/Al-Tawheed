@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
@@ -298,6 +300,14 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return offset.clamp(position.minScrollExtent, position.maxScrollExtent);
   }
 
+  /// Expanded height of the Lectures hero for the current text scale: the
+  /// 14dp bottom padding, plus ~24dp of fixed gaps and chip padding, plus
+  /// ~82dp of text that scales (never below the original 150dp).
+  static double _heroExtent(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(100) / 100;
+    return math.max(150, 14 + 24 + 82 * textScale);
+  }
+
   SliverAppBar _buildAppBar(Catalog? catalog) {
     // Watch the language so the resolved title/speaker refresh when the user
     // switches UI language while this screen is on-screen.
@@ -405,7 +415,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
       // toolbar row above it carries nothing but the bell. What remains above
       // the hero now is the device's status bar / Dynamic Island, which is
       // system-reserved.
-      expandedHeight: catalog != null ? 150 : 80,
+      //
+      // The text in the hero (two-line title, speaker, stats chip) grows with
+      // the user's text size while the avatar and gaps do not, so the height
+      // follows the text scale; a fixed 150 overflowed the hero by 48dp at 2x.
+      expandedHeight: catalog != null ? _heroExtent(context) : 80,
       automaticallyImplyLeading: false,
       // No ⋮ here — the lecture list is the busiest screen. Search comes
       // before the bell.

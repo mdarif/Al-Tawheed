@@ -406,6 +406,21 @@ is portable memory: any LLM working the repo should read and extend it.
   Several real overflows (Study dashboard duration row, edition-switcher
   `CapabilityChip`) stayed hidden for releases because the widget sat in an
   offstage `IndexedStack` that tests never rendered at 2×.
+- **`test/overflow_smoke_test.dart` is the overflow guard — never silence a
+  `RenderFlex overflowed` to get another test green.** It pumps every screen
+  and sheet (en · ar · ur · ur_roman × 1.0x/2.0x × 360×640, real long Urdu and
+  Arabic titles from the bundled books) through the production router, scrolls
+  every list end to end (rows build lazily, so an overflow in row 30 is
+  invisible otherwise), and lists *all* overflows with pixels and `lib/` site —
+  not just the first one Flutter names. A bare `Center(Column)` status page
+  overflows on a short screen / big text: use `CenteredScrollBody`. Bottom sheets
+  taller than 9/16 of the screen need a `SingleChildScrollView`. Rows of
+  `[Text, Text/Button]` need `Flexible`/`Wrap` on the text. Two traps when
+  extending it: widget tests render Latin text in the Ahem fallback font
+  (every glyph 1em wide, ~1.8× real Roboto), so a Latin-script overflow in a
+  test is pessimistic by design (a layout that passes under Ahem is safe);
+  and a `tester.drag` shorter than the touch slop is a TAP on whatever is
+  under it (it once opened the Player from the continue-listening banner).
 - **Device tests that find a screen by its widget TYPE go stale silently.**
   Patrol/integration finders like `find.byType(ListView)` or an `AppBar`
   title broke without warning when the Book chapter list became a

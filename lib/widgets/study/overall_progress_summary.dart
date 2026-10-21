@@ -105,24 +105,31 @@ class OverallProgressSummary extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.adjust_rounded,
-                    size: 17,
-                    color: context.brandColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.studyOverallProgress,
-                    style: context.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: context.secondaryTextColor,
+              // Expanded + Flexible: the label wraps rather than pushing the
+              // percentage off the card at large text.
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.adjust_rounded,
+                      size: 17,
+                      color: context.brandColor,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.studyOverallProgress,
+                        style: context.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: context.secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 context.localizedDigits('$percent%'),
                 style: context.textTheme.bodyMedium?.copyWith(

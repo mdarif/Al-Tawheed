@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
+import 'package:myapp/widgets/centered_scroll_body.dart';
 
 /// Shared "couldn't load" state for catalog-backed screens (Lectures, Study,
 /// Book). Callers supply the [icon], [title], and [message]; the retry button
@@ -21,11 +22,11 @@ class CatalogErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return CenteredScrollBody(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 52, color: context.mutedIconColor),
             const SizedBox(height: 20),

@@ -11,6 +11,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/startup_metrics.dart';
+import 'package:myapp/widgets/centered_scroll_body.dart';
 
 // Arabic tagline shown when the series includes a companion book.
 const _arTagline = 'شرح صوتي مع متن الكتاب';
@@ -164,7 +165,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   // All content centred as one group — photo, name, title,
                                   // tagline all move together when the screen height changes.
                                   Expanded(
-                                    child: Center(
+                                    // Scrolls when the group is taller than
+                                    // the space above the button (large text,
+                                    // short screens) instead of overflowing.
+                                    child: CenteredScrollBody(
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 32,

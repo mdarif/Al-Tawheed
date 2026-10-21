@@ -179,11 +179,17 @@ class _TileContent extends StatelessWidget {
                         playing: isPlaying,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        context.l10n.nowPlaying,
-                        style: context.textTheme.labelSmall?.copyWith(
-                          color: context.brandColor,
-                          fontWeight: FontWeight.w700,
+                      // Flexible: the column is only as wide as the row leaves
+                      // it (badge and trailing buttons take their share), so
+                      // the label wraps instead of overflowing at large text
+                      // or in a longer translation.
+                      Flexible(
+                        child: Text(
+                          context.l10n.nowPlaying,
+                          style: context.textTheme.labelSmall?.copyWith(
+                            color: context.brandColor,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -341,11 +347,13 @@ class _OfflineCue extends StatelessWidget {
       children: [
         Icon(Icons.cloud_off_rounded, size: 13, color: context.mutedIconColor),
         const SizedBox(width: 4),
-        Text(
-          context.l10n.offlineBadge,
-          style: context.textTheme.labelSmall?.copyWith(
-            color: context.secondaryTextColor,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            context.l10n.offlineBadge,
+            style: context.textTheme.labelSmall?.copyWith(
+              color: context.secondaryTextColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

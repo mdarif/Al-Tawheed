@@ -85,12 +85,14 @@ class ClassProgressCard extends StatelessWidget {
                             color: context.brandColor,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            l10n.studyRecommendedNext,
-                            style: context.textTheme.labelSmall?.copyWith(
-                              fontSize: 10,
-                              color: context.brandColor,
-                              fontWeight: FontWeight.w700,
+                          Flexible(
+                            child: Text(
+                              l10n.studyRecommendedNext,
+                              style: context.textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color: context.brandColor,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
@@ -115,11 +117,28 @@ class ClassProgressCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        StudyStatusChip(status: info.status),
-                        if (info.isRecommended) ...[
-                          const SizedBox(width: 8),
-                          _RecommendedPlayCue(onTap: onTap),
-                        ],
+                        // The status pill (and play cue) are capped at 40% of the
+                        // screen width, so a long label wraps inside the pill
+                        // and the title always keeps room, instead of the
+                        // fixed-width trailing group overflowing the row at
+                        // large text.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.sizeOf(context).width * 0.4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: StudyStatusChip(status: info.status),
+                              ),
+                              if (info.isRecommended) ...[
+                                const SizedBox(width: 8),
+                                _RecommendedPlayCue(onTap: onTap),
+                              ],
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -133,12 +152,18 @@ class ClassProgressCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          context
-                              .localizedDigits(studyProgressLabel(info, l10n)),
-                          style: context.textTheme.bodySmall?.copyWith(
-                            color: context.secondaryTextColor,
-                            fontSize: 11.5,
+                        // Flexible: the caption ("2 of 3 parts complete", or
+                        // its longer Roman Urdu form) wraps rather than
+                        // overflowing the row beside the progress bar.
+                        Flexible(
+                          child: Text(
+                            context.localizedDigits(
+                              studyProgressLabel(info, l10n),
+                            ),
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: context.secondaryTextColor,
+                              fontSize: 11.5,
+                            ),
                           ),
                         ),
                       ],

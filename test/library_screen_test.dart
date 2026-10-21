@@ -29,7 +29,6 @@ import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/section_tab_header.dart';
 
 import 'support/fake_audio_playback.dart';
-import 'support/ignore_render_flex_overflow.dart';
 
 Lecture _lecture(String id, int number) => Lecture(
       id: id,
@@ -559,9 +558,6 @@ void main() {
           tester.view.physicalSize = const Size(360 * 3, 800 * 3);
           tester.view.devicePixelRatio = 3;
           addTearDown(tester.view.reset);
-          // Unrelated rows already overflow at some scales/locales (the
-          // LectureTile badge row): not this test's subject.
-          ignoreRenderFlexOverflow(addTearDown);
 
           final progress = ProgressProvider()..load();
           final downloads = DownloadsProvider();

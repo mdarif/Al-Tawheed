@@ -32,7 +32,6 @@ import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/widgets/mini_player.dart';
 
 import 'support/fake_audio_playback.dart';
-import 'support/ignore_render_flex_overflow.dart';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -1383,8 +1382,6 @@ void main() {
       testWidgets(
           'results clear the mini-player: the last hit is tappable '
           '($name, ${scale}x text)', (tester) async {
-        // Unrelated rows already overflow at 2x text: not this test's subject.
-        if (scale > 1) ignoreRenderFlexOverflow(addTearDown);
         final catalog = _urduCatalog();
         final app = await _pumpApp(
           tester,

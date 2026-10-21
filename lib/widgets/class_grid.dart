@@ -229,7 +229,7 @@ class ClassGridLegend extends StatelessWidget {
               BorderSide(color: context.dividerColor),
             ),
             const SizedBox(width: 6),
-            Text(l10n.searchLegendFinished, style: style),
+            Flexible(child: Text(l10n.searchLegendFinished, style: style)),
           ],
         ),
         Row(
@@ -240,7 +240,7 @@ class ClassGridLegend extends StatelessWidget {
               BorderSide(color: context.brandColor, width: 2),
             ),
             const SizedBox(width: 6),
-            Text(l10n.searchLegendContinue, style: style),
+            Flexible(child: Text(l10n.searchLegendContinue, style: style)),
           ],
         ),
       ],

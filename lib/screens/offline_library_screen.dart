@@ -318,25 +318,35 @@ class _ActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = color ?? context.brandColor;
+    // The chip sits beside the chapter title in a Row, which hands it
+    // unbounded width. Cap it at under half the screen so a long label (large
+    // text, a longer translation) wraps inside the chip instead of pushing the
+    // row past the edge; short labels are unaffected.
+    final maxWidth = MediaQuery.sizeOf(context).width * 0.45;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: fg.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: context.textTheme.labelSmall
-                  ?.copyWith(color: fg, fontWeight: FontWeight.w600),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: fg.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 13, color: fg),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: context.textTheme.labelSmall
+                      ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

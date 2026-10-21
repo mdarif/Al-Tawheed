@@ -52,13 +52,17 @@ class StudyStatusChip extends StatelessWidget {
             Icon(icon, size: 13, color: foreground),
             const SizedBox(width: 2),
           ],
-          Text(
-            label,
-            style: context.textTheme.labelSmall?.copyWith(
-              fontSize: 10.5,
-              color: foreground,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
+          // Flexible: the card caps the chip's width, and a long label
+          // (large text, a longer translation) wraps inside the pill.
+          Flexible(
+            child: Text(
+              label,
+              style: context.textTheme.labelSmall?.copyWith(
+                fontSize: 10.5,
+                color: foreground,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
             ),
           ),
         ],

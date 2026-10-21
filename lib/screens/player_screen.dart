@@ -268,9 +268,15 @@ class _OfflineStatusStrip extends StatelessWidget {
                     ),
                   ),
                 ),
-                TextButton(
-                  onPressed: context.read<PlayerNotifier>().retryPlayback,
-                  child: Text(l10n.retry),
+                // Flexible: the Retry label ("Dobara koshish karein",
+                // "دوبارہ کوشش کریں") is wider than a narrow phone leaves after
+                // the message, so the button gives way and wraps its label
+                // instead of pushing the pill off the screen.
+                Flexible(
+                  child: TextButton(
+                    onPressed: context.read<PlayerNotifier>().retryPlayback,
+                    child: Text(l10n.retry),
+                  ),
                 ),
               ],
             ),
@@ -339,11 +345,15 @@ class _OfflineStatusStrip extends StatelessWidget {
                 ] else
                   Icon(strip.icon, size: 14, color: strip.fgColor),
                 const SizedBox(width: 6),
-                Text(
-                  strip.label,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: strip.fgColor,
-                    fontWeight: FontWeight.w600,
+                // Flexible: a long status ("Not available offline") wraps
+                // inside the pill at large text instead of overflowing it.
+                Flexible(
+                  child: Text(
+                    strip.label,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: strip.fgColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 if (strip.tappable) ...[

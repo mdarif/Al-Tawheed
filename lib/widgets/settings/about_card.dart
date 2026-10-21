@@ -193,11 +193,16 @@ class _WebsiteLink extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             textDirection: TextDirection.ltr,
             children: [
-              Text(
-                domain,
-                style: context.textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+              // Flexible: at large text the domain breaks onto a second line
+              // rather than overflowing the card.
+              Flexible(
+                child: Text(
+                  domain,
+                  textAlign: TextAlign.center,
+                  style: context.textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 3),
