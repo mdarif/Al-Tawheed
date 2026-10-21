@@ -58,9 +58,9 @@ looks like, and what to do if it doesn't go to plan.
       at "Require Play Store service account" without it.
 - [ ] **`PLAY_FGS_MEDIA_DECLARED` is set to `true`** (or, for a one-time
       bootstrap attempt, `bootstrap`) — `gh secret list --repo
-      mdarif/Al-Tawheed` should list it. Without this the `publish` job's
-      Play preflight (`tool/play_release_preflight.py`) refuses the upload
-      outright. See [ci-cd.md → One-Time Setup → "Add the
+      mdarif/Al-Tawheed` should list it. Without this the `prepare` job's
+      foreground-service preflight (`tool/play_release_preflight.py
+      manifest`) refuses the release in seconds, before any build. See [ci-cd.md → One-Time Setup → "Add the
       `PLAY_FGS_MEDIA_DECLARED` secret"](ci-cd.md#7-add-the-play_fgs_media_declared-secret--required-or-publish-fails).
 
 ## Step 1 — Run the local release gate
@@ -211,64 +211,87 @@ gh run watch
 # or: https://github.com/mdarif/Al-Tawheed/actions/workflows/flutter-release.yml
 ```
 
-The workflow runs a six-job graph (plus a dry-run-only summary job):
-`promote → prepare → build-android → verify-android → publish → sync-develop`.
+The workflow runs an eight-job chain (plus a dry-run-only summary job):
 
-1. **`promote`** — fast-forward merges `develop` into `master` and pushes.
-   Fails fast if that's not possible (see Troubleshooting).
-2. **`prepare`** — cheap and fast: computes the new version/tag, rejects a
-   duplicate tag, and checks the signing secrets + Play service account are
-   non-empty. All of this used to run only after a ~20-minute build; now a
-   missing secret or a stale tag fails in seconds.
-3. **`build-android`** — the only job holding signing secrets. Re-runs
-   analyze + tests (refuses to tag a broken build even if Step 1 passed —
-   different machine, same checks), plus the new `dart format
-   --set-exit-if-changed` and `tool/` unit-test gates, builds a
-   **production-signed** APK + AAB (CD Phase 2 — same upload key as Step 1's
-   local build), and uploads them as the `android-release` artifact.
+```
+prepare → quality → build-android → verify-android → finalize-git → publish-play → github-release → sync-develop
+                                     └─ a dry run stops here (the last four are skipped) ─┘
+```
+
+**The rule: nothing durable exists until `verify-android` has passed.** No
+pushed commit, no tag, no Play release and no GitHub Release is created before
+the signed APK has been installed and launched. Until then a run leaves behind
+only CI artifacts and read-only Play queries.
+
+1. **`prepare`** — cheap and fast. Rejects a dispatch from any ref other than
+   `master`/`develop` (and from `develop` without `confirm_promote`), pins the
+   **immutable source SHA** (the commit the run was dispatched at — pushes to
+   the branch while it runs cannot change what ships), checks `yq` exists,
+   computes the new version/tag **once** and exports it (no later job
+   recomputes it from the bump), checks the signing secrets, the Play service
+   account and the foreground-service declaration, and takes a read-only
+   snapshot of Play state. A missing secret or a stale tag fails in seconds.
+2. **`quality`** — `make format-check` (check only, never rewrites), `make
+   analyze`, `make test`, `make test-tooling`. Different machine, same checks
+   as Step 1.
+3. **`build-android`** — the only job holding signing secrets. Stamps exactly
+   the version `prepare` computed, builds the **production-signed** APK + AAB
+   (same upload key as Step 1's local build), asserts it built that version,
+   records the **AAB's SHA-256**, and uploads `android-release`.
 4. **`verify-android`** — a clean runner with no secrets. Downloads the exact
    signed APK, runs `tool/verify_release_apk.py --inspect-only`, then
    installs/launches/backgrounds/resumes it on an API 34 emulator, uploading
    screenshot + logcat evidence either way. **This is the job the
    `skip_verify` input bypasses** — see ci-cd.md for when that's legitimate.
-5. **`publish`** — builds nothing (reuses `android-release`). Runs
-   `tool/play_release_preflight.py` (which requires the
-   `PLAY_FGS_MEDIA_DECLARED` secret — see the pre-flight checklist above),
-   uploads the AAB to the Play Store **internal track** (CD Phase 3), commits
-   the version bump to `master`, tags it, pushes both, and creates a GitHub
-   Release carrying the APK, the AAB, `play-store-notes.txt` and an
-   auto-generated changelog. Play "What's new"
-   notes are written for en-US/ar/ur but with the **same English text** in
-   all three — release notes are authored in English only, unlike every
-   other user-facing string in this app.
-6. **`sync-develop`** — fast-forward merges `master` (now including the
-   version bump + tag) back into `develop` and pushes. This is the step that
-   used to be a manual "close out the release" chore — it's now automatic.
+   It exports `verified=true` only when the device check actually ran.
+5. **`finalize-git`** — the first durable state. **One atomic push** of
+   `master` (promoted to the source SHA when dispatched from `develop`) + the
+   `chore: release X.Y.Z` commit + the tag: either all of it lands or none.
+   Resumable: if the tag already exists it is accepted only when its commit's
+   parent is the dispatched source SHA, its `pubspec.yaml` version is the
+   release version, and `master` contains it; otherwise the job aborts.
+6. **`publish-play`** — builds nothing (reuses `android-release`). Re-queries
+   Play itself (the `prepare` snapshot may be stale), then: **upload** if the
+   versionCode is absent, **assign** an already-uploaded bundle to the
+   internal track without re-uploading, or **skip** if that exact build is
+   already `completed`. A versionCode already on Play counts as ours only when
+   Play's reported bundle SHA-256 equals the AAB's; otherwise the job fails
+   with a conflict and writes nothing. It finishes by proving Play now shows
+   the exact build as `completed` on the **internal track**
+   (Play "What's new" notes are the **same English text** for en-US/ar/ur —
+   release notes are authored in English only).
+7. **`github-release`** — creates the release for the tag, or edits it if a
+   previous attempt already did, replacing the APK, AAB and
+   `play-store-notes.txt` assets. The body says "Device verification: PASSED"
+   or "Device verification: SKIPPED" depending on what actually ran.
+8. **`sync-develop`** — no-op if `develop` already contains the tag;
+   fast-forwards it (with a lease) only if `develop` still equals the source
+   SHA; otherwise fails with merge instructions. It never overwrites commits
+   that landed on `develop` meanwhile.
 
-> **`needs:` propagates skips.** If an early job is skipped (e.g. `promote`
-> on a non-develop dispatch), everything downstream skips too and the run
-> still shows green with nothing built. See "dry run" note below and
-> `docs/gotchas.md` for the mechanics.
+> **Gating is by `if:`, not by luck.** The four state-changing jobs
+> (`finalize-git`, `publish-play`, `github-release`, `sync-develop`) each carry
+> `if: inputs.dry_run != true` and no status function (`always()` etc.), so a
+> dry run structurally cannot reach them; `test/tool/test_workflows.py` proves
+> it. See `docs/gotchas.md` for why `needs:` skip-propagation matters here.
 
 > **First time, or testing a workflow change?** Add `DRY_RUN=true` (or run
-> `make release MODE=dry BUMP=patch`) to run build + verify only — nothing is
-> promoted, committed, tagged, pushed, or released:
+> `make release MODE=dry BUMP=patch`) to run quality + build + verify only —
+> nothing is promoted, committed, tagged, pushed, published or released:
 > ```sh
 > make release MODE=develop BUMP=patch DRY_RUN=true
 > ```
 > **A dry run that finishes in under a minute with no artifacts is a
-> FAILURE, not a pass.** `needs:` cascade-skips can make the whole graph
-> report green while nothing actually built. Confirm `build-android` and
-> `verify-android` ran and uploaded the `android-release` / `verify-evidence`
-> artifacts — the `dry-run-summary` job's step-summary exists to make this
-> obvious.
+> FAILURE, not a pass.** Confirm `build-android` and `verify-android` ran and
+> uploaded the `android-release` / `verify-evidence` artifacts — the
+> `dry-run-summary` job's step-summary exists to make this obvious.
 
 ### Fallback: manual promote + release from master
 
-Use this only if `make release MODE=develop` can't be used — e.g. the `promote` job
-failed because `master` has genuinely diverged from `develop` and needs a
-human to resolve it (see Troubleshooting), or you need to re-trigger a
-release for code that's already on `master`.
+Use this only if `make release MODE=develop` can't be used — e.g. `finalize-git`
+aborted because `master` has genuinely diverged from `develop` and needs a
+human to resolve it (see Troubleshooting), or you need to release code that's
+already on `master`.
 
 > ## ⚠️ Read this before you do anything else
 > **`make release` builds from `origin/master` on GitHub, not your local
@@ -321,7 +344,9 @@ make release BUMP=patch     # must be run from master
 ```
 
 `sync-develop` still runs automatically afterward — no separate "sync
-develop" step needed even in this fallback flow.
+develop" step needed even in this fallback flow (it fast-forwards `develop`
+only if it still equals the commit the release was built from; after the
+manual merge above, `develop` and `master` are the same commit, so it does).
 
 ## Step 3 — Verify the release actually shipped
 
@@ -351,7 +376,7 @@ below.
 Not every release needs this — only do it when you're ready to push to
 production on the Play Store.
 
-CD Phase 3's `publish` job already uploaded `app-release.aab` to the
+The `publish-play` job already uploaded `app-release.aab` to the
 **internal track** (status: completed) with the auto-generated
 `play-store-notes.txt` as the "What's new" text — nothing to build or upload
 manually.
@@ -378,52 +403,63 @@ manually.
 
 ## Troubleshooting
 
-### Failure blast radius by job — read this first
+### Failure points and recovery — read this first
 
-The new job graph fails in three very different ways depending on which job
-breaks. Know which one you're in before you touch anything:
+The release is a resumable chain. The one rule that tells you how worried to
+be: **nothing durable exists until `verify-android` has passed.** A failure at
+or before `verify-android` leaves nothing behind but CI artifacts. After it, each
+job leaves a known state and the next attempt picks up from there.
 
-**`verify-android` fails => NOTHING has shipped, safe to fix and re-run.**
-No secrets are even present in this job, no upload has happened, no tag or
-commit exists. Fix the underlying issue (a real crash the on-device check
-caught, or infra flakiness in the emulator runner) and re-run
-`make release MODE=develop` from scratch. If the check itself is the blocker and the
-release is genuinely time-critical, `skip_verify=true` bypasses it — but that
-is an escape hatch for infra outages, not a way to ship past a real failure
-it found.
+**To resume, use "Re-run failed jobs" on the SAME run** (Actions → the run →
+Re-run failed jobs, or `gh run rerun <run-id> --failed`). Jobs that already
+succeeded keep their outputs — the version, the source SHA and the AAB SHA-256
+— so nothing is recomputed and the build is not repeated.
 
-**`publish` fails partway => the release may be HALF-SHIPPED. Do NOT blindly
-re-run.** `publish` does multiple non-atomic things in sequence: Play upload,
-then commit+tag+push, then GitHub Release creation. If it fails after the
-Play upload step but before the tag push, the AAB is live on the Play Store
-**internal track** with a `versionCode` now consumed, while `origin` has no
-new tag/commit for it. Before doing anything:
-1. Check the Play Console **internal testing** track — is the new build
-   already there?
-2. Check the tag list — `git fetch --tags && git tag --sort=-creatordate | head -3`
-   — does the new version's tag exist?
-3. If Play has it but the tag doesn't: don't re-trigger a normal release (it
-   will try to reuse the same `versionCode` and get rejected — see "Version
-   code N has already been used" below). Bump `pubspec.yaml`'s `+BUILD`,
-   commit, tag, and push manually to reconcile, or bump `+BUILD` and let a
-   fresh `make release MODE=develop` run produce a new tag pointing at the right code.
-4. If neither Play nor the tag has it: the failure happened before any
-   irreversible action — a plain re-run is safe.
+- Do **not** use "Re-run all jobs" once `finalize-git` has pushed: `prepare`
+  would recompute the version, find the tag, and (correctly) refuse.
+- A **fresh dispatch** is a *new release*: from an already-bumped `master` it
+  computes the next version; from a `develop` that was never synced it
+  computes the **same** version, finds the existing tag, and aborts in
+  `prepare` ("Tag X.Y.Z already exists"). That abort is the signal to resume
+  the old run instead.
 
-**`sync-develop` fails => the release already shipped — only `develop` needs
-manual fixing.** By the time `sync-develop` runs, `publish` has already
-succeeded: the AAB is on Play, the tag and GitHub Release exist, the commit
-is on `master`. Nothing about the *release* is broken — only merging that
-commit back into `develop` failed (see the `DEVELOP_SYNC_TOKEN` entry below
-for the usual cause). Do not re-trigger the release workflow; just reconcile
-`develop` by hand:
+| Job that failed | State it leaves | What "Re-run failed jobs" does |
+|---|---|---|
+| `prepare` | Nothing | Re-validates, recomputes the version. Fix the cause first (missing secret, bad ref, `confirm_promote`, Play conflict). |
+| `quality` | Nothing | Re-runs the gates. A real failure needs a fix on `develop`, then a fresh dispatch. |
+| `build-android` | Artifacts only | Rebuilds the same version (replaces `android-release`). |
+| `verify-android` | Artifacts only | Re-verifies. A real crash needs a fix and a fresh dispatch; `skip_verify=true` is for emulator/infra outages only. |
+| `finalize-git` | Nothing, **or** `master` + commit + tag all together (the push is one atomic push) | Tag absent: creates it. Tag present: continues only if its commit's parent is the dispatched source SHA, its `pubspec.yaml` version is the release version, and `master` contains it — otherwise aborts and tells you why. It never retags. |
+| `publish-play` | The tag is on `master`. Play has: nothing, a bundle only, or the finished release | Re-queries Play and acts: **upload** if absent, **assign** the already-uploaded bundle without re-uploading, **skip** if that exact build is already `completed`; then verifies Play shows the same SHA-256. |
+| `github-release` | Tag + Play release exist | Creates the release, or edits it and replaces the assets (`--clobber`). |
+| `sync-develop` | The release is fully shipped | No-op if `develop` has the tag; leased fast-forward if `develop` is still the source SHA; otherwise fails with merge instructions. |
+
+**`publish-play` conflict ("exists on Play with SHA-256 …, but this workflow
+built SHA-256 …").** A versionCode is on Play but it is a *different* artifact
+(a manual upload, or an older build). Nothing was written. A consumed
+versionCode can never be reused, so bump the `+BUILD` number on `develop` and
+cut a **new** release; the tag from this run stays on `master` as a record.
+
+**`publish-play` fails but you suspect Play has the build.** Re-run failed
+jobs: the decision step will say `skip` if the exact build is already
+`completed` on the internal track, and the job turns green without writing.
+
+**`sync-develop` fails => the release already shipped; only `develop` needs
+manual fixing.** The AAB is on Play, the tag and GitHub Release exist, the
+commit is on `master`. Do not re-trigger the release. Reconcile `develop`:
 ```sh
-git checkout develop && git merge --ff-only origin/master && git push origin develop
+git fetch origin && git checkout develop && git merge origin/master
+# if develop had its own commits, resolve the pubspec.yaml `version:` conflict
+# keeping the HIGHER number, then:
+git push origin develop
 ```
+(`--ff-only` works when `develop` has no commits of its own.) The job is
+deliberately strict: it never overwrites or rebases commits that landed on
+`develop` while the release ran.
 
 ---
 
-**"Upload to Play Store failed: 'The caller does not have permission' (403),
+**"`publish-play` failed with 'The caller does not have permission' (403),
 even though the service account is invited and Active"**
 Account-level "Release apps to testing tracks" is **not sufficient**. Grant it
 at the **app level**: Users and permissions → the service account → Manage →
@@ -435,14 +471,24 @@ account-level looks right and it still 403s within the first ~30 min it may also
 be permission propagation — but if it persists past that, it's the missing
 app-level grant, not time.
 
-**"Release job failed at 'Commit, tag, and push': 'src refspec master does not
-match any'"**
-The one-click (develop-dispatched) flow checks out the promote SHA, so the
-`publish` job runs in **detached HEAD** — there is no local `master` branch. The
-step must push with `git push origin HEAD:master`, not `git push origin master`.
-Fixed in `flutter-release.yml` on the 2.3.0 release; if it regresses, check that
-step. Note: if the Play upload already ran before this failure, that versionCode
-is consumed — bump `pubspec.yaml`'s `+BUILD` before re-running (see below).
+**"`finalize-git` failed: 'src refspec master does not match any'"**
+Historical (2.3.0): the release job runs in **detached HEAD**, so there is no
+local `master` to push. `tool/release_git.py` now pushes an explicit
+`<sha>:refs/heads/master` refspec together with the tag in one `--atomic`
+push, and `finalize-git` runs before any Play upload, so a failure here can no
+longer leave a live Play build without a tag. If it ever regresses, the
+push is in `finalize()` in `tool/release_git.py`.
+
+**"`finalize-git` failed: 'master is not an ancestor of the source SHA'"**
+`master` moved (or diverged from `develop`) after the release was dispatched,
+or someone pushed to `master` outside this workflow. Nothing was pushed. Use
+the **Fallback: manual promote** section to reconcile, then dispatch again.
+
+**"`finalize-git` failed: 'The tag already exists … but …'"**
+The tag is there but this run did not create it (its commit has a different
+parent, a different `pubspec.yaml` version, or `master` does not contain it).
+Do not re-run. Inspect `git show <tag>`; delete the tag only if it was a
+mistake, or dispatch a new release.
 
 **"sync-develop failed: 'GH006: Protected branch update failed for
 refs/heads/develop'"**
@@ -458,11 +504,15 @@ admin push bypasses too):
 git checkout develop && git merge --ff-only origin/master && git push origin develop
 ```
 
-**"Upload failed: 'Version code N has already been used'"**
-A prior run uploaded that AAB to Play (consuming versionCode N) but then failed
-*after* the upload, so no tag/commit was made and a re-run recomputes the same
-N. Bump `pubspec.yaml`'s `+BUILD` (e.g. `2.2.0+15` → `+16`) so the compute step
-yields N+1, commit, push, and re-run.
+**"`publish-play`: 'versionCode N exists on Play with SHA-256 …' / 'Version
+code N has already been used'"**
+Play already has versionCode N. Since the Play publish now runs *after* the tag
+is pushed and re-queries Play first, the normal "half-shipped" case resolves
+itself on "Re-run failed jobs" (same SHA-256: the job assigns or skips). If you
+still see this, the code belongs to a **different** artifact (typically a manual
+upload with a higher build number): bump `pubspec.yaml`'s `+BUILD` past the
+highest versionCode in Play Console (e.g. `2.2.0+15` → `+16`), commit, push, and
+cut a new release.
 
 **"Release workflow failed at 'Require signing secrets'"** (in the
 `prepare` job)
@@ -480,57 +530,52 @@ is not set"** (in the `prepare` job)
 `GOOGLE_PLAY_SERVICE_ACCOUNT` isn't set as a repo secret yet (CD Phase 3). See
 `docs/ci-cd.md` → "One-Time Setup" → "Add CD Phase 3 Play Store secret".
 
-**"`publish` failed in the Play preflight step (`tool/play_release_preflight.py`):
-refusing to upload — `PLAY_FGS_MEDIA_DECLARED` is not true"**
+**"`prepare` failed at 'Foreground-service declaration preflight': refusing to
+upload — `PLAY_FGS_MEDIA_DECLARED` is not true"**
 The `PLAY_FGS_MEDIA_DECLARED` secret is unset or not `true`/`bootstrap`. This
 is a required secret, not an optional one — see the pre-flight checklist and
 `docs/ci-cd.md` → "One-Time Setup" → "Add the `PLAY_FGS_MEDIA_DECLARED`
 secret". If Play Console hasn't surfaced the foreground-service declaration
 form yet, set it to `bootstrap` for one attempt, then switch it to `true`
 once you've filled in the form. Nothing has shipped at this point — this
-step runs before the Play upload.
+check runs in `prepare`, before any build.
 
-**"Release workflow failed at 'Upload to Play Store' with 'no application was
-found' / track not found"**
+**"`publish-play` failed with 'no application was found' / track not found"**
 Google requires at least one **manual** upload to a track via Play Console
 before the API can publish to it. Build the AAB locally (Step 4's fallback
-box), upload it to the **internal** track by hand once, then re-run
-`make release MODE=develop`.
+box), upload it to the **internal** track by hand once, then **Re-run failed
+jobs** (if that manual upload used the release's own AAB the job skips; a
+different AAB under the same versionCode is reported as a conflict — see
+above).
 
-**"Release workflow failed at 'Upload to Play Store' with 'APK/Bundle
-... versionCode ... has already been used'"**
-The `versionCode` (the `+BUILD` number in `pubspec.yaml`) was already used by
-a release on this or another track — most likely from a manual upload that
-used a higher build number than the repo's `pubspec.yaml`. Bump
-`pubspec.yaml`'s `+BUILD` past whatever the highest `versionCode` is in Play
-Console (Release → any track → release details), commit, push, and re-run.
-
-**"Release workflow failed at 'Upload to Play Store' with a permission /
-403 error"**
+**"`publish-play` failed with a permission / 403 error"**
 The service account in `GOOGLE_PLAY_SERVICE_ACCOUNT` doesn't have **Release
 Manager** access to Al-Tawheed yet, or that access hasn't propagated. Play
 Console → Users and permissions → confirm the service account's email has
-Release Manager (or Admin) on this app, then re-run.
+Release Manager (or Admin) on this app, then **Re-run failed jobs** — the
+tag is already on `master`, so do not dispatch a new release.
 
-**"`release MODE=develop` failed at `promote`: 'not possible to fast-forward'"**
+**"`release MODE=develop` failed at `finalize-git`: 'master is not an ancestor
+of the source SHA'"**
 `master` has diverged from `develop` — most likely someone pushed directly to
 `master` outside this workflow, or `sync-develop` failed on a previous
-release and was never reconciled. Use the **Fallback: manual promote**
-section above to reconcile `master` and `develop` by hand (resolve the
-`pubspec.yaml` version conflict, keeping the higher number), then re-run
-`make release MODE=develop`.
+release and was never reconciled. Nothing was pushed. Use the **Fallback:
+manual promote** section above to reconcile `master` and `develop` by hand
+(resolve the `pubspec.yaml` version conflict, keeping the higher number), then
+dispatch `make release MODE=develop` again.
 
-**"`release MODE=develop` failed at `promote`: 'Dispatched from develop without
+**"`release MODE=develop` failed at `prepare`: 'Dispatched from develop without
 confirm_promote=true'"**
 `make release MODE=develop` always sets `confirm_promote=true` — if you see this, the
 workflow was dispatched manually (GitHub UI or `gh workflow run`) without
 checking that input. Re-run via `make release MODE=develop`, or tick
 `confirm_promote` if dispatching manually. This guard exists so an accidental
-`--ref develop` dispatch can't silently ship stale code from `master`.
+`--ref develop` dispatch can't silently ship stale code from `master`. (A
+`--dry_run` dispatch from `develop` does not need it.)
 
-**"`sync-develop` failed: 'not possible to fast-forward'"**
+**"`sync-develop` failed: 'develop has moved since this release was cut'"**
 `develop` picked up its own commits (most likely its own `pubspec.yaml`
-edits) since the last sync. Reconcile by hand:
+edits) since the release was dispatched. The release has shipped. Reconcile by hand:
 ```sh
 git checkout develop
 git pull origin develop
@@ -548,10 +593,11 @@ way more than that"** — your release shipped the **wrong code**, fix it
 immediately. This is the failure mode the manual flow's "prove the push
 landed" check exists to prevent (it happened for real on 2026-06-07 — a
 `2.1.0` release went out containing only a stray "Add Play Store assets"
-commit, missing the entire offline-mode feature set). The one-click flow's
-`promote` job (which always fast-forwards `master` to `develop` before
-`build-android` builds) makes this much harder to hit, but if you're using the
-manual fallback and it happens anyway:
+commit, missing the entire offline-mode feature set). The one-click flow makes
+this much harder to hit: the release is built from the immutable source SHA
+the run was dispatched at, and `finalize-git` refuses to push if `master` is
+not an ancestor of that SHA. If you're using the manual fallback and it
+happens anyway:
 1. Confirm the gap: `git log <bad-release-tag>..<your-local-master> --oneline`
    — if this lists your real commits, the release is missing them
 2. Reconcile the branches (see the Fallback section's "if the push is
@@ -567,14 +613,15 @@ manual fallback and it happens anyway:
 
 **"The changelog describes the PREVIOUS release's changes, not this one (but
 the APK itself is correct)"**
-This was a workflow ordering bug, fixed on 2026-06-13: `flutter-release.yml`'s
-"Generate changelog" step ran `git-cliff --latest` *before* the "Commit, tag,
-and push" step created the new tag — so `--latest` resolved against the
-still-current tag and produced ITS changelog instead of the new one. The fix
-changed the arg to `--unreleased` (changelog for commits since the last tag
-that aren't tagged yet), which is correct regardless of step ordering. If you
-see this again after this fix, the workflow has regressed — check the
-"Generate changelog" step's args first.
+This was a workflow ordering bug (first fixed 2026-06-13): git-cliff's
+`--latest` resolves to the newest tag *that exists*, so running it before the
+new tag was created produced the previous release's changelog, and the fix was
+`--unreleased` (commits since the last tag). The graph has since changed so
+that the tag is pushed in `finalize-git` *before* `publish-play` and
+`github-release` generate their notes — the tag now exists, `--unreleased`
+would be empty, and both jobs correctly use `--latest` on a checkout of the
+release commit. If a changelog is wrong again, check those two jobs' "Generate
+changelog" args and that they check out `needs.finalize-git.outputs.release_sha`.
 
 To regenerate the correct changelog for an already-published release and fix
 it in place:
@@ -601,10 +648,13 @@ the wrong branch (intentional — stops a release from being tagged off a
 feature branch by accident). `make release MODE=develop` → `git checkout develop`.
 `make release` → `git checkout master && git pull origin master`.
 
-**"Tag already exists" in the release workflow**
-The version in `pubspec.yaml` wasn't bumped since the last release, or you're
-re-running a workflow that already succeeded. Bump `pubspec.yaml` manually (or
-choose a higher `BUMP` level) and push before re-triggering.
+**"Tag already exists" in the release workflow (`prepare`)**
+Either the version in `pubspec.yaml` wasn't bumped since the last release, or a
+previous run already pushed this release's tag and stopped later (Play,
+GitHub Release or the develop sync). In the second case do **not** dispatch
+again: open the earlier run and use **Re-run failed jobs** — see "Failure points
+and recovery" above. If it really is a stale version, bump `pubspec.yaml`
+manually (or choose a higher `BUMP` level) and push before re-triggering.
 
 **"`make release` / `make release MODE=develop` returns HTTP 403"**
 Your `gh` token is missing the `workflow` scope — see `docs/deployment.md` →
@@ -625,6 +675,6 @@ PR review back if you want it.
 
 **"Can I require PRs on master without breaking the release bot?"**
 Not with classic branch-protection rules — they have no bypass-actor field, so
-the release bot's pushes (`promote`, `publish`, `sync-develop`) would start
+the release bot's pushes (`finalize-git`, and `sync-develop` via the PAT) would start
 failing. You'd need to switch to Repository Rulesets, which do have a
 bypass-actor field, and add `github-actions[bot]` to it.

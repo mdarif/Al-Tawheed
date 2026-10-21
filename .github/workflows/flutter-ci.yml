@@ -1,7 +1,8 @@
 # Flutter CI — Al-Tawheed Islamic Education App
 #
 # Triggers: push to develop, PRs into develop, PRs into master.
-# Runs on ubuntu-latest with Java 21 + Flutter 3.41.1 (pinned).
+# Runs on ubuntu-latest with Java 21 + the Flutter SDK pinned in pubspec.yaml
+# (`environment: flutter:`), the same pin every other workflow reads.
 
 name: Flutter CI
 
@@ -101,15 +102,15 @@ jobs:
         run: flutter pub get
 
       # ------------------------------------------------------------------ #
-      # 7b. Formatting — the release pipeline enforces the same check, so
-      #     catching drift here keeps a release from being the first place a
-      #     stray format shows up. Note that `dart format` and the
-      #     `require_trailing_commas` lint can disagree: run `dart format`,
-      #     then `dart fix --apply --code=require_trailing_commas`, and repeat
-      #     until both are clean. `make format-check` mirrors this exactly.
+      # 7b. Formatting - check only, never rewrites. The release pipeline
+      #     enforces the same check, so catching drift here keeps a release
+      #     from being the first place a stray format shows up. `dart format`
+      #     and the `require_trailing_commas` lint can disagree: run
+      #     `dart format`, then `dart fix --apply --code=require_trailing_commas`,
+      #     and repeat until both are clean. The recipe lives in the Makefile.
       # ------------------------------------------------------------------ #
       - name: Verify formatting
-        run: dart format --set-exit-if-changed -o none lib test tool integration_test patrol_test
+        run: make format-check
 
       # ------------------------------------------------------------------ #
       # 8. Analyze (static analysis)
@@ -118,7 +119,7 @@ jobs:
       #    produce INFO-level hints that are outside this project's control.
       # ------------------------------------------------------------------ #
       - name: Analyze code
-        run: flutter analyze --fatal-warnings
+        run: make analyze
 
       # ------------------------------------------------------------------ #
       # 9. Run tests with coverage
@@ -129,6 +130,20 @@ jobs:
       # ------------------------------------------------------------------ #
       - name: Run tests
         run: flutter test --coverage --reporter=expanded
+
+      # ------------------------------------------------------------------ #
+      # 9b. Release tooling and workflow-structure tests (test/tool). The
+      #     structure tests parse the workflows with a pinned PyYAML, in a venv
+      #     because the runner's system Python is externally managed.
+      # ------------------------------------------------------------------ #
+      - name: Install pinned PyYAML for the tooling tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tooling-venv"
+          "$RUNNER_TEMP/tooling-venv/bin/python" -m pip install --quiet PyYAML==6.0.3
+          echo "$RUNNER_TEMP/tooling-venv/bin" >> "$GITHUB_PATH"
+
+      - name: Test release tooling
+        run: make test-tooling
 
       # ------------------------------------------------------------------ #
       # 10. Upload coverage to Codecov

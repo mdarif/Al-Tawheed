@@ -6,8 +6,10 @@
 # and that every catalogUrl stays on the compiled-in base host.
 #
 # Runs on:
-#   • Nightly at 03:00 UTC — 1h after the integration regression, so a bad
-#     content deploy is caught within a day without an app release.
+#   • Nightly at 03:00 UTC — so a bad content deploy is caught within a day
+#     without an app release. (The other nightlies were removed 2026-08-31;
+#     this one stays because it costs one cheap ubuntu job and gates on
+#     content the app cannot ship a fix for.)
 #   • Manual dispatch — to re-check on demand after a content-repo change.
 #
 # Deliberately NOT on PRs: these hit the network, and a CDN/DNS flake must never

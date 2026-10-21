@@ -95,7 +95,7 @@ jobs:
       # 6. Analyze (fast sanity check before booting an emulator)
       # ------------------------------------------------------------------ #
       - name: Analyze code
-        run: flutter analyze --fatal-warnings
+        run: make analyze
 
       # ------------------------------------------------------------------ #
       # 7. Enable KVM so the emulator can use hardware acceleration
@@ -121,11 +121,10 @@ jobs:
           disable-animations: true
           # android-emulator-runner runs each line of `script` as its own
           # `sh -c` invocation (not as one multi-line script), so the
-          # `flutter test` command must stay on a single line — a trailing
-          # `\` continuation becomes a literal extra argument that Flutter
-          # misclassifies as a unit-test path.
+          # `make integration-test` command must stay on a single line — a
+          # trailing `\` continuation becomes a literal extra argument.
           script: |
-            flutter test integration_test/app_test.dart -d emulator-5554 --timeout 15m; echo $? > /tmp/flutter_test_status
+            make integration-test DEVICE=emulator-5554; echo $? > /tmp/flutter_test_status
             adb logcat -d > /tmp/emulator.log
             exit $(cat /tmp/flutter_test_status)
 

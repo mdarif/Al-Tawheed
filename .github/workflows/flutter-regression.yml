@@ -2,8 +2,11 @@
 #
 # Runs on:
 #   • Every PR into master  (release gate — must pass before merging)
-#   • Nightly at 02:00 UTC  (catches develop drift before it reaches master)
-#   • Manual dispatch        (on-demand re-run without a commit)
+#   • Manual dispatch        (on-demand re-run without a commit; do this
+#                             before a release)
+#
+# There is no nightly schedule: it was removed 2026-08-31 (see the note on
+# `on:` below).
 #
 # Intentionally NOT triggered on every push to develop — macOS runners cost
 # ~10× more than ubuntu and integration tests take 5–8 min to build + run.
@@ -69,7 +72,7 @@ jobs:
       # 5. Analyze (fast sanity check before booting a simulator)
       # ------------------------------------------------------------------ #
       - name: Analyze code
-        run: flutter analyze --fatal-warnings
+        run: make analyze
 
       # ------------------------------------------------------------------ #
       # 6. Boot iOS Simulator
@@ -101,10 +104,7 @@ jobs:
       #    from the CDN and may download audio metadata.
       # ------------------------------------------------------------------ #
       - name: Run integration tests
-        run: |
-          flutter test integration_test/app_test.dart \
-            -d "$SIMULATOR_UDID" \
-            --timeout 15m
+        run: make integration-test DEVICE="$SIMULATOR_UDID"
 
       # ------------------------------------------------------------------ #
       # 8. Upload .xcresult on failure (attached to the workflow run)

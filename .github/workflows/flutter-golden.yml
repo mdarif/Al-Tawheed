@@ -15,12 +15,13 @@
 #   • PRs into master touching the same paths.
 #   • Manual dispatch.
 #
-# Why push-with-a-paths-filter rather than nightly: this repo does not use
-# PRs, so the pull_request trigger above effectively never fires, and a
-# nightly burns a 10x-billed macOS runner every day whether or not any UI
-# changed. The paths filter means goldens run when — and only when — something
-# that could move a pixel changed. Tagged `golden` + skipped by default, so
-# this is the only job that runs them (via --run-skipped).
+# Why push-with-a-paths-filter rather than nightly: this repo works by direct
+# commits to develop, so the pull_request trigger above is a safety net rather
+# than the main path, and a nightly burns a 10x-billed macOS runner every day
+# whether or not any UI changed. The paths filter means goldens run when - and
+# only when - something that could move a pixel changed. Tagged `golden` +
+# skipped by default, so this is the only job that runs them (`make
+# test-goldens`, which passes --run-skipped).
 #
 # History: the nightly failed four runs straight (2026-08) with
 # ProviderNotFoundException<ShellChromeProvider>. That was never a golden
@@ -74,13 +75,13 @@ jobs:
         run: flutter pub get
 
       - name: Verify goldens
-        run: flutter test test/golden --run-skipped --reporter=expanded
+        run: make test-goldens
 
       # On failure, surface the pixel diffs the comparator wrote next to each
       # golden so a reviewer can see WHAT moved without reproducing locally.
       - name: Upload golden failures
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: golden-failures
           path: 'test/golden/**/failures/*.png'

@@ -1,40 +1,58 @@
-# CD Phase 1 — Release Automation (+ CD Phase 1.5 — promote/sync automation,
-# CD Phase 2 — production-signed APK/AAB, CD Phase 3 — Play Store
-# internal-track upload, CD Phase 4c — release-artifact verification)
+# Release automation: version, quality gates, signed build, on-device check,
+# atomic git finalize, Play internal-track publish, GitHub Release, develop sync.
 #
-# Job graph:
+# Job graph (each arrow is a `needs:`; a dry run stops after verify-android):
 #
-#   promote -> prepare -> build-android -> verify-android -> publish -> sync-develop
+#   prepare -> quality -> build-android -> verify-android
+#                                              |
+#      (skipped when dry_run) finalize-git -> publish-play -> github-release -> sync-develop
 #
-# Split out of a single monolithic job so that (a) a bad version or a missing
-# signing secret fails in `prepare` in ~30s instead of after a twenty-minute
-# Gradle build, and (b) the signed APK that ships is actually installed and
-# launched on a device by `verify-android` before `publish` can upload it.
-# Only `build-android` ever sees the signing secrets.
+# THE RULE: no durable release state (a pushed commit, a tag, a Play release, a
+# GitHub Release) exists until verify-android has passed. Before that, the only
+# things a run leaves behind are CI artifacts and read-only Play queries.
 #
-# One-click release: dispatch from `develop` with `confirm_promote: true`.
-# Traditional flow: dispatch from `master` (promote/sync are skipped).
-# Use `dry_run: true` to run analyze/test/build/verify only — no commits,
-# tags, releases, pushes, or Play Store uploads of any kind.
+# Each job is resumable. "Re-run failed jobs" on the SAME run is a resume: jobs
+# that already succeeded keep their outputs (version, source SHA, AAB SHA-256),
+# so nothing is recomputed. Dispatching again from an already-bumped `master`
+# is a NEW release. Do not use "Re-run all jobs" after finalize-git has pushed:
+# `prepare` would (correctly) refuse the now-existing tag.
 #
-# WHY every downstream job carries `always() && needs.X.result == 'success'`:
-# `needs:` propagates SKIPS transitively. On a dry run `promote` is skipped, so
-# a plain `needs:` chain would cascade-skip the entire pipeline and report a
-# green run that built nothing — a false all-clear on the exact flow whose job
-# is to catch problems. The explicit result checks below are load-bearing; do
-# not "simplify" them away. See docs/gotchas.md -> CI / release.
+#   failed job      state left behind               "Re-run failed jobs" does
+#   prepare         nothing                         re-checks, recomputes version
+#   quality/build   nothing (artifacts only)        rebuilds
+#   verify-android  nothing                         re-verifies
+#   finalize-git    nothing, or master+tag both     tag absent: create; tag present
+#                   (the push is atomic)            and matching: resume; else abort
+#   publish-play    tag on master; Play maybe       re-queries Play: upload | assign
+#                   uploaded, maybe not             | skip, then proves SHA-256 landed
+#   github-release  Play has the build             creates or edits the release
+#   sync-develop    release is fully shipped        no-op / leased fast-forward / fail
+#
+# Dispatch contract (what `make release MODE=...` sends):
+#   - from `master`:  the release source is master's tip.
+#   - from `develop`: needs confirm_promote=true; develop is promoted to master
+#     inside finalize-git, in the same atomic push as the release commit, and
+#     only after verify-android. dry_run=true needs no confirm_promote.
+# `dry_run: true` runs prepare/quality/build/verify and nothing else: the four
+# state-changing jobs carry `if: inputs.dry_run != true` and no status function,
+# which test/tool/test_workflows.py proves structurally.
+#
+# Only `build-android` USES the signing secrets; `prepare` also receives them,
+# solely to fail fast if any is missing (presence check, never decoded or
+# logged). GOOGLE_PLAY_SERVICE_ACCOUNT is read by `prepare` (read-only
+# snapshot) and `publish-play`. DEVELOP_SYNC_TOKEN is read only by
+# `sync-develop`.
 #
 # Prerequisites (one-time GitHub settings):
-#   - Settings -> Branches -> master -> Bypass list -> add github-actions[bot]
-#     Without this, the version-bump push to master will be rejected.
-#   - Repo secrets for release signing (CD Phase 2): KEYSTORE_BASE64,
-#     KEY_ALIAS, KEY_PASSWORD, STORE_PASSWORD (mirrors android/key.properties).
-#   - Repo secret for Play Store upload (CD Phase 3):
-#     GOOGLE_PLAY_SERVICE_ACCOUNT (service account JSON, Release Manager).
-#   - Repo secret PLAY_FGS_MEDIA_DECLARED=true — the app declares
+#   - Settings -> Branches -> master: github-actions[bot] must be able to push
+#     (master only blocks force-pushes and deletions today).
+#   - Repo secrets for release signing: KEYSTORE_BASE64, KEY_ALIAS,
+#     KEY_PASSWORD, STORE_PASSWORD (mirrors android/key.properties).
+#   - Repo secret GOOGLE_PLAY_SERVICE_ACCOUNT (service account JSON).
+#   - Repo secret PLAY_FGS_MEDIA_DECLARED=true: the app declares
 #     FOREGROUND_SERVICE_MEDIA_PLAYBACK; Play requires an accepted declaration
 #     form. See docs/ci-cd.md -> "One-Time Setup".
-#   - Repo secret DEVELOP_SYNC_TOKEN for the develop fast-forward.
+#   - Repo secret DEVELOP_SYNC_TOKEN (admin PAT) for the develop fast-forward.
 
 name: Release
 
@@ -56,7 +74,7 @@ on:
         default: false
         type: boolean
       dry_run:
-        description: 'Run analyze/test/build/verify only - skip promote, tag, release, Play upload, and the develop sync.'
+        description: 'Run quality/build/verify only - skip the git push, tag, Play publish, GitHub Release and the develop sync.'
         required: false
         default: false
         type: boolean
@@ -66,74 +84,27 @@ on:
         default: false
         type: boolean
 
-# GITHUB_TOKEN needs write access to push the version-bump commit, the tag,
-# the develop sync, and to create the GitHub Release.
+# Read-only by default; finalize-git and github-release opt in to write.
 permissions:
-  contents: write
+  contents: read
 
-# Two concurrent releases would race on the same tag and the same
-# `git push origin HEAD:master`. Queue rather than cancel: a half-finished
-# release that has already uploaded to Play must be allowed to finish tagging.
+# Two concurrent releases would race on the same tag and the same push to
+# master. Queue rather than cancel: a half-finished release must be allowed to
+# finish.
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
   # ------------------------------------------------------------------ #
-  # Promote develop -> master (CD Phase 1.5)
-  #
-  # Fast-forward only: if master has diverged from develop in a way that
-  # can't fast-forward, this fails rather than guessing at a merge — see
-  # docs/release-runbook.md -> Troubleshooting.
-  # ------------------------------------------------------------------ #
-  promote:
-    name: Promote develop to master
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && inputs.dry_run != true
-    outputs:
-      sha: ${{ steps.merge.outputs.sha }}
-
-    steps:
-      - name: Require confirm_promote
-        if: inputs.confirm_promote != true
-        run: |
-          echo "::error::Dispatched from develop without confirm_promote=true. Refusing to promote develop -> master (this guards against accidentally shipping stale code on master). Re-run with confirm_promote: true, or dispatch from master for the traditional flow."
-          exit 1
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Configure git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Fast-forward master to develop
-        id: merge
-        run: |
-          git fetch origin develop master
-          git checkout -B master origin/master
-          git merge --ff-only origin/develop
-          git push origin master
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-  # ------------------------------------------------------------------ #
-  # Prepare — cheap, fail-fast gate. No Flutter, no Gradle, no secrets
-  # consumed beyond an emptiness check. Everything that can reject a
-  # release without building it happens here.
+  # Prepare: cheap, fail-fast, no Flutter, no Gradle. Pins the immutable
+  # source SHA, computes the version ONCE, and snapshots Play read-only.
   # ------------------------------------------------------------------ #
   prepare:
-    name: Prepare release version
+    name: Prepare release
     runs-on: ubuntu-latest
-    needs: [promote]
-    if: |
-      always() &&
-      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop') &&
-      (needs.promote.result == 'success' || needs.promote.result == 'skipped')
     outputs:
-      ref: ${{ steps.resolve.outputs.ref }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
       new_version: ${{ steps.version.outputs.new_version }}
       new_semver: ${{ steps.version.outputs.new_semver }}
       build_number: ${{ steps.version.outputs.build_number }}
@@ -142,26 +113,57 @@ jobs:
       aab: ${{ steps.version.outputs.aab }}
 
     steps:
-      - name: Resolve release ref
-        id: resolve
+      # A dispatch from any other ref used to be a silent green no-op.
+      - name: Validate the dispatch
+        env:
+          REF: ${{ github.ref }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONFIRM_PROMOTE: ${{ inputs.confirm_promote }}
         run: |
-          # The SHA promote just pushed to master, or the triggering ref itself
-          # (master in the traditional flow, develop for a dry run).
-          REF="${{ needs.promote.outputs.sha || github.ref_name }}"
-          echo "ref=${REF}" >> "$GITHUB_OUTPUT"
-          echo "Releasing from ${REF}"
+          case "$REF" in
+            refs/heads/master) ;;
+            refs/heads/develop)
+              if [ "$DRY_RUN" != "true" ] && [ "$CONFIRM_PROMOTE" != "true" ]; then
+                echo "::error::Dispatched from develop without confirm_promote=true. Refusing to promote develop -> master (this guards against accidentally shipping stale code). Re-run with confirm_promote: true, or dispatch from master."
+                exit 1
+              fi ;;
+            *)
+              echo "::error::Releases run from refs/heads/master or refs/heads/develop only (got ${REF})."
+              exit 1 ;;
+          esac
 
-      # fetch-depth: 0 — the duplicate-tag guard needs every tag, and the
-      # changelog in `publish` needs full history.
+      # fetch-depth: 0 - the duplicate-tag guard needs every tag.
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ steps.resolve.outputs.ref }}
+          ref: ${{ github.sha }}
 
-      # Fails on an unparseable pubspec or an already-released tag. Does NOT
-      # pass --write: the version is applied in build-android, on its own
-      # checkout, so a rejected release leaves no half-bumped file behind.
+      # github.sha is fixed when the workflow is dispatched, so a push to the
+      # branch while this run is in flight cannot change what gets released.
+      - name: Pin the source SHA
+        id: source
+        run: |
+          SHA="$(git rev-parse HEAD)"
+          if [ "$SHA" != "$GITHUB_SHA" ]; then
+            echo "::error::Checked out ${SHA}, expected the dispatched ${GITHUB_SHA}."
+            exit 1
+          fi
+          echo "source_sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "Releasing from ${GITHUB_REF_NAME} @ ${SHA}"
+
+      # subosito/flutter-action reads the SDK pin from pubspec.yaml with yq.
+      # Fail here, in seconds, rather than in the middle of a later job.
+      - name: Require yq (needed by the Flutter setup action)
+        run: |
+          if ! yq --version; then
+            echo "::error::yq is not available on this runner image; subosito/flutter-action needs it to read the SDK pin from pubspec.yaml."
+            exit 1
+          fi
+
+      # The ONLY place a version is computed. It is exported as a job output
+      # and every later job uses that exact string; nothing recomputes it from
+      # the bump. Does not write pubspec.yaml.
       - name: Compute release version
         id: version
         run: |
@@ -170,8 +172,7 @@ jobs:
             --github-output "$GITHUB_OUTPUT"
 
       # Checked here, not after the build: an empty secret makes Gradle fall
-      # back to the DEBUG signing key silently, and the failure would otherwise
-      # surface twenty minutes later (or, worse, not at all).
+      # back to the DEBUG signing key silently.
       - name: Require signing secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -200,6 +201,23 @@ jobs:
             exit 1
           fi
 
+      # Fails now, not after a twenty-minute build and an on-device check.
+      - name: Foreground-service declaration preflight
+        if: inputs.dry_run != true
+        env:
+          PLAY_FGS_MEDIA_DECLARED: ${{ secrets.PLAY_FGS_MEDIA_DECLARED }}
+        run: python3 tool/play_release_preflight.py manifest
+
+      # Read-only: opens and deletes a throwaway edit. A stale snapshot is
+      # fine; publish-play re-queries before it decides anything.
+      - name: Snapshot Play state (read-only)
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          python3 tool/play_release_preflight.py snapshot \
+            --version-code "${{ steps.version.outputs.build_number }}" \
+            --optional
+
       - name: Release summary
         run: |
           {
@@ -207,7 +225,7 @@ jobs:
             echo ""
             echo "| | |"
             echo "|---|---|"
-            echo "| Ref | \`${{ steps.resolve.outputs.ref }}\` |"
+            echo "| Source | \`${GITHUB_REF_NAME}\` @ \`${{ steps.source.outputs.source_sha }}\` |"
             echo "| Version | \`${{ steps.version.outputs.new_version }}\` |"
             echo "| Tag | \`${{ steps.version.outputs.tag }}\` |"
             echo "| Dry run | \`${{ inputs.dry_run }}\` |"
@@ -215,25 +233,79 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ------------------------------------------------------------------ #
-  # Build — the only job that touches the signing secrets.
+  # Quality: the Makefile's own gates, none of which rewrite a file.
   # ------------------------------------------------------------------ #
-  build-android:
-    name: Build Android release artifacts
+  quality:
+    name: Quality gates
     runs-on: ubuntu-latest
-    needs: [promote, prepare]
-    if: always() && needs.prepare.result == 'success'
+    needs: [prepare]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          ref: ${{ needs.prepare.outputs.ref }}
+          ref: ${{ needs.prepare.outputs.source_sha }}
 
-      # ubuntu-latest runners ship large unused toolchains (.NET, GHC, CodeQL)
-      # that leave too little headroom for the Android SDK + Gradle cache + the
-      # APK and AAB. Without this, packaging fails with "No space left on
-      # device" (hit on 2026-06-12).
+      - name: Set up Flutter (pinned)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Cache pub packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.pub-cache
+          key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-cache-${{ runner.os }}-
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # The workflow-structure tests parse YAML with a pinned PyYAML. A venv
+      # because the runner's system Python is externally managed.
+      - name: Install pinned PyYAML for the tooling tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tooling-venv"
+          "$RUNNER_TEMP/tooling-venv/bin/python" -m pip install --quiet PyYAML==6.0.3
+          echo "$RUNNER_TEMP/tooling-venv/bin" >> "$GITHUB_PATH"
+
+      - name: Check formatting (does not rewrite)
+        run: make format-check
+
+      - name: Analyze code
+        run: make analyze
+
+      - name: Run tests
+        run: make test
+
+      # The release tooling computes the tag and the Play versionCode, decides
+      # the Play action and the git pushes. It is gated like app code.
+      - name: Test release tooling
+        run: make test-tooling
+
+  # ------------------------------------------------------------------ #
+  # Build: the only job that touches the signing secrets. Builds EXACTLY
+  # the version `prepare` computed and records the AAB's SHA-256.
+  # ------------------------------------------------------------------ #
+  build-android:
+    name: Build Android release artifacts
+    runs-on: ubuntu-latest
+    needs: [prepare, quality]
+    outputs:
+      aab_sha256: ${{ steps.hash.outputs.aab_sha256 }}
+      apk_sha256: ${{ steps.hash.outputs.apk_sha256 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      # ubuntu-latest ships large unused toolchains that leave too little
+      # headroom for the Android SDK + Gradle cache + the APK and AAB
+      # ("No space left on device", hit on 2026-06-12).
       - name: Free disk space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -242,7 +314,7 @@ jobs:
           sudo rm -rf /opt/hostedtoolcache/CodeQL
           df -h /
 
-      # Java 21 — matches android/app/build.gradle compileOptions
+      # Java 21 - matches android/app/build.gradle compileOptions
       - name: Set up Java 21
         uses: actions/setup-java@v5
         with:
@@ -272,32 +344,17 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # ---------------- Quality gates: refuse to tag a bad build -------- #
-      - name: Verify formatting
-        run: dart format --set-exit-if-changed lib test tool integration_test patrol_test
-
-      - name: Analyze code
-        run: flutter analyze --fatal-warnings
-
-      - name: Run tests
-        run: flutter test --reporter=expanded
-
-      # The release tooling computes the tag and the Play versionCode. A bug
-      # there is expensive and invisible, so it is gated like app code.
-      - name: Test release tooling
-        run: python3 -m unittest discover -s test/tool
-
-      # Applied here rather than in `prepare` so a rejected release never
-      # leaves a mutated pubspec.yaml behind on any checkout.
-      - name: Apply release version to pubspec.yaml
+      # Stamps the exact version string `prepare` computed (never a recompute
+      # from the bump) and fails if pubspec.yaml does not read back as it.
+      - name: Apply the release version to pubspec.yaml
         run: |
-          python3 tool/compute_release_version.py \
-            --bump "${{ inputs.bump }}" --write --no-check-tag
+          python3 tool/release_git.py stamp \
+            --new-version "${{ needs.prepare.outputs.new_version }}"
           grep '^version:' pubspec.yaml
 
-      # CD Phase 2 — decodes KEYSTORE_BASE64 into android/app/upload-keystore.jks
-      # and writes android/key.properties, matching signingConfigs.release in
-      # android/app/build.gradle. Presence was already verified in `prepare`.
+      # Decodes KEYSTORE_BASE64 into android/app/upload-keystore.jks and writes
+      # android/key.properties, matching signingConfigs.release in
+      # android/app/build.gradle. Presence was verified in `prepare`.
       - name: Configure release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -319,6 +376,15 @@ jobs:
       - name: Build release AAB
         run: flutter build appbundle --release
 
+      # What was built is what `prepare` computed: the pubspec still reads
+      # back as new_version, and any AGP output-metadata.json agrees.
+      - name: Assert the build is exactly the release version
+        run: |
+          python3 tool/release_git.py assert-version \
+            --new-version "${{ needs.prepare.outputs.new_version }}"
+          python3 tool/release_git.py assert-build \
+            --new-version "${{ needs.prepare.outputs.new_version }}"
+
       - name: Rename artifacts
         run: |
           mkdir -p release-artifacts
@@ -328,28 +394,43 @@ jobs:
              "release-artifacts/${{ needs.prepare.outputs.aab }}"
           ls -lh release-artifacts
 
-      # compression-level: 0 — an APK/AAB is already deflated; re-compressing
-      # costs minutes and saves nothing. if-no-files-found: error so a silent
-      # rename change cannot produce an empty "successful" release.
+      # publish-play proves the AAB it uploads is this exact file, and that
+      # Play's own reported SHA-256 equals it.
+      - name: Record artifact SHA-256
+        id: hash
+        run: |
+          cd release-artifacts
+          AAB_SHA="$(sha256sum "${{ needs.prepare.outputs.aab }}" | cut -d' ' -f1)"
+          APK_SHA="$(sha256sum "${{ needs.prepare.outputs.apk }}" | cut -d' ' -f1)"
+          {
+            echo "aab_sha256=${AAB_SHA}"
+            echo "apk_sha256=${APK_SHA}"
+          } >> "$GITHUB_OUTPUT"
+          sha256sum "${{ needs.prepare.outputs.aab }}" "${{ needs.prepare.outputs.apk }}" | tee SHA256SUMS
+
+      # compression-level: 0 - an APK/AAB is already deflated. overwrite: a
+      # re-run of this job replaces its own artifact instead of failing.
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-release
           path: release-artifacts/*
           compression-level: 0
           retention-days: 14
           if-no-files-found: error
+          overwrite: true
 
   # ------------------------------------------------------------------ #
-  # Verify — installs the EXACT signed artifact that will ship onto a
-  # real Android image and drives it. Runs on a clean runner with no
-  # signing secrets and no build tree: it can only see what users get.
+  # Verify: installs the EXACT signed artifact that will ship onto a real
+  # Android image and drives it. A clean runner with no signing secrets and
+  # no build tree: it can only see what users get.
   # ------------------------------------------------------------------ #
   verify-android:
     name: Verify Android release APK
     runs-on: ubuntu-latest
     needs: [prepare, build-android]
-    if: always() && needs.build-android.result == 'success'
+    outputs:
+      verified: ${{ steps.record.outputs.verified }}
 
     steps:
       - name: Record explicit verification bypass
@@ -362,7 +443,7 @@ jobs:
         if: inputs.skip_verify != true
         uses: actions/checkout@v6
         with:
-          ref: ${{ needs.prepare.outputs.ref }}
+          ref: ${{ needs.prepare.outputs.source_sha }}
 
       - name: Download Android artifacts
         if: inputs.skip_verify != true
@@ -371,10 +452,9 @@ jobs:
           name: android-release
           path: release-artifacts
 
-      # apksigner is a Java program and is NOT on a stock runner's PATH; the
-      # verifier globs $ANDROID_SDK_ROOT/build-tools/*/apksigner for it, but
-      # without a JRE it cannot run at all. This job builds nothing, so it
-      # would otherwise have no Java.
+      # apksigner is a Java program and is NOT on a stock runner's PATH; without
+      # a JRE it cannot run at all. This job builds nothing, so it would
+      # otherwise have no Java.
       - name: Set up Java 21
         if: inputs.skip_verify != true
         uses: actions/setup-java@v5
@@ -382,12 +462,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      # Deterministic checks first — no emulator needed, so a packaging or
+      # Deterministic checks first - no emulator needed, so a packaging or
       # signing fault reports in seconds rather than after a boot.
-      # --require-signature-check: in CI, an apksigner that cannot run is a
-      # HARD failure. Degrading to a warning here would retire the one guard
-      # that catches a debug-signed release — precisely the situation a broken
-      # signing setup produces.
+      # --require-signature-check: in CI an apksigner that cannot run is a HARD
+      # failure; degrading to a warning would retire the one guard that catches
+      # a debug-signed release.
       - name: Inspect release APK
         if: inputs.skip_verify != true
         run: |
@@ -404,7 +483,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # NOTE: the `script:` command MUST stay on ONE line. The action wraps it
-      # in `sh -c`, which drops backslash continuations — a multi-line script
+      # in `sh -c`, which drops backslash continuations - a multi-line script
       # silently runs only its first fragment. See docs/gotchas.md.
       - name: Install, launch, and resume the release APK
         if: inputs.skip_verify != true
@@ -422,34 +501,86 @@ jobs:
       # crashed or blank first screen are the entire point of this upload.
       - name: Upload verification evidence
         if: ${{ !cancelled() && inputs.skip_verify != true }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: verify-evidence
           path: verify-evidence
           retention-days: 14
           if-no-files-found: warn
+          overwrite: true
+
+      # The ONLY source of the release notes' device-verification claim. It is
+      # set after the emulator step passed, so a skipped or failed check can
+      # never produce it.
+      - name: Record that the device check passed
+        id: record
+        if: inputs.skip_verify != true
+        run: echo "verified=true" >> "$GITHUB_OUTPUT"
 
   # ------------------------------------------------------------------ #
-  # Publish — builds nothing. Changelog, Play upload, tag, GitHub Release.
-  # Skipped entirely on a dry run.
+  # Finalize git: the first durable state. ONE atomic push of master (with the
+  # develop promote when dispatched from develop) + release commit + tag.
+  # Resumable: see tool/release_git.py resume_decision.
   # ------------------------------------------------------------------ #
-  publish:
-    name: Publish release
+  finalize-git:
+    name: Finalize git (commit, tag, push)
     runs-on: ubuntu-latest
     needs: [prepare, build-android, verify-android]
-    if: |
-      always() &&
-      inputs.dry_run != true &&
-      needs.build-android.result == 'success' &&
-      needs.verify-android.result == 'success'
+    if: inputs.dry_run != true
+    permissions:
+      contents: write
+    outputs:
+      release_sha: ${{ steps.finalize.outputs.release_sha }}
 
     steps:
-      # fetch-depth: 0 — git-cliff walks every tag to build the range.
+      # fetch-depth: 0 - the resume checks walk history and tags.
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ needs.prepare.outputs.ref }}
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit, tag, and push atomically
+        id: finalize
+        run: |
+          python3 tool/release_git.py finalize \
+            --source-sha "${{ needs.prepare.outputs.source_sha }}" \
+            --tag "${{ needs.prepare.outputs.tag }}" \
+            --new-version "${{ needs.prepare.outputs.new_version }}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Finalize summary
+        run: |
+          {
+            echo "### Git finalized"
+            echo ""
+            echo "Tag \`${{ needs.prepare.outputs.tag }}\` at \`${{ steps.finalize.outputs.release_sha }}\` (resumed: \`${{ steps.finalize.outputs.resumed }}\`)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------------------ #
+  # Publish to Play (internal track). Builds nothing. Re-queries Play itself
+  # (the snapshot in `prepare` may be stale), then: upload if absent, assign
+  # an already-uploaded bundle without re-uploading, or skip if that exact
+  # artifact is already completed. Finally proves Play shows our SHA-256.
+  # ------------------------------------------------------------------ #
+  publish-play:
+    name: Publish to Play (internal track)
+    runs-on: ubuntu-latest
+    needs: [prepare, build-android, verify-android, finalize-git]
+    if: inputs.dry_run != true
+
+    steps:
+      # fetch-depth: 0 - git-cliff walks every tag to build the range.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.finalize-git.outputs.release_sha }}
 
       - name: Download Android artifacts
         uses: actions/download-artifact@v4
@@ -457,21 +588,30 @@ jobs:
           name: android-release
           path: release-artifacts
 
-      # Structured changelog from conventional commits: git-cliff groups
-      # feat/fix/perf and skips ci/chore/docs noise.
+      - name: Require the AAB that build-android produced
+        run: |
+          ACTUAL="$(sha256sum "release-artifacts/${{ needs.prepare.outputs.aab }}" | cut -d' ' -f1)"
+          EXPECTED="${{ needs.build-android.outputs.aab_sha256 }}"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::The downloaded AAB (${ACTUAL}) is not the one build-android recorded (${EXPECTED})."
+            exit 1
+          fi
+          echo "AAB SHA-256 ${ACTUAL}"
+
+      # The tag exists now, so the changelog is the LATEST tag's section
+      # (`--unreleased` was only right while the tag did not exist yet).
       - name: Generate changelog
         id: cliff
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --unreleased --strip header
+          args: --latest --strip header
         env:
           GITHUB_REPO: ${{ github.repository }}
 
       # Play Store "What's new": 500 characters per locale, hard limit.
-      # Pass the changelog via env, NOT inline `${{ }}` — commit subjects
-      # contain double quotes (e.g. 'Now Playing') that would close the bash
-      # string and break the step with exit 127.
+      # Pass the changelog via env, NOT inline `${{ }}` - commit subjects
+      # contain double quotes that would close the bash string.
       - name: Generate Play Store release notes
         env:
           MARKDOWN: ${{ steps.cliff.outputs.content }}
@@ -485,20 +625,16 @@ jobs:
           TRUNCATED=$(echo "$PLAIN" | head -c 500)
           FULL_LEN=$(echo "$PLAIN" | wc -c | tr -d ' ')
           if [ "$FULL_LEN" -gt 500 ]; then
-            echo "::warning::Play Store notes truncated to 500 chars (was ${FULL_LEN}). Review before promoting to production."
+            echo "::warning::Play Store notes truncated to 500 chars (was ${FULL_LEN}). Review before promoting."
           fi
 
           echo "$TRUNCATED" > play-store-notes.txt
           echo "Play Store notes:"
           cat play-store-notes.txt
 
-      # r0adkll/upload-google-play expects a directory of locale-named files.
-      # The app ships four locales (ar, en, ur, and the Arabic edition chrome),
-      # but release notes are authored in English only — so every locale gets
-      # the en-US text DELIBERATELY, rather than Play falling back on its own
-      # because a file happened to be absent. Release notes are the one
-      # user-facing string set not covered by ARB parity; translating them is
-      # tracked separately. See docs/release-runbook.md.
+      # The app ships three notes locales; release notes are authored in
+      # English only, so every locale gets the en-US text DELIBERATELY. See
+      # docs/release-runbook.md.
       - name: Prepare Play Store release notes for upload
         run: |
           mkdir -p distribution/whatsnew
@@ -507,27 +643,26 @@ jobs:
           done
           ls distribution/whatsnew
 
-      # Fail before the upload can burn a version code Play will reject:
-      # checks the FOREGROUND_SERVICE_MEDIA_PLAYBACK declaration and asks the
-      # Play API whether this versionCode is actually publishable.
-      - name: Play release preflight
+      # Re-queries Play now. Fails on a conflicting versionCode (a different
+      # artifact already owns it) before anything is written.
+      - name: Decide the Play action
+        id: decide
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
-          PLAY_FGS_MEDIA_DECLARED: ${{ secrets.PLAY_FGS_MEDIA_DECLARED }}
         run: |
-          # pubspec.yaml on this checkout is still pre-bump (the bump lives in
-          # build-android's tree), so stamp the version the AAB was actually
-          # built with before asking Play about its version code.
-          sed -i 's/^version: .*/version: ${{ needs.prepare.outputs.new_version }}/' pubspec.yaml
-          python3 tool/play_release_preflight.py \
-            --package-name com.almarfa.tawheed \
-            --manifest android/app/src/main/AndroidManifest.xml
-          git checkout -- pubspec.yaml
+          python3 tool/play_release_preflight.py decide \
+            --version-code "${{ needs.prepare.outputs.build_number }}" \
+            --aab "release-artifacts/${{ needs.prepare.outputs.aab }}" \
+            --github-output "$GITHUB_OUTPUT"
 
-      # Internal track testers get it immediately (status: completed).
-      # Promoting internal -> production stays a manual step in Play Console —
-      # a deliberate human safety gate.
+      # Upload + assign + complete in the action's single committed edit.
+      # continue-on-error: a failed-looking upload may still have committed, so
+      # the verify step below re-queries Play and decides; it does not trust
+      # this step's status either way.
       - name: Upload to Play Store (internal track)
+        id: upload
+        if: steps.decide.outputs.action == 'upload'
+        continue-on-error: true
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
@@ -537,81 +672,116 @@ jobs:
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
-      - name: Configure git identity
+      # The bundle is already on Play (a previous attempt uploaded it): assign
+      # it to the track and complete it in ONE committed edit, no re-upload.
+      - name: Assign the uploaded bundle to the internal track
+        id: assign
+        if: steps.decide.outputs.action == 'assign'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python3 tool/play_release_preflight.py assign \
+            --version-code "${{ needs.prepare.outputs.build_number }}" \
+            --aab "release-artifacts/${{ needs.prepare.outputs.aab }}" \
+            --notes-dir distribution/whatsnew
 
-      # Requires github-actions[bot] in the master branch bypass list.
-      - name: Commit, tag, and push
+      # Proof, not trust: Play must now report OUR bundle SHA-256 as completed.
+      - name: Verify Play shows this exact build
+        if: steps.decide.outputs.action == 'upload' || steps.decide.outputs.action == 'assign'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
         run: |
-          TAG="${{ needs.prepare.outputs.tag }}"
+          python3 tool/play_release_preflight.py verify \
+            --version-code "${{ needs.prepare.outputs.build_number }}" \
+            --aab "release-artifacts/${{ needs.prepare.outputs.aab }}"
 
-          python3 tool/compute_release_version.py \
-            --bump "${{ inputs.bump }}" --write --no-check-tag
+      # overwrite: a re-run of this job replaces the artifact.
+      - name: Upload Play Store notes
+        uses: actions/upload-artifact@v6
+        with:
+          name: play-notes
+          path: play-store-notes.txt
+          retention-days: 14
+          if-no-files-found: error
+          overwrite: true
 
-          git add pubspec.yaml
-          git commit -m "chore: release ${TAG}"
-          git tag "${TAG}" -m "Release ${TAG}"
-          # HEAD:master (not "master") — this checkout is detached at the
-          # release SHA, so there is no local "master" branch to push.
-          # ("src refspec master does not match any" otherwise.)
-          git push origin HEAD:master
-          git push origin "${TAG}"
+  # ------------------------------------------------------------------ #
+  # GitHub Release: create-or-edit for the validated tag; assets replaced.
+  # Only after Play has the exact artifact.
+  # ------------------------------------------------------------------ #
+  github-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build-android, verify-android, finalize-git, publish-play]
+    if: inputs.dry_run != true
+    permissions:
+      contents: write
 
-      # CHANGELOG goes via env, not inline `${{ }}`, and the body via
-      # --notes-file — commit subjects contain quotes and backticks that would
-      # otherwise be re-parsed by bash.
-      - name: Create GitHub Release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.finalize-git.outputs.release_sha }}
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts
+
+      - name: Download Play Store notes
+        uses: actions/download-artifact@v4
+        with:
+          name: play-notes
+          path: play-notes
+
+      - name: Generate changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
+      # The notes (including the device-verification line) are built by
+      # tool/release_git.py from `verified`, which verify-android sets only
+      # when the emulator check actually ran. Changelog goes via env + file:
+      # commit subjects contain quotes and backticks.
+      - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHANGELOG: ${{ steps.cliff.outputs.content }}
+          VERIFIED: ${{ needs.verify-android.outputs.verified == 'true' && 'true' || 'false' }}
         run: |
-          TAG="${{ needs.prepare.outputs.tag }}"
-          APK="${{ needs.prepare.outputs.apk }}"
-          AAB="${{ needs.prepare.outputs.aab }}"
-          NEW_VERSION="${{ needs.prepare.outputs.new_version }}"
-
-          [ -z "$CHANGELOG" ] && CHANGELOG="- Maintenance release"
-
-          cat > release-notes.md <<EOF
-          ## What's changed
-
-          ${CHANGELOG}
-
-          ---
-          **Build:** \`${NEW_VERSION}\`
-          **APK:** release build, signed with the production key — install via \`adb install ${APK}\`
-          **Verified:** installed, launched, backgrounded and resumed on an API 34 emulator
-          **Play Store notes:** download \`play-store-notes.txt\` above — copy/paste into Play Console → What's new
-          EOF
-
-          gh release create "${TAG}" \
-            "release-artifacts/${APK}#Al-Tawheed Android APK (release, signed)" \
-            "release-artifacts/${AAB}#Al-Tawheed Android App Bundle (release, signed)" \
-            "play-store-notes.txt#Play Store release notes (plain text)" \
-            --title "Al-Tawheed ${TAG}" \
-            --notes-file release-notes.md
+          printf '%s\n' "$CHANGELOG" > changelog.md
+          python3 tool/release_git.py github-release \
+            --tag "${{ needs.prepare.outputs.tag }}" \
+            --new-version "${{ needs.prepare.outputs.new_version }}" \
+            --apk-name "${{ needs.prepare.outputs.apk }}" \
+            --aab-sha256 "${{ needs.build-android.outputs.aab_sha256 }}" \
+            --verified "$VERIFIED" \
+            --changelog-file changelog.md \
+            --title "Al-Tawheed ${{ needs.prepare.outputs.tag }}" \
+            --asset "release-artifacts/${{ needs.prepare.outputs.apk }}#Al-Tawheed Android APK (release, signed)" \
+            --asset "release-artifacts/${{ needs.prepare.outputs.aab }}#Al-Tawheed Android App Bundle (release, signed)" \
+            --asset "play-notes/play-store-notes.txt#Play Store release notes (plain text)"
 
   # ------------------------------------------------------------------ #
-  # Dry run summary — a dry run must prove it BUILT and VERIFIED, not
-  # merely that nothing errored. A cascade-skipped pipeline reports
-  # success too; this step only runs if the real work did.
+  # Dry run summary: a dry run must prove it BUILT and VERIFIED, not merely
+  # that nothing errored.
   # ------------------------------------------------------------------ #
   dry-run-summary:
     name: Dry run summary
     runs-on: ubuntu-latest
-    needs: [prepare, build-android, verify-android]
-    if: |
-      always() &&
-      inputs.dry_run == true &&
-      needs.build-android.result == 'success' &&
-      (needs.verify-android.result == 'success' || inputs.skip_verify == true)
+    needs: [prepare, quality, build-android, verify-android]
+    if: inputs.dry_run == true
 
     steps:
       - name: Report
         run: |
-          echo "::notice::Dry run complete for ${{ github.ref_name }} — version ${{ needs.prepare.outputs.new_version }} computed, analyze/format/test passed, signed APK + AAB built and verified on device. Nothing was committed, tagged, pushed, released, or uploaded to the Play Store."
+          echo "::notice::Dry run complete for ${{ github.ref_name }} - version ${{ needs.prepare.outputs.new_version }} computed, quality gates passed, signed APK + AAB built (AAB SHA-256 ${{ needs.build-android.outputs.aab_sha256 }}) and device verification ${{ inputs.skip_verify == true && 'SKIPPED' || 'passed' }}. Nothing was committed, tagged, pushed, published or released."
           {
             echo "### ✅ Dry run passed"
             echo ""
@@ -620,29 +790,26 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ------------------------------------------------------------------ #
-  # Sync develop with master (CD Phase 1.5)
-  #
-  # `publish` commits the version bump + tag directly to master. Fast-forward
-  # that into develop so the next release's promote doesn't hit a pubspec.yaml
-  # conflict. Fast-forward only — if develop picked up its own commits since,
-  # this fails rather than guessing at a merge.
+  # Sync develop: the last step. No-op if develop already has the tag;
+  # fast-forward with a lease only if develop still equals the source SHA;
+  # otherwise fail with merge instructions. Never overwrites anything.
   # ------------------------------------------------------------------ #
   sync-develop:
-    name: Sync develop with master
+    name: Sync develop with the release
     runs-on: ubuntu-latest
-    needs: [publish]
-    if: always() && needs.publish.result == 'success' && inputs.dry_run != true
+    needs: [prepare, finalize-git, github-release]
+    if: inputs.dry_run != true
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ needs.finalize-git.outputs.release_sha }}
           # Push to the protected `develop` branch as the repo owner (admin) so
-          # the fast-forward isn't rejected by the "Flutter CI" required check —
-          # the default GITHUB_TOKEN (github-actions[bot]) has no bypass.
-          # checkout persists this token, so the later `git push` uses it.
-          # See docs/gotchas.md → CI / release.
+          # the fast-forward isn't rejected by the "Flutter CI" required check -
+          # the default GITHUB_TOKEN (github-actions[bot]) has no bypass. The
+          # PAT is exposed to this job only. See docs/gotchas.md -> CI / release.
           token: ${{ secrets.DEVELOP_SYNC_TOKEN }}
 
       - name: Configure git identity
@@ -650,12 +817,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fast-forward develop to master
+      - name: Fast-forward develop safely
         run: |
-          git fetch origin develop master
-          git checkout -B develop origin/develop
-          git merge --ff-only origin/master || {
-            echo "::error::develop has diverged from master and cannot be fast-forwarded (develop likely picked up its own commits since the last sync). The release HAS already shipped — do not re-run the workflow. See docs/release-runbook.md -> Troubleshooting -> \"sync-develop failed: 'not possible to fast-forward'\" for the manual recovery."
-            exit 1
-          }
-          git push origin develop
+          python3 tool/release_git.py sync-develop \
+            --source-sha "${{ needs.prepare.outputs.source_sha }}" \
+            --release-sha "${{ needs.finalize-git.outputs.release_sha }}" \
+            --tag "${{ needs.prepare.outputs.tag }}"

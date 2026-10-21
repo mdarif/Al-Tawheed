@@ -120,9 +120,11 @@ lint:
 	dart analyze
 
 # Runs `python3 -m unittest discover -s test/tool` and nothing else. The suite
-# currently covers test/tool/test_compute_release_version.py and
-# test/tool/test_workflows.py; it does not yet exercise verify_release_apk.py or
-# play_release_preflight.py.
+# covers the release tooling (compute_release_version.py, release_git.py,
+# play_release_preflight.py), the Makefile targets and the workflow structure
+# (test_workflows.py); it does not yet exercise verify_release_apk.py.
+# test_workflows.py parses the workflows with PyYAML, pinned in CI to 6.0.3:
+# `python3 -m pip install PyYAML==6.0.3` locally if it is missing.
 test-tooling:
 	python3 -m unittest discover -s test/tool
 
