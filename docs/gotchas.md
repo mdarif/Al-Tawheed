@@ -418,10 +418,16 @@ is portable memory: any LLM working the repo should read and extend it.
   `book_scroll_offsets` for all editions; 2.4.2 reads `ar_book_scroll_offsets`
   for Arabic, so Arabic readers start chapters from the top once (the
   cross-edition leak fix). (2) A 2.4.1 download whose file size differs from
-  the catalogue's `fileSizeBytes` is dropped after metadata backfill (2.4.1
-  never checked sizes). All 50 live Urdu files match today; **re-encoding CDN
-  audio without updating `fileSizeBytes` would silently drop users'
-  downloads.**
+  the catalogue's `fileSizeBytes` is **kept, not dropped** (2.4.1 never
+  checked sizes, so the catalogue figure was never verified against the
+  file). `backfillDownloadedMetadata` records the file's real on-disk size in
+  the row (the verified baseline for later launches) and only `debugPrint`s
+  the difference from the catalogue; the file is never deleted or hidden over
+  a metadata mismatch. Still dropped to "unavailable" (Retry/Remove): a
+  missing file, a **zero-byte** file, or a file that no longer matches the
+  size its row was verified at (damage after the fact). Fresh downloads keep
+  the atomic `.part` + exact-size check. **Never record the unverified
+  catalogue size as a row's trusted size for a file that already exists.**
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)

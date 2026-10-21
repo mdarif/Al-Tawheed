@@ -94,9 +94,18 @@ Future<Set<String>> reconcileDownloadedIds(
   );
 }
 
-/// Like [reconcileDownloadedIds], but also rejects files whose byte count no
-/// longer matches a trusted catalog snapshot. A missing expected size means
-/// legacy metadata and is checked for existence only.
+/// Like [reconcileDownloadedIds], but also checks each file against the size on
+/// record for it.
+///
+/// A file is rejected when it is missing, zero bytes (never a playable
+/// download, whatever size is on record), or, where [expectedBytes] holds a
+/// size for it, differs from that size. That size must be one the file was
+/// actually VERIFIED at (a promoted download's, or one adopted from the file
+/// itself by `DownloadsProvider.backfillDownloadedMetadata`), never an
+/// unverified catalogue figure: a catalogue/CDN disagreement is not evidence
+/// that a file the user already downloaded is broken. A missing expected size
+/// means legacy metadata and the file is checked for existence and non-empty
+/// only.
 Future<Set<String>> reconcileDownloadedIdsWithExpectedBytes(
   (
     List<String> ids,
@@ -113,10 +122,11 @@ Future<Set<String>> reconcileDownloadedIdsWithExpectedBytes(
   for (final id in ids) {
     if (!isSafePathSegment(id)) continue;
     final file = File(_localPathFor(documentsPath, seriesId, id));
-    if (await file.exists() &&
-        (expectedBytes[id] == null ||
-            expectedBytes[id] == 0 ||
-            await file.length() == expectedBytes[id])) {
+    if (!await file.exists()) continue;
+    final length = await file.length();
+    if (length == 0) continue;
+    final expected = expectedBytes[id];
+    if (expected == null || expected == 0 || length == expected) {
       valid.add(id);
     }
   }

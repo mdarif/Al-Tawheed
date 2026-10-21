@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus_platform_interface/connectivity_plus_platform_interface.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/saved_lecture_metadata.dart';
@@ -363,6 +364,152 @@ void main() {
       expect(provider.isDownloaded('corrupt'), isFalse);
       expect(provider.isUnavailable('corrupt'), isTrue);
       expect(provider.unavailableMetadata.single.id, 'corrupt');
+    });
+
+    test('a missing saved file is unavailable, and Remove clears the row',
+        () async {
+      const row = SavedLectureMetadata(
+        id: 'gone',
+        number: 1,
+        chapterId: 'ch-01',
+        title: {'en': 'Gone'},
+        audioUrl: 'https://example.test/gone.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 100,
+      );
+      await PreferencesService.instance.saveDownloadedIds({'gone'});
+      await PreferencesService.instance.saveDownloadedMetadata([row]);
+
+      final provider = DownloadsProvider();
+      await provider.load();
+
+      expect(provider.isDownloaded('gone'), isFalse);
+      expect(provider.isUnavailable('gone'), isTrue);
+
+      await provider.delete('gone');
+      expect(provider.isUnavailable('gone'), isFalse);
+    });
+
+    test('a zero-byte saved file is unavailable even if no size is on record',
+        () async {
+      const row = SavedLectureMetadata(
+        id: 'empty',
+        number: 1,
+        chapterId: 'ch-01',
+        title: {'en': 'Empty'},
+        audioUrl: 'https://example.test/empty.mp3',
+        durationSeconds: 60,
+        fileSizeBytes: 0, // unknown size: previously "existence only"
+      );
+      final path = DownloadService.localPath('empty');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(const []);
+      await PreferencesService.instance.saveDownloadedIds({'empty'});
+      await PreferencesService.instance.saveDownloadedMetadata([row]);
+
+      final provider = DownloadsProvider();
+      await provider.load();
+
+      expect(provider.isDownloaded('empty'), isFalse);
+      expect(provider.isUnavailable('empty'), isTrue);
+    });
+
+    test('a zero-byte legacy file (id only, no row) is not listed as playable',
+        () async {
+      final path = DownloadService.localPath('legacy-empty');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(const []);
+      await PreferencesService.instance.saveDownloadedIds({'legacy-empty'});
+
+      final provider = DownloadsProvider();
+      await provider.load();
+
+      expect(provider.isDownloaded('legacy-empty'), isFalse);
+      expect(provider.localPathIfDownloaded('legacy-empty'), isNull);
+    });
+  });
+
+  group('size differing from the catalogue', () {
+    test(
+        'a completed legacy download is kept, on disk and playable, after '
+        'backfill against a catalogue with a different size', () async {
+      // The file on disk is 80 bytes; the catalogue now says 1000 (e.g. the
+      // CDN audio was re-encoded). A metadata mismatch alone must not cost the
+      // user a download they already have.
+      final path = DownloadService.localPath('big');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(List.filled(80, 3));
+      await PreferencesService.instance.saveDownloadedIds({'big'});
+
+      final logs = <String>[];
+      final originalDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) logs.add(message);
+      };
+      addTearDown(() => debugPrint = originalDebugPrint);
+
+      final first = DownloadsProvider();
+      await first.load();
+      await first.backfillDownloadedMetadata([_lec('big', bytes: 1000)]);
+      expect(first.isDownloaded('big'), isTrue);
+
+      // Flagged internally (diagnostics), not surfaced to the user.
+      expect(
+        logs.where((l) => l.contains('big') && l.contains('differs')),
+        isNotEmpty,
+      );
+
+      for (var launch = 0; launch < 2; launch++) {
+        final restarted = DownloadsProvider();
+        await restarted.load();
+        expect(restarted.isDownloaded('big'), isTrue, reason: 'launch $launch');
+        expect(restarted.isUnavailable('big'), isFalse);
+        expect(restarted.localPathIfDownloaded('big'), path);
+        expect(restarted.downloadedMetadata.single.id, 'big');
+        expect(File(path).lengthSync(), 80, reason: 'file untouched');
+      }
+    });
+
+    test('a matching size is not flagged', () async {
+      final path = DownloadService.localPath('same');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(List.filled(80, 3));
+      await PreferencesService.instance.saveDownloadedIds({'same'});
+
+      final logs = <String>[];
+      final originalDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) logs.add(message);
+      };
+      addTearDown(() => debugPrint = originalDebugPrint);
+
+      final provider = DownloadsProvider();
+      await provider.load();
+      await provider.backfillDownloadedMetadata([_lec('same', bytes: 80)]);
+
+      expect(logs.where((l) => l.contains('differs')), isEmpty);
+      expect(provider.isDownloaded('same'), isTrue);
+    });
+
+    test(
+        'a file that later shrinks below the size it was verified at is still '
+        'rejected', () async {
+      // The protection that must remain: once a row records the size a file
+      // was verified at, a file that no longer matches it is damaged.
+      final path = DownloadService.localPath('shrunk');
+      await File(path).parent.create(recursive: true);
+      await File(path).writeAsBytes(List.filled(80, 3));
+      await PreferencesService.instance.saveDownloadedIds({'shrunk'});
+
+      final first = DownloadsProvider();
+      await first.load();
+      await first.backfillDownloadedMetadata([_lec('shrunk', bytes: 1000)]);
+      await File(path).writeAsBytes(List.filled(30, 3)); // damaged afterwards
+
+      final restarted = DownloadsProvider();
+      await restarted.load();
+      expect(restarted.isDownloaded('shrunk'), isFalse);
+      expect(restarted.isUnavailable('shrunk'), isTrue);
     });
   });
 

@@ -651,6 +651,83 @@ void main() {
     });
   });
 
+  group('reconcileDownloadedIdsWithExpectedBytes', () {
+    Future<void> write(String id, int bytes) async {
+      final f = File('${tempDir.path}/audio/$id.mp3');
+      await f.parent.create(recursive: true);
+      await f.writeAsBytes(List<int>.filled(bytes, 1));
+    }
+
+    Future<Set<String>> reconcile(
+      List<String> ids,
+      Map<String, int> expected,
+    ) =>
+        reconcileDownloadedIdsWithExpectedBytes(
+          (ids, expected, tempDir.path, 'tawheed-ur'),
+        );
+
+    test('keeps a non-empty file with a matching, unknown or zero size',
+        () async {
+      await write('match', 100);
+      await write('unknown', 100);
+      await write('zero-size', 100);
+
+      final result = await reconcile(
+        ['match', 'unknown', 'zero-size'],
+        {'match': 100, 'zero-size': 0},
+      );
+
+      expect(result, {'match', 'unknown', 'zero-size'});
+    });
+
+    test('rejects a missing file', () async {
+      expect(await reconcile(['nope'], {'nope': 100}), isEmpty);
+      expect(await reconcile(['nope'], const {}), isEmpty);
+    });
+
+    test('rejects a zero-byte file, whatever size is on record', () async {
+      await write('empty-a', 0);
+      await write('empty-b', 0);
+      await write('empty-c', 0);
+
+      final result = await reconcile(
+        ['empty-a', 'empty-b', 'empty-c'],
+        {'empty-a': 100, 'empty-b': 0},
+      );
+
+      expect(result, isEmpty);
+    });
+
+    test('rejects a file that disagrees with the size it was verified at',
+        () async {
+      await write('shrunk', 30);
+
+      expect(await reconcile(['shrunk'], {'shrunk': 100}), isEmpty);
+    });
+  });
+
+  test('does not promote a response longer than the catalog byte count',
+      () async {
+    final (:server, :baseUrl) = await _startServer(256, sentBytes: 512);
+    addTearDown(() => server.close(force: true));
+
+    final savePath = '${tempDir.path}/audio/oversized.mp3';
+
+    await expectLater(
+      DownloadService.download(
+        cancelKey: 'oversized',
+        url: '$baseUrl/audio.mp3',
+        savePath: savePath,
+        fileSizeBytes: 256,
+        onProgress: (_) {},
+      ),
+      throwsA(isA<DownloadIntegrityException>()),
+    );
+
+    expect(await File(savePath).exists(), isFalse);
+    expect(await _partFilesFor(savePath), isEmpty);
+  });
+
   group('byte accounting', () {
     test('fileSizeSync returns on-disk size, 0 for missing/unsafe', () async {
       final f = File('${tempDir.path}/audio/tawheed-ar/l1.mp3');

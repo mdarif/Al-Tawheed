@@ -251,6 +251,15 @@ class DownloadsProvider extends ChangeNotifier {
   int get queuedDownloadCount => _queuedDownloads.length;
 
   /// Migrates legacy ID-only completed downloads once a catalogue is available.
+  ///
+  /// The row's `fileSizeBytes` is the size the file really has on disk, NOT the
+  /// catalogue's: a 2.4.1 file was never size-checked, so the catalogue figure
+  /// has not been verified against it, and a launch-time check against that
+  /// figure would drop a perfectly playable download whenever the CDN audio had
+  /// been re-encoded. Recording the on-disk size makes it the verified
+  /// baseline instead, so later damage (truncation) is still caught. A
+  /// difference from the catalogue is only logged. If the file cannot be
+  /// measured the catalogue size is used.
   Future<void> backfillDownloadedMetadata(Iterable<Lecture> lectures) async {
     final byId = {for (final lecture in lectures) lecture.id: lecture};
     var changed = false;
@@ -258,7 +267,28 @@ class DownloadsProvider extends ChangeNotifier {
       if (_downloadedMetadata.containsKey(id)) continue;
       final lecture = byId[id];
       if (lecture == null) continue;
-      _downloadedMetadata[id] = SavedLectureMetadata.fromLecture(lecture);
+      final onDisk = DownloadService.fileSizeSync(id, seriesId: _seriesId);
+      if (onDisk > 0 && onDisk != lecture.fileSizeBytes) {
+        if (lecture.fileSizeBytes > 0) {
+          debugPrint(
+            'DownloadsProvider: size of downloaded $id differs from the '
+            'catalogue ($onDisk bytes on disk, ${lecture.fileSizeBytes} in '
+            'catalogue); keeping the file',
+          );
+        }
+        final row = SavedLectureMetadata.fromLecture(lecture);
+        _downloadedMetadata[id] = SavedLectureMetadata(
+          id: row.id,
+          number: row.number,
+          chapterId: row.chapterId,
+          title: row.title,
+          audioUrl: row.audioUrl,
+          durationSeconds: row.durationSeconds,
+          fileSizeBytes: onDisk,
+        );
+      } else {
+        _downloadedMetadata[id] = SavedLectureMetadata.fromLecture(lecture);
+      }
       changed = true;
     }
     if (!changed) return;

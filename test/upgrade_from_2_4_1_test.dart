@@ -311,14 +311,12 @@ void main() {
     });
 
     test(
-        'documented hazard: a 2.4.1 file whose size differs from the '
-        'catalogue is dropped by the launch after backfill', () async {
+        'a 2.4.1 file whose size differs from the catalogue is KEPT: it '
+        'survives backfill and later launches, on disk and playable', () async {
       // 2.4.1 never compared a finished file to the catalogue size (it was a
-      // progress estimate only). Backfill adopts the catalogue's size as the
-      // row's trusted size, and the next launch rejects a file that disagrees.
-      // Checked against the live Urdu catalogue on 2026-10-21: all 50
-      // `fileSizeBytes` equal the CDN Content-Length, so no real download is
-      // affected today — this pins what would happen if audio were re-encoded.
+      // progress estimate only), so a catalogue/CDN disagreement is not
+      // evidence the file is broken. Re-encoded CDN audio must never cost an
+      // upgrading user the downloads they already paid data for.
       final catalog = _catalog(fileSizeBytes: _audioBytes + 1000);
 
       final first = await _App.launch();
@@ -326,11 +324,28 @@ void main() {
       expect(first.downloads.isDownloaded('lec-001'), isTrue);
       first.dispose();
 
-      final second = await _App.launch();
-      addTearDown(second.dispose);
+      for (var launch = 2; launch <= 3; launch++) {
+        final app = await _App.launch();
 
-      expect(second.downloads.isDownloaded('lec-001'), isFalse);
-      expect(second.downloads.isDownloaded('lec-002'), isFalse);
+        for (final id in ['lec-001', 'lec-002']) {
+          expect(
+            app.downloads.isDownloaded(id),
+            isTrue,
+            reason: '$id, launch $launch',
+          );
+          expect(app.downloads.isUnavailable(id), isFalse, reason: id);
+          final path = app.downloads.localPathIfDownloaded(id);
+          expect(path, '${docs.path}/audio/$id.mp3');
+          expect(File(path!).existsSync(), isTrue, reason: '$id on disk');
+          expect(File(path).lengthSync(), _audioBytes, reason: 'untouched');
+        }
+        expect(app.downloads.downloadedMetadata.map((r) => r.id).toSet(), {
+          'lec-001',
+          'lec-002',
+        });
+        expect(app.downloads.totalDownloadedBytes, 2 * _audioBytes);
+        app.dispose();
+      }
     });
 
     test('Arabic-prefixed 2.4.1 state is read from its own `ar_` keys',
