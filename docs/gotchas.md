@@ -372,6 +372,20 @@ is portable memory: any LLM working the repo should read and extend it.
   tab settles). Otherwise the location keeps the last link's tab and repeating
   that same link — the offline banner stays on screen while offline — is a
   router no-op that leaves the user on the wrong tab.
+- **The text-size preview must paint exactly like the reader.** The reader
+  draws Urdu runs in Nastaliq at 0.78× and Arabic runs (āyāt, `[citations]`)
+  in Naskh at full size on the same line; a preview drawn as one string at one
+  size showed Urdu ~28% larger than the reader would. Script detection, the
+  0.78 factor and line heights live in
+  [book_typography.dart](../lib/utils/book_typography.dart), used by both the
+  reader and [text_size_setting.dart](../lib/widgets/settings/text_size_setting.dart);
+  change them there, never in one place only.
+- **Only the first `RenderFlex overflowed` report in a test names the
+  widget**; later ones are bare. To find a 2×-text overflow, bisect by turning
+  sections/flags off, or walk the render tree for `RenderFlex` with overflow.
+  Several real overflows (Study dashboard duration row, edition-switcher
+  `CapabilityChip`) stayed hidden for releases because the widget sat in an
+  offstage `IndexedStack` that tests never rendered at 2×.
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)

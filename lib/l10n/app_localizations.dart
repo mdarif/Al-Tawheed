@@ -671,11 +671,83 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsAbout;
 
-  /// No description provided for @moreOptions.
+  /// No description provided for @settingsReading.
   ///
   /// In en, this message translates to:
-  /// **'More options'**
-  String get moreOptions;
+  /// **'Reading'**
+  String get settingsReading;
+
+  /// No description provided for @settingsTextSizeSmaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller text'**
+  String get settingsTextSizeSmaller;
+
+  /// No description provided for @settingsTextSizeLarger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger text'**
+  String get settingsTextSizeLarger;
+
+  /// No description provided for @settingsTextSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview uses the book’s font. You can also pinch to resize while reading.'**
+  String get settingsTextSizeHint;
+
+  /// No description provided for @settingsAboutApp.
+  ///
+  /// In en, this message translates to:
+  /// **'About this app'**
+  String get settingsAboutApp;
+
+  /// No description provided for @settingsOtherApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Our other apps'**
+  String get settingsOtherApps;
+
+  /// No description provided for @settingsOtherAppsFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in Google Play.'**
+  String get settingsOtherAppsFooter;
+
+  /// No description provided for @settingsOtherAppOpensInPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, opens in Google Play'**
+  String settingsOtherAppOpensInPlay(String name);
+
+  /// No description provided for @settingsOtherAppsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open Google Play'**
+  String get settingsOtherAppsOpenFailed;
+
+  /// No description provided for @settingsOtherAppsCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get settingsOtherAppsCopyLink;
+
+  /// No description provided for @otherAppQuranTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'A beautiful offline Qur\'an reader — Uthmani & IndoPak, Urdu, Hindi & English.'**
+  String get otherAppQuranTagline;
+
+  /// No description provided for @otherAppAssunnahTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Hadith in Urdu, Arabic and English, with scholars’ rulings. Works offline.'**
+  String get otherAppAssunnahTagline;
+
+  /// No description provided for @settingsDownloadsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your downloaded lectures are in Library › Downloads.'**
+  String get settingsDownloadsHint;
 
   /// No description provided for @statLectures.
   ///

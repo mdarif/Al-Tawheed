@@ -320,7 +320,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAbout => 'About';
 
   @override
-  String get moreOptions => 'More options';
+  String get settingsReading => 'Reading';
+
+  @override
+  String get settingsTextSizeSmaller => 'Smaller text';
+
+  @override
+  String get settingsTextSizeLarger => 'Larger text';
+
+  @override
+  String get settingsTextSizeHint =>
+      'Preview uses the book’s font. You can also pinch to resize while reading.';
+
+  @override
+  String get settingsAboutApp => 'About this app';
+
+  @override
+  String get settingsOtherApps => 'Our other apps';
+
+  @override
+  String get settingsOtherAppsFooter => 'Opens in Google Play.';
+
+  @override
+  String settingsOtherAppOpensInPlay(String name) {
+    return '$name, opens in Google Play';
+  }
+
+  @override
+  String get settingsOtherAppsOpenFailed => 'Couldn’t open Google Play';
+
+  @override
+  String get settingsOtherAppsCopyLink => 'Copy link';
+
+  @override
+  String get otherAppQuranTagline =>
+      'A beautiful offline Qur\'an reader — Uthmani & IndoPak, Urdu, Hindi & English.';
+
+  @override
+  String get otherAppAssunnahTagline =>
+      'Hadith in Urdu, Arabic and English, with scholars’ rulings. Works offline.';
+
+  @override
+  String get settingsDownloadsHint =>
+      'Your downloaded lectures are in Library › Downloads.';
 
   @override
   String get statLectures => 'Lectures';

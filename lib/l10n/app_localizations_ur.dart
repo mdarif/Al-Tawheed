@@ -322,7 +322,49 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAbout => 'ایپ کے بارے میں';
 
   @override
-  String get moreOptions => 'مزید اختیارات';
+  String get settingsReading => 'مطالعہ';
+
+  @override
+  String get settingsTextSizeSmaller => 'متن چھوٹا کریں';
+
+  @override
+  String get settingsTextSizeLarger => 'متن بڑا کریں';
+
+  @override
+  String get settingsTextSizeHint =>
+      'پیش منظر کتاب کا فونٹ استعمال کرتا ہے۔ مطالعے کے دوران دو انگلیوں سے پنچ کر کے بھی سائز بدل سکتے ہیں۔';
+
+  @override
+  String get settingsAboutApp => 'اس ایپ کے بارے میں';
+
+  @override
+  String get settingsOtherApps => 'ہماری دیگر ایپس';
+
+  @override
+  String get settingsOtherAppsFooter => 'گوگل پلے میں کھلتا ہے۔';
+
+  @override
+  String settingsOtherAppOpensInPlay(String name) {
+    return '$name، گوگل پلے میں کھلتا ہے';
+  }
+
+  @override
+  String get settingsOtherAppsOpenFailed => 'گوگل پلے نہیں کھل سکا';
+
+  @override
+  String get settingsOtherAppsCopyLink => 'لنک کاپی کریں';
+
+  @override
+  String get otherAppQuranTagline =>
+      'قرآن کا خوبصورت آف لائن ریڈر — عثمانی اور انڈو پاک رسم الخط، اردو، ہندی اور انگریزی کے ساتھ۔';
+
+  @override
+  String get otherAppAssunnahTagline =>
+      'اردو، عربی اور انگریزی میں احادیث، علماء کے احکام کے ساتھ۔ آف لائن بھی چلتی ہے۔';
+
+  @override
+  String get settingsDownloadsHint =>
+      'آپ کے ڈاؤن لوڈ کیے ہوئے دروس لائبریری › ڈاؤن لوڈز میں ہیں۔';
 
   @override
   String get statLectures => 'دروس';
@@ -961,7 +1003,49 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   String get settingsAbout => 'App ke baare mein';
 
   @override
-  String get moreOptions => 'Mazeed ikhtiyarat';
+  String get settingsReading => 'Mutaala';
+
+  @override
+  String get settingsTextSizeSmaller => 'Matn chhota karein';
+
+  @override
+  String get settingsTextSizeLarger => 'Matn bada karein';
+
+  @override
+  String get settingsTextSizeHint =>
+      'Preview kitaab ka font istemaal karta hai. Mutaale ke dauraan do ungliyon se pinch kar ke bhi size badal sakte hain.';
+
+  @override
+  String get settingsAboutApp => 'Is app ke baare mein';
+
+  @override
+  String get settingsOtherApps => 'Hamari doosri apps';
+
+  @override
+  String get settingsOtherAppsFooter => 'Google Play mein khulta hai.';
+
+  @override
+  String settingsOtherAppOpensInPlay(String name) {
+    return '$name, Google Play mein khulta hai';
+  }
+
+  @override
+  String get settingsOtherAppsOpenFailed => 'Google Play nahin khul saka';
+
+  @override
+  String get settingsOtherAppsCopyLink => 'Link copy karein';
+
+  @override
+  String get otherAppQuranTagline =>
+      'Qur\'an ka khoobsurat offline reader — Uthmani aur IndoPak, Urdu, Hindi aur English ke saath.';
+
+  @override
+  String get otherAppAssunnahTagline =>
+      'Urdu, Arabic aur English mein ahadees, ulama ke ahkaam ke saath. Offline bhi chalti hai.';
+
+  @override
+  String get settingsDownloadsHint =>
+      'Aap ke download kiye hue duroos Library › Downloads mein hain.';
 
   @override
   String get statLectures => 'Lectures';

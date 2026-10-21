@@ -64,6 +64,7 @@ flutter:
     - assets/
     - assets/images/
     - assets/content/
+    - assets/brand/other_apps/
   fonts:
     - family: NotoNaskhArabic
       fonts:

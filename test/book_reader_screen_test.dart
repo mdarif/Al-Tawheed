@@ -14,6 +14,8 @@ import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
+import 'package:myapp/testing/widget_keys.dart';
+import 'package:myapp/widgets/settings/text_size_setting.dart';
 import 'package:myapp/widgets/book/scroll_to_top_button.dart';
 import 'package:myapp/theme/app_semantic_colors.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -97,6 +99,8 @@ Widget _wrap(
   String chapterId, {
   ReadingProvider? reading,
   bool startFromTop = false,
+  Locale? locale,
+  double textScale = 1,
 }) {
   return MultiProvider(
     providers: [
@@ -109,8 +113,17 @@ Widget _wrap(
     ],
     child: MaterialApp.router(
       theme: AppTheme.light,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: textScale == 1
+          ? null
+          : (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(textScale),
+                ),
+                child: child!,
+              ),
       routerConfig: GoRouter(
         initialLocation:
             '/book/$chapterId${startFromTop ? '?startFromTop=true' : ''}',
@@ -708,6 +721,181 @@ void main() {
 
     // The enlarged size persisted on lift-off.
     expect((ReadingProvider()..load()).bookFontSize, reading.bookFontSize);
+  });
+
+  testWidgets(
+      'a pinch persists under the shared book_font_size key, clamped '
+      'to the provider bounds', (tester) async {
+    final book = BookProvider()..setBookForTest(_testBook);
+    final reading = ReadingProvider()..load(); // starts at 20
+
+    await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+    await tester.pumpAndSettle();
+
+    Future<void> pinch(double fromHalf, double toHalf) async {
+      final center = tester.getCenter(find.byType(PageView));
+      final g1 = await tester.createGesture(pointer: 1);
+      final g2 = await tester.createGesture(pointer: 2);
+      await g1.down(center - Offset(fromHalf, 0));
+      await g2.down(center + Offset(fromHalf, 0));
+      await tester.pump();
+      await g1.moveTo(center - Offset(toHalf, 0));
+      await g2.moveTo(center + Offset(toHalf, 0));
+      await tester.pump();
+      await g1.up();
+      await g2.up();
+      await tester.pumpAndSettle();
+    }
+
+    await pinch(50, 300); // 6× spread → far past the maximum
+    expect(reading.bookFontSize, ReadingProvider.maxBookFontSize);
+    expect(
+      (await SharedPreferences.getInstance()).getDouble('book_font_size'),
+      ReadingProvider.maxBookFontSize,
+    );
+
+    await pinch(300, 10); // collapse → far below the minimum
+    expect(reading.bookFontSize, ReadingProvider.minBookFontSize);
+    expect(
+      (await SharedPreferences.getInstance()).getDouble('book_font_size'),
+      ReadingProvider.minBookFontSize,
+    );
+  });
+
+  group('"Aa" text-size shortcut', () {
+    testWidgets('the app bar offers a Text size action beside the ⋮', (
+      tester,
+    ) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(WidgetKeys.readerTextSize), findsOneWidget);
+      expect(find.byTooltip('Text size'), findsOneWidget);
+      expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+      final size = tester.getSize(find.byKey(WidgetKeys.readerTextSize));
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+    });
+
+    testWidgets('opens the text-size sheet', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+
+      await tester.pumpWidget(_wrap(book, 'ch-01'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextSizeSetting), findsNothing);
+
+      await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextSizeSetting), findsOneWidget);
+      expect(find.text('Text size'), findsOneWidget);
+    });
+
+    testWidgets(
+        'its stepper writes the shared ReadingProvider value, the reader '
+        'follows, and it persists', (tester) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      final reading = ReadingProvider()..load();
+
+      await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(WidgetKeys.settingsTextSizeIncrease));
+      await tester.pumpAndSettle();
+
+      expect(reading.bookFontSize, 22.0);
+      expect(PreferencesService.instance.bookFontSize, 22.0);
+      expect((ReadingProvider()..load()).bookFontSize, 22.0);
+      // The chapter body repainted at the new size behind the sheet.
+      expect(_spanFor(tester, 'نص الباب الأول')?.style?.fontSize, 22.0);
+    });
+
+    testWidgets('clamps at 14 and 32 and disables the end buttons', (
+      tester,
+    ) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      final reading = ReadingProvider()..load();
+
+      await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+      await tester.pumpAndSettle();
+
+      await reading.setBookFontSize(32);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(WidgetKeys.settingsTextSizeIncrease))
+            .onPressed,
+        isNull,
+      );
+
+      await reading.setBookFontSize(14);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(WidgetKeys.settingsTextSizeDecrease))
+            .onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('a pinch behind the sheet is reflected in it (same provider)', (
+      tester,
+    ) async {
+      final book = BookProvider()..setBookForTest(_testBook);
+      final reading = ReadingProvider()..load();
+
+      await tester.pumpWidget(_wrap(book, 'ch-01', reading: reading));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+      await tester.pumpAndSettle();
+
+      reading.setBookFontSizeLive(26); // the value a pinch writes
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<Text>(
+              find.descendant(
+                of: find.byKey(WidgetKeys.settingsTextSizeValue),
+                matching: find.byType(Text),
+              ),
+            )
+            .data,
+        '26',
+      );
+    });
+
+    for (final locale in [const Locale('ar'), const Locale('ur')]) {
+      testWidgets('works in $locale at 2.0 text scale without overflow', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(360, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final book = BookProvider()..setBookForTest(_testBook);
+        final reading = ReadingProvider()..load();
+
+        await tester.pumpWidget(
+          _wrap(book, 'ch-01', reading: reading, locale: locale, textScale: 2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(WidgetKeys.readerTextSize));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(WidgetKeys.settingsTextSizeIncrease));
+        await tester.pumpAndSettle();
+        expect(reading.bookFontSize, 22.0);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   testWidgets('the scroll-to-top button is present but hidden at the top', (

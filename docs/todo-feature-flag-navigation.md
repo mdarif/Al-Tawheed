@@ -8,7 +8,7 @@ edition's capabilities in `SeriesConfig`: `hasBook` and `hasStudyMode` control
 whether the Read tab appears (it appears when either is true) and whether Read
 shows the Book/Study toggle (only when both are true). Lectures, Library, and
 Settings are always present; Library holds Bookmarks and, when the `downloads`
-flag is on, Downloads. About is reached from the overflow menu. Route guards
+flag is on, Downloads. About, Share app and Our other apps live in Settings › About / Our other apps. Route guards
 apply the same capability checks. The legacy Urdu edition also has a
 client-side `hasBook` default because this app bundles its Urdu book asset; an
 explicit manifest `hasBook: false` still wins. This is the current source of truth

@@ -12,8 +12,20 @@ class ReadingProvider extends ChangeNotifier {
   String get _prefix =>
       (_series?.currentSeries ?? SeriesConfig.legacyUrduFallback).storagePrefix;
 
+  /// The reader's text-size bounds (pt) and default. Owned here so the pinch
+  /// gesture, the Settings stepper and the reader's "Aa" sheet cannot drift.
+  static const double minBookFontSize = 14;
+  static const double maxBookFontSize = 32;
+  static const double defaultBookFontSize = 20;
+
+  /// [size] limited to [minBookFontSize]–[maxBookFontSize]; a non-finite value
+  /// (a corrupt pref) falls back to [defaultBookFontSize].
+  static double clampBookFontSize(double size) => size.isFinite
+      ? size.clamp(minBookFontSize, maxBookFontSize).toDouble()
+      : defaultBookFontSize;
+
   // Reading comfort setting — global, not per-edition content state.
-  double _bookFontSize = 20;
+  double _bookFontSize = defaultBookFontSize;
   double get bookFontSize => _bookFontSize;
 
   Map<String, double> _scrollOffsets = {};
@@ -27,7 +39,7 @@ class ReadingProvider extends ChangeNotifier {
 
   void load() {
     final prefix = _prefix;
-    _bookFontSize = _prefs.bookFontSize;
+    _bookFontSize = clampBookFontSize(_prefs.bookFontSize);
     _scrollOffsets = _prefs.bookScrollOffsets(prefix: prefix);
     _lastChapterId = _prefs.lastChapterIdFor(prefix);
     notifyListeners();
@@ -39,9 +51,10 @@ class ReadingProvider extends ChangeNotifier {
   void reload() => load();
 
   Future<void> setBookFontSize(double size) async {
-    if (_bookFontSize == size) return;
-    _bookFontSize = size;
-    await _prefs.saveBookFontSize(size);
+    final clamped = clampBookFontSize(size);
+    if (_bookFontSize == clamped) return;
+    _bookFontSize = clamped;
+    await _prefs.saveBookFontSize(clamped);
     notifyListeners();
   }
 
@@ -50,8 +63,9 @@ class ReadingProvider extends ChangeNotifier {
   /// leaves the disk alone until [commitBookFontSize] runs at the end of the
   /// gesture. Without this split, a single pinch is dozens of prefs writes.
   void setBookFontSizeLive(double size) {
-    if (_bookFontSize == size) return;
-    _bookFontSize = size;
+    final clamped = clampBookFontSize(size);
+    if (_bookFontSize == clamped) return;
+    _bookFontSize = clamped;
     notifyListeners();
   }
 

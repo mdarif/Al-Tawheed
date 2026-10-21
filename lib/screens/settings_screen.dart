@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/audio/player_notifier.dart';
@@ -17,7 +18,10 @@ import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/safe_url_launcher.dart';
 import 'package:myapp/widgets/capability_chip.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
+import 'package:myapp/widgets/settings/other_apps_section.dart';
 import 'package:myapp/widgets/settings/playback_speed_selector.dart';
+import 'package:myapp/widgets/settings/settings_section.dart';
+import 'package:myapp/widgets/settings/text_size_setting.dart';
 import 'package:myapp/widgets/settings/theme_mode_switch.dart';
 
 /// Opens [url] in an external app, showing [fallbackMessage] in a snackbar if
@@ -37,32 +41,6 @@ Future<void> _launchOrNotify(
   }
 }
 
-/// Rounded, bordered container used to group a settings section's rows — the
-/// shared "card" chrome so every section reads consistently.
-class _SettingsCard extends StatelessWidget {
-  final Widget child;
-  const _SettingsCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Material(
-        color: context.groupedSurface,
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: context.groupedBorder, width: 1),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -79,9 +57,18 @@ class SettingsScreen extends StatelessWidget {
           bottom: MediaQuery.paddingOf(context).bottom + 92,
         ),
         children: [
-          _SectionHeader(l10n.settingsAppearance),
-          const _SettingsCard(child: ThemeModeSwitch()),
+          SettingsSectionHeader(l10n.settingsAppearance),
+          const SettingsCard(child: ThemeModeSwitch()),
           const SizedBox(height: 6),
+
+          // Text size only affects the Book, so it is offered only when the
+          // active edition has one. The same value is written by the reader's
+          // pinch gesture and its "Aa" sheet (see ReadingProvider).
+          if (context.watch<SeriesProvider>().currentSeries.hasBook) ...[
+            SettingsSectionHeader(l10n.settingsReading),
+            const SettingsCard(child: TextSizeSetting()),
+            const SizedBox(height: 6),
+          ],
 
           // The edition switcher is always reachable whenever multi-series is
           // active with more than one series available — there is no separate
@@ -89,8 +76,8 @@ class SettingsScreen extends StatelessWidget {
           // launched.
           if (flags.multiSeriesEnabled &&
               context.watch<SeriesProvider>().availableSeries.length > 1) ...[
-            _SectionHeader(l10n.settingsSeries),
-            const _SettingsCard(child: _SeriesLanguageSelector()),
+            SettingsSectionHeader(l10n.settingsSeries),
+            const SettingsCard(child: _SeriesLanguageSelector()),
             const SizedBox(height: 6),
           ],
 
@@ -98,27 +85,44 @@ class SettingsScreen extends StatelessWidget {
           // content-edition switcher above, which is headed "Language"): the two
           // are independent axes — content edition vs app/chrome language.
           if (flags.features.language) ...[
-            _SectionHeader(l10n.settingsAppLanguage),
-            const _SettingsCard(child: _LanguageSelector()),
+            SettingsSectionHeader(l10n.settingsAppLanguage),
+            const SettingsCard(child: _LanguageSelector()),
             const SizedBox(height: 6),
           ],
 
-          _SectionHeader(l10n.settingsPlayback),
-          const _SettingsCard(child: _PlaybackSpeedRow()),
+          SettingsSectionHeader(l10n.settingsPlayback),
+          const SettingsCard(child: _PlaybackSpeedRow()),
           const SizedBox(height: 6),
 
-          // The App section bundles promotional/outbound links (contact, rate,
-          // YouTube). Gated behind its own feature flag (default off) so it can
-          // be hidden now and re-enabled remotely. "Share app" used to live here
-          // too but moved to the app-bar overflow (⋯) menu so it stays reachable
-          // regardless of this flag. The official website is surfaced separately
-          // in the About card, so it is not duplicated here.
-          if (flags.features.appLinks) ...[
-            _SectionHeader(l10n.settingsApp),
-            _SettingsCard(
-              child: Column(
-                children: [
+          if (flags.features.downloads) const _DownloadsSection(),
+
+          // About is always visible: it replaces the old appLinks-gated "App"
+          // section and is where the (now removed) shell menu's About and
+          // Share app live on. Only the outbound promo rows stay behind
+          // `appLinks` (off in production); Share app has its own flag.
+          SettingsSectionHeader(l10n.settingsAbout),
+          SettingsCard(
+            child: Column(
+              children: [
+                ListTile(
+                  key: WidgetKeys.settingsAbout,
+                  leading: const Icon(Icons.info_outline_rounded),
+                  title: Text(l10n.settingsAboutApp),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/about'),
+                ),
+                if (flags.features.shareButton)
                   ListTile(
+                    key: WidgetKeys.settingsShareApp,
+                    leading: const Icon(Icons.share_rounded),
+                    title: Text(l10n.settingsShareApp),
+                    onTap: () => SharePlus.instance.share(
+                      ShareParams(text: config.share.message),
+                    ),
+                  ),
+                if (flags.features.appLinks) ...[
+                  ListTile(
+                    key: WidgetKeys.settingsContactUs,
                     leading: const Icon(Icons.mail_outline_rounded),
                     title: Text(l10n.settingsContactUs),
                     onTap: () async {
@@ -140,6 +144,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   if (config.links.playStore != null)
                     ListTile(
+                      key: WidgetKeys.settingsRateApp,
                       leading: const Icon(Icons.star_outline_rounded),
                       title: Text(l10n.settingsRateApp),
                       onTap: () => _launchOrNotify(
@@ -150,6 +155,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   if (config.links.youtube != null)
                     ListTile(
+                      key: WidgetKeys.settingsYouTube,
                       leading: const Icon(Icons.play_circle_outline_rounded),
                       title: Text(l10n.settingsYouTubeChannel),
                       subtitle: Text(
@@ -164,35 +170,17 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: 6),
-          ],
+          ),
+          const SizedBox(height: 6),
 
-          if (flags.features.downloads) const _DownloadsSection(),
+          // Android-only, and deliberately not behind `appLinks` (see the
+          // widget's doc).
+          const OtherAppsSection(),
 
-          // Settings is pure config — Bookmarks / About / Settings are reached
-          // from the ⋯ overflow menu (see AppOverflowMenu), not from here.
           const SizedBox(height: 8),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
-      child: Text(
-        title,
-        style: context.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
@@ -264,26 +252,21 @@ class _PlaybackSpeedRow extends StatelessWidget {
 class _DownloadsSection extends StatelessWidget {
   const _DownloadsSection();
 
-  static String _formatBytes(int bytes) {
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   @override
   Widget build(BuildContext context) {
     final downloads = context.watch<DownloadsProvider>();
-    final count = downloads.downloadedCount;
-    final size = downloads.totalDownloadedBytes;
     final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(l10n.settingsDownloads),
-        _SettingsCard(
+        SettingsSectionHeader(l10n.settingsDownloads),
+        SettingsCard(
           child: Column(
             children: [
-              // Wi-Fi only toggle
+              // Wi-Fi only toggle. The downloaded-lectures list and "remove
+              // all" live in Library > Downloads — each collection has exactly
+              // one home — so this section is preferences only.
               SwitchListTile(
                 key: WidgetKeys.settingsDownloadOnWifiOnly,
                 secondary: const Icon(Icons.wifi_rounded),
@@ -299,50 +282,15 @@ class _DownloadsSection extends StatelessWidget {
               ),
 
               const _NotificationStatusRow(),
-
-              // Storage summary + library link
-              ListTile(
-                key: WidgetKeys.settingsOfflineLibrary,
-                leading: const Icon(Icons.storage_rounded),
-                title: Text(l10n.offlineLibrary),
-                subtitle: Text(
-                  count == 0
-                      ? l10n.offlineLibraryEmpty
-                      : '${l10n.settingsDownloadsCount(count)}\n'
-                          '${l10n.settingsStorageUsed(_formatBytes(size))}',
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/offline-library'),
-              ),
-
-              if (count > 0)
-                ListTile(
-                  leading: Icon(
-                    Icons.delete_outline_rounded,
-                    color: context.colorScheme.error,
-                  ),
-                  title: Text(
-                    l10n.settingsClearDownloads,
-                    style: TextStyle(color: context.colorScheme.error),
-                  ),
-                  onTap: () async {
-                    final confirmed = await showConfirmDialog(
-                      context,
-                      title: l10n.clearAllDownloads,
-                      message: l10n.clearAllDownloadsMessage(
-                        count,
-                        _formatBytes(size),
-                      ),
-                      confirmLabel: l10n.deleteAll,
-                      destructive: true,
-                    );
-                    if (confirmed && context.mounted) {
-                      await context.read<DownloadsProvider>().deleteAll();
-                    }
-                  },
-                ),
             ],
           ),
+        ),
+        // Settings is a shell branch, so `go` to Library's branch is correct
+        // here (the root-navigator pitfall only bites pushed pages).
+        SettingsSectionFootnote(
+          l10n.settingsDownloadsHint,
+          key: WidgetKeys.settingsDownloadsHint,
+          onTap: () => context.go('/library?tab=downloads'),
         ),
         const SizedBox(height: 6),
       ],
@@ -539,24 +487,29 @@ class _SeriesLanguageRow extends StatelessWidget {
           if (teacher.isNotEmpty)
             Text(teacher, style: context.textTheme.bodySmall),
           const SizedBox(height: 4),
+          // Each chip scales down rather than overflowing: at 2x text (or a
+          // long translation) one chip can be wider than the row's subtitle.
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              CapabilityChip(
-                icon: Icons.headphones_rounded,
-                label: l10n.audioLabel,
-              ),
-              if (series.hasStudyMode)
+              for (final chip in [
                 CapabilityChip(
-                  icon: Icons.school_rounded,
-                  label: l10n.studyMode,
+                  icon: Icons.headphones_rounded,
+                  label: l10n.audioLabel,
                 ),
-              if (series.hasBook)
-                CapabilityChip(
-                  icon: Icons.menu_book_rounded,
-                  label: l10n.tabBook,
-                ),
+                if (series.hasStudyMode)
+                  CapabilityChip(
+                    icon: Icons.school_rounded,
+                    label: l10n.studyMode,
+                  ),
+                if (series.hasBook)
+                  CapabilityChip(
+                    icon: Icons.menu_book_rounded,
+                    label: l10n.tabBook,
+                  ),
+              ])
+                FittedBox(fit: BoxFit.scaleDown, child: chip),
             ],
           ),
         ],

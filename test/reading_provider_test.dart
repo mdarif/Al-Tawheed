@@ -82,6 +82,86 @@ void main() {
     });
   });
 
+  // The provider — not the reader's pinch code — owns the 14–32 bounds, so the
+  // pinch gesture, the Settings stepper and the reader's "Aa" sheet can never
+  // disagree. A persisted out-of-range value (older build, hand-edited prefs)
+  // must be corrected on restore, not trusted.
+  group('ReadingProvider — font size clamp (14–32)', () {
+    test('exposes the bounds as constants', () {
+      expect(ReadingProvider.minBookFontSize, 14.0);
+      expect(ReadingProvider.maxBookFontSize, 32.0);
+    });
+
+    test('setBookFontSize clamps below the minimum and persists the clamp',
+        () async {
+      final p = ReadingProvider()..load();
+      await p.setBookFontSize(6.0);
+
+      expect(p.bookFontSize, 14.0);
+      expect((ReadingProvider()..load()).bookFontSize, 14.0);
+      expect(PreferencesService.instance.bookFontSize, 14.0);
+    });
+
+    test('setBookFontSize clamps above the maximum and persists the clamp',
+        () async {
+      final p = ReadingProvider()..load();
+      await p.setBookFontSize(99.0);
+
+      expect(p.bookFontSize, 32.0);
+      expect(PreferencesService.instance.bookFontSize, 32.0);
+    });
+
+    test('accepts the boundary values exactly', () async {
+      final p = ReadingProvider()..load();
+      await p.setBookFontSize(14.0);
+      expect(p.bookFontSize, 14.0);
+      await p.setBookFontSize(32.0);
+      expect(p.bookFontSize, 32.0);
+    });
+
+    test('setBookFontSizeLive (pinch) clamps too', () {
+      final p = ReadingProvider()..load();
+      p.setBookFontSizeLive(100.0);
+      expect(p.bookFontSize, 32.0);
+      p.setBookFontSizeLive(1.0);
+      expect(p.bookFontSize, 14.0);
+    });
+
+    test('a clamped no-op does not notify', () async {
+      final p = ReadingProvider()..load();
+      await p.setBookFontSize(32.0);
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      await p.setBookFontSize(80.0); // clamps to the 32 already held
+      p.setBookFontSizeLive(80.0);
+
+      expect(notifications, 0);
+    });
+
+    test('load() corrects a persisted value below the minimum', () async {
+      await PreferencesService.instance.saveBookFontSize(6.0);
+      expect((ReadingProvider()..load()).bookFontSize, 14.0);
+    });
+
+    test('load() corrects a persisted value above the maximum', () async {
+      await PreferencesService.instance.saveBookFontSize(99.0);
+      expect((ReadingProvider()..load()).bookFontSize, 32.0);
+    });
+
+    test('load() falls back to the default for a non-finite persisted value',
+        () async {
+      await PreferencesService.instance.saveBookFontSize(double.nan);
+      expect((ReadingProvider()..load()).bookFontSize, 20.0);
+    });
+
+    test('setBookFontSize ignores a non-finite value', () async {
+      final p = ReadingProvider()..load();
+      await p.setBookFontSize(double.nan);
+      expect(p.bookFontSize, 20.0);
+    });
+  });
+
   group('ReadingProvider — book scroll offset', () {
     test('defaults to 0 for an unseen chapter', () {
       expect(ReadingProvider().bookScrollOffsetFor('ch-01'), 0.0);

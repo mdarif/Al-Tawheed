@@ -318,7 +318,48 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAbout => 'حول';
 
   @override
-  String get moreOptions => 'المزيد من الخيارات';
+  String get settingsReading => 'القراءة';
+
+  @override
+  String get settingsTextSizeSmaller => 'تصغير الخط';
+
+  @override
+  String get settingsTextSizeLarger => 'تكبير الخط';
+
+  @override
+  String get settingsTextSizeHint =>
+      'تستخدم المعاينة خط الكتاب. ويمكنك أيضًا التكبير أو التصغير بالقرص بإصبعين أثناء القراءة.';
+
+  @override
+  String get settingsAboutApp => 'حول هذا التطبيق';
+
+  @override
+  String get settingsOtherApps => 'تطبيقاتنا الأخرى';
+
+  @override
+  String get settingsOtherAppsFooter => 'يُفتح في Google Play.';
+
+  @override
+  String settingsOtherAppOpensInPlay(String name) {
+    return '$name، يُفتح في Google Play';
+  }
+
+  @override
+  String get settingsOtherAppsOpenFailed => 'تعذّر فتح Google Play';
+
+  @override
+  String get settingsOtherAppsCopyLink => 'نسخ الرابط';
+
+  @override
+  String get otherAppQuranTagline =>
+      'قارئ قرآن أنيق يعمل دون إنترنت — بالرسم العثماني والهندي-الباكستاني، مع الترجمة الأردية والهندية والإنجليزية.';
+
+  @override
+  String get otherAppAssunnahTagline =>
+      'الأحاديث بالأردية والعربية والإنجليزية مع أحكام العلماء. يعمل دون إنترنت.';
+
+  @override
+  String get settingsDownloadsHint => 'دروسك المنزَّلة في المكتبة › التنزيلات.';
 
   @override
   String get statLectures => 'الدروس';

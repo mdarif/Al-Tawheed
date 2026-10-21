@@ -63,12 +63,48 @@ abstract final class WidgetKeys {
     'offline.manage-downloads',
   );
 
+  // The Offline-library row left Settings (it lives in Library › Downloads).
+  // Kept only so integration_test/support/app_flow.dart still compiles until
+  // its P6T update repoints `openOfflineLibraryFromSettings`; nothing in lib/
+  // attaches it any more.
   static const settingsOfflineLibrary = ValueKey<String>(
     'settings.offline-library',
+  );
+  static const settingsDownloadsHint = ValueKey<String>(
+    'settings.downloads-hint',
   );
   static const settingsDownloadOnWifiOnly = ValueKey<String>(
     'settings.download-on-wifi-only',
   );
   static ValueKey<String> settingsSeriesOption(String seriesId) =>
       ValueKey<String>('settings.series-option.$seriesId');
+
+  static const settingsReadingSection = ValueKey<String>('settings.reading');
+  static const settingsTextSize = ValueKey<String>('settings.text-size');
+  static const settingsTextSizeDecrease = ValueKey<String>(
+    'settings.text-size.decrease',
+  );
+  static const settingsTextSizeIncrease = ValueKey<String>(
+    'settings.text-size.increase',
+  );
+  static const settingsTextSizeValue = ValueKey<String>(
+    'settings.text-size.value',
+  );
+  static const settingsTextSizePreview = ValueKey<String>(
+    'settings.text-size.preview',
+  );
+
+  static const settingsAbout = ValueKey<String>('settings.about');
+  static const settingsShareApp = ValueKey<String>('settings.share-app');
+  static const settingsContactUs = ValueKey<String>('settings.contact-us');
+  static const settingsRateApp = ValueKey<String>('settings.rate-app');
+  static const settingsYouTube = ValueKey<String>('settings.youtube');
+
+  static const settingsOtherAppsSection = ValueKey<String>(
+    'settings.other-apps',
+  );
+  static ValueKey<String> settingsOtherApp(String packageId) =>
+      ValueKey<String>('settings.other-app.$packageId');
+
+  static const readerTextSize = ValueKey<String>('reader.text-size');
 }

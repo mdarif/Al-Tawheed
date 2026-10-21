@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:myapp/utils/book_typography.dart';
 import 'package:myapp/models/book_content.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/duration_formatter.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
@@ -15,6 +17,7 @@ import 'package:myapp/utils/reader_scroll_physics.dart';
 import 'package:myapp/utils/scroll_immersion_detector.dart';
 import 'package:myapp/widgets/book/report_mistake.dart';
 import 'package:myapp/widgets/book/scroll_to_top_button.dart';
+import 'package:myapp/widgets/settings/text_size_setting.dart';
 
 /// The three theme-resolved highlight colours passed down to span building,
 /// so the reader doesn't read [BuildContext] inside its text-layout helpers.
@@ -93,9 +96,6 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     setState(() => _chromeVisible = visible);
   }
 
-  static const _minFontSize = 14.0;
-  static const _maxFontSize = 32.0;
-
   // Pinch-to-zoom, done with a passive [Listener] rather than a scale gesture
   // recognizer — the same approach as the Quran app. Tracking raw pointers
   // keeps it out of the gesture arena entirely, so single-finger scroll, the
@@ -128,8 +128,13 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
       // Snap to whole points: pinch feeds a continuous value on every move, and
       // reshaping a whole chapter on each fractional change stutters badly. One
       // reshape per 1pt crossing is imperceptible. (Lesson from the Quran app.)
+      // ReadingProvider owns the 14–32 bounds (and clamps again on write), so
+      // pinch, the Settings stepper and the "Aa" sheet can never disagree.
       final next = (_fontAtPinchStart * (_pointerSpread() / base))
-          .clamp(_minFontSize, _maxFontSize)
+          .clamp(
+            ReadingProvider.minBookFontSize,
+            ReadingProvider.maxBookFontSize,
+          )
           .roundToDouble();
       context.read<ReadingProvider>().setBookFontSizeLive(next);
     }
@@ -240,9 +245,16 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
             ),
           ),
           actions: [
-            // Just the ⋮ — text size is set by pinch-to-zoom (no on-screen
-            // control), so the chapter title gets the width the A−/A+ buttons
-            // used to take.
+            // "Aa" opens the text-size sheet — the same stepper and value as
+            // Settings › Reading and the pinch gesture (see ReadingProvider).
+            // A single icon, so the chapter title keeps nearly all the width
+            // the old A−/A+ buttons took.
+            IconButton(
+              key: WidgetKeys.readerTextSize,
+              icon: const Icon(Icons.text_fields_rounded),
+              tooltip: context.l10n.settingsBookFontSize,
+              onPressed: () => showTextSizeSheet(context),
+            ),
             PopupMenuButton<_ReaderAction>(
               icon: const Icon(Icons.more_vert_rounded),
               onSelected: (action) {
@@ -434,7 +446,7 @@ class _BookBodyState extends State<_BookBody> {
   // Parses the whole chapter once into style-independent runs. The regex
   // passes, interval sort, and string rewriting (ornaments, guillemets,
   // Eastern-Arabic digits) depend only on the source text — not on font size or
-  // theme colours — so doing this once (not on every rebuild) keeps A−/A+ and
+  // theme colours — so doing this once (not on every rebuild) keeps size and
   // light/dark switches cheap. Each line becomes null (a blank spacer) or a
   // list of (text, type) runs.
   List<List<(String, int)>?> _parseChapter(String source) {
@@ -503,19 +515,8 @@ class _BookBodyState extends State<_BookBody> {
         _ => colors.hadith,
       };
 
-  // Urdu uses letters (ک گ چ پ ژ ٹ ڈ ڑ ں ھ ہ ی ے) that Qur'anic Arabic never
-  // does, so a line's script is unambiguous. Arabic (verses, hadith, narrator
-  // prose) renders in Naskh; Urdu (translation, sharah, masā'il) in the series
-  // font (Nastaliq), which also needs a larger size and more generous leading.
-  static final _urduLetters = RegExp(r'[کگچپژٹڈڑںھہیے]');
-
-  // Noto Nastaliq Urdu renders visually larger than Noto Naskh Arabic at the
-  // same point size, so Urdu is scaled to sit level with the Arabic matn.
-  // Tunable: raise toward 1.0 for larger Urdu, lower for smaller. Nastaliq's
-  // tall, sloping glyphs still get generous leading via [_urduHeight].
-  static const _urduSizeFactor = 0.78;
-  static const _urduHeight = 2.0;
-  static const _arabicHeight = 1.8;
+  // Script detection, the Urdu size factor and line heights live in
+  // book_typography.dart so the Settings / "Aa" preview paints identically.
 
   // Applies per-line script (font/size/leading) + theme colours to the
   // precomputed runs — the only per-rebuild work. No regex-heavy parsing here.
@@ -532,9 +533,9 @@ class _BookBodyState extends State<_BookBody> {
       }
       // Line leading follows the taller script present (Nastaliq needs more),
       // so a mixed Urdu-intro + Arabic-āyah line still breathes.
-      final height = runs.any((r) => _urduLetters.hasMatch(r.$1))
-          ? _urduHeight
-          : _arabicHeight;
+      final height = runs.any((r) => bookUrduLetters.hasMatch(r.$1))
+          ? bookUrduLineHeight
+          : bookArabicLineHeight;
 
       // The masāʾil heading closes the matn and opens the author's summary
       // points — mark the seam with a rule and extra space above it.
@@ -609,10 +610,10 @@ class _BookBodyState extends State<_BookBody> {
     TextStyle template,
     _HighlightColors colors,
   ) {
-    final isUrdu = _urduLetters.hasMatch(text);
+    final isUrdu = bookUrduLetters.hasMatch(text);
     var style = template.copyWith(
-      fontFamily: isUrdu ? widget.fontFamily : 'NotoNaskhArabic',
-      fontSize: isUrdu ? fontSize * _urduSizeFactor : fontSize,
+      fontFamily: isUrdu ? widget.fontFamily : bookArabicFontFamily,
+      fontSize: isUrdu ? fontSize * bookUrduSizeFactor : fontSize,
       height: height,
     );
     if (type != 0) style = style.copyWith(color: _colorFor(type, colors));
@@ -715,10 +716,9 @@ class _BookBodyState extends State<_BookBody> {
 
   @override
   Widget build(BuildContext context) {
-    // Font size is driven by the A−/A+ controls in the app bar (see
-    // ReadingProvider). Watching here rebuilds the body when it changes.
-    // Driven by pinch-to-zoom (see the reader's _onPointer* handlers). Watching
-    // here rebuilds the body live as the size changes.
+    // Font size is shared state in ReadingProvider, written by pinch-to-zoom
+    // (the reader's _onPointer* handlers), the app bar's "Aa" sheet, and
+    // Settings › Reading. Watching here rebuilds the body live as it changes.
     final fontSize = context.watch<ReadingProvider>().bookFontSize;
     // The template carries theme + colour only; per-line font, size and leading
     // are chosen by script in _renderLines. letterSpacing stays 0 — any

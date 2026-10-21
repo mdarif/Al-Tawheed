@@ -33,6 +33,20 @@ void main() {
       WidgetKeys.offlineManageDownloads,
       WidgetKeys.settingsOfflineLibrary,
       WidgetKeys.settingsDownloadOnWifiOnly,
+      WidgetKeys.settingsDownloadsHint,
+      WidgetKeys.settingsReadingSection,
+      WidgetKeys.settingsTextSize,
+      WidgetKeys.settingsTextSizeDecrease,
+      WidgetKeys.settingsTextSizeIncrease,
+      WidgetKeys.settingsTextSizeValue,
+      WidgetKeys.settingsTextSizePreview,
+      WidgetKeys.settingsAbout,
+      WidgetKeys.settingsShareApp,
+      WidgetKeys.settingsContactUs,
+      WidgetKeys.settingsRateApp,
+      WidgetKeys.settingsYouTube,
+      WidgetKeys.settingsOtherAppsSection,
+      WidgetKeys.readerTextSize,
     ];
 
     expect(keys.map((key) => key.value).toSet(), hasLength(keys.length));
@@ -47,6 +61,14 @@ void main() {
     expect(
       WidgetKeys.settingsSeriesOption('urdu'),
       isNot(equals(WidgetKeys.settingsSeriesOption('arabic'))),
+    );
+    expect(
+      WidgetKeys.settingsOtherApp('com.almarfa.alquran'),
+      equals(WidgetKeys.settingsOtherApp('com.almarfa.alquran')),
+    );
+    expect(
+      WidgetKeys.settingsOtherApp('com.almarfa.alquran'),
+      isNot(equals(WidgetKeys.settingsOtherApp('com.almarfa.assunnah'))),
     );
   });
 }
