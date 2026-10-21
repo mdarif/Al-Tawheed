@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/navigation/missing_edition_refresh.dart';
 import 'package:myapp/navigation/route_guards.dart';
 import 'package:myapp/audio/audio_handler.dart';
 import 'package:myapp/audio/player_notifier.dart';
@@ -26,7 +27,6 @@ import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/edition_missing_screen.dart';
-import 'package:myapp/widgets/missing_edition_guard.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/lecture_search_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
@@ -50,9 +50,24 @@ final _settingsNavigatorKey = GlobalKey<NavigatorState>();
 ///
 /// Keeping this in one place ensures tests exercise the production branch
 /// navigator keys and capability redirects instead of a smaller substitute.
-GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
+///
+/// While the saved edition is missing from the manifest (BLK-06) the top-level
+/// redirect confines the app to `/edition-missing` and `/choose-series`.
+/// Pass [refreshListenable] (a [MissingEditionRefresh]) so that guard also
+/// re-runs when the edition goes missing *after* launch, not just on
+/// navigation.
+GoRouter createAppRouter({
+  String initialLocation = '/',
+  Listenable? refreshListenable,
+}) =>
+    GoRouter(
       navigatorKey: _rootNavigatorKey,
       initialLocation: initialLocation,
+      refreshListenable: refreshListenable,
+      redirect: (context, state) => RouteGuards.missingEdition(
+        isMissing: context.read<SeriesProvider>().hasMissingSelectedSeries,
+        path: state.uri.path,
+      ),
       routes: [
         // Splash / onboarding — shown on cold start.
         // Redirect fires before the widget builds, so returning users never see
@@ -156,8 +171,8 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
         ),
 
         // Shown instead of silently substituting Urdu when the saved edition
-        // isn't in the loaded manifest (BLK-06). WelcomeScreen redirects here
-        // once the series state is definitively resolved.
+        // isn't in the loaded manifest (BLK-06). The top-level redirect above
+        // sends every other route here while that holds.
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
           path: '/edition-missing',
@@ -226,9 +241,6 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
         ),
       ],
     );
-
-// Router is a top-level singleton — created once, never recreated on rebuild.
-final _router = createAppRouter();
 
 class MyApp extends StatelessWidget {
   final TawheedAudioHandler audioHandler;
@@ -328,37 +340,67 @@ class MyApp extends StatelessWidget {
           },
         ),
       ],
-      child: Consumer2<ThemeProvider, LanguageProvider>(
-        builder: (context, themeProvider, langProvider, _) =>
-            MaterialApp.router(
-          title: 'Sharah Kitab at-Tawheed',
-          routerConfig: _router,
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeProvider.themeMode,
-          locale: langProvider.locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          builder: (context, child) {
-            // MaterialApp swaps theme/darkTheme instantly with no transition,
-            // which reads as a hard flash when the system or in-app toggle
-            // changes it. AnimatedTheme crossfades the resolved ThemeData
-            // across rebuilds instead.
-            return AnimatedTheme(
-              data: Theme.of(context),
-              duration: const Duration(milliseconds: 200),
-              child: Directionality(
-                textDirection:
-                    langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
-                child: MissingEditionGuard(
-                  router: _router,
-                  child: child ?? const SizedBox.shrink(),
-                ),
-              ),
-            );
-          },
-        ),
+      child: const _AppView(),
+    );
+  }
+}
+
+/// Owns the router. It lives below the provider tree, in State, so it is
+/// created once (never on rebuild) yet can listen to [SeriesProvider] for the
+/// BLK-06 missing-edition redirect.
+class _AppView extends StatefulWidget {
+  const _AppView();
+
+  @override
+  State<_AppView> createState() => _AppViewState();
+}
+
+class _AppViewState extends State<_AppView> {
+  late final MissingEditionRefresh _missingEdition;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _missingEdition = MissingEditionRefresh(context.read<SeriesProvider>());
+    _router = createAppRouter(refreshListenable: _missingEdition);
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _missingEdition.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<ThemeProvider, LanguageProvider>(
+      builder: (context, themeProvider, langProvider, _) => MaterialApp.router(
+        title: 'Sharah Kitab at-Tawheed',
+        routerConfig: _router,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeProvider.themeMode,
+        locale: langProvider.locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) {
+          // MaterialApp swaps theme/darkTheme instantly with no transition,
+          // which reads as a hard flash when the system or in-app toggle
+          // changes it. AnimatedTheme crossfades the resolved ThemeData
+          // across rebuilds instead.
+          return AnimatedTheme(
+            data: Theme.of(context),
+            duration: const Duration(milliseconds: 200),
+            child: Directionality(
+              textDirection:
+                  langProvider.isRtl ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          );
+        },
       ),
     );
   }

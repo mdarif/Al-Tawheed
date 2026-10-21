@@ -320,6 +320,20 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## i18n & multi-series
 
+- **A missing saved edition must be enforced by the router, not by a one-shot
+  push (BLK-06).** `SeriesProvider.currentSeries` silently resolves a missing
+  id to the Urdu fallback, so *any* route that renders is a silent
+  substitution. A widget that pushed `/edition-missing` once (with a latch) was
+  bypassed by a failed Retry (`context.go('/')`), by system Back, and by deep
+  links. The fix is the top-level `redirect:` in `createAppRouter`
+  (`RouteGuards.missingEdition`) plus a `refreshListenable`
+  (`MissingEditionRefresh`) that fires only when `hasMissingSelectedSeries`
+  flips; the stack is replaced, so Back has nothing to reveal. A new
+  production route is covered automatically, but a test that builds
+  `createAppRouter` without the refresh listenable only gets the
+  navigation-time half. `/edition-missing` itself is deliberately *not*
+  redirected away when the edition resolves (the overflow smoke test opens it
+  directly); the screen leaves via `context.go('/')` after a successful Retry.
 - **The edition supplies the *default* chrome language; an explicit pick wins.**
   `LanguageProvider.language` resolves `explicit ?? seriesDefault ?? device`
   (see [ADR-0002](decisions/0002-chrome-language-follows-the-content-edition.md)).

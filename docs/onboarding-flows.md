@@ -220,13 +220,17 @@ edition shows its WelcomeScreen first, then its CTA goes to `/lectures`.
 6. **Saved edition stops resolving (BLK-06)** — a returning user's saved
    `selected_series_id` can go missing after onboarding is long past: the
    manifest drops that edition, or a manifest fetch fails and falls back to
-   the bundled default. This happens well after `/lectures`, so it can't be
-   a route `redirect:` (those only re-run on navigation, not on a provider
-   notifying). `MissingEditionGuard` wraps `MaterialApp.router`'s `builder`
-   content and reactively pushes `/edition-missing` — offering Retry
-   (re-fetch the manifest) or choosing another edition — whenever
-   `SeriesProvider.hasMissingSelectedSeries` becomes true. See
-   `lib/widgets/missing_edition_guard.dart` and
+   the bundled default. This happens well after `/lectures`, so the router's
+   top-level `redirect:` (`RouteGuards.missingEdition`) is re-run by a
+   `refreshListenable` (`MissingEditionRefresh`) that fires when
+   `SeriesProvider.hasMissingSelectedSeries` flips. While it holds, **every**
+   route except `/edition-missing` and `/choose-series` redirects to
+   `/edition-missing` — deep links, Back and a failed Retry included — and the
+   redirect replaces the stack, so Back cannot reveal the Urdu fallback
+   underneath. The screen offers Retry (re-fetch the manifest; only a
+   successful one leaves, via `/`) or choosing another edition. See
+   `lib/navigation/route_guards.dart`,
+   `lib/navigation/missing_edition_refresh.dart` and
    `lib/screens/edition_missing_screen.dart`.
 
 ---

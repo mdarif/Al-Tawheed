@@ -31,4 +31,27 @@ abstract final class RouteGuards {
   /// `SeriesProvider.shouldShowWelcomeForCurrentSeries`.
   static String? welcome({required bool shouldShowWelcome}) =>
       shouldShowWelcome ? null : lectures;
+
+  /// Recovery screen shown when the saved edition is not in the manifest.
+  static const editionMissing = '/edition-missing';
+
+  /// The edition picker — the "choose another edition" recovery path.
+  static const chooseSeries = '/choose-series';
+
+  /// App-wide guard (BLK-06): while the saved edition is missing from the
+  /// manifest, [SeriesProvider.currentSeries] silently resolves to the Urdu
+  /// fallback, so *no* content route may be reachable — a deep link, Back, a
+  /// failed Retry would all otherwise show Urdu under the user's saved edition.
+  /// Everything except the recovery screen and the picker is sent to
+  /// [editionMissing]. [isMissing] is
+  /// `SeriesProvider.hasMissingSelectedSeries`; [path] is the requested
+  /// location's path. `null` means "no redirect — allow the route".
+  static String? missingEdition({
+    required bool isMissing,
+    required String path,
+  }) {
+    if (!isMissing) return null;
+    if (path == editionMissing || path == chooseSeries) return null;
+    return editionMissing;
+  }
 }

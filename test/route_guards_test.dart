@@ -111,4 +111,50 @@ void main() {
       ]);
     });
   });
+
+  group('RouteGuards.missingEdition (every route)', () {
+    test('allows everything while the saved edition resolves', () {
+      for (final path in ['/', '/lectures', '/library', '/edition-missing']) {
+        expect(
+          RouteGuards.missingEdition(isMissing: false, path: path),
+          isNull,
+          reason: path,
+        );
+      }
+    });
+
+    test('sends every content route to /edition-missing while missing', () {
+      for (final path in [
+        '/',
+        '/lectures',
+        '/lectures/search',
+        '/read',
+        '/library',
+        '/settings',
+        '/about',
+        '/bookmarks',
+        '/offline-library',
+        '/player',
+        '/book/ch-1',
+        '/study/complete',
+      ]) {
+        expect(
+          RouteGuards.missingEdition(isMissing: true, path: path),
+          '/edition-missing',
+          reason: path,
+        );
+      }
+    });
+
+    test('keeps the recovery screen and the edition picker reachable', () {
+      expect(
+        RouteGuards.missingEdition(isMissing: true, path: '/edition-missing'),
+        isNull,
+      );
+      expect(
+        RouteGuards.missingEdition(isMissing: true, path: '/choose-series'),
+        isNull,
+      );
+    });
+  });
 }

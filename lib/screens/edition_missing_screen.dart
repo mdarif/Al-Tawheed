@@ -24,14 +24,17 @@ class _EditionMissingScreenState extends State<EditionMissingScreen> {
   Future<void> _retry(BuildContext context) async {
     if (_retrying) return;
     setState(() => _retrying = true);
-    await context.read<SeriesProvider>().loadManifest();
+    final series = context.read<SeriesProvider>();
+    await series.loadManifest();
     if (!mounted) return;
     setState(() => _retrying = false);
-    if (!context.mounted) return;
-    // Router redirect re-checks hasMissingSelectedSeries on the next
-    // navigation; going to / re-triggers it whether or not this retry fixed
-    // things.
-    context.go('/');
+    // Still missing: stay here. The router-level redirect (RouteGuards.
+    // missingEdition) confines the app to this screen and the edition picker
+    // while hasMissingSelectedSeries holds, so there is nowhere else to go —
+    // and nothing to "re-check" by navigating. Only a successful retry leaves,
+    // and `/` then resolves the (now present) saved edition's own welcome or
+    // Lectures.
+    if (!series.hasMissingSelectedSeries && context.mounted) context.go('/');
   }
 
   @override
