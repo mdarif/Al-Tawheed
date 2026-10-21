@@ -362,7 +362,7 @@ void main() {
   // The Urdu edition is deliberately untouched by the Arabic-chrome work: its
   // audience reads English chrome, so its lecture list counts 01, 02 exactly as
   // it always has. (Its *Book* is the exception — that renders ۰۱, in the
-  // book's own script. Different rule, see book_chapter_list_screen_test.)
+  // book's own script. Different rule, see book_chapter_list_body_test.)
   testWidgets('leaves the Urdu duroos numbered in Western digits',
       (tester) async {
     await PreferencesService.instance.saveRemoteJson(

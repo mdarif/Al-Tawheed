@@ -1,109 +1,212 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/screens/book_chapter_list_screen.dart';
 import 'package:myapp/screens/study_screen.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
-import 'package:myapp/widgets/app_overflow_menu.dart';
-import 'package:myapp/widgets/compact_toggle_chip.dart';
+import 'package:myapp/widgets/section_tab_header.dart';
 
-/// The shell home for reading and studying the book — Book and Study merged
-/// into one destination behind a single shared header, with an in-screen
-/// toggle when an edition has both. See D1 amendment in the IA roadmap.
-class ReadScreen extends StatefulWidget {
-  const ReadScreen({super.key});
+/// The two things Read holds.
+enum ReadTab {
+  book,
+  study;
 
-  @override
-  State<ReadScreen> createState() => _ReadScreenState();
+  /// The `?tab=` query value, or null for anything unrecognised.
+  static ReadTab? fromQuery(String? value) => switch (value) {
+        'book' => book,
+        'study' => study,
+        _ => null,
+      };
 }
 
-class _ReadScreenState extends State<ReadScreen> {
-  var _selected = 0;
+/// The shell home for reading and studying the book — Book and Study merged
+/// into one destination under a single plain header ("Read", the book's name
+/// beside it, then underline tabs), the same pattern as Library. See D1
+/// amendment in the IA roadmap.
+///
+/// The tab bar exists only when the edition has both: a book-only edition
+/// (Arabic) or a study-only edition shows its one body under just the title.
+///
+/// A null [initialTab] means "no preference" and keeps the current tab.
+class ReadScreen extends StatelessWidget {
+  final ReadTab? initialTab;
+
+  const ReadScreen({super.key, this.initialTab});
+
+  @override
+  Widget build(BuildContext context) {
+    final series = context.watch<SeriesProvider>().currentSeries;
+    final hasBook = series.hasBook;
+    final hasStudy = series.hasStudyMode;
+
+    return Scaffold(
+      body: hasBook && hasStudy
+          ? _ReadTabs(initialTab: initialTab)
+          : Column(
+              children: [
+                _ReadHeader(series: series),
+                Expanded(
+                  child: hasBook
+                      ? const BookChapterListBody()
+                      : hasStudy
+                          ? const StudyBody()
+                          : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _ReadTabs extends StatefulWidget {
+  final ReadTab? initialTab;
+
+  const _ReadTabs({required this.initialTab});
+
+  @override
+  State<_ReadTabs> createState() => _ReadTabsState();
+}
+
+class _ReadTabsState extends State<_ReadTabs>
+    with SingleTickerProviderStateMixin {
+  late final TabController _controller;
+
+  /// The tab index the location (or the initial tab) already reflects, so a
+  /// settled change is mirrored into the URL exactly once.
+  late int _syncedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncedIndex = widget.initialTab?.index ?? 0;
+    _controller = TabController(
+      length: ReadTab.values.length,
+      vsync: this,
+      initialIndex: _syncedIndex,
+    )..addListener(_onTabChanged);
+  }
+
+  @override
+  void didUpdateWidget(_ReadTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new `?tab=` link (e.g. Study completion's "Back to overview") while
+    // Read is alive.
+    final requested = widget.initialTab;
+    if (requested != null &&
+        requested != oldWidget.initialTab &&
+        requested.index != _controller.index) {
+      _syncedIndex = requested.index;
+      _controller.animateTo(requested.index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onTabChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  /// Mirrors a user-chosen tab into `/read?tab=…`, for the same reason as
+  /// Library: otherwise the location keeps the last link's tab and repeating
+  /// that link is a router no-op that leaves the user on the other tab.
+  void _onTabChanged() {
+    if (_controller.indexIsChanging) return;
+    final index = _controller.index;
+    if (index == _syncedIndex) return;
+    _syncedIndex = index;
+    context.go('/read?tab=${ReadTab.values[index].name}');
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final series = context.watch<SeriesProvider>().currentSeries;
-    final hasBook = series.hasBook;
-    final hasStudy = series.hasStudyMode;
-    final showToggle = hasBook && hasStudy;
-    final selected = showToggle ? _selected : 0;
-    final showingBook = hasBook && (!hasStudy || selected == 0);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: showingBook
-            ? _BookTitle(fontFamily: series.bookFontFamily)
-            : Text(l10n.studyMode),
-        actions: const [AppOverflowMenu()],
-        bottom: showToggle
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(56),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: CompactToggleChip(
-                          label: l10n.tabBook,
-                          selected: selected == 0,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _selected = 0);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: CompactToggleChip(
-                          label: l10n.tabStudyMode,
-                          selected: selected == 1,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _selected = 1);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : null,
-      ),
-      body: IndexedStack(
-        index: selected,
-        children: [
-          if (hasBook) const BookChapterListBody(),
-          if (hasStudy) const StudyBody(),
-        ],
-      ),
+    return Column(
+      children: [
+        _ReadHeader(
+          series: series,
+          controller: _controller,
+          tabs: [
+            SectionTab(label: l10n.tabBook, tabKey: WidgetKeys.readTabBook),
+            SectionTab(
+              label: l10n.tabStudyMode,
+              tabKey: WidgetKeys.readTabStudy,
+            ),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _controller,
+            children: const [
+              _KeepAlive(child: BookChapterListBody()),
+              _KeepAlive(child: StudyBody()),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _BookTitle extends StatelessWidget {
-  final String fontFamily;
+/// "Read", with the book's name (in the book's own script and font) as a quiet
+/// subtitle once it has loaded and the edition has a book.
+class _ReadHeader extends StatelessWidget {
+  final SeriesConfig series;
+  final TabController? controller;
+  final List<SectionTab> tabs;
 
-  const _BookTitle({required this.fontFamily});
+  const _ReadHeader({
+    required this.series,
+    this.controller,
+    this.tabs = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
-    final book = context.watch<BookProvider>().book;
-    final l10n = context.l10n;
-    if (book == null) return Text(l10n.tabBook);
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Text(
-        book.title,
-        textAlign: TextAlign.right,
-        style: context.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          fontFamily: fontFamily,
-        ),
+    final bookTitle =
+        series.hasBook ? context.watch<BookProvider>().book?.title : null;
+    return SectionTabHeader(
+      key: WidgetKeys.readHeader,
+      title: context.l10n.tabRead,
+      subtitle: bookTitle,
+      subtitleDirection: TextDirection.rtl,
+      subtitleStyle: context.textTheme.bodyMedium?.copyWith(
+        color: context.secondaryTextColor,
+        fontFamily: series.bookFontFamily,
+        // Nastaliq stacks tall: a tight line height clips its marks.
+        height: series.language == 'ur' ? 1.9 : null,
       ),
+      controller: controller,
+      tabs: tabs,
     );
+  }
+}
+
+/// Keeps a tab's list (and its scroll position) alive while the other tab is
+/// showing.
+class _KeepAlive extends StatefulWidget {
+  final Widget child;
+  const _KeepAlive({required this.child});
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

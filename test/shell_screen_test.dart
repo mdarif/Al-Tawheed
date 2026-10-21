@@ -301,8 +301,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The Urdu series has both Book and Study, merged into one Read tab, plus
-    // Settings last. Home was retired; Bookmarks and About live behind the ⋯
-    // overflow menu.
+    // Settings last. Home was retired, and the ⋯ overflow menu is gone.
     expect(find.text('Lecture 0'), findsOneWidget);
     expect(find.text('Lectures'), findsOneWidget);
     expect(find.text('Read'), findsOneWidget);
@@ -393,7 +392,7 @@ void main() {
     expect(find.text('القراءة'), findsOneWidget);
     expect(find.text('المكتبة'), findsOneWidget);
     expect(find.text('الإعدادات'), findsOneWidget); // Settings tab (last)
-    // Home retired; only Bookmarks/About live behind the ⋯ overflow menu.
+    // Home retired.
     expect(find.text('الرئيسية'), findsNothing);
   });
 

@@ -32,7 +32,6 @@ import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
-import 'package:myapp/screens/study_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/screens/welcome.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -90,7 +89,13 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
                   redirect: (context, state) => RouteGuards.read(
                     context.read<SeriesProvider>().currentSeries,
                   ),
-                  builder: (context, state) => const ReadScreen(),
+                  // `?tab=book|study` selects the tab (Study completion links
+                  // to `?tab=study`).
+                  builder: (context, state) => ReadScreen(
+                    initialTab: ReadTab.fromQuery(
+                      state.uri.queryParameters['tab'],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -192,16 +197,22 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
             child: PlayerScreen(),
           ),
         ),
+        // Study completion — root navigator, over the shell. Its "Back to
+        // overview" goes to `/read?tab=study`: there is no `/study` route,
+        // Book and Study share the Read destination.
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
           path: '/study/complete',
-          builder: (context, state) {
+          // Without a chapter there is nothing to celebrate: go to Study.
+          redirect: (context, state) {
             final chapterId = state.uri.queryParameters['chapterId'];
-            if (chapterId == null || chapterId.isEmpty) {
-              return const StudyScreen();
-            }
-            return StudyClassCompleteScreen(chapterId: chapterId);
+            return chapterId == null || chapterId.isEmpty
+                ? '/read?tab=study'
+                : null;
           },
+          builder: (context, state) => StudyClassCompleteScreen(
+            chapterId: state.uri.queryParameters['chapterId']!,
+          ),
         ),
       ],
     );

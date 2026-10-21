@@ -228,36 +228,48 @@ class _DurationRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Icon(Icons.schedule_rounded, size: 17, color: context.brandColor),
-            const SizedBox(width: 8),
-            Text(
-              label.toUpperCase(),
-              style: context.textTheme.labelSmall?.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: context.secondaryTextColor,
-              ),
-            ),
-          ],
-        ),
-        Text.rich(
-          TextSpan(
-            style: context.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+        // Flexible so the label gives way at large text scales instead of
+        // pushing the time off the card.
+        Flexible(
+          child: Row(
             children: [
-              TextSpan(text: completed),
-              TextSpan(
-                text: ' / $total',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: context.secondaryTextColor,
+              Icon(Icons.schedule_rounded, size: 17, color: context.brandColor),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textTheme.labelSmall?.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: context.secondaryTextColor,
+                  ),
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text.rich(
+            TextSpan(
+              style: context.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+              children: [
+                TextSpan(text: completed),
+                TextSpan(
+                  text: ' / $total',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: context.secondaryTextColor,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.end,
           ),
         ),
       ],

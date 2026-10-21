@@ -41,8 +41,10 @@ component already does so.
 
 ## Reusable components
 
-- `AppOverflowMenu` is the shell app-bar hub for secondary destinations and
-  actions.
+- `SectionTabHeader` is the shared shell-tab header: a plain title, optional
+  quiet subtitle, and an underline `TabBar` with optional counts (Library,
+  Read). There is no shell overflow (⋮) menu; secondary destinations live in
+  Library or Settings.
 - `LectureTile`, `ChapterHeader`, `SelectionChip`, `DownloadButton`, and
   `MiniPlayer` are the lecture-list and playback building blocks.
 - `OfflineStatusBanner` communicates the global offline state; `OfflineSheet`

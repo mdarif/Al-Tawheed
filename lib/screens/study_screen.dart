@@ -8,94 +8,15 @@ import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/utils/study_session.dart';
-import 'package:myapp/widgets/app_overflow_menu.dart';
 import 'package:myapp/widgets/catalog_connect_required.dart';
 import 'package:myapp/widgets/catalog_error_body.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 import 'package:myapp/widgets/study/class_progress_card.dart';
 import 'package:myapp/widgets/study/study_dashboard_card.dart';
 
-class StudyScreen extends StatefulWidget {
-  const StudyScreen({super.key});
-
-  @override
-  State<StudyScreen> createState() => _StudyScreenState();
-}
-
-class _StudyScreenState extends State<StudyScreen> {
-  // See the matching helper in LectureListScreen — reloads the catalog once
-  // per distinct series id so Study Mode never shows a different series'
-  // classes than the one currently active.
-  String? _requestedSeriesId;
-
-  void _syncCatalogToSeries(BuildContext context) {
-    final series = context.watch<SeriesProvider>().currentSeries;
-    if (series.id == _requestedSeriesId) return;
-    _requestedSeriesId = series.id;
-
-    final catalog = context.read<CatalogProvider>();
-    if (catalog.loadedSeriesId == series.id) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<CatalogProvider>().load(series);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _syncCatalogToSeries(context);
-    final catalog = context.watch<CatalogProvider>();
-    final l10n = context.l10n;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.studyMode),
-        actions: const [AppOverflowMenu()],
-      ),
-      body: switch (catalog.status) {
-        CatalogStatus.idle || CatalogStatus.loading => Center(
-            child: CircularProgressIndicator(color: context.brandColor),
-          ),
-        CatalogStatus.error => catalog.needsOnlineToLoad
-            ? CatalogConnectRequiredBody(provider: catalog)
-            : CatalogErrorBody(
-                icon: Icons.wifi_off_rounded,
-                title: l10n.studyCouldNotLoadClasses,
-                message: catalog.error ?? l10n.studyCouldNotLoadClasses,
-                onRetry: () => catalog.load(),
-              ),
-        CatalogStatus.loaded => _StudyBody(
-            onClassTap: (info) => _onClassTap(context, info),
-          ),
-      },
-    );
-  }
-
-  Future<void> _onClassTap(BuildContext context, ChapterStudyInfo info) async {
-    final l10n = context.l10n;
-    final lang = context.read<LanguageProvider>();
-    final title = lang.resolve(info.chapter.title);
-
-    if (info.status == ChapterStudyStatus.studied) {
-      final restart = await showConfirmDialog(
-        context,
-        title: l10n.studyRestartTitle(title),
-        message: l10n.studyRestartMessage,
-        confirmLabel: l10n.studyRestart,
-        filledConfirm: true,
-      );
-      if (!restart || !context.mounted) return;
-      startStudySession(context, info.chapter.id, restartStudied: true);
-      return;
-    }
-
-    startStudySession(context, info.chapter.id);
-  }
-}
-
-/// Study content only, no `Scaffold`/`AppBar` — embedded inside `ReadScreen`'s
-/// single shared header.
+/// The Study tab: the progress dashboard and the class list. Embedded inside
+/// `ReadScreen`, which owns the header; it has no `Scaffold`/`AppBar` of its
+/// own.
 class StudyBody extends StatefulWidget {
   const StudyBody({super.key});
 

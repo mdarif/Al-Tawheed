@@ -349,14 +349,15 @@ is portable memory: any LLM working the repo should read and extend it.
   book, even inside Arabic āyāt), via `localizedDigitsInString(text,
   widget.language)` in the reader.
 - **The Urdu series renders 4 bottom-nav tabs** (Lectures · Read · Library ·
-  Settings). Book and Study merged into one Read destination with an
-  in-screen toggle (A3/D1 amendment) rather than two tabs, since a fifth
-  destination felt cramped on small devices — Read shows the toggle only
-  when the edition has both `hasBook` and `hasStudyMode`; Arabic (book only,
-  no study) shows Book alone with no toggle. Library is a stable destination
-  for every edition regardless of Book/Study (A1). Settings is a shell tab
-  (always last); only Bookmarks and About live in the `⋯` overflow menu
-  ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)).
+  Settings). Book and Study merged into one Read destination with Book /
+  Study tabs (A3/D1 amendment, then 2.4.2 P3) rather than two bottom-nav
+  destinations, since a fifth felt cramped on small devices — Read shows the
+  tab bar only when the edition has both `hasBook` and `hasStudyMode`; Arabic
+  (book only, no study) shows Book alone with no tabs. `/read?tab=book|study`
+  selects the tab (Study completion returns to `/read?tab=study` — there is
+  no `/study` route). Library is a stable destination for every edition
+  regardless of Book/Study (A1). Settings is a shell tab (always last). There
+  is no `⋯` overflow menu any more (removed in 2.4.2 P3).
 - **From a root-navigator route (Player), never `go`/`push` a shell route
   like `/library?tab=…`.** `go` rebuilds the location and drops Player off the
   stack; `push` of a shell branch route from the root navigator never renders

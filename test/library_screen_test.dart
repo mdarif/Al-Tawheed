@@ -21,7 +21,6 @@ import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
-import 'package:myapp/widgets/compact_toggle_chip.dart';
 import 'package:myapp/widgets/section_tab_header.dart';
 
 import 'support/fake_audio_playback.dart';
@@ -198,7 +197,6 @@ void main() {
     expect(find.byKey(WidgetKeys.libraryHeader), findsOneWidget);
     expect(find.byType(SectionTabHeader), findsOneWidget);
     expect(find.byType(SliverAppBar), findsNothing);
-    expect(find.byType(CompactToggleChip), findsNothing);
     expect(find.byIcon(Icons.collections_bookmark_rounded), findsNothing);
     // The old "N saved · N downloaded" stats chip.
     expect(find.textContaining('saved ·'), findsNothing);

@@ -94,10 +94,15 @@ void main() {
               builder: (_, __) =>
                   StudyClassCompleteScreen(chapterId: chapterId),
             ),
+            // Where "Back to overview" must land: the real Read destination,
+            // not a stand-in for a route that no longer exists. The
+            // production router is driven in study_completion_navigation_test.
             GoRoute(
-              path: '/study',
-              builder: (_, __) => const Scaffold(
-                body: Center(child: Text('Study Hub')),
+              path: '/read',
+              builder: (_, state) => Scaffold(
+                body: Center(
+                  child: Text('Read ${state.uri.queryParameters['tab']}'),
+                ),
               ),
             ),
           ],
@@ -191,6 +196,41 @@ void main() {
       expect(find.text('Next Up'), findsNothing);
       expect(find.text('Continue to Class 05'), findsNothing);
       expect(find.text('Back to Study Mode'), findsOneWidget);
+    });
+
+    testWidgets('"Back to Study Mode" goes to Read\'s Study tab',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await study.markChapterStudied('class-01');
+      await tester.pumpWidget(wrap('class-01'));
+      await tester.pumpAndSettle();
+
+      await tester
+          .tap(find.widgetWithText(OutlinedButton, 'Back to Study Mode'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Read study'), findsOneWidget);
+    });
+
+    testWidgets('the series-complete "Back to Study Mode" does too',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      for (final chapter in catalog.chapters) {
+        await study.markChapterStudied(chapter.id);
+      }
+      await tester.pumpWidget(wrap('class-05'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Back to Study Mode'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Read study'), findsOneWidget);
     });
   });
 }

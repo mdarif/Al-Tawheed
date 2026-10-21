@@ -8,18 +8,23 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/book_content.dart';
+import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/book_provider.dart';
-import 'package:myapp/providers/feature_flags_provider.dart';
+import 'package:myapp/providers/catalog_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
-import 'package:myapp/screens/book_chapter_list_screen.dart';
+import 'package:myapp/providers/study_progress_provider.dart';
+import 'package:myapp/screens/read_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 
 import 'golden_config.dart';
 
-/// Golden snapshots of the book chapter list — the surface where the marquee
+/// Golden snapshots of Read's Book tab (header + chapter list) — the surface where the marquee
 /// visual bug shipped: chapter badges drew **Persian-shaped** 4/5/6/7 because
 /// the numerals fell back to the UI font instead of the book face (194f7ef).
 /// Every codepoint assertion passed; only a screenshot caught it. These pin the
@@ -77,13 +82,40 @@ Widget _app({
   final seriesProvider = SeriesProvider()
     ..load(false)
     ..setCurrentSeriesForTest(series);
+  final progress = ProgressProvider()..load();
+  final catalogProvider = CatalogProvider()
+    ..setCatalogForTest(
+      Catalog(
+        version: 1,
+        book: Book(
+          id: 'book',
+          title: {'en': 'Book'},
+          speaker: {'en': 'Speaker'},
+          totalDurationSeconds: 0,
+          lectureCount: 0,
+          coverImageUrl: '',
+          language: 'Urdu',
+        ),
+        chapters: [],
+        lectures: [],
+        dailyBenefits: [],
+      ),
+      seriesId: series.id,
+    );
 
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: bookProvider),
       ChangeNotifierProvider.value(value: seriesProvider),
       ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
-      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+      ChangeNotifierProvider(create: (_) => ReadingProvider()..load()),
+      // Urdu's Read also builds the Study tab beside Book.
+      ChangeNotifierProvider.value(value: progress),
+      ChangeNotifierProvider.value(value: catalogProvider),
+      ChangeNotifierProvider(
+        create: (_) => StudyProgressProvider(progress, catalogProvider)..load(),
+      ),
+      ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
     ],
     // `locale:` drives text direction: the Global*Localizations delegates set
     // Directionality from the locale (RTL for ar/ur), so this reproduces the
@@ -95,12 +127,9 @@ Widget _app({
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
-        initialLocation: '/book',
+        initialLocation: '/read',
         routes: [
-          GoRoute(
-            path: '/book',
-            builder: (_, __) => const BookChapterListScreen(),
-          ),
+          GoRoute(path: '/read', builder: (_, __) => const ReadScreen()),
         ],
       ),
     ),
@@ -141,7 +170,7 @@ void main() {
       chrome: const Locale('en'),
     );
     await expectLater(
-      find.byType(BookChapterListScreen),
+      find.byType(ReadScreen),
       matchesGoldenFile('goldens/book_chapter_list.urdu.light.png'),
     );
   });
@@ -154,7 +183,7 @@ void main() {
       chrome: const Locale('en'),
     );
     await expectLater(
-      find.byType(BookChapterListScreen),
+      find.byType(ReadScreen),
       matchesGoldenFile('goldens/book_chapter_list.urdu.dark.png'),
     );
   });
@@ -170,7 +199,7 @@ void main() {
       chrome: const Locale('ar'),
     );
     await expectLater(
-      find.byType(BookChapterListScreen),
+      find.byType(ReadScreen),
       matchesGoldenFile('goldens/book_chapter_list.arabic.light.png'),
     );
   });

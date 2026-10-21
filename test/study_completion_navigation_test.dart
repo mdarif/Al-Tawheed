@@ -5,18 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/app.dart' show createAppRouter;
 import 'package:myapp/audio/player_notifier.dart';
 import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/models/book_content.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/models/series.dart';
+import 'package:myapp/providers/book_provider.dart';
 import 'package:myapp/providers/catalog_provider.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
 import 'package:myapp/providers/downloads_provider.dart';
 import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
+import 'package:myapp/providers/reading_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
+import 'package:myapp/providers/shell_chrome_provider.dart';
 import 'package:myapp/providers/study_progress_provider.dart';
 import 'package:myapp/screens/player_screen.dart';
+import 'package:myapp/screens/read_screen.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
@@ -56,6 +63,14 @@ Catalog _testCatalog() {
 ''';
   return Catalog.fromJson(jsonDecode(json) as Map<String, dynamic>);
 }
+
+const _testBook = BookContent(
+  title: 'كتاب التوحيد',
+  author: 'المؤلف',
+  chapters: [
+    BookChapter(id: 'ch-01', number: 1, title: 'باب الأول', text: 'نص'),
+  ],
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -161,5 +176,89 @@ void main() {
 
     // The just-completed chapter is no longer recommended to itself.
     expect(find.text('Class 01'), findsNothing);
+  });
+
+  // The completion screen's "Back to overview" used to `go('/study')`, a route
+  // the production router no longer has since Book and Study merged into
+  // `/read`. Every other test here swaps in a substitute router, which is why
+  // it shipped: this one drives the real `createAppRouter`.
+  testWidgets(
+      'finishing a class and tapping Back to overview lands on Read > Study '
+      'under the production router', (tester) async {
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final catalog = _testCatalog();
+    final progress = ProgressProvider()..load();
+    final catalogProvider = CatalogProvider()
+      ..setCatalogForTest(catalog, seriesId: SeriesConfig.legacyId);
+    final study = StudyProgressProvider(progress, catalogProvider)..load();
+    final series = SeriesProvider()..load(false);
+    final player = PlayerNotifier(
+      FakeAudioPlayback(),
+      progress,
+      DownloadsProvider(),
+      ConnectivityProvider.testOffline(),
+    );
+    addTearDown(player.dispose);
+    await player.startStudySession(
+      lecture: catalog.lecturesForChapter('class-01').first,
+      queue: catalog.lecturesForChapter('class-01'),
+      chapter: catalog.chapterById('class-01'),
+    );
+
+    final router = createAppRouter(initialLocation: '/read');
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: player),
+          ChangeNotifierProvider.value(value: progress),
+          ChangeNotifierProvider.value(value: catalogProvider),
+          ChangeNotifierProvider.value(value: study),
+          ChangeNotifierProvider.value(value: series),
+          ChangeNotifierProvider(create: (_) => DownloadsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => ConnectivityProvider.testOffline(),
+          ),
+          ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+          ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
+          ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
+          ChangeNotifierProvider(create: (_) => ReadingProvider()..load()),
+          ChangeNotifierProvider(
+            create: (_) => BookProvider()..setBookForTest(_testBook),
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.dark,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ReadScreen), findsOneWidget);
+
+    unawaited(router.push('/player'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PlayerScreen), findsOneWidget);
+
+    player.setPendingStudyCompleteForTest('class-01');
+    await tester.pumpAndSettle();
+    expect(find.byType(StudyClassCompleteScreen), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Back to Study Mode'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(StudyClassCompleteScreen), findsNothing);
+    expect(find.byType(ReadScreen), findsOneWidget);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/read?tab=study',
+    );
+    // The Study tab is the selected one, and its dashboard is what is showing.
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 1);
+    expect(find.text('Your progress').hitTestable(), findsOneWidget);
   });
 }

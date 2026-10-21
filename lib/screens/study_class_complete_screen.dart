@@ -97,12 +97,12 @@ class StudyClassCompleteScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: () => context.go('/study'),
+              onPressed: () => context.go('/read?tab=study'),
               child: Text(l10n.studyBackToOverview),
             ),
           ] else
             FilledButton(
-              onPressed: () => context.go('/study'),
+              onPressed: () => context.go('/read?tab=study'),
               child: Text(l10n.studyBackToOverview),
             ),
         ],

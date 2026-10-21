@@ -31,6 +31,10 @@ abstract final class WidgetKeys {
     'library.remove-all-downloads',
   );
 
+  static const readHeader = ValueKey<String>('read.header');
+  static const readTabBook = ValueKey<String>('read.tab.book');
+  static const readTabStudy = ValueKey<String>('read.tab.study');
+
   static const playerClose = ValueKey<String>('player.close');
   static const playerBookmark = ValueKey<String>('player.bookmark');
   static const playerDownload = ValueKey<String>('player.download');

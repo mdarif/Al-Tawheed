@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/catalog_provider.dart';
-import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
@@ -71,9 +70,6 @@ Widget _wrap({required SeriesProvider series, CatalogProvider? catalog}) {
     providers: [
       ChangeNotifierProvider.value(value: series),
       ChangeNotifierProvider.value(value: catalogProvider),
-      // The screen's app bar hosts AppOverflowMenu, which reads the shareButton
-      // flag; the app provides this globally.
-      ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
       ChangeNotifierProvider(create: (_) => ProgressProvider()..load()),
       ChangeNotifierProvider(
         create: (ctx) => StudyProgressProvider(
@@ -88,11 +84,12 @@ Widget _wrap({required SeriesProvider series, CatalogProvider? catalog}) {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: GoRouter(
-        initialLocation: '/study',
         routes: [
+          // The Study tab on its own. In the app it only ever lives inside
+          // Read (there is no standalone Study route).
           GoRoute(
-            path: '/study',
-            builder: (_, __) => const StudyScreen(),
+            path: '/',
+            builder: (_, __) => const Scaffold(body: StudyBody()),
           ),
           GoRoute(
             path: '/player',
@@ -111,6 +108,18 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     PreferencesService.instance.resetForTest();
     await PreferencesService.instance.init();
+  });
+
+  testWidgets('has no app bar and no overflow menu of its own', (tester) async {
+    final series = SeriesProvider()..load(false);
+    await tester.pumpWidget(_wrap(series: series));
+    await tester.pumpAndSettle();
+
+    // Read owns the one header; the shell's old ⋮ menu is gone everywhere.
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.byType(PopupMenuButton), findsNothing);
+    expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
+    expect(find.byTooltip('More options'), findsNothing);
   });
 
   testWidgets('shows a ClassProgressCard for each chapter in the catalog',

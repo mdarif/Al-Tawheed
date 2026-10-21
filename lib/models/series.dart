@@ -97,10 +97,11 @@ class SeriesConfig {
     catalogUrl: AppConfig.catalogUrl,
     storagePrefix: '',
     hasStudyMode: true,
-    // The Urdu series now ships a Book tab. Interim: `book_tawheed-ur.json` is
-    // a placeholder copy of the Arabic matn until the clean Urdu text lands
-    // (swap the asset, no code change). Production reveals the tab via
-    // series.json's `hasBook` once an asset-bearing release has rolled out.
+    // The Urdu series ships the Book (a Book tab under Read, beside Study),
+    // bilingual Arabic + Urdu from the bundled `book_tawheed-ur.json`. It is
+    // enabled client-side, not via series.json: `fromJson` defaults `hasBook`
+    // to true for this series (see docs/gotchas.md), so an older install with
+    // no asset is never handed a Book it cannot open.
     hasBook: true,
     language: 'ur',
     displayName: {'en': 'Kitab at-Tawheed (Urdu)'},
