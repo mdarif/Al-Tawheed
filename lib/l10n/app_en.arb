@@ -234,6 +234,8 @@
   "downloadNotificationRationaleAllow": "Allow",
   "notificationsSettingsRow": "Download notifications",
   "notificationsDisabledHint": "Turned off — enable in your device's Settings app to see download progress and completion.",
+  "downloadNotificationChannelName": "Downloads",
+  "downloadNotificationChannelDescription": "Progress and completion of lecture downloads",
 
   "changeSeriesConfirmTitle": "Change content edition?",
   "changeSeriesConfirmMessage": "You are switching to \"{seriesName}\". Playback will stop, and your progress, downloads, and bookmarks are kept separately for each edition — you can switch back anytime.",

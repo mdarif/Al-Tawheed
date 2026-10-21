@@ -473,6 +473,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'بند ہے — ڈاؤن لوڈ کی پیش رفت اور تکمیل دیکھنے کے لیے اپنی ڈیوائس کی سیٹنگز ایپ میں فعال کریں۔';
 
   @override
+  String get downloadNotificationChannelName => 'ڈاؤن لوڈز';
+
+  @override
+  String get downloadNotificationChannelDescription =>
+      'درس ڈاؤن لوڈ کی پیش رفت اور تکمیل';
+
+  @override
   String get changeSeriesConfirmTitle => 'ایڈیشن تبدیل کریں؟';
 
   @override
@@ -1254,6 +1261,13 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   @override
   String get notificationsDisabledHint =>
       'Band hai — download progress aur completion dekhne ke liye apni device ki Settings app mein enable karein.';
+
+  @override
+  String get downloadNotificationChannelName => 'Downloads';
+
+  @override
+  String get downloadNotificationChannelDescription =>
+      'Dars downloads ki progress aur takmeel';
 
   @override
   String get changeSeriesConfirmTitle => 'Edition tabdeel karein?';

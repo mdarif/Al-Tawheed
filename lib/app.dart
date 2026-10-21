@@ -302,10 +302,26 @@ class MyApp extends StatelessWidget {
             ctx.read<SeriesProvider>(),
           )..load(),
         ),
+        // Must precede DownloadsProvider, which posts the download
+        // notification in the chrome language. Depends on SeriesProvider so
+        // the active edition can supply the default chrome language (Arabic
+        // edition ⇒ Arabic UI). An explicit pick still wins — see
+        // LanguageProvider.language / ADR-0002.
+        ChangeNotifierProxyProvider2<FeatureFlagsProvider, SeriesProvider,
+            LanguageProvider>(
+          create: (_) => LanguageProvider()..load(),
+          update: (_, flags, series, lang) {
+            lang ??= LanguageProvider()..load();
+            lang.applyLanguageFeatureFlag(flags.features.language);
+            lang.applySeriesDefault(series.currentSeries);
+            return lang;
+          },
+        ),
         ChangeNotifierProvider(
           create: (ctx) => DownloadsProvider(
             ctx.read<SeriesProvider>(),
             ctx.read<ConnectivityProvider>(),
+            ctx.read<LanguageProvider>(),
           )..load(),
         ),
         ChangeNotifierProvider(
@@ -326,19 +342,6 @@ class MyApp extends StatelessWidget {
           lazy: false,
         ),
         ChangeNotifierProvider(create: (_) => ShellChromeProvider()),
-        // Depends on SeriesProvider so the active edition can supply the
-        // default chrome language (Arabic edition ⇒ Arabic UI). An explicit
-        // pick still wins — see LanguageProvider.language / ADR-0002.
-        ChangeNotifierProxyProvider2<FeatureFlagsProvider, SeriesProvider,
-            LanguageProvider>(
-          create: (_) => LanguageProvider()..load(),
-          update: (_, flags, series, lang) {
-            lang ??= LanguageProvider()..load();
-            lang.applyLanguageFeatureFlag(flags.features.language);
-            lang.applySeriesDefault(series.currentSeries);
-            return lang;
-          },
-        ),
       ],
       child: const _AppView(),
     );

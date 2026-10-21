@@ -480,6 +480,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'متوقفة — فعّلها من تطبيق الإعدادات في جهازك لرؤية تقدّم التنزيل واكتماله.';
 
   @override
+  String get downloadNotificationChannelName => 'التنزيلات';
+
+  @override
+  String get downloadNotificationChannelDescription =>
+      'تقدّم تنزيل الدروس واكتماله';
+
+  @override
   String get changeSeriesConfirmTitle => 'تغيير إصدار المحتوى؟';
 
   @override

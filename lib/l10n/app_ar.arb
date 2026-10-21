@@ -217,6 +217,8 @@
   "downloadNotificationRationaleAllow": "السماح",
   "notificationsSettingsRow": "إشعارات التنزيل",
   "notificationsDisabledHint": "متوقفة — فعّلها من تطبيق الإعدادات في جهازك لرؤية تقدّم التنزيل واكتماله.",
+  "downloadNotificationChannelName": "التنزيلات",
+  "downloadNotificationChannelDescription": "تقدّم تنزيل الدروس واكتماله",
 
   "changeSeriesConfirmTitle": "تغيير إصدار المحتوى؟",
   "changeSeriesConfirmMessage": "ستنتقل إلى \"{seriesName}\". سيتوقف التشغيل، ويُحفظ تقدّمك والتنزيلات والعلامات المرجعية لكل إصدار بشكل منفصل — ويمكنك العودة في أيّ وقت.",

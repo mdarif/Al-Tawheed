@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myapp/models/catalog.dart';
+import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 import 'package:patrol/patrol.dart';
+import 'package:provider/provider.dart' show ReadContext;
 
 import '../integration_test/support/app_flow.dart';
 import 'support/patrol_flow.dart';
@@ -255,12 +258,16 @@ void main() {
         timeout: const Duration(seconds: 15),
         reason: 'lecture list before reading notification title',
       );
-      // DownloadsProvider posts `lecture.title.en` — the English catalogue
-      // title, whatever the edition or chrome language — so that is what the
-      // shade must show. (The media notification, by contrast, shows the
-      // edition-resolved title; see docs/gotchas.md.)
+      // DownloadsProvider posts the lecture title resolved for the current
+      // chrome language + edition — `LanguageProvider.resolveForSeries`, the
+      // same call LectureTile renders its title with — so derive the expected
+      // shade title the same way rather than assuming English.
+      final tileContext = $.tester.element(tiles.first);
       final lectureTitle =
-          $.tester.widget<LectureTile>(tiles.first).lecture.title.en;
+          tileContext.read<LanguageProvider>().resolveForSeries(
+                $.tester.widget<LectureTile>(tiles.first).lecture.title,
+                tileContext.read<SeriesProvider>().currentSeries,
+              );
 
       // Work from the list tile only: opening the player would start playback
       // and post a second (media) notification, and Android 14 then folds both

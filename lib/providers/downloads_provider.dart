@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/models/saved_lecture_metadata.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/providers/connectivity_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/models/series.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/services/download_notification_service.dart';
@@ -13,17 +16,65 @@ import 'package:myapp/services/preferences_service.dart';
 enum DownloadStatus { notDownloaded, queued, downloading, downloaded, failed }
 
 class DownloadsProvider extends ChangeNotifier {
-  DownloadsProvider([this._series, this._connectivity]) : _seriesForTest = null;
+  DownloadsProvider([this._series, this._connectivity, this._language])
+      : _seriesForTest = null {
+    _watchLanguage();
+  }
 
   @visibleForTesting
-  DownloadsProvider.forSeries(this._seriesForTest, [this._connectivity])
-      : _series = null;
+  DownloadsProvider.forSeries(
+    this._seriesForTest, [
+    this._connectivity,
+    this._language,
+  ]) : _series = null {
+    _watchLanguage();
+  }
 
   final SeriesProvider? _series;
   final SeriesConfig Function()? _seriesForTest;
   final ConnectivityProvider? _connectivity;
+  final LanguageProvider? _language;
   static int _nextProviderIdentity = 0;
   final int _providerIdentity = ++_nextProviderIdentity;
+
+  // ── Notification text ────────────────────────────────────────────────────
+  //
+  // The download notification is posted from here with no BuildContext, so the
+  // chrome language comes from the [LanguageProvider] (the same single source
+  // `MaterialApp.locale` reads — ADR-0002). Without one (unit tests that don't
+  // care) the notification is English.
+
+  /// `AppLocalizations` for the current chrome locale — fixed notification
+  /// strings ("Download complete", the channel name/description).
+  AppLocalizations get _notificationL10n =>
+      lookupAppLocalizations(_language?.locale ?? const Locale('en'));
+
+  /// The lecture title exactly as the lecture list shows it for this chrome
+  /// language + edition (`LectureTile` uses the same `resolveForSeries`).
+  String _notificationTitle(Lecture lecture) =>
+      _language?.resolveForSeries(lecture.title, _activeSeries) ??
+      lecture.title.en;
+
+  void _watchLanguage() {
+    final language = _language;
+    if (language == null) return;
+    language.addListener(_syncNotificationChannel);
+    _syncNotificationChannel();
+  }
+
+  /// Renames the Android channel to the chrome language as soon as it changes,
+  /// so Settings > Notifications reads right before the next download.
+  void _syncNotificationChannel() {
+    unawaited(
+      DownloadNotificationService.instance.syncChannel(_notificationL10n),
+    );
+  }
+
+  @override
+  void dispose() {
+    _language?.removeListener(_syncNotificationChannel);
+    super.dispose();
+  }
 
   SeriesConfig get _activeSeries =>
       _seriesForTest?.call() ??
@@ -481,8 +532,12 @@ class DownloadsProvider extends ChangeNotifier {
           if (stepped != lastNotifiedProgress || p >= 1.0) {
             lastNotifiedProgress = stepped;
             unawaited(
-              DownloadNotificationService.instance
-                  .showProgress(lecture.id, lecture.title.en, p),
+              DownloadNotificationService.instance.showProgress(
+                lecture.id,
+                _notificationTitle(lecture),
+                p,
+                _notificationL10n,
+              ),
             );
             notifyListeners();
           }
@@ -535,8 +590,11 @@ class DownloadsProvider extends ChangeNotifier {
             DownloadService.fileSizeSync(lecture.id, seriesId: seriesId);
       }
       unawaited(
-        DownloadNotificationService.instance
-            .showComplete(lecture.id, lecture.title.en),
+        DownloadNotificationService.instance.showComplete(
+          lecture.id,
+          _notificationTitle(lecture),
+          _notificationL10n,
+        ),
       );
     } on DownloadCancelled {
       if (_isCurrentAttempt(

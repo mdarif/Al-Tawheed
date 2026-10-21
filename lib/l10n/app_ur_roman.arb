@@ -147,6 +147,8 @@
   "downloadNotificationRationaleAllow": "Ijazat dein",
   "notificationsSettingsRow": "Download notifications",
   "notificationsDisabledHint": "Band hai — download progress aur completion dekhne ke liye apni device ki Settings app mein enable karein.",
+  "downloadNotificationChannelName": "Downloads",
+  "downloadNotificationChannelDescription": "Dars downloads ki progress aur takmeel",
 
   "changeSeriesConfirmTitle": "Edition tabdeel karein?",
   "changeSeriesConfirmMessage": "\"{seriesName}\" par switch karne se chal rahi audio ruk jayegi. Aap ki progress, downloads aur bookmarks har edition ke liye alag mahfooz rehte hain aur aap kabhi bhi wapas ja sakte hain.",

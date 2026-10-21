@@ -923,6 +923,18 @@ abstract class AppLocalizations {
   /// **'Turned off — enable in your device\'s Settings app to see download progress and completion.'**
   String get notificationsDisabledHint;
 
+  /// No description provided for @downloadNotificationChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadNotificationChannelName;
+
+  /// No description provided for @downloadNotificationChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress and completion of lecture downloads'**
+  String get downloadNotificationChannelDescription;
+
   /// No description provided for @changeSeriesConfirmTitle.
   ///
   /// In en, this message translates to:

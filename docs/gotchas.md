@@ -211,10 +211,10 @@ is portable memory: any LLM working the repo should read and extend it.
   Playback posts a second notification (the audio_service media one); Android
   14 then folds both into an auto group (`tag=ranker_group`) whose collapsed
   header shows only the media title (the edition-resolved Urdu
-  `درس ۰۱ — حصہ ۰۱`), so the English download title is not in the visible tree
+  `درس ۰۱ — حصہ ۰۱`), so the download title is not in the visible tree
   and `textContains 'Class 01'` finds nothing. With only the download
-  notification posted, the shade tree has `android:id/title` =
-  `Class 01 — Part 01` and an `android:id/progress` bar, and
+  notification posted, the shade tree has `android:id/title` = the
+  chrome-resolved lecture title (`Class 01 — Part 01` in English chrome) and an `android:id/progress` bar, and
   `getNotifications()` works on API 34. (3) *Throttle the `.mp3`.* A lecture is
   ~8 MB and completes before Patrol has opened the shade; the old test
   `return`ed when it saw "Saved for offline", i.e. passed vacuously.
@@ -230,14 +230,26 @@ is portable memory: any LLM working the repo should read and extend it.
   open**, which hides the next run's system permission dialog from
   `isPermissionDialogVisible`. `adb shell cmd statusbar collapse` before
   re-running.
-- **The download notification's text is English-only and ignores the
-  edition** (`DownloadsProvider` passes `lecture.title.en`; "Download complete"
-  and the "Downloads" channel name are hard-coded in
-  `DownloadNotificationService`), unlike the media notification, which uses the
-  resolved title. Not what broke the Patrol test, but it breaks the
-  all-4-ARB-locales rule. Open follow-up: it needs `DownloadsProvider` to pass
-  a resolved title and the service to take localized strings, which was out of
-  scope for the Patrol fix.
+- **The download notification is localized, but it has no `BuildContext` — keep
+  it that way deliberately.** `DownloadsProvider` takes the `LanguageProvider`
+  (wired in `app.dart`, which therefore creates `LanguageProvider` *before*
+  `DownloadsProvider`) and passes `DownloadNotificationService` the title from
+  `resolveForSeries(lecture.title, series)` — the very call `LectureTile` uses,
+  so the shade matches the list — plus an `AppLocalizations` from
+  `lookupAppLocalizations(language.locale)`. Never reintroduce `lecture.title.en`
+  or a hard-coded "Download complete". Note the media notification resolves its
+  title differently (the edition's *content* language, `forLanguage(series.language)`),
+  so on the Urdu edition with English chrome the download row is English while
+  the media row is Urdu — by design, the download row follows the chrome.
+  **Android has no per-locale channel text**: the channel name is stored once at
+  creation. `init()` (before any locale exists) registers it in English;
+  `syncChannel(l10n)` re-calls `createNotificationChannel` with the same id,
+  which Android treats as a rename/redescribe in place (importance and the
+  user's own channel settings are untouched, so no delete+recreate). It is
+  deduped on the registered text, runs on every chrome-language change, and the
+  `show*` calls only `await` it when the text actually changed — an unconditional
+  `await` would let a `dismiss()` issued right after a `showProgress()` overtake
+  it and leave a zombie progress notification.
 - **Version dead-end + Android 16 (as of 2026-07).** The repo pins
   `patrol 4.6.1`, whose ONLY compatible CLI is `patrol_cli 4.4.0` (Patrol's own
   version check rejects everything else). But 4.4.0 discovers **0 tests**

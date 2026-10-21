@@ -485,6 +485,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Turned off — enable in your device\'s Settings app to see download progress and completion.';
 
   @override
+  String get downloadNotificationChannelName => 'Downloads';
+
+  @override
+  String get downloadNotificationChannelDescription =>
+      'Progress and completion of lecture downloads';
+
+  @override
   String get changeSeriesConfirmTitle => 'Change content edition?';
 
   @override
