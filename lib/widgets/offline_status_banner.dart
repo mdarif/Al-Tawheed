@@ -31,7 +31,7 @@ class OfflineStatusBanner extends StatelessWidget {
         alpha: context.isDarkTheme ? 0.22 : 0.12,
       ),
       child: InkWell(
-        onTap: () => context.go('/library'),
+        onTap: () => context.go('/library?tab=downloads'),
         child: SafeArea(
           bottom: false,
           child: Padding(

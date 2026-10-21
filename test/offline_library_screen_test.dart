@@ -116,6 +116,7 @@ Widget _wrap(
   bool catalogLoaded = true,
   SeriesProvider? series,
   Locale? locale,
+  double textScale = 1.0,
 }) {
   return MultiProvider(
     providers: [
@@ -140,7 +141,13 @@ Widget _wrap(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const OfflineLibraryScreen(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: child!,
+      ),
+      home: const Scaffold(body: OfflineLibraryBody()),
     ),
   );
 }
@@ -158,7 +165,7 @@ void main() {
 
   // ── Empty state ───────────────────────────────────────────────────────────
 
-  group('OfflineLibraryScreen — empty state', () {
+  group('Downloads tab — empty state', () {
     testWidgets('shows empty state when no lectures are downloaded',
         (tester) async {
       await tester.pumpWidget(_wrap(DownloadsProvider()));
@@ -166,6 +173,19 @@ void main() {
 
       expect(find.text('No downloads yet'), findsOneWidget);
       expect(find.byType(ListView), findsNothing);
+    });
+
+    testWidgets('scrolls instead of overflowing at 2x text in a short viewport',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(_wrap(DownloadsProvider(), textScale: 2));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No downloads yet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -193,7 +213,7 @@ void main() {
 
   // ── Populated state ───────────────────────────────────────────────────────
 
-  group('OfflineLibraryScreen — populated state', () {
+  group('Downloads tab — populated state', () {
     testWidgets('shows downloaded lectures grouped by chapter', (tester) async {
       final downloads = DownloadsProvider()
         ..seedDownloadedForTest('l1')
@@ -291,7 +311,7 @@ void main() {
 
   // ── Delete lecture ────────────────────────────────────────────────────────
 
-  group('OfflineLibraryScreen — delete lecture', () {
+  group('Downloads tab — delete lecture', () {
     testWidgets('delete icon triggers confirmation dialog', (tester) async {
       final downloads = DownloadsProvider()..seedDownloadedForTest('l1');
 
@@ -325,7 +345,7 @@ void main() {
 
   // ── Delete chapter ────────────────────────────────────────────────────────
 
-  group('OfflineLibraryScreen — delete chapter', () {
+  group('Downloads tab — delete chapter', () {
     testWidgets('cancel delete-chapter dialog keeps lectures downloaded',
         (tester) async {
       final downloads = DownloadsProvider()
@@ -350,7 +370,7 @@ void main() {
 
   // ── Arabic series (flat list, no chapters) ──────────────────────────────
 
-  group('OfflineLibraryScreen — Arabic series (flat list)', () {
+  group('Downloads tab — Arabic series (flat list)', () {
     testWidgets('shows the downloaded Arabic lecture without chapter grouping',
         (tester) async {
       final downloads = DownloadsProvider()..seedDownloadedForTest('ar-1');

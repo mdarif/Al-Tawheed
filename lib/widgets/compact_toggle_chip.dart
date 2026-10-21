@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 
 /// A compact, on-brand toggle chip for a small (2-3 option) in-screen switch —
-/// e.g. Library's Saved/Downloads segments or Read's Book/Study segments.
+/// e.g. Read's Book/Study segments. (Library moved to [SectionTabHeader]; Read
+/// follows in P3, after which this widget can be deleted.)
 ///
 /// Unlike [SegmentedButton], the label is bounded to a fixed height and
 /// scaled down to fit, so long Arabic/Urdu labels don't overflow the chip at

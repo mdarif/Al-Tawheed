@@ -10,29 +10,7 @@ import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/lecture_tile.dart';
 
-class BookmarksScreen extends StatelessWidget {
-  const BookmarksScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = context.watch<ProgressProvider>();
-    final catalog = context.watch<CatalogProvider>();
-    final l10n = context.l10n;
-
-    final lectures = _lectures(progress, catalog);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          lectures.isEmpty ? l10n.saved : l10n.savedCount(lectures.length),
-        ),
-      ),
-      body: const BookmarksBody(),
-    );
-  }
-}
-
-/// The Saved collection without route chrome, for embedding in Library.
+/// The Bookmarks collection, the first tab of Library.
 class BookmarksBody extends StatelessWidget {
   const BookmarksBody({super.key});
 
@@ -122,27 +100,33 @@ class _EmptyState extends StatelessWidget {
         ),
       );
     }
+    // Scrollable so a large text scale in a short viewport can't overflow.
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.bookmark_outline_rounded,
-            size: 52,
-            color: context.mutedIconColor,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noSavedLectures,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.noSavedHint,
-            style: Theme.of(context).textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bookmark_outline_rounded,
+              size: 52,
+              color: context.mutedIconColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noSavedLectures,
+              style: context.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.noSavedHint,
+              style: context.textTheme.bodySmall
+                  ?.copyWith(color: context.secondaryTextColor),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

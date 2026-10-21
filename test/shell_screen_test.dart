@@ -21,14 +21,13 @@ import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
 import 'package:myapp/providers/shell_chrome_provider.dart';
-import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
-import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
 import 'package:myapp/screens/shell_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/widgets/offline_sheet.dart';
 
 import 'support/fake_audio_playback.dart';
 
@@ -235,11 +234,17 @@ Widget _wrap({
                 ),
                 GoRoute(
                   path: '/bookmarks',
-                  builder: (_, __) => const BookmarksScreen(),
+                  builder: (_, __) => const LibraryScreen(
+                    initialTab: LibraryTab.bookmarks,
+                    standalone: true,
+                  ),
                 ),
                 GoRoute(
                   path: '/offline-library',
-                  builder: (_, __) => const OfflineLibraryScreen(),
+                  builder: (_, __) => const LibraryScreen(
+                    initialTab: LibraryTab.downloads,
+                    standalone: true,
+                  ),
                 ),
                 GoRoute(
                   path: '/player',
@@ -253,6 +258,16 @@ Widget _wrap({
               ],
             ),
     ),
+  );
+}
+
+/// A legacy route renders the one Library widget (not a separate collection
+/// screen) on the tab its name implies.
+void _expectLegacyLibrary(String route) {
+  expect(find.byType(LibraryScreen), findsOneWidget);
+  expect(
+    find.text(route == '/bookmarks' ? 'No bookmarks yet' : 'No downloads yet'),
+    findsOneWidget,
   );
 }
 
@@ -595,7 +610,7 @@ void main() {
   });
 
   testWidgets(
-      'Arabic and Urdu Library segments fit at narrow 2x scale with downloads',
+      'Arabic and Urdu Library tabs fit at narrow 2x scale with downloads',
       (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
@@ -608,13 +623,13 @@ void main() {
           ..load(false)
           ..setCurrentSeriesForTest(_arabicSeries),
         locale: const Locale('ar'),
-        saved: 'المحفوظات',
+        saved: 'الإشارات المرجعية',
         downloads: 'التنزيلات',
       ),
       (
         series: SeriesProvider()..load(false),
         locale: const Locale('ur'),
-        saved: 'محفوظ',
+        saved: 'بک مارکس',
         downloads: 'ڈاؤن لوڈز',
       ),
     ]) {
@@ -686,12 +701,7 @@ void main() {
         find.byKey(const ValueKey('player-route-probe'), skipOffstage: false),
         findsOneWidget,
       );
-      expect(
-        route == '/bookmarks'
-            ? find.byType(BookmarksScreen)
-            : find.byType(OfflineLibraryScreen),
-        findsOneWidget,
-      );
+      _expectLegacyLibrary(route);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('player-route-probe')), findsOneWidget);
@@ -739,12 +749,7 @@ void main() {
 
       unawaited(router.push(route));
       await tester.pumpAndSettle();
-      expect(
-        route == '/bookmarks'
-            ? find.byType(BookmarksScreen)
-            : find.byType(OfflineLibraryScreen),
-        findsOneWidget,
-      );
+      _expectLegacyLibrary(route);
       // Player is still on the root stack, underneath the Library route.
       expect(find.byType(PlayerScreen, skipOffstage: false), findsOneWidget);
       expect(identical(player.current, lecture), isTrue);
@@ -758,6 +763,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(PlayerScreen), findsNothing);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'production router: Player offline sheet "Manage downloads" opens '
+      'Library > Downloads over the Player, and Back returns to Player',
+      (tester) async {
+    // The sheet is only ever opened from the full-screen Player. `go` to the
+    // shell's /library would replace the stack and drop the Player; the
+    // root-navigator /offline-library adapter keeps it underneath.
+    final progress = ProgressProvider()..load();
+    final downloads = DownloadsProvider();
+    final connectivity = ConnectivityProvider.testOffline();
+    final player =
+        PlayerNotifier(FakeAudioPlayback(), progress, downloads, connectivity);
+    addTearDown(player.dispose);
+    final lecture = _arabicLec();
+    await player.loadAndPlay(lecture, [lecture]);
+
+    await tester.pumpWidget(
+      _wrap(
+        series: SeriesProvider()..load(false),
+        catalog: _arabicCatalog(),
+        player: player,
+        progress: progress,
+        downloads: downloads,
+        connectivity: connectivity,
+        downloadsEnabled: true,
+        useProductionRouter: true,
+        initialLocation: '/lectures',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(ShellScreen)));
+    unawaited(router.push('/player'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PlayerScreen), findsOneWidget);
+
+    showOfflineSheet(tester.element(find.byType(PlayerScreen)), lecture);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(WidgetKeys.offlineManageDownloads));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LibraryScreen), findsOneWidget);
+    expect(find.text('No downloads yet'), findsOneWidget);
+    expect(find.byType(PlayerScreen, skipOffstage: false), findsOneWidget);
+    expect(identical(player.current, lecture), isTrue);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(PlayerScreen), findsOneWidget);
+    expect(find.byType(LibraryScreen), findsNothing);
+    expect(identical(player.current, lecture), isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -780,12 +838,7 @@ void main() {
     for (final route in ['/bookmarks', '/offline-library']) {
       unawaited(router.push(route));
       await tester.pumpAndSettle();
-      expect(
-        route == '/bookmarks'
-            ? find.byType(BookmarksScreen)
-            : find.byType(OfflineLibraryScreen),
-        findsOneWidget,
-      );
+      _expectLegacyLibrary(route);
 
       unawaited(router.push('/player'));
       await tester.pumpAndSettle();
@@ -793,12 +846,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(
-        route == '/bookmarks'
-            ? find.byType(BookmarksScreen)
-            : find.byType(OfflineLibraryScreen),
-        findsOneWidget,
-      );
+      _expectLegacyLibrary(route);
       expect(find.byKey(const ValueKey('player-route-probe')), findsNothing);
 
       await tester.binding.handlePopRoute();

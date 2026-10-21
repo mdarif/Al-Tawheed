@@ -357,6 +357,20 @@ is portable memory: any LLM working the repo should read and extend it.
   for every edition regardless of Book/Study (A1). Settings is a shell tab
   (always last); only Bookmarks and About live in the `⋯` overflow menu
   ([app_overflow_menu.dart](../lib/widgets/app_overflow_menu.dart)).
+- **From a root-navigator route (Player), never `go`/`push` a shell route
+  like `/library?tab=…`.** `go` rebuilds the location and drops Player off the
+  stack; `push` of a shell branch route from the root navigator never renders
+  it. That is why `/bookmarks` and `/offline-library` survive as
+  root-navigator *adapters* that render the same `LibraryScreen(initialTab:,
+  standalone: true)` — the offline sheet over Player pushes `/offline-library`
+  and Back returns to Player (proven against `createAppRouter` in
+  `test/shell_screen_test.dart`). Links from inside the shell (offline banner)
+  use `/library?tab=downloads`.
+- **A shell tab that reads `?tab=` must mirror the user's own tab choice back
+  into the URL** (`LibraryScreen` calls `context.go('/library?tab=…')` when a
+  tab settles). Otherwise the location keeps the last link's tab and repeating
+  that same link — the offline banner stays on screen while offline — is a
+  router no-op that leaves the user on the wrong tab.
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)

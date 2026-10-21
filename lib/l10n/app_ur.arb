@@ -62,17 +62,9 @@
   "studyRecommendedNext": "اگلا تجویز شدہ",
   "studyPartsComplete": "{total} میں سے {completed} حصے مکمل",
 
-  "saved": "محفوظ",
-  "savedCount": "محفوظ ({count})",
-  "libraryHeroSubtitle": "{saved} محفوظ · {downloaded} ڈاؤن لوڈ",
-  "@libraryHeroSubtitle": {
-    "placeholders": {
-      "saved": { "type": "int" },
-      "downloaded": { "type": "int" }
-    }
-  },
-  "noSavedLectures": "ابھی تک کوئی درس محفوظ نہیں",
-  "noSavedHint": "کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں",
+  "saved": "بک مارکس",
+  "noSavedLectures": "ابھی تک کوئی بک مارک نہیں",
+  "noSavedHint": "کسی درس پر یا پلیئر میں بک مارک آئیکن پر ٹیپ کریں تاکہ وہ یہاں رہے۔",
 
   "couldNotLoadLectures": "دروس لوڈ نہیں ہو سکے",
   "lecturesEmpty": "ابھی کوئی درس دستیاب نہیں",

@@ -204,21 +204,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saved => 'Bookmarks';
 
   @override
-  String savedCount(int count) {
-    return 'Bookmarks ($count)';
-  }
-
-  @override
-  String libraryHeroSubtitle(int saved, int downloaded) {
-    return '$saved saved · $downloaded downloaded';
-  }
-
-  @override
-  String get noSavedLectures => 'No bookmarked lectures yet';
+  String get noSavedLectures => 'No bookmarks yet';
 
   @override
   String get noSavedHint =>
-      'Tap the bookmark icon in the player to save a lecture';
+      'Tap the bookmark icon on a lecture or in the player to keep it here.';
 
   @override
   String get couldNotLoadLectures => 'Could not load lectures';

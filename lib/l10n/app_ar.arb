@@ -95,20 +95,9 @@
     }
   },
 
-  "saved": "المحفوظات",
-  "savedCount": "المحفوظات ({count})",
-  "@savedCount": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "libraryHeroSubtitle": "{saved} محفوظ · {downloaded} تنزيل",
-  "@libraryHeroSubtitle": {
-    "placeholders": {
-      "saved": { "type": "int" },
-      "downloaded": { "type": "int" }
-    }
-  },
-  "noSavedLectures": "لا توجد دروس محفوظة بعد",
-  "noSavedHint": "اضغط أيقونة الإشارة المرجعية في المشغّل لحفظ درس",
+  "saved": "الإشارات المرجعية",
+  "noSavedLectures": "لا توجد إشارات مرجعية بعد",
+  "noSavedHint": "اضغط أيقونة الإشارة المرجعية على أي درس أو في المشغّل لتبقى هنا.",
 
   "couldNotLoadLectures": "تعذّر تحميل الدروس",
   "lecturesEmpty": "لا توجد دروس متاحة بعد",

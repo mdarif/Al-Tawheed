@@ -24,6 +24,13 @@ abstract final class WidgetKeys {
     'shell.offline-status-banner',
   );
 
+  static const libraryHeader = ValueKey<String>('library.header');
+  static const libraryTabBookmarks = ValueKey<String>('library.tab.bookmarks');
+  static const libraryTabDownloads = ValueKey<String>('library.tab.downloads');
+  static const libraryRemoveAllDownloads = ValueKey<String>(
+    'library.remove-all-downloads',
+  );
+
   static const playerClose = ValueKey<String>('player.close');
   static const playerBookmark = ValueKey<String>('player.bookmark');
   static const playerDownload = ValueKey<String>('player.download');

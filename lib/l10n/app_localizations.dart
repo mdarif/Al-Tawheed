@@ -449,28 +449,16 @@ abstract class AppLocalizations {
   /// **'Bookmarks'**
   String get saved;
 
-  /// No description provided for @savedCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Bookmarks ({count})'**
-  String savedCount(int count);
-
-  /// No description provided for @libraryHeroSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{saved} saved · {downloaded} downloaded'**
-  String libraryHeroSubtitle(int saved, int downloaded);
-
   /// No description provided for @noSavedLectures.
   ///
   /// In en, this message translates to:
-  /// **'No bookmarked lectures yet'**
+  /// **'No bookmarks yet'**
   String get noSavedLectures;
 
   /// No description provided for @noSavedHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap the bookmark icon in the player to save a lecture'**
+  /// **'Tap the bookmark icon on a lecture or in the player to keep it here.'**
   String get noSavedHint;
 
   /// No description provided for @couldNotLoadLectures.

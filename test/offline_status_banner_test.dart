@@ -48,8 +48,12 @@ void main() {
             ),
             GoRoute(
               path: '/library',
-              builder: (_, __) =>
-                  const Scaffold(body: Center(child: Text('Library'))),
+              builder: (_, state) => Scaffold(
+                body: Center(
+                  child:
+                      Text('Library tab=${state.uri.queryParameters['tab']}'),
+                ),
+              ),
             ),
           ],
         ),
@@ -80,7 +84,8 @@ void main() {
     expect(find.text('Offline'), findsNothing);
   });
 
-  testWidgets('tapping the banner opens Library (IMP-05)', (tester) async {
+  testWidgets('tapping the banner opens Library > Downloads (IMP-05)',
+      (tester) async {
     await tester.pumpWidget(wrap(downloadsEnabled: true, isOffline: true));
     await tester.pumpAndSettle();
 
@@ -89,7 +94,7 @@ void main() {
     await tester.tap(find.byKey(WidgetKeys.offlineStatusBanner));
     await tester.pumpAndSettle();
 
-    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Library tab=downloads'), findsOneWidget);
     expect(find.text('Lectures'), findsNothing);
   });
 }

@@ -202,24 +202,14 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get saved => 'محفوظ';
+  String get saved => 'بک مارکس';
 
   @override
-  String savedCount(int count) {
-    return 'محفوظ ($count)';
-  }
-
-  @override
-  String libraryHeroSubtitle(int saved, int downloaded) {
-    return '$saved محفوظ · $downloaded ڈاؤن لوڈ';
-  }
-
-  @override
-  String get noSavedLectures => 'ابھی تک کوئی درس محفوظ نہیں';
+  String get noSavedLectures => 'ابھی تک کوئی بک مارک نہیں';
 
   @override
   String get noSavedHint =>
-      'کوئی درس محفوظ کرنے کے لیے پلیئر میں بُک مارک آئیکن پر ٹیپ کریں';
+      'کسی درس پر یا پلیئر میں بک مارک آئیکن پر ٹیپ کریں تاکہ وہ یہاں رہے۔';
 
   @override
   String get couldNotLoadLectures => 'دروس لوڈ نہیں ہو سکے';
@@ -850,24 +840,14 @@ class AppLocalizationsUrRoman extends AppLocalizationsUr {
   }
 
   @override
-  String get saved => 'Mehfooz';
+  String get saved => 'Bookmarks';
 
   @override
-  String savedCount(int count) {
-    return 'Mehfooz ($count)';
-  }
-
-  @override
-  String libraryHeroSubtitle(int saved, int downloaded) {
-    return '$saved mehfooz · $downloaded download';
-  }
-
-  @override
-  String get noSavedLectures => 'Abhi tak koi dars mehfooz nahin';
+  String get noSavedLectures => 'Abhi tak koi bookmark nahin';
 
   @override
   String get noSavedHint =>
-      'Koi dars mehfooz karne ke liye player mein bookmark icon par tap karein';
+      'Kisi dars par ya player mein bookmark icon par tap karein taake woh yahan rahe.';
 
   @override
   String get couldNotLoadLectures => 'Dars load nahin ho sake';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/catalog.dart';
 import 'package:myapp/providers/catalog_provider.dart';
@@ -8,24 +8,50 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/offline_library_screen.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme_extensions.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
-import 'package:myapp/widgets/compact_toggle_chip.dart';
+import 'package:myapp/widgets/confirm_dialog.dart';
+import 'package:myapp/widgets/section_tab_header.dart';
 
-/// The shell home for content a user has explicitly kept.
+/// The two collections Library holds.
+enum LibraryTab {
+  bookmarks,
+  downloads;
+
+  /// The `?tab=` query value, or null for anything unrecognised.
+  static LibraryTab? fromQuery(String? value) => switch (value) {
+        'bookmarks' => bookmarks,
+        'downloads' => downloads,
+        _ => null,
+      };
+}
+
+/// Where a user finds content they have explicitly kept: Bookmarks and
+/// Downloads, as two tabs under one plain title.
 ///
-/// The old root routes remain for Release A compatibility (notably pushes
-/// initiated by Player and Settings). This branch is intentionally stateful so
-/// its selected collection survives switches to other shell destinations.
+/// Mounted in two places, both rendering this same widget:
+///  * the shell's Library branch (`/library?tab=…`), which is stateful so the
+///    selected tab survives switches to other destinations; and
+///  * the root-navigator legacy routes `/bookmarks` and `/offline-library`
+///    (pushed from Player and the offline sheet), as [standalone] adapters with
+///    a back button and the matching [initialTab].
+///
+/// A null [initialTab] means "no preference" and keeps the current tab.
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  final LibraryTab? initialTab;
+
+  /// True for the pushed legacy routes: adds a back button and leaves the URL
+  /// alone, since there is no shell location to mirror the tab into.
+  final bool standalone;
+
+  const LibraryScreen({super.key, this.initialTab, this.standalone = false});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  var _selected = 0;
   Catalog? _backfilledCatalog;
 
   @override
@@ -46,194 +72,217 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final l10n = context.l10n;
     final downloadsEnabled =
         context.watch<FeatureFlagsProvider>().features.downloads;
-    final selected = downloadsEnabled ? _selected : 0;
-    final savedCount = context.watch<ProgressProvider>().bookmarkedIds.length;
-    final downloadedCount = context.watch<DownloadsProvider>().downloadedCount;
+    final bookmarkCount =
+        context.watch<ProgressProvider>().bookmarkedIds.length;
+    final downloadCount = context.watch<DownloadsProvider>().downloadedCount;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _LibraryHero(
-            savedCount: savedCount,
-            downloadedCount: downloadsEnabled ? downloadedCount : 0,
-          ),
-          if (downloadsEnabled)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: CompactToggleChip(
-                        label: l10n.saved,
-                        selected: selected == 0,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _selected = 0);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: CompactToggleChip(
-                        label: l10n.offlineLibrary,
-                        selected: selected == 1,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _selected = 1);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          SliverFillRemaining(
-            child: IndexedStack(
-              index: selected,
+      body: downloadsEnabled
+          ? _LibraryTabs(
+              initialTab: widget.initialTab,
+              standalone: widget.standalone,
+              bookmarkCount: bookmarkCount,
+              downloadCount: downloadCount,
+            )
+          // A single destination needs no tab bar: just the title and the
+          // Bookmarks body.
+          : Column(
               children: [
-                const BookmarksBody(),
-                if (downloadsEnabled) const OfflineLibraryBody(),
+                SectionTabHeader(
+                  key: WidgetKeys.libraryHeader,
+                  title: l10n.tabLibrary,
+                  showBack: widget.standalone,
+                ),
+                const Expanded(child: BookmarksBody()),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
 
-/// Library's hero, matching the Lectures tab's pinned-hero language (icon
-/// badge + title + stats chip) instead of a bare default AppBar — Library is
-/// a peer top-level destination now, not a pushed utility screen.
-class _LibraryHero extends StatelessWidget {
-  final int savedCount;
-  final int downloadedCount;
+class _LibraryTabs extends StatefulWidget {
+  final LibraryTab? initialTab;
+  final bool standalone;
+  final int bookmarkCount;
+  final int downloadCount;
 
-  const _LibraryHero({required this.savedCount, required this.downloadedCount});
+  const _LibraryTabs({
+    required this.initialTab,
+    required this.standalone,
+    required this.bookmarkCount,
+    required this.downloadCount,
+  });
+
+  @override
+  State<_LibraryTabs> createState() => _LibraryTabsState();
+}
+
+class _LibraryTabsState extends State<_LibraryTabs>
+    with SingleTickerProviderStateMixin {
+  late final TabController _controller;
+
+  /// The tab index the location (or the initial tab) already reflects, so a
+  /// settled change is mirrored into the URL exactly once.
+  late int _syncedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncedIndex = widget.initialTab?.index ?? 0;
+    _controller = TabController(
+      length: LibraryTab.values.length,
+      vsync: this,
+      initialIndex: _syncedIndex,
+    )..addListener(_onTabChanged);
+  }
+
+  @override
+  void didUpdateWidget(_LibraryTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new `?tab=` link (e.g. the offline banner) while Library is alive.
+    final requested = widget.initialTab;
+    if (requested != null &&
+        requested != oldWidget.initialTab &&
+        requested.index != _controller.index) {
+      _syncedIndex = requested.index;
+      _controller.animateTo(requested.index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onTabChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  /// Mirrors a user-chosen tab into `/library?tab=…`. Without this the
+  /// location would keep the last link's tab, and repeating that link (the
+  /// offline banner is always on screen while offline) would be a no-op for
+  /// the router once the user had moved to the other tab.
+  void _onTabChanged() {
+    if (_controller.indexIsChanging) return;
+    final index = _controller.index;
+    if (index == _syncedIndex) return;
+    _syncedIndex = index;
+    if (widget.standalone) return;
+    context.go('/library?tab=${LibraryTab.values[index].name}');
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    return Column(
+      children: [
+        SectionTabHeader(
+          key: WidgetKeys.libraryHeader,
+          title: l10n.tabLibrary,
+          showBack: widget.standalone,
+          controller: _controller,
+          tabs: [
+            SectionTab(
+              label: l10n.saved,
+              count: widget.bookmarkCount,
+              tabKey: WidgetKeys.libraryTabBookmarks,
+            ),
+            SectionTab(
+              label: l10n.offlineLibrary,
+              count: widget.downloadCount,
+              tabKey: WidgetKeys.libraryTabDownloads,
+            ),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _controller,
+            children: const [
+              _KeepAlive(child: BookmarksBody()),
+              _KeepAlive(child: _DownloadsTab()),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-    return SliverAppBar(
-      pinned: true,
-      centerTitle: false,
-      expandedHeight: 130,
-      automaticallyImplyLeading: false,
-      flexibleSpace: LayoutBuilder(
-        builder: (context, constraints) {
-          final settings = context
-              .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
-          final collapsed = constraints.maxHeight <=
-              (settings?.minExtent ?? kToolbarHeight) + 12;
+/// Keeps a tab's list (and its scroll position) alive while the other tab is
+/// showing.
+class _KeepAlive extends StatefulWidget {
+  final Widget child;
+  const _KeepAlive({required this.child});
 
-          final flexTitle = collapsed
-              ? Text(
-                  l10n.tabLibrary,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                )
-              : null;
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
 
-          return FlexibleSpaceBar(
-            centerTitle: false,
-            titlePadding:
-                const EdgeInsetsDirectional.only(start: 16, bottom: 14),
-            title: flexTitle,
-            background: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 14),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _LibraryBadge(),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.tabLibrary,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              _StatsChip(
-                                label: l10n.libraryHeroSubtitle(
-                                  savedCount,
-                                  downloadedCount,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+/// The Downloads collection, topped by "remove all" once there is something
+/// to remove.
+class _DownloadsTab extends StatelessWidget {
+  const _DownloadsTab();
+
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final downloads = context.watch<DownloadsProvider>();
+    final count = downloads.downloadedCount;
+    final l10n = context.l10n;
+    final error = context.colorScheme.error;
+
+    return Column(
+      children: [
+        if (count > 0)
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8, top: 4),
+              child: TextButton.icon(
+                key: WidgetKeys.libraryRemoveAllDownloads,
+                style: TextButton.styleFrom(
+                  foregroundColor: error,
+                  minimumSize: const Size(48, 48),
                 ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                label: Text(l10n.settingsClearDownloads),
+                onPressed: () async {
+                  final confirmed = await showConfirmDialog(
+                    context,
+                    title: l10n.clearAllDownloads,
+                    message: l10n.clearAllDownloadsMessage(
+                      count,
+                      context.localizedDecimal(
+                        _formatBytes(downloads.totalDownloadedBytes),
+                      ),
+                    ),
+                    confirmLabel: l10n.deleteAll,
+                    destructive: true,
+                  );
+                  if (confirmed && context.mounted) {
+                    await context.read<DownloadsProvider>().deleteAll();
+                  }
+                },
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Icon-badge stand-in for the Lectures hero's teacher portrait — Library has
-/// no single teacher/book to depict, so a brand-colored icon fills that slot.
-class _LibraryBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: context.brandColor.withValues(alpha: 0.12),
-        border: Border.all(color: context.brandColor.withValues(alpha: 0.55)),
-      ),
-      child: Icon(
-        Icons.collections_bookmark_rounded,
-        color: context.brandColor,
-        size: 26,
-      ),
-    );
-  }
-}
-
-class _StatsChip extends StatelessWidget {
-  final String label;
-
-  const _StatsChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: context.elevatedSurface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: context.textTheme.bodySmall
-            ?.copyWith(color: context.secondaryTextColor),
-      ),
+          ),
+        const Expanded(child: OfflineLibraryBody()),
+      ],
     );
   }
 }

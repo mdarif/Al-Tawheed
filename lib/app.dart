@@ -24,14 +24,12 @@ import 'package:myapp/providers/theme_provider.dart';
 import 'package:myapp/screens/read_screen.dart';
 import 'package:myapp/screens/about_page.dart';
 import 'package:myapp/screens/book_reader_screen.dart';
-import 'package:myapp/screens/bookmarks_screen.dart';
 import 'package:myapp/screens/choose_series_screen.dart';
 import 'package:myapp/screens/edition_missing_screen.dart';
 import 'package:myapp/widgets/missing_edition_guard.dart';
 import 'package:myapp/screens/lecture_list_screen.dart';
 import 'package:myapp/screens/library_screen.dart';
 import 'package:myapp/screens/player_screen.dart';
-import 'package:myapp/screens/offline_library_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/screens/study_class_complete_screen.dart';
 import 'package:myapp/screens/study_screen.dart';
@@ -99,9 +97,15 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
             StatefulShellBranch(
               navigatorKey: _libraryNavigatorKey,
               routes: [
+                // `?tab=bookmarks|downloads` selects the tab (the offline banner
+                // links to `?tab=downloads`).
                 GoRoute(
                   path: '/library',
-                  builder: (context, state) => const LibraryScreen(),
+                  builder: (context, state) => LibraryScreen(
+                    initialTab: LibraryTab.fromQuery(
+                      state.uri.queryParameters['tab'],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -109,8 +113,8 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
               navigatorKey: _settingsNavigatorKey,
               routes: [
                 // Settings is a bottom-nav tab (always last), so it lives inside the
-                // shell and keeps the nav bar visible. Bookmarks and About remain
-                // full-screen pushes from the ⋯ overflow menu below.
+                // shell and keeps the nav bar visible. About remains a full-screen
+                // push.
                 GoRoute(
                   path: '/settings',
                   builder: (context, state) => const SettingsScreen(),
@@ -145,21 +149,26 @@ GoRouter createAppRouter({String initialLocation = '/'}) => GoRouter(
           builder: (context, state) => const EditionMissingScreen(),
         ),
 
-        // Bookmarks — root navigator so it opens as a full-screen pushed view
-        // (with a back button) from the ⋯ overflow menu, rather than occupying a
-        // bottom-nav slot.
+        // Legacy collection routes — kept on the root navigator (same as
+        // /player) because Player, Settings and the offline sheet push them and
+        // Back must return to the pusher; pushing the shell's /library there
+        // would duplicate ShellRoute page keys. They are adapters, not separate
+        // screens: the same LibraryScreen as the shell tab, on the matching tab.
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
           path: '/bookmarks',
-          builder: (context, state) => const BookmarksScreen(),
+          builder: (context, state) => const LibraryScreen(
+            initialTab: LibraryTab.bookmarks,
+            standalone: true,
+          ),
         ),
-
-        // Offline library — root navigator (same as /player) so pushes from the
-        // player sheet or Settings never duplicate ShellRoute page keys.
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
           path: '/offline-library',
-          builder: (context, state) => const OfflineLibraryScreen(),
+          builder: (context, state) => const LibraryScreen(
+            initialTab: LibraryTab.downloads,
+            standalone: true,
+          ),
         ),
 
         // Book reader — root navigator (same as /player) so the bottom nav bar

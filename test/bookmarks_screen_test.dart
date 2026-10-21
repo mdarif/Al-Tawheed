@@ -15,13 +15,14 @@ import 'package:myapp/providers/feature_flags_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/progress_provider.dart';
 import 'package:myapp/providers/series_provider.dart';
-import 'package:myapp/screens/bookmarks_screen.dart';
+import 'package:myapp/screens/library_screen.dart';
+import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/theme/app_theme.dart';
 
-/// `bookmarks_screen.dart` was never constructed in any test, despite being a
-/// live route reachable from the overflow menu. Covers the three states that
-/// matter: empty, the bookmarked-only filter, and tap-through to the player.
+/// The Bookmarks tab as reached through the legacy `/bookmarks` route (a
+/// standalone Library adapter). Covers the states that matter: empty, the
+/// bookmarked-only filter, and tap-through to the player.
 
 Lecture _lec(String id, int num) => Lecture(
       id: id,
@@ -56,6 +57,7 @@ Future<ProgressProvider> _pump(
   required List<String> bookmarked,
   bool loaded = true,
   bool online = false,
+  double textScale = 1.0,
 }) async {
   final progress = ProgressProvider()..load();
   for (final id in bookmarked) {
@@ -82,19 +84,31 @@ Future<ProgressProvider> _pump(
         ChangeNotifierProvider.value(value: downloads),
         ChangeNotifierProvider.value(value: connectivity),
         ChangeNotifierProvider.value(value: series),
-        ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+        ChangeNotifierProvider(
+          create: (_) => FeatureFlagsProvider()
+            ..setFeaturesJsonForTest({'downloads': true}),
+        ),
         ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: child!,
+        ),
         routerConfig: GoRouter(
           initialLocation: '/bookmarks',
           routes: [
             GoRoute(
               path: '/bookmarks',
-              builder: (_, __) => const BookmarksScreen(),
+              builder: (_, __) => const LibraryScreen(
+                initialTab: LibraryTab.bookmarks,
+                standalone: true,
+              ),
             ),
             GoRoute(
               path: '/player',
@@ -121,12 +135,31 @@ void main() {
   testWidgets('no bookmarks: empty state, unnumbered title', (tester) async {
     await _pump(tester, bookmarked: []);
 
-    expect(find.text('No bookmarked lectures yet'), findsOneWidget);
-    expect(find.text('Bookmarks'), findsOneWidget); // no count
+    expect(find.text('No bookmarks yet'), findsOneWidget);
+    expect(find.text('Bookmarks'), findsOneWidget); // the tab label
+    expect(
+      find.descendant(
+        of: find.byKey(WidgetKeys.libraryTabBookmarks),
+        matching: find.text('0'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(ListTile), findsNothing);
   });
 
-  testWidgets('shows only bookmarked lectures, with the count in the title',
+  testWidgets('empty state scrolls instead of overflowing at 2x text',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pump(tester, bookmarked: [], textScale: 2);
+
+    expect(find.text('No bookmarks yet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows only bookmarked lectures, with the count on the tab',
       (tester) async {
     await _pump(tester, bookmarked: ['l1', 'l3']);
 
@@ -134,20 +167,38 @@ void main() {
     expect(find.text('Lecture 1'), findsOneWidget);
     expect(find.text('Lecture 3'), findsOneWidget);
     expect(find.text('Lecture 2'), findsNothing);
-    expect(find.text('Bookmarks (2)'), findsOneWidget);
-    expect(find.text('No bookmarked lectures yet'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(WidgetKeys.libraryTabBookmarks),
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('No bookmarks yet'), findsNothing);
   });
 
   testWidgets('un-bookmarking removes a lecture from the list live',
       (tester) async {
     final progress = await _pump(tester, bookmarked: ['l1', 'l2']);
-    expect(find.text('Bookmarks (2)'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(WidgetKeys.libraryTabBookmarks),
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
 
     await progress.toggleBookmark(_lectures.first);
     await tester.pumpAndSettle();
 
     expect(find.text('Lecture 1'), findsNothing);
-    expect(find.text('Bookmarks (1)'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(WidgetKeys.libraryTabBookmarks),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('plays persisted bookmark metadata when catalogue is unavailable',
@@ -173,7 +224,10 @@ void main() {
           ChangeNotifierProvider.value(value: downloads),
           ChangeNotifierProvider.value(value: connectivity),
           ChangeNotifierProvider.value(value: SeriesProvider()..load(false)),
-          ChangeNotifierProvider(create: (_) => FeatureFlagsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => FeatureFlagsProvider()
+              ..setFeaturesJsonForTest({'downloads': true}),
+          ),
           ChangeNotifierProvider(create: (_) => LanguageProvider()..load()),
         ],
         child: MaterialApp.router(
@@ -185,7 +239,10 @@ void main() {
             routes: [
               GoRoute(
                 path: '/bookmarks',
-                builder: (_, __) => const BookmarksScreen(),
+                builder: (_, __) => const LibraryScreen(
+                  initialTab: LibraryTab.bookmarks,
+                  standalone: true,
+                ),
               ),
               GoRoute(
                 path: '/player',

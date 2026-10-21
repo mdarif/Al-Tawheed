@@ -145,6 +145,12 @@ class _OfflineSheetContent extends StatelessWidget {
               label: l10n.offlineManageDownloads,
               color: context.secondaryTextColor,
               onTap: () {
+                // The sheet only opens over the full-screen Player, so this
+                // pushes the root-navigator Library adapter (Downloads tab)
+                // and Back returns to the Player. `go('/library?tab=…')` would
+                // drop the Player from the stack, and `push`ing the shell
+                // route does not render (see shell_screen_test).
+                //
                 // Capture the router and delay the push to the next frame.
                 // Navigator.pop (direct) + router.push (via GoRouter) in the
                 // same sync block causes Navigator._updatePages to see

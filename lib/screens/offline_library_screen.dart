@@ -15,19 +15,7 @@ import 'package:myapp/utils/download_notification_permission.dart';
 import 'package:myapp/utils/l10n_extensions.dart';
 import 'package:myapp/widgets/confirm_dialog.dart';
 
-class OfflineLibraryScreen extends StatelessWidget {
-  const OfflineLibraryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.offlineLibrary)),
-      body: const OfflineLibraryBody(),
-    );
-  }
-}
-
-/// The Downloads collection without route chrome, for embedding in Library.
+/// The Downloads collection, the second tab of Library.
 class OfflineLibraryBody extends StatelessWidget {
   const OfflineLibraryBody({super.key});
 
@@ -147,8 +135,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    // Scrollable so a large text scale in a short viewport can't overflow.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,

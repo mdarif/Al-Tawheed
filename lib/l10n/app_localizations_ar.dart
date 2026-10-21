@@ -199,23 +199,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get saved => 'المحفوظات';
+  String get saved => 'الإشارات المرجعية';
 
   @override
-  String savedCount(int count) {
-    return 'المحفوظات ($count)';
-  }
+  String get noSavedLectures => 'لا توجد إشارات مرجعية بعد';
 
   @override
-  String libraryHeroSubtitle(int saved, int downloaded) {
-    return '$saved محفوظ · $downloaded تنزيل';
-  }
-
-  @override
-  String get noSavedLectures => 'لا توجد دروس محفوظة بعد';
-
-  @override
-  String get noSavedHint => 'اضغط أيقونة الإشارة المرجعية في المشغّل لحفظ درس';
+  String get noSavedHint =>
+      'اضغط أيقونة الإشارة المرجعية على أي درس أو في المشغّل لتبقى هنا.';
 
   @override
   String get couldNotLoadLectures => 'تعذّر تحميل الدروس';
