@@ -57,6 +57,21 @@ String mistakeReportDetails({
     'Chapter: $chapterNumber — $chapterTitle\n'
     'App: $version';
 
+/// The report's subject: the localized [base] plus the same triage details as
+/// [mistakeReportDetails], on the one line every mail client keeps intact.
+///
+/// Some mail apps run a prefilled body's lines together (one real report
+/// arrived with Edition, Chapter and App on a single line), so the inbox
+/// subject alone has to say which edition, chapter and build to check. Like
+/// the details block, the suffix is deliberately not translated.
+String mistakeReportSubject({
+  required String base,
+  required String seriesId,
+  required int chapterNumber,
+  required String version,
+}) =>
+    '$base · $seriesId · ch $chapterNumber · $version';
+
 /// The report as plain text for the clipboard fallback, when no mail app can be
 /// opened. Carries the address and subject inline so a report pasted into any
 /// app — chat, notes, a webmail tab — still says where it needs to go.
@@ -113,7 +128,12 @@ Future<void> reportBookMistake(
   )}';
 
   final email = config.contact.email;
-  final subject = l10n.bookReportIssueSubject;
+  final subject = mistakeReportSubject(
+    base: l10n.bookReportIssueSubject,
+    seriesId: series.id,
+    chapterNumber: chapterNumber,
+    version: version,
+  );
 
   final uri = buildMistakeReportUri(email: email, subject: subject, body: body);
   if (uri != null && await launchExternalUrl(uri)) return;

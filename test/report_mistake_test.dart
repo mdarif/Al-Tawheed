@@ -161,6 +161,21 @@ void main() {
     });
   });
 
+  test('mistakeReportSubject appends edition, chapter and app on one line', () {
+    final subject = mistakeReportSubject(
+      base: 'Kitab at-Tawheed — book correction',
+      seriesId: 'tawheed-ur',
+      chapterNumber: 1,
+      version: '2.4.1 (20)',
+    );
+
+    expect(
+      subject,
+      'Kitab at-Tawheed — book correction · tawheed-ur · ch 1 · 2.4.1 (20)',
+    );
+    expect(subject, isNot(contains('\n')));
+  });
+
   group('hasBookContact — gates whether the report action is offered', () {
     testWidgets('true when a contact address is configured', (tester) async {
       // AppConfigProvider defaults carry a contact email.
@@ -221,6 +236,15 @@ void main() {
     expect(copied, contains('To: '));
     expect(copied, contains('Edition: tawheed-ur'));
     expect(copied, contains('9 — باب'));
+    // The subject carries the triage details too, so a report stays readable
+    // in the inbox even when a mail app runs the body's lines together.
+    expect(
+      copied,
+      contains(
+        'Subject: Kitab at-Tawheed — book correction · tawheed-ur · ch 9 · '
+        '2.4.0 (',
+      ),
+    );
     expect(find.byType(SnackBar), findsOneWidget);
   });
 }
