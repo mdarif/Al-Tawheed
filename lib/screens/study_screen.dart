@@ -103,7 +103,16 @@ class _StudyBody extends StatelessWidget {
     final l10n = context.l10n;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      // The shell draws the mini-player and NavigationBar over the body
+      // (`extendBody: true`) and reports their height as the bottom padding;
+      // an explicit `padding` replaces ListView's automatic MediaQuery inset,
+      // so add it back or the last card ends up underneath them.
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
         StudyDashboardCard(
           studiedCount: study.studiedCount,

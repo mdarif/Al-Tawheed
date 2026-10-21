@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -30,7 +28,9 @@ import 'package:myapp/screens/study_screen.dart';
 import 'package:myapp/services/preferences_service.dart';
 import 'package:myapp/testing/widget_keys.dart';
 import 'package:myapp/theme/app_theme.dart';
+import 'package:myapp/widgets/mini_player.dart';
 import 'package:myapp/widgets/section_tab_header.dart';
+import 'package:myapp/widgets/study/class_progress_card.dart';
 
 import 'support/fake_audio_playback.dart';
 
@@ -67,27 +67,41 @@ const _book = BookContent(
   ],
 );
 
-Catalog _catalog() => Catalog.fromJson(
-      jsonDecode('''
-{
-  "version": 1,
-  "book": {
-    "id": "book", "title": "Test", "titleArabic": "", "speaker": "Speaker",
-    "totalDurationSeconds": 1200, "lectureCount": 2, "coverImageUrl": "",
-    "language": "Urdu"
-  },
-  "chapters": [
-    {"id": "class-01", "number": 1, "title": "Class 01", "lectureCount": 1},
-    {"id": "class-02", "number": 2, "title": "Class 02", "lectureCount": 1}
-  ],
-  "lectures": [
-    {"id": "lec-01", "number": 1, "chapterId": "class-01", "title": "P1", "audioUrl": "", "durationSeconds": 600, "fileSizeBytes": 1},
-    {"id": "lec-02", "number": 1, "chapterId": "class-02", "title": "P1", "audioUrl": "", "durationSeconds": 600, "fileSizeBytes": 1}
-  ],
-  "dailyBenefits": []
-}
-''') as Map<String, dynamic>,
-    );
+Catalog _catalog({int classes = 2}) => Catalog.fromJson({
+      'version': 1,
+      'book': {
+        'id': 'book',
+        'title': 'Test',
+        'titleArabic': '',
+        'speaker': 'Speaker',
+        'totalDurationSeconds': 600 * classes,
+        'lectureCount': classes,
+        'coverImageUrl': '',
+        'language': 'Urdu',
+      },
+      'chapters': [
+        for (var i = 1; i <= classes; i++)
+          {
+            'id': 'class-${i.toString().padLeft(2, '0')}',
+            'number': i,
+            'title': 'Class ${i.toString().padLeft(2, '0')}',
+            'lectureCount': 1,
+          },
+      ],
+      'lectures': [
+        for (var i = 1; i <= classes; i++)
+          {
+            'id': 'lec-${i.toString().padLeft(2, '0')}',
+            'number': 1,
+            'chapterId': 'class-${i.toString().padLeft(2, '0')}',
+            'title': 'P1',
+            'audioUrl': '',
+            'durationSeconds': 600,
+            'fileSizeBytes': 1,
+          },
+      ],
+      'dailyBenefits': <Object>[],
+    });
 
 /// The shell with stub sibling branches around the real [ReadScreen], parsing
 /// `?tab=` exactly like the production `/read` route does.
@@ -135,6 +149,10 @@ GoRouter _substituteRouter(String initialLocation) => GoRouter(
             ),
           ],
         ),
+        GoRoute(
+          path: '/player',
+          builder: (_, __) => const Scaffold(body: Text('Player!')),
+        ),
       ],
     );
 
@@ -148,12 +166,13 @@ Widget _read({
   Locale? locale,
   double textScale = 1.0,
   BookContent? book = _book,
+  int classes = 2,
 }) {
   final activeSeries = series ?? (SeriesProvider()..load(false));
   final progress = ProgressProvider()..load();
   final catalogProvider = CatalogProvider()
     ..setCatalogForTest(
-      _catalog(),
+      _catalog(classes: classes),
       seriesId: activeSeries.currentSeries.id,
     );
   final downloads = DownloadsProvider();
@@ -481,6 +500,66 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  // The shell draws the mini-player and NavigationBar over the body
+  // (`extendBody: true`), so a Study body that fixes its own bottom padding
+  // leaves the last class card underneath them, unreachable.
+  for (final (name, locale, scale) in [
+    ('LTR', null, 1.0),
+    ('LTR', null, 2.0),
+    ('RTL (ur)', const Locale('ur'), 1.0),
+    ('RTL (ur)', const Locale('ur'), 2.0),
+  ]) {
+    testWidgets(
+        'Study clears the mini-player: the last class card is tappable '
+        '($name, ${scale}x text)', (tester) async {
+      tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      final router = _substituteRouter('/read?tab=study');
+      await tester.pumpWidget(
+        _read(router: router, locale: locale, textScale: scale, classes: 12),
+      );
+      await tester.pumpAndSettle();
+
+      // A lecture is loaded, so the shell shows the mini-player.
+      final shell = tester.element(find.byType(ShellScreen));
+      final player = shell.read<PlayerNotifier>();
+      final lecture = shell.read<CatalogProvider>().catalog!.lectures.first;
+      await player.loadAndPlay(lecture, [lecture]);
+      await tester.pumpAndSettle();
+      expect(find.byType(MiniPlayer), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+
+      final scrollable = find.descendant(
+        of: find.byType(StudyBody),
+        matching: find.byType(Scrollable),
+      );
+      final position = tester.state<ScrollableState>(scrollable).position;
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+
+      final lastCard = find.byType(ClassProgressCard).last;
+      expect(find.text('Class 12'), findsOneWidget);
+      final cardBottom = tester.getBottomLeft(lastCard).dy;
+      final miniTop = tester.getTopLeft(find.byType(MiniPlayer)).dy;
+      expect(
+        cardBottom,
+        lessThanOrEqualTo(miniTop),
+        reason: 'last class card ($cardBottom) must end above the '
+            'mini-player ($miniTop)',
+      );
+
+      // And it is actually hit by a tap, which starts that class.
+      expect(lastCard.hitTestable(), findsOneWidget);
+      await tester.tap(lastCard, warnIfMissed: true);
+      await tester.pumpAndSettle();
+      expect(player.studyChapter?.id, 'class-12');
+      expect(find.text('Player!'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final (name, locale) in [
     ('Arabic', const Locale('ar')),
