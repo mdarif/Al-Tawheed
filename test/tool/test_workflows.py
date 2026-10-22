@@ -534,11 +534,23 @@ class PlayWhatsNewWiringTest(unittest.TestCase):
         self.assertLess(make, fan_out)
         self.assertLess(fan_out, decide)
 
-    def test_every_locale_still_gets_the_notes(self):
+    # The Play listing's default (and only) language is en-GB. Notes uploaded
+    # under any other code attach to nothing, and the production promotion
+    # form then shows "Release notes provided for 0 language" (2.4.2/2.4.3).
+    PLAY_LISTING_LOCALES = ("en-GB",)
+
+    def _whatsnew_locales(self):
         steps = self.jobs["publish-play"]["steps"]
         run = steps[self.index_of(steps, "distribution/whatsnew/whatsnew-")]["run"]
-        for locale in ("en-US", "ar", "ur"):
-            self.assertIn(locale, run)
+        m = re.search(r"for LOCALE in ([^;]+);", run)
+        self.assertIsNotNone(m, "the whatsnew fan-out loop must stay greppable")
+        return tuple(m.group(1).split())
+
+    def test_notes_go_to_the_listing_default_language_en_gb(self):
+        self.assertIn("en-GB", self._whatsnew_locales())
+
+    def test_notes_go_only_to_languages_the_listing_has(self):
+        self.assertEqual(self._whatsnew_locales(), self.PLAY_LISTING_LOCALES)
 
     def test_prepare_validates_the_curated_text_before_anything_is_built(self):
         steps = self.jobs["prepare"]["steps"]

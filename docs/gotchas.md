@@ -529,6 +529,14 @@ is portable memory: any LLM working the repo should read and extend it.
   size its row was verified at (damage after the fact). Fresh downloads keep
   the atomic `.part` + exact-size check. **Never record the unverified
   catalogue size as a row's trusted size for a file that already exists.**
+- **Play release notes must target `en-GB`, the listing's default (and only)
+  language.** Notes uploaded under a language the listing lacks attach to
+  nothing: 2.4.2 and 2.4.3 sent `en-US`/`ar`/`ur`, and the production
+  promotion form showed "Release notes provided for 0 language".
+  `flutter-release.yml` now writes `whatsnew-en-GB` only, pinned by
+  `test/tool/test_workflows.py`. Promoting internal → production never copies
+  notes either: use "Copy from a previous release" or paste the
+  `<en-GB>…</en-GB>` block.
 - **There is no Home tab, and Lectures is the landing screen** (`/` →
   `/lectures`). The old Home tab was retired: its **only** keeper, the resume
   card, moved to a self-hiding [continue_listening_banner.dart](../lib/widgets/continue_listening_banner.dart)

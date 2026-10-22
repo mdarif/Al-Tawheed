@@ -640,13 +640,15 @@ jobs:
           cat play-store-notes.txt
           echo
 
-      # The app ships three notes locales; release notes are authored in
-      # English only, so every locale gets the en-US text DELIBERATELY. See
+      # The Play listing's default (and only) language is en-GB, so the notes
+      # go there. Notes under a language the listing does not have attach to
+      # nothing (2.4.2/2.4.3 sent en-US/ar/ur and the promotion form showed
+      # "0 languages"). test/tool/test_workflows.py pins this list. See
       # docs/release-runbook.md.
       - name: Prepare Play Store release notes for upload
         run: |
           mkdir -p distribution/whatsnew
-          for LOCALE in en-US ar ur; do
+          for LOCALE in en-GB; do
             cp play-store-notes.txt "distribution/whatsnew/whatsnew-${LOCALE}"
           done
           ls distribution/whatsnew

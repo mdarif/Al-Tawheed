@@ -210,7 +210,8 @@ template. It has two parts:
 - `## Play "What's new"` — one fenced block (```` ``` ````) of plain text.
   **At most 500 bytes**, which is Play's limit; a bullet `•` takes 3 bytes and
   an Urdu or Arabic letter 2, so count bytes, not characters. This block is
-  uploaded as-is as the "What's new" text for `en-US`, `ar` and `ur`.
+  uploaded as-is as the "What's new" text for `en-GB`, the Play listing's
+  default (and only) language.
 - `## GitHub Release notes` — the longer notes. This section, followed by the
   workflow's own "Device verification" line, is the GitHub Release body.
 
@@ -290,8 +291,9 @@ only CI artifacts and read-only Play queries.
    with a conflict and writes nothing. It finishes by proving Play now shows
    the exact build as `completed` on the **internal track**
    (Play "What's new" is the curated Play block of
-   `docs/release-notes/<version>.md`, the **same English text** for
-   en-US/ar/ur — release notes are authored in English only. It is not
+   `docs/release-notes/<version>.md`, uploaded for **en-GB**, the listing's
+   default and only language. Promoting internal → production does not copy
+   notes: use "Copy from a previous release" in the Console. It is not
    truncated; `git-cliff` is only the warned-about fallback when the block is
    missing.)
 7. **`github-release`** — creates the release for the tag, or edits it if a
