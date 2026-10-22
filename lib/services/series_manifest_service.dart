@@ -31,6 +31,9 @@ class SeriesManifestService {
         ttlMs: AppConfig.seriesManifestCacheTtlMs,
         forceRefresh: forceRefresh,
         client: httpClientForTest,
+        // Gates the Welcome screen on a fresh install; a forced refresh is the
+        // user's explicit Retry and keeps the full retry budget.
+        deadline: forceRefresh ? null : AppConfig.startupFetchDeadline,
       );
       final parsed = _parse(body);
       if (parsed == null && forceRefresh) {

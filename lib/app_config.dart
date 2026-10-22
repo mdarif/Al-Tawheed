@@ -36,6 +36,17 @@ class AppConfig {
   static const int maxSupportedFeatureFlagsVersion = 1;
   static const int maxSupportedAnnouncementsVersion = 1;
 
+  // ── Startup network budget ───────────────────────────────────────────────
+  // The Welcome screen of a fresh install (no cache yet) cannot show anything
+  // until the feature flags — and, when multi-series is on, series.json — have
+  // settled. A connection that never answers (captive portal, dead uplink)
+  // would otherwise take 3 attempts x 10 s = 30 s per fetch to give up, with a
+  // blank screen throughout. Each of those two gating fetches is therefore
+  // capped at this long, after which the app proceeds on its bundled defaults;
+  // the abandoned request keeps going in the background and still fills the
+  // cache for the next launch.
+  static const Duration startupFetchDeadline = Duration(seconds: 10);
+
   // ── Cache TTLs (milliseconds) ────────────────────────────────────────────
   static const int catalogCacheTtlMs = 60 * 60 * 1000; // 1 hour
   static const int appConfigCacheTtlMs = 60 * 60 * 1000; // 1 hour

@@ -32,6 +32,8 @@ class FeatureFlagsProvider extends ChangeNotifier {
         url: AppConfig.featureFlagsUrl,
         cacheKey: 'feature_flags',
         ttlMs: AppConfig.featureFlagsCacheTtlMs,
+        // Gates the Welcome screen on a fresh install — see the constant.
+        deadline: AppConfig.startupFetchDeadline,
       );
       final raw = jsonDecode(body) as Map<String, dynamic>;
       final version = raw['version'] as int? ?? 1;

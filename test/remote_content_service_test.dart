@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -184,6 +186,97 @@ void main() {
         throwsA(isA<NoCachedContentException>()),
       );
       expect(calls, 3);
+    });
+  });
+
+  group('fetch — startup deadline', () {
+    const url = 'https://cdn.example/feature-flags.json';
+    const deadline = Duration(milliseconds: 50);
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      PreferencesService.instance.resetForTest();
+      await PreferencesService.instance.init();
+    });
+
+    // A connection that never answers must not hold a no-cache caller for
+    // maxAttempts x 10 s: past the deadline it fails like any other fetch.
+    test('gives up on a fetch that never answers once the deadline passes',
+        () async {
+      final client = MockClient((_) => Completer<http.Response>().future);
+
+      final stopwatch = Stopwatch()..start();
+      await expectLater(
+        RemoteContentService.fetch(
+          url: url,
+          cacheKey: 'k',
+          ttlMs: 1,
+          client: client,
+          deadline: deadline,
+        ),
+        throwsA(isA<NoCachedContentException>()),
+      );
+
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
+    });
+
+    test('a slow fetch that lands inside the deadline is still returned',
+        () async {
+      final client = MockClient((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        return http.Response('{"ok":1}', 200);
+      });
+
+      final body = await RemoteContentService.fetch(
+        url: url,
+        cacheKey: 'k',
+        ttlMs: 1,
+        client: client,
+        deadline: const Duration(seconds: 5),
+      );
+
+      expect(body, contains('ok'));
+    });
+
+    // The abandoned request is not cancelled: if it lands later it fills the
+    // cache, so the next launch starts warm.
+    test('a fetch that lands after the deadline still fills the cache',
+        () async {
+      final late = Completer<http.Response>();
+      final client = MockClient((_) => late.future);
+
+      await expectLater(
+        RemoteContentService.fetch(
+          url: url,
+          cacheKey: 'k',
+          ttlMs: 1,
+          client: client,
+          deadline: deadline,
+        ),
+        throwsA(isA<NoCachedContentException>()),
+      );
+      expect(PreferencesService.instance.loadRemoteJson('k'), isNull);
+
+      late.complete(http.Response('{"ok":1}', 200));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(PreferencesService.instance.loadRemoteJson('k'), contains('ok'));
+    });
+
+    test('a cached body is served instantly; the deadline never applies',
+        () async {
+      await PreferencesService.instance.saveRemoteJson('k', '{"cached":1}');
+      final client = MockClient((_) => Completer<http.Response>().future);
+
+      final body = await RemoteContentService.fetch(
+        url: url,
+        cacheKey: 'k',
+        ttlMs: 60 * 60 * 1000,
+        client: client,
+        deadline: deadline,
+      );
+
+      expect(body, contains('cached'));
     });
   });
 }

@@ -676,6 +676,28 @@ is portable memory: any LLM working the repo should read and extend it.
 
 ## Networking / CDN
 
+- **A fresh install's Welcome screen waits on the network; a connection that
+  never answers (not one that fails) used to blank it for 30 s.** Welcome shows
+  no content until `SeriesProvider.isSeriesReady`, which on a fresh install
+  (no cache) needs the feature-flags fetch and, when multi-series is on,
+  `series.json`. Offline fails fast, but a captive portal / dead uplink / slow
+  DNS makes `http.get` hang, so each fetch burned 3 attempts x 10 s = 30 s, in
+  silence (nothing logs until the retries end). It surfaced as the intermittent
+  `Timed out after 30s waiting for welcome screen or lecture list after cold
+  start` in `AppFlow.launchApp` (integration + Patrol, worst on a cold emulator
+  with a stalled first DNS/TLS) and, for real users, as a blank dark first
+  screen. The startup path itself (`main()` awaits: prefs, path_provider,
+  notification channel, `AudioService.init`) is local-only and takes 0.5-2.5 s
+  in the harness (4-5 s from launch to Welcome); it is not the hang. Fix: the
+  two gating fetches pass `AppConfig.startupFetchDeadline` (10 s) to
+  `RemoteContentService.fetch(deadline:)`, after which startup proceeds on the
+  bundled defaults while the abandoned request still fills the cache.
+  `test/startup_network_bound_test.dart` reproduces it with
+  `test/support/black_hole_http.dart` (connections that never complete). When
+  you add another fetch that gates first paint, give it a deadline too. To
+  reproduce on a device, run a probe with that `HttpOverrides`; `adb` network
+  delay and the emulator `-http-proxy` flag do not black-hole traffic.
+
 - **`*.pages.dev` can be unreachable over IPv4 on some networks — serve content
   from a custom domain.** The content CDN was `al-tawheed-content.pages.dev`,
   which resolves to Cloudflare's `172.66.44.x` IPv4 range. On some ISPs that

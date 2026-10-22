@@ -55,6 +55,12 @@ class RemoteContentService {
   /// tests may pass a non-zero value for real backoff.
   static const Duration defaultRetryDelay = Duration.zero;
 
+  /// Entry point: applies the strategy documented above.
+  ///
+  /// [deadline] (optional) bounds how long a *no-cache* fetch may be awaited,
+  /// across all retries; on expiry this throws like any failed fetch. Without
+  /// it a connection that never answers is only given up on after
+  /// [maxAttempts] x 10 s. It does not apply when a cached body can be served.
   static Future<String> fetch({
     required String url,
     required String cacheKey,
@@ -63,6 +69,7 @@ class RemoteContentService {
     http.Client? client,
     int maxAttempts = defaultMaxAttempts,
     Duration retryDelay = defaultRetryDelay,
+    Duration? deadline,
   }) async {
     final prefs = PreferencesService.instance;
     final cached = prefs.loadRemoteJson(cacheKey);
@@ -100,13 +107,17 @@ class RemoteContentService {
 
       case CacheStrategy.fetchSynchronously:
         try {
-          return await _fetchAndCache(
+          final fetch = _fetchAndCache(
             url: url,
             cacheKey: cacheKey,
             client: client,
             maxAttempts: maxAttempts,
             retryDelay: retryDelay,
           );
+          // Past [deadline] the caller stops waiting (and sees the same
+          // failure as any other) but the fetch itself carries on and caches
+          // its result if it ever lands.
+          return await (deadline == null ? fetch : fetch.timeout(deadline));
         } catch (_) {
           throw NoCachedContentException(cacheKey);
         }
